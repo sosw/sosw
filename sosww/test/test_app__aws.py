@@ -2,9 +2,6 @@ import boto3
 import os
 import unittest
 
-from unittest import mock
-from unittest.mock import MagicMock
-
 from ..app import Processor
 from ..components.sns import SnsManager
 from ..components.siblings import SiblingsManager
@@ -19,26 +16,22 @@ class app_TestCase(unittest.TestCase):
 
 
     def setUp(self):
-        pass
+        self.processor = Processor(custom_config=self.TEST_CONFIG)
 
 
     def tearDown(self):
         pass
 
 
-    @mock.patch("boto3.client")
-    def test_app_init(self, mock_boto_client):
-        Processor(custom_config=self.TEST_CONFIG)
+    def test_app_init(self):
         self.assertTrue(True)
 
 
-    @mock.patch("boto3.client")
-    def test_app_init__fails_without_custom_config(self, mock_boto_client):
+    def test_app_init__fails_without_custom_config(self):
         self.assertRaises(RuntimeError, Processor)
 
 
-    @mock.patch("boto3.client")
-    def test_app_init__with_some_clients(self, mock_boto_client):
+    def test_app_init__with_some_clients(self):
         custom_config = {
             'init_clients': ['Sns', 'Siblings']
         }
@@ -49,8 +42,7 @@ class app_TestCase(unittest.TestCase):
         self.assertIsNotNone(getattr(processor, 'siblings_client'))
 
 
-    @mock.patch("boto3.client")
-    def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
+    def test_app_init__boto_and_components_custom_clients(self):
         custom_config = {
             'init_clients': ['dynamodb', 'Siblings']
         }
@@ -63,9 +55,7 @@ class app_TestCase(unittest.TestCase):
         self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
 
 
-    @unittest.skip("With mocked boto3 this doesn't pass.")
-    @mock.patch("boto3.client")
-    def test_app_init__with_some_invalid_client(self, mock_boto_client):
+    def test_app_init__with_some_invalid_client(self):
         custom_config = {
             'init_clients': ['NotExists', 'Sns']
         }

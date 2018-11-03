@@ -5,7 +5,7 @@ python:
 install:
   - pip install boto3
 script:
-  - pytest sosww/test
+  - pytest sosww/test/test_app.py
 branches:
   only:
   - travis_test
