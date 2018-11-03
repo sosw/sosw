@@ -1,0 +1,11 @@
+sudo: enabled
+language: python
+python:
+  - '3.6'
+install:
+  - pip install boto3
+script:
+  - pytest sosww/test/suite_3_6_unit.py
+branches:
+  only:
+  - travis_test
