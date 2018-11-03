@@ -6,6 +6,6 @@ install:
   - pip install boto3
 script:
   - pytest sosww/test/suite_3_6_unit.py
-branches:
-  only:
-  - travis_test
+#branches:
+#  only:
+#  - travis_test
