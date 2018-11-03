@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(name='sosww',
-      version='0.1.7',
+      version='0.1.9',
       description='SOSW Worker',
       url='http://github.com/bimpression/sosww',
       author='Nikolay Grishchenko',
@@ -15,7 +15,8 @@ setup(name='sosww',
           'Programming Language :: Python :: 3.6',
           'Topic :: Software Development'
       ],
-      packages=['sosww'],
+      # packages=['sosww'],
+      packages=find_packages(exclude=['docs']),
       install_requires=[
           'boto3>=1.9'
       ],
