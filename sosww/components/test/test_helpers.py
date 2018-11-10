@@ -12,7 +12,7 @@ os.environ["autotest"] = "True"
 from ..helpers import *
 
 
-class helpers_TestCase(unittest.TestCase):
+class helpers_UnitTestCase(unittest.TestCase):
 
     def setUp(self):
         pass

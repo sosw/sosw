@@ -47,7 +47,7 @@ class SnsManager():
 
         self.test = kwargs.get('test')
         if self.test:
-            self.recipient = 'arn:aws:sns:us-west-2:737060422660:autotest_topic'
+            self.recipient = 'arn:aws:sns:us-west-2:000000000000:autotest_topic'
 
 
     def __del__(self):
