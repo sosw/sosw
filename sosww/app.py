@@ -5,14 +5,14 @@ import os
 from importlib import import_module
 from collections import defaultdict
 
-from .components.helpers import *
-from .components.ssm import get_config
-from .components.tasks_api_client_for_workers import close_task
+from sosww.components.helpers import *
+from sosww.components.ssm import get_config
+from sosww.components.tasks_api_client_for_workers import close_task
 
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
-__version__ = "1.01"
+__version__ = "0.3.0"
 __license__ = "MIT"
 __status__ = "Production"
 
@@ -43,7 +43,7 @@ class Processor:
             raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
 
         self.config = self.DEFAULT_CONFIG.copy()
-        self.config.update(get_config(f"{__name__}_config"))
+        self.config.update(get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config.update(custom_config or {})
         logger.info(f"Final processor config: {self.config}")
 

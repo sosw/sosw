@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 
 
 setup(name='sosww',
-      version='0.1.9',
+      version='0.3.0',
       description='SOSW Worker',
       url='http://github.com/bimpression/sosww',
       author='Nikolay Grishchenko',
       author_email='nikolay@bimpression.com',
       license='MIT',
       classifiers=[
-          'Development Status :: 1 - Planning',
+          'Development Status :: 3 - Alpha',
           'Operating System :: Other OS',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3.6',

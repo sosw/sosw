@@ -5,16 +5,16 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock
 
-from ..app import Processor
-from ..components.sns import SnsManager
-from ..components.siblings import SiblingsManager
+from sosww.app import Processor
+from sosww.components.sns import SnsManager
+from sosww.components.siblings import SiblingsManager
 
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
-class app_TestCase(unittest.TestCase):
+class app_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = {'test': True}
 
 
@@ -23,7 +23,10 @@ class app_TestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        pass
+        try:
+            del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
+        except:
+            pass
 
 
     @mock.patch("boto3.client")
@@ -70,3 +73,13 @@ class app_TestCase(unittest.TestCase):
             'init_clients': ['NotExists', 'Sns']
         }
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
+
+
+    @mock.patch("sosww.app.get_config")
+    def test_app_calls_get_config(self, mock_ssm):
+
+        mock_ssm.return_value = {'mock': 'called'}
+        os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
+
+        Processor(custom_config=self.TEST_CONFIG)
+        mock_ssm.assert_called_once_with('test_func_config')
