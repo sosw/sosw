@@ -127,7 +127,7 @@ class Processor:
         Returns config by name from SSM. Override this to provide your config handling method.
 
         :param name: Name of the config
-        :return:
+        :rtype: dict
         """
 
         return get_config(name)
