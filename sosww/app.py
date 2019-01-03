@@ -43,7 +43,7 @@ class Processor:
             raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
 
         self.config = self.DEFAULT_CONFIG.copy()
-        self.config.update(get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
+        self.config.update(self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config.update(custom_config or {})
         logger.info(f"Final processor config: {self.config}")
 
@@ -119,6 +119,18 @@ class Processor:
         # Update the stats for number of calls.
         # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
+
+
+    @staticmethod
+    def get_config(name):
+        """
+        Returns config by name from SSM. Override this to provide your config handling method.
+
+        :param name: Name of the config
+        :rtype: dict
+        """
+
+        return get_config(name)
 
 
     def get_stats(self):
