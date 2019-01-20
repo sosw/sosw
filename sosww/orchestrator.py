@@ -5,10 +5,7 @@ import os
 from importlib import import_module
 from collections import defaultdict
 
-from sosww.components.helpers import *
-from sosww.components.ssm import get_config
-# from sosww.components.tasks_api_client_for_workers import close_task
-
+from sosww.app import Processor
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
@@ -23,11 +20,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Orchestrator:
+class Orchestrator(Processor):
     """
     Orchestrator class.
     """
 
     DEFAULT_CONFIG = {}
-
-    def

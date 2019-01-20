@@ -6,7 +6,7 @@ from sosww.components.tasks_api_client_for_workers import close_task
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
-__version__ = "0.3.0"
+__version__ = "0.1"
 __license__ = "MIT"
 __status__ = "Production"
 
@@ -34,4 +34,4 @@ class Worker(Processor):
         except:
             pass
 
-        super.__call__(event)
+        super().__call__(event)
