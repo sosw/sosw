@@ -7,7 +7,6 @@ from collections import defaultdict
 
 from sosww.components.helpers import *
 from sosww.components.ssm import get_config
-from sosww.components.tasks_api_client_for_workers import close_task
 
 
 __author__ = "Nikolay Grishchenko"
@@ -25,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 class Processor:
     """
-    Worker class template.
+    Core Processor class template.
     """
 
     DEFAULT_CONFIG = {}
@@ -110,12 +109,6 @@ class Processor:
         You can either call super() at the end of your child function or completely overwrite this function.
         """
 
-        # Mark the task as completed in DynamoDB if the event had task_id.
-        try:
-            close_task(event)
-        except:
-            pass
-
         # Update the stats for number of calls.
         # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
@@ -127,7 +120,7 @@ class Processor:
         Returns config by name from SSM. Override this to provide your config handling method.
 
         :param name: Name of the config
-        :return:
+        :rtype: dict
         """
 
         return get_config(name)
