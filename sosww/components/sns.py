@@ -55,7 +55,7 @@ class SnsManager():
         Destructor. Send unsent queued messages.
         """
 
-        if self.queue and not self.test:
+        if self.queue:
             self.commit()
 
 
