@@ -180,7 +180,7 @@ class DynamoConfig:
                     'config_value': 'S'
                 },
                 'required_fields': ['env', 'config_name', 'config_value'],
-                'table_name':      'config'  # If a table is not specified, this table will be used.
+                'table_name':      'config'
             }
         }
 

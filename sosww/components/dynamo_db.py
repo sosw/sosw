@@ -129,7 +129,7 @@ class DynamoDBClient:
         Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.
 
         e.g.                {'key1': 'value1', 'key2': 'value2'}
-        will convert to:    {'key1': {'Type1': 'value2'}, 'key2': {'Type2': 'value2'}}
+        will convert to:    {'key1': {'Type1': 'value1'}, 'key2': {'Type2': 'value2'}}
 
         :param dict row_dict:   A row we want to convert to dynamo syntax.
         :param str add_prefix:  A string prefix to add to the key in the result dict. Useful for queries like update.
