@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='sosww',
-      version='0.3.3',
+      version='0.3.5',
       description='SOSW Worker',
       url='http://github.com/bimpression/sosww',
       author='Nikolay Grishchenko',

@@ -6,12 +6,12 @@ from importlib import import_module
 from collections import defaultdict
 
 from sosww.components.helpers import *
-from sosww.components.ssm import get_config
+from sosww.components.config import get_config
 
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __license__ = "MIT"
 __status__ = "Production"
 
