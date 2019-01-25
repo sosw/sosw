@@ -5,9 +5,9 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock
 
-from sosww.app import Processor
-from sosww.components.sns import SnsManager
-from sosww.components.siblings import SiblingsManager
+from sosw.app import Processor
+from sosw.components.sns import SnsManager
+from sosw.components.siblings import SiblingsManager
 
 
 os.environ["STAGE"] = "test"
@@ -75,7 +75,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
 
 
-    @mock.patch("sosww.app.get_config")
+    @mock.patch("sosw.app.get_config")
     def test_app_calls_get_config(self, mock_ssm):
 
         mock_ssm.return_value = {'mock': 'called'}

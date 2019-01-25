@@ -5,7 +5,7 @@ import os
 from importlib import import_module
 from collections import defaultdict
 
-from sosww.app import Processor
+from sosw.app import Processor
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
