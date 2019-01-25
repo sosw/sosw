@@ -1,7 +1,7 @@
 import logging
 
-from sosww.app import Processor
-from sosww.components.tasks_api_client_for_workers import close_task
+from sosw.app import Processor
+from sosw.components.tasks_api_client_for_workers import close_task
 
 
 __author__ = "Nikolay Grishchenko"
