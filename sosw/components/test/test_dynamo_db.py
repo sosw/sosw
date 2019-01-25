@@ -10,8 +10,8 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosww.components.helpers import *
-from sosww.components.dynamo_db import DynamoDBClient, clean_dynamo_table
+from sosw.components.helpers import *
+from sosw.components.dynamo_db import DynamoDBClient, clean_dynamo_table
 
 
 class dynamodb_client_IntegrationTestCase(unittest.TestCase):

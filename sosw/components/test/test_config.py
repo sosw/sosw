@@ -5,8 +5,8 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sosww.components.dynamo_db import DynamoDBClient, clean_dynamo_table
-from sosww.components.config import SSMConfig, DynamoConfig, ConfigSource
+from sosw.components.dynamo_db import DynamoDBClient, clean_dynamo_table
+from sosw.components.config import SSMConfig, DynamoConfig, ConfigSource
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -102,8 +102,8 @@ class DynamoConfigTestCase(unittest.TestCase):
 class ConfigTestCase(unittest.TestCase):
 
     def setUp(self):
-        with patch('sosww.components.config.DynamoConfig') as patch_dynamo:
-            with patch('sosww.components.config.SSMConfig') as patch_ssm:
+        with patch('sosw.components.config.DynamoConfig') as patch_dynamo:
+            with patch('sosw.components.config.SSMConfig') as patch_ssm:
                 self.config_source = ConfigSource(test=True)
                 self.patched_ssm = patch_ssm
                 self.patched_dynamo = patch_dynamo

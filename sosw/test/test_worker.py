@@ -5,7 +5,7 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from sosww.worker import Worker
+from sosw.worker import Worker
 
 
 os.environ["STAGE"] = "test"
@@ -17,7 +17,7 @@ class worker_UnitTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.patcher = patch("sosww.app.get_config")
+        self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
 
@@ -30,7 +30,7 @@ class worker_UnitTestCase(unittest.TestCase):
             pass
 
 
-    @mock.patch("sosww.worker.close_task")
+    @mock.patch("sosw.worker.close_task")
     def test_close_task__called(self, mock_close_task):
         p = Worker(custom_config=self.TEST_CONFIG)
         p({'key': 'payload'})

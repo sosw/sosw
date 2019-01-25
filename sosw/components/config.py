@@ -15,8 +15,8 @@ import json
 import logging
 import os
 
-from sosww.components.helpers import chunks
-from sosww.components.dynamo_db import DynamoDBClient
+from sosw.components.helpers import chunks
+from sosw.components.dynamo_db import DynamoDBClient
 
 
 class SSMConfig:
