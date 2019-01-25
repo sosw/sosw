@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(name='sosw',
       version='0.3.7',
       description='Serverless Orchestrator of Serverless Workers',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       url='http://github.com/bimpression/sosw',
       author='Nikolay Grishchenko',
       author_email='nikolay@bimpression.com',
