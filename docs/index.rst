@@ -9,6 +9,15 @@ The three main components are Worker, Orchestrator and Scheduler.
 
 Documentation is on the way full speed, for now you can read informative docstrings...
 
+.. toctree::
+   :titlesonly:
+   :caption: Contents:
+
+   convention
+   ../sosw/components/docs/index
+   processor
+   worker
+
 
 Indices and tables
 ==================
