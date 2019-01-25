@@ -5,8 +5,8 @@ import os
 from importlib import import_module
 from collections import defaultdict
 
-from sosww.components.helpers import *
-from sosww.components.config import get_config
+from sosw.components.helpers import *
+from sosw.components.config import get_config
 
 
 __author__ = "Nikolay Grishchenko"
@@ -74,7 +74,7 @@ class Processor:
             module_name = camel_case_to_underscore(service)
             try:
                 # FIXME you probably need __name__ here or smth.
-                some_module = import_module(f"sosww.components.{module_name}")
+                some_module = import_module(f"sosw.components.{module_name}")
                 # some_module = import_module(f"{__name__}.components.{module_name}")
             except:
 
