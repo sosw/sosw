@@ -322,17 +322,21 @@ class DynamoDBClient:
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
 
-        :param list keys_list: A list of the keys of the items we want to get.
-                               Ex: [{'hash_col': '1, 'range_col': 2}, {'hash_col': 3, 'range_col': 4}, ...]
+        :param list keys_list: A list of the keys of the items we want to get. Gets the items that match the given keys.
+                               If some key doesn't exist - it just skips it and gets the others.
+                               e.g. [{'hash_col': '1, 'range_col': 2}, {'hash_col': 3}]
+                               - will get a row where `hash_col` is 1 and `range_col` is 2, and also all rows where
+                               `hash_col` is 3.
 
         Optional
 
         :param str table_name:
-        :param int max_retries: If failed to get some items, retry this much times. Waiting between retries is
+        :param int max_retries: If failed to get some items, retry this many times. Waiting between retries is
                                 multiplied by 2 after each retry, so `retries` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
-        :return:
+        :return: List of items from the table
+        :rtype: list
         """
 
         table_name = self._get_validate_table_name(table_name)
@@ -345,7 +349,6 @@ class DynamoDBClient:
                 table_name: {
                     'Keys': query_keys
                 }
-                # Just so you know - you could add another query for another table here.
             }
         }
 
