@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='sosw',
-      version='0.3.7',
+      version='0.3.9',
       description='Serverless Orchestrator of Serverless Workers',
       url='http://github.com/bimpression/sosw',
       author='Nikolay Grishchenko',
