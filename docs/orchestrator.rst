@@ -1,9 +1,10 @@
-Worker
-------
+Orchestrator
+------------
 
-Worker should be used as parent class for your Lambda processors in your workers.
-It has all the common methods of `sosw.app.Processor` and tries to close task in case it received some
-`task_id` in the payload (event).
+| Orchestrator does the ... Orchestration.
+| You can use the class in your Lambda as is, just configure some settings using one of the supported ways
+in * :ref:`Config <components-config>`
 
-.. automodule:: sosw.worker
+
+.. automodule:: sosw.orchestrator
    :members:

@@ -5,9 +5,9 @@ Components
 .. _components-config:
 
 Config Source
------------
+-------------
 
-.. automodule:: sosw.components.config
+.. automodule:: ..sosw.components.config
    :members:
 
 
