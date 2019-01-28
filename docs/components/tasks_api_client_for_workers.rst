@@ -1,7 +1,7 @@
 tasks_api_client_for_workers
 ----------------------------
 
-.. :warning::
+.. warning::
 
    This components is a not generalized for broad usage. Requires refactoring.
 
