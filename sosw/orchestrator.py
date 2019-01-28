@@ -23,6 +23,9 @@ logger.setLevel(logging.INFO)
 class Orchestrator(Processor):
     """
     Orchestrator class.
+    Not yet migrated to `sosw` from private repository.
+
+    Coming soon...
     """
 
     DEFAULT_CONFIG = {}
