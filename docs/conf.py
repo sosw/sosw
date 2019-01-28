@@ -15,6 +15,8 @@
 import sys
 import os
 
+import sosw
+
 # sys.path.append('/var/app/sphinx/sosw/src/sosw/')
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
