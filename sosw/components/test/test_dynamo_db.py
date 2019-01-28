@@ -364,5 +364,28 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             assert r in result, f"row not in result from dynamo scan: {r}"
 
 
+    def test_batch_get_items(self):
+        rows = [
+            {'hash_col': 'cat1', 'range_col': 121, 'some_col': 'test1'},
+            {'hash_col': 'cat1', 'range_col': 122, 'some_col': 'test2'},
+            {'hash_col': 'cat2', 'range_col': 122, 'some_col': 'test2'},
+        ]
+        for x in rows:
+            self.dynamo_client.put(x, self.table_name)
+
+        keys_list_query = [
+            {'hash_col': 'cat1', 'range_col': 121},
+            {'hash_col': 'doesnt_exist', 'range_col': 40},
+            {'hash_col': 'cat2', 'range_col': 122},
+        ]
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list_query)
+
+        self.assertEquals(len(result), 2)
+
+        self.assertIn(rows[0], result)
+        self.assertIn(rows[2], result)
+
+
 if __name__ == '__main__':
     unittest.main()
