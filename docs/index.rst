@@ -13,7 +13,7 @@ Documentation is on the way full speed, for now you can read informative docstri
    :caption: Contents:
 
    convention
-   ../sosw/components/docs/index
+   components
    processor
    orchestrator
    worker

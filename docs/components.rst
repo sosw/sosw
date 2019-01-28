@@ -2,31 +2,13 @@
 Components
 ==========
 
-.. _components-config:
+.. toctree::
+   :titlesonly:
+   :caption: Components:
 
-Config Source
--------------
-
-.. automodule:: ..sosw.components.config
-   :members:
-
-
-.. _components-helpers:
-
-Helpers
--------
-
-.. automodule:: sosw.components.helpers
-   :members:
-
-
-.. _components-dynamo_db:
-
-DynamoDB Client
----------------
-
-.. automodule:: sosw.components.dynamo_db
-   :members:
+   config
+   components/dynamo_db
+   components.helpers
 
 
 .. _components-siblings:
@@ -54,3 +36,11 @@ tasks_api_client_for_workers
 
 .. automodule:: sosw.components.tasks_api_client_for_workers
    :members:
+
+
+MEMBERS
+-------
+
+.. automodule:: sosw.components
+   :members:
+
