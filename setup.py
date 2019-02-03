@@ -1,10 +1,15 @@
 from setuptools import setup, find_packages
 
 
-setup(name='sosww',
-      version='0.3.3',
-      description='SOSW Worker',
-      url='http://github.com/bimpression/sosww',
+with open("README.md", "r") as f:
+    long_description = f.read()
+
+setup(name='sosw',
+      version='0.3.9',
+      description='Serverless Orchestrator of Serverless Workers',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
+      url='http://github.com/bimpression/sosw',
       author='Nikolay Grishchenko',
       author_email='nikolay@bimpression.com',
       license='MIT',
@@ -15,7 +20,7 @@ setup(name='sosww',
           'Programming Language :: Python :: 3.6',
           'Topic :: Software Development'
       ],
-      # packages=['sosww'],
+      # packages=['sosw'],
       packages=find_packages(exclude=['docs']),
       install_requires=[
           'boto3>=1.9'

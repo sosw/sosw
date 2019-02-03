@@ -7,6 +7,7 @@ import os
 import csv
 
 from collections import defaultdict
+from unittest.mock import MagicMock
 from ..sns import *
 
 
@@ -18,9 +19,13 @@ os.environ["autotest"] = "True"
 
 class sns_TestCase(unittest.TestCase):
 
+    def clean_queue(self):
+        setattr(self.sns, 'queue', [])
+
 
     def setUp(self):
         self.sns = SnsManager(test=True, subject='Autotest SNS Subject')
+        self.sns.commit = MagicMock(side_effect=self.clean_queue)
 
     def tearDown(self):
         pass
@@ -40,6 +45,7 @@ class sns_TestCase(unittest.TestCase):
         self.sns.send_message("test message")
         self.sns.commit()
         self.assertEqual(len(self.sns.queue), 0, f"Commit did not clean queue")
+        self.sns.commit.assert_called_once()
 
 
     def test_commit_on_change_subject(self):
