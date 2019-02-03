@@ -91,8 +91,8 @@ class SSMConfig:
         if param_type not in ('String', 'StringList', 'SecureString'):
             param_type = 'String'
 
-        ssm = boto3.client('ssm')
-        ssm.put_parameter(
+        ssm_client = self._get_ssm_client()
+        ssm_client.put_parameter(
                 Name=name,
                 Description=description,
                 Value=val,
