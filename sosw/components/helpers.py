@@ -19,7 +19,8 @@ __all__ = ['validate_account_to_dashed',
            'validate_string_matches_datetime_format',
            'recursive_matches_soft',
            'recursive_matches_strict',
-           'recursive_matches_extract'
+           'recursive_matches_extract',
+           'convert_string_to_words'
            ]
 
 import copy
@@ -532,3 +533,18 @@ def recursive_matches_extract(src, key, **kwargs):
 
     # If nothing found we return False
     return None
+
+
+def convert_string_to_words(string):
+    """
+    Convert string to comma separated words.
+
+    :param  str string:     String to convert into words.
+    :rtype: str
+    :return: Comma separated words.
+    """
+
+    if not isinstance(string, str):
+        raise TypeError(f"Input must be string, got {type(string)}")
+
+    return re.sub('\s+', ',', string.lower().strip())

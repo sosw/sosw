@@ -380,5 +380,11 @@ class helpers_UnitTestCase(unittest.TestCase):
             validate_string_matches_datetime_format(date_str, date_format)
 
 
+    def test_convert_string_to_words(self):
+        self.assertEquals(convert_string_to_words('Best Dating NY'), 'best,dating,ny')
+        self.assertEquals(convert_string_to_words('   Best     Dating NY'), 'best,dating,ny')
+        self.assertEquals(convert_string_to_words('Best 42 daTing sites     '), 'best,42,dating,sites')
+
+
 if __name__ == '__main__':
     unittest.main()
