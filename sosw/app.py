@@ -73,18 +73,20 @@ class Processor:
         for service in clients:
             module_name = camel_case_to_underscore(service)
             try:
-                # FIXME you probably need __name__ here or smth.
                 some_module = import_module(f"sosw.components.{module_name}")
-                # some_module = import_module(f"{__name__}.components.{module_name}")
             except:
-
-                # The other supported option is to load boto3 client if it exists.
+                # Also try to import from the components directory owned by the Lambda itself.
                 try:
-                    setattr(self, f"{module_name}_client", boto3.client(module_name))
-                    continue
+                    some_module = import_module(f"components.{module_name}")
                 except:
-                    logger.error(f"Failed to import module for service {module_name}. Component naming problem.")
-                    raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
+
+                    # The other supported option is to load boto3 client if it exists.
+                    try:
+                        setattr(self, f"{module_name}_client", boto3.client(module_name))
+                        continue
+                    except:
+                        logger.error(f"Failed to import module for service {module_name}. Component naming problem.")
+                        raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
 
             for suffix in client_suffixes:
                 try:
