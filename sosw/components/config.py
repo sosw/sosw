@@ -6,7 +6,7 @@ Especially SSMConfig, because SSM throttles and has limits we reached in the pas
 Using these methods requires the Role to have permissions to access SSM and/or Dynamo for requested resources.
 """
 
-__all__ = ['ConfigSource', 'get_config', 'get_credentials_by_prefix']
+__all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix']
 __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.7"
 
@@ -73,6 +73,32 @@ class SSMConfig:
             config = {}
 
         return config
+
+
+    def update_config(self, name, val, **kwargs):
+        """
+        Update a parameter in SSM ParameterStore with a new value.
+
+        :param  str     name:   Parameter name to address.
+        :param  object  val:    Parameter value to update.
+        """
+
+        description = kwargs.get('description')
+        if not isinstance(description, str):
+            description = ''
+
+        param_type = kwargs.get('param_type')
+        if param_type not in ('String', 'StringList', 'SecureString'):
+            param_type = 'String'
+
+        ssm_client = self._get_ssm_client()
+        ssm_client.put_parameter(
+                Name=name,
+                Description=description,
+                Value=val,
+                Type=param_type,
+                Overwrite=True
+        )
 
 
     def call_boto_with_pagination(self, f, **kwargs):
@@ -160,7 +186,7 @@ class SSMConfig:
 
 class DynamoConfig:
     """
-    Methods to get config from DynamoDB.
+    Methods to get/update config from/to DynamoDB.
     """
 
     dynamo_client = None
@@ -207,6 +233,23 @@ class DynamoConfig:
             return json.loads(config_value)
         except:
             return config_value if config_value is not None else {}
+
+
+    def update_config(self, name, val, **kwargs):
+        """
+        Update a field in DynamoDB 'config' table with a new value.
+
+        :param  str     name:   Field name to address.
+        :param  object  val:    Field value to update.
+        """
+
+        if self.test or os.environ.get('STAGE') in ['test', 'autotest']:
+            env = "dev"
+        else:
+            env = "production"
+
+        dynamo_client = self._get_dynamo_client()
+        dynamo_client.update(keys={'env': env, 'config_name': name}, attributes_to_update={'config_value': val})
 
 
     def get_credentials_by_prefix(self, prefix, env="production"):
@@ -300,6 +343,10 @@ class ConfigSource:
         return self.default_source.get_config(name)
 
 
+    def update_config(self, name, val):
+        return self.default_source.update_config(name, val)
+
+
     def get_credentials_by_prefix(self, prefix):
         return self.default_source.get_credentials_by_prefix(prefix)
 
@@ -309,4 +356,5 @@ test = True if os.environ.get('STAGE') == 'test' else False
 __config_source = ConfigSource(test=test)
 
 get_config = __config_source.get_config
+update_config = __config_source.update_config
 get_credentials_by_prefix = __config_source.get_credentials_by_prefix

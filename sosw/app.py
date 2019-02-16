@@ -165,7 +165,7 @@ class Processor:
 
         # Update them with current values
         for k, v in self.stats.items():
-            if not isinstance(v, int):
+            if not isinstance(v, (int, float)):
                 continue
             if not (k in self.config.get('lifetime_stats_params', []) or k.startswith('total_')):
                 preserved[f'total_{k}'] += v
