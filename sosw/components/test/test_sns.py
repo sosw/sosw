@@ -31,6 +31,15 @@ class sns_TestCase(unittest.TestCase):
         pass
 
 
+    def test_init__reads_config(self):
+
+        sns = SnsManager(config={'subject': 'subj', 'recepient': 'arn::some_topic'})
+
+        self.assertEqual(sns.recipient, 'arn:aws:sns:us-west-2:000000000000:autotest_topic',
+                         "The Topic must be automatically reset for test")
+        self.assertEqual(sns.subject, 'subj', "Subject was not set during __init__ from config.")
+
+
     def test_queue_message(self):
         self.sns.send_message("test message")
         self.assertEqual(len(self.sns.queue), 1, "Default send_message() did not queue the message.")

@@ -39,8 +39,13 @@ class SnsManager():
 
         self.stats = defaultdict(int)
 
-        self.recipient = kwargs.get('recipient')
-        self.subject = kwargs.get('subject')
+        if 'config' in kwargs:
+            self.recipient = kwargs['config'].get('recipient')
+            self.subject = kwargs['config'].get('subject')
+        else:
+            self.recipient = kwargs.get('recipient')
+            self.subject = kwargs.get('subject')
+
         self.queue = []
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
