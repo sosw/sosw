@@ -386,5 +386,29 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEquals(convert_string_to_words('Best 42 daTing sites     '), 'best,42,dating,sites')
 
 
+    def test_construct_dates_from_event__conflict_of_attributes(self):
+        self.assertRaises(AttributeError, construct_dates_from_event, {'st_date': '2018-01-01', 'days_back': 10}), \
+                    "Not raised conflict of attributes"
+
+
+    def test_construct_dates_from_event__missing_attributes(self):
+        self.assertRaises(AttributeError, construct_dates_from_event, {'bad_event': 'missing st_date and days_back'}), \
+                    "Not raised missing attributes in event"
+
+
+    def test_construct_dates_from_event__ok(self):
+
+        TESTS = {
+            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)): {'st_date': '2019-01-01', 'en_date': '2019-01-10'},
+            (datetime.date(2019, 1, 1), datetime.date.today()): {'st_date': '2019-01-01'},
+            (datetime.date(2018, 12, 31), datetime.date(2019, 1, 10)): {'days_back': 10, 'en_date': '2019-01-10'},
+            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)): {'days_back': '9', 'en_date': '2019-01-10'},
+            (datetime.date.today() - datetime.timedelta(days=10), datetime.date.today()): {'days_back': 10},
+        }
+
+        for expected, payload in TESTS.items():
+            self.assertEqual(expected, construct_dates_from_event(payload))
+
+
 if __name__ == '__main__':
     unittest.main()
