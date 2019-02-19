@@ -410,5 +410,13 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(expected, construct_dates_from_event(payload))
 
 
+    def test_validate_list_of_words_from_csv_or_list__raises(self):
+        pass
+
+
+    def test_validate_list_of_words_from_csv_or_list__ok(self):
+        pass
+
+
 if __name__ == '__main__':
     unittest.main()
