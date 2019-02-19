@@ -1,5 +1,5 @@
 """
-Static helper method which you can use in any lambdas.
+Static helper methods which you can use in any Lambdas.
 Must be completely independent with no specific requirements.
 """
 
@@ -20,15 +20,13 @@ __all__ = ['validate_account_to_dashed',
            'recursive_matches_soft',
            'recursive_matches_strict',
            'recursive_matches_extract',
-           'convert_string_to_words'
+           'convert_string_to_words',
+           'construct_dates_from_event',
            ]
 
-import copy
-import logging
 import re
 import uuid
 import datetime
-import unicodedata
 
 
 def validate_account_to_dashed(account):
@@ -348,7 +346,6 @@ def validate_date_from_something(d):
     return validate_datetime_from_something(d).date()
 
 
-
 def validate_string_matches_datetime_format(date_str, date_format, field_name='date'):
     """
     Validate string, make sure it's of the given datetime format
@@ -548,3 +545,38 @@ def convert_string_to_words(string):
         raise TypeError(f"Input must be string, got {type(string)}")
 
     return re.sub('\s+', ',', string.lower().strip())
+
+
+def construct_dates_from_event(event: dict) -> tuple:
+    """
+    Processes given event dictionary for start and end points of time. Otherwise takes the default settings.
+
+    The end date of the period may be specified as `en_date` in the event. The default value is today.
+
+    Also the `event` should have either `st_date` or `days_back` numeric parameter.
+    If provided the days_back it will be substracted from end date.
+
+    Both `st_date` and `en_date` might be either `date`, `datetime` or `string` (`'YYYY-MM-DD'`) types.
+    In case of `datetime`, the hours/minutes/etc are ignored.
+
+    :param dict event:  Lambda payload.
+    :return:            start_date, end_date    as datetime.date
+    """
+
+    en_date = validate_date_from_something(event.get('en_date', datetime.date.today()))
+    st_date = event.get('st_date')
+    days_back = event.get('days_back')
+
+    if st_date and days_back:
+        raise AttributeError(f"construct_dates_from_event() doesn't allow st_date and days_back simultaneously")
+
+    if not st_date and not days_back:
+        raise AttributeError(f"construct_dates_from_event() expects either st_date or days_back")
+
+    if days_back:
+        st_date = en_date - datetime.timedelta(days=int(days_back))
+    else:
+        st_date = validate_date_from_something(st_date)
+        assert st_date < en_date, "Start date must be earlier than end date."
+
+    return st_date, en_date
