@@ -72,22 +72,21 @@ class SnsManager():
         Commits the self.queue if there are any messages in it.
         """
 
-        if self.queue:
-            self.commit()
+        if getattr(self, name) != value:
+            if self.queue:
+                self.commit()
 
-        setattr(self, name, value)
+            setattr(self, name, value)
 
 
     def set_recipient(self, arn):
         assert isinstance(arn, str), f"Invalid format of ARN: {arn}. Recipient must be string ARN of SNS Topic"
         assert arn.lower().startswith('arn:aws:'), f"Invalid format of ARN: {arn}. Recipient must be ARN of SNS Topic"
-        if self.recipient != arn:
-            self.set_client_attr('recipient', value=arn)
+        self.set_client_attr('recipient', value=arn)
 
 
     def set_subject(self, value):
-        if self.subject != value:
-            self.set_client_attr('subject', value=str(value))
+        self.set_client_attr('subject', value=str(value))
 
 
     def commit(self):
