@@ -81,11 +81,13 @@ class SnsManager():
     def set_recipient(self, arn):
         assert isinstance(arn, str), f"Invalid format of ARN: {arn}. Recipient must be string ARN of SNS Topic"
         assert arn.lower().startswith('arn:aws:'), f"Invalid format of ARN: {arn}. Recipient must be ARN of SNS Topic"
-        self.set_client_attr('recipient', value=arn)
+        if self.recipient != arn:
+            self.set_client_attr('recipient', value=arn)
 
 
     def set_subject(self, value):
-        self.set_client_attr('subject', value=str(value))
+        if self.subject != value:
+            self.set_client_attr('subject', value=str(value))
 
 
     def commit(self):
