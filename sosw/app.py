@@ -92,6 +92,7 @@ class Processor:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                     some_client_config = self.config.get(f"{module_name}_config")
+                    logger.info(f"Found config for {module_name}: {some_client_config}")
                     if some_client_config:
                         setattr(self, f"{module_name}_client", some_class(config=some_client_config))
                     else:
@@ -99,6 +100,7 @@ class Processor:
                     logger.info(f"Successfully registered {module_name}_client")
                     break
                 except:
+                    logger.exception(f"Failed suffix {suffix}")
                     pass
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
