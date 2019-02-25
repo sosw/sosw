@@ -1,6 +1,6 @@
-__all__ = ['DynamoDBClient', 'clean_dynamo_table']
+__all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel"
-__version__ = "1.5"
+__version__ = "1.6"
 
 import boto3
 import logging
@@ -18,7 +18,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class DynamoDBClient:
+class DynamoDbClient:
     """
     Has default methods for different types of DynamoDB tables.
 
@@ -44,7 +44,7 @@ class DynamoDBClient:
 
 
     def __init__(self, config):
-        assert isinstance(config, dict), "Config must be provided during DynamoDBClient initialization"
+        assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
         # If this is a test, make sure the table is a test table
         if os.environ.get('STAGE') == 'test' and 'table_name' in config:
@@ -99,8 +99,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
         else:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
@@ -118,8 +118,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"

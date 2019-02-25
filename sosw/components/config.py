@@ -8,7 +8,7 @@ Using these methods requires the Role to have permissions to access SSM and/or D
 
 __all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix']
 __author__ = "Sophie Fogel, Nikolay Grishchenko"
-__version__ = "1.7"
+__version__ = "1.7.1"
 
 import boto3
 import json
@@ -16,7 +16,7 @@ import logging
 import os
 
 from sosw.components.helpers import chunks
-from sosw.components.dynamo_db import DynamoDBClient
+from sosw.components.dynamo_db import DynamoDbClient
 
 
 class SSMConfig:
@@ -282,7 +282,7 @@ class DynamoConfig:
             if self.test:
                 dynamo_config['table_name'] = 'autotest_config'
 
-            self.dynamo_client = DynamoDBClient(dynamo_config)
+            self.dynamo_client = DynamoDbClient(dynamo_config)
 
         return self.dynamo_client
 
