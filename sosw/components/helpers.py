@@ -22,6 +22,7 @@ __all__ = ['validate_account_to_dashed',
            'recursive_matches_extract',
            'convert_string_to_words',
            'construct_dates_from_event',
+           'validate_list_of_words_from_csv_or_list',
            ]
 
 import re
@@ -580,3 +581,36 @@ def construct_dates_from_event(event: dict) -> tuple:
         assert st_date < en_date, "Start date must be earlier than end date."
 
     return st_date, en_date
+
+
+def validate_list_of_words_from_csv_or_list(data: (str, list)) -> list:
+    """
+    Splits a CSV string to list of stripped words.
+    In case the `data` is already a list of strings - splits it's elements and flattens the result.
+
+    All resulting elements must be single words, if any of the elements contains spaces (i.e. multiple words)
+    the validation fails with `ValueError`.
+
+    :param data:    CSV string of list of strings (possibly CSV themselves)
+    :return:        List of stripped and split words
+    """
+
+
+    def split_csv(row):
+        if not isinstance(row, str):
+            raise TypeError(f"Unsupported type of data for validate_list_of_words_from_csv_or_list(): {data}")
+
+        return [x.strip() for x in row.split(',')]
+
+
+    result = []
+    if isinstance(data, (list, tuple, set)):
+        for element in data:
+            result.extend(split_csv(element))
+    else:
+        result = split_csv(data)
+
+    if any(' ' in x for x in result):
+        raise ValueError(f"data for validate_list_of_words_from_csv_or_list() should be csv of WORDS or list: {data}")
+
+    return result

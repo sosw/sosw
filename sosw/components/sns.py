@@ -72,10 +72,11 @@ class SnsManager():
         Commits the self.queue if there are any messages in it.
         """
 
-        if self.queue:
-            self.commit()
+        if getattr(self, name) != value:
+            if self.queue:
+                self.commit()
 
-        setattr(self, name, value)
+            setattr(self, name, value)
 
 
     def set_recipient(self, arn):
