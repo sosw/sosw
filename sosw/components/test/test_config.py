@@ -99,6 +99,14 @@ class DynamoConfigTestCase(unittest.TestCase):
         self.assertEqual(result['zz2'], 'zz2_value')
 
 
+    def test_update_config(self):
+        KEY = 'testing_update_method'
+        VALUE = 'exists'
+        self.dynamo_config.update_config(name=KEY, val=VALUE)
+        result = self.dynamo_client.get_by_query(keys={'env': 'dev', 'config_name': KEY})
+        self.assertEquals({'env': 'dev', 'config_name': KEY, 'config_value': VALUE}, result[0])
+
+
 class ConfigTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -113,6 +121,12 @@ class ConfigTestCase(unittest.TestCase):
         # checks it calls dynamo config
         self.config_source.get_config('something')
         self.config_source.default_source.get_config.assert_called_once_with('something')
+
+
+    def test_update_config(self):
+        # checks it calls dynamo config
+        self.config_source.update_config('name', 'value')
+        self.config_source.default_source.update_config.assert_called_once_with('name', 'value')
 
 
     def test_default_sources(self):
