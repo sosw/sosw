@@ -1,5 +1,6 @@
 import boto3
 import logging
+import time
 import unittest
 import os
 from collections import defaultdict
@@ -16,21 +17,22 @@ from sosw.components.dynamo_db import DynamoDBClient, clean_dynamo_table
 
 class dynamodb_client_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = {
-        'row_mapper': {
-            'lambda_name': 'S',
+        'row_mapper':      {
+            'lambda_name':   'S',
             'invocation_id': 'S',
-            'en_time': 'N',
+            'en_time':       'N',
 
-            'hash_col': 'S',
-            'range_col': 'N',
-            'other_col': 'S',
-            'new_col': 'S',
-            'some_col': 'S',
-            'some_counter': 'N'
+            'hash_col':      'S',
+            'range_col':     'N',
+            'other_col':     'S',
+            'new_col':       'S',
+            'some_col':      'S',
+            'some_counter':  'N'
         },
         'required_fields': ['lambda_name'],
-        'table_name': 'autotest_dynamo_db'
+        'table_name':      'autotest_dynamo_db'
     }
+
 
     @classmethod
     def setUpClass(cls):
@@ -48,6 +50,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
     def tearDown(self):
         clean_dynamo_table(self.table_name, self.KEYS)
 
+
     def test_put(self):
         row = {'hash_col': 'cat', 'range_col': '123'}
 
@@ -55,23 +58,24 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         client.delete_item(TableName=self.table_name,
                            Key={
-                               'hash_col': {'S': str(row['hash_col'])},
+                               'hash_col':  {'S': str(row['hash_col'])},
                                'range_col': {'N': str(row['range_col'])},
                            })
 
         self.dynamo_client.put(row, self.table_name)
 
         result = client.scan(TableName=self.table_name,
-                    FilterExpression="hash_col = :hash_col AND range_col = :range_col",
-                    ExpressionAttributeValues={
-                        ':hash_col': {'S': row['hash_col']},
-                        ':range_col': {'N': str(row['range_col'])}
-                    }
-                )
+                             FilterExpression="hash_col = :hash_col AND range_col = :range_col",
+                             ExpressionAttributeValues={
+                                 ':hash_col':  {'S': row['hash_col']},
+                                 ':range_col': {'N': str(row['range_col'])}
+                             }
+                             )
 
         items = result['Items']
 
         self.assertTrue(len(items) > 0)
+
 
     def test_dict_to_dynamo_strict(self):
         dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
@@ -80,12 +84,14 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
+
     def test_dict_to_dynamo_not_strict(self):
         dict_row = {'name': 'cat', 'age': 3}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
         expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}}
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
+
 
     def test_dict_to_dynamo_prefix(self):
         dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
@@ -94,19 +100,27 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
+
     def test_dynamo_to_dict(self):
-        dynamo_row = {'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-                      'extra_key': {'N': '42'}}
+        dynamo_row = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'extra_key':   {'N': '42'}
+        }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
         expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
         self.assertDictEqual(dict_row, expected)
 
+
     def test_dynamo_to_dict_no_strict_row_mapper(self):
-        dynamo_row = {'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-                      'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}}
+        dynamo_row = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}
+        }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
-        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-                    'extra_key_s': 'wowie'}
+        expected = {
+            'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
+            'extra_key_s': 'wowie'
+        }
         self.assertDictEqual(dict_row, expected)
 
 
@@ -116,8 +130,10 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client = DynamoDBClient(config=config)
 
-        dynamo_row = {'hash_col': {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-                      'duck_quack': {'S': '{"quack": "duck"}'}}
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
+            'duck_quack': {'S': '{"quack": "duck"}'}
+        }
         res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
@@ -137,8 +153,10 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client = DynamoDBClient(config=config)
 
-        dynamo_row = {'hash_col': {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-                      'duck_quack': {'S': '{"quack": "duck"}'}}
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
+            'duck_quack': {'S': '{"quack": "duck"}'}
+        }
         res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}, 'duck_quack': {"quack": "duck"}
@@ -176,6 +194,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertIsNotNone(updated_row)
         self.assertEqual(updated_row['some_col'], 'yes')
         self.assertEqual(updated_row['new_col'], 'yup')
+
 
     def test_update__increment(self):
         keys = {'hash_col': 'cat', 'range_col': '123'}
@@ -241,6 +260,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         for key in result:
             self.assertEqual(row[key], result[key])
 
+
     def test_get_by_query__primary_index__gets_multiple(self):
         row = {'hash_col': 'cat', 'range_col': 123, 'some_col': 'test'}
         self.dynamo_client.put(row, self.table_name)
@@ -263,6 +283,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             self.assertEqual(row2[key], result2[key])
         for key in result2:
             self.assertEqual(row2[key], result2[key])
+
 
     def test_get_by_query__secondary_index(self):
         keys = {'hash_col': 'cat', 'other_col': 'abc123'}
@@ -326,6 +347,31 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.assertTrue(row1 in result)
         self.assertTrue(row3 in result)
+
+
+    @unittest.skip("This test takes too long time to run every time. It passes.")
+    def test_get_by_query__max_items(self):
+
+        for x in range(1000, 2000):
+            row = {'hash_col': f"key", 'range_col': x}
+            self.dynamo_client.put(row, self.table_name)
+            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        st = time.perf_counter()
+        result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=3)
+        bm = time.perf_counter() - st
+        # print(f"Benchmark: {bm}")
+
+        self.assertEqual(len(result), 3)
+        self.assertLess(bm, 0.1)
+
+        st = time.perf_counter()
+        result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=499)
+        bm = time.perf_counter() - st
+        # print(f"Benchmark: {bm}")
+        self.assertLess(bm, 0.1)
+
+        self.assertEqual(len(result), 499)
 
 
     def test_get_by_scan__all(self):
