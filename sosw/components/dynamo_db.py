@@ -1,4 +1,4 @@
-__all__ = ['DynamoDBClient', 'clean_dynamo_table']
+__all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel"
 __version__ = "1.5"
 
@@ -6,7 +6,6 @@ import boto3
 import logging
 import json
 import os
-import time
 from collections import defaultdict
 
 from .benchmark import benchmark
@@ -16,7 +15,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class DynamoDBClient:
+class DynamoDbClient:
     """
     Has default methods for different types of DynamoDB tables.
 
@@ -42,7 +41,7 @@ class DynamoDBClient:
 
 
     def __init__(self, config):
-        assert isinstance(config, dict), "Config must be provided during DynamoDBClient initialization"
+        assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
         # If this is a test, make sure the table is a test table
         if os.environ.get('STAGE') == 'test' and 'table_name' in config:
@@ -97,8 +96,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
         else:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
@@ -116,8 +115,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
@@ -315,75 +314,6 @@ class DynamoDBClient:
         paginator = self.dynamo_client.get_paginator('scan')
         response_iterator = paginator.paginate(**query_args)
         return response_iterator
-
-
-    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2):
-        """
-        Gets a batch of items from a single dynamo table.
-        Only accepts keys, can't query by other columns.
-
-        :param list keys_list: A list of the keys of the items we want to get. Gets the items that match the given keys.
-                               If some key doesn't exist - it just skips it and gets the others.
-                               e.g. [{'hash_col': '1, 'range_col': 2}, {'hash_col': 3}]
-                               - will get a row where `hash_col` is 1 and `range_col` is 2, and also all rows where
-                               `hash_col` is 3.
-
-        Optional
-
-        :param str table_name:
-        :param int max_retries: If failed to get some items, retry this many times. Waiting between retries is
-                                multiplied by 2 after each retry, so `retries` shouldn't be a big number.
-                                Default is 1.
-        :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
-        :return: List of items from the table
-        :rtype: list
-        """
-
-        table_name = self._get_validate_table_name(table_name)
-
-        # Convert given keys to dynamo syntax
-        query_keys = [self.dict_to_dynamo(item) for item in keys_list]
-
-        batch_get_item_query = {
-            'RequestItems': {
-                table_name: {
-                    'Keys': query_keys
-                }
-            }
-        }
-
-        logger.debug(f"batch_get_item query: {batch_get_item_query}")
-
-        db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-        logger.debug(f"batch_get_items_one_table response: {db_result}")
-
-        # Check if we skipped something - if we did, try again.
-        def is_action_incomplete(db_result):
-            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
-
-        if is_action_incomplete(db_result):
-            # Retry several times
-            retry_num = 0
-            wait_time = retry_wait_base_time
-            while is_action_incomplete(db_result) and retry_num < max_retries:
-                logger.warning(f"batch_get_item action did NOT finish successfully.")
-                time.sleep(wait_time)
-                db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-                retry_num += 1
-                wait_time *= 2
-
-        # After the retries still we have a bad result... then raise Exception
-        if is_action_incomplete(db_result):
-            raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
-
-        items = db_result['Responses'][table_name]
-
-        result = []
-        for item in items:
-            result.append(self.dynamo_to_dict(item))
-
-        return result
 
 
     def build_put_query(self, row, table_name=None):

@@ -16,7 +16,7 @@ import logging
 import os
 
 from sosw.components.helpers import chunks
-from sosw.components.dynamo_db import DynamoDBClient
+from sosw.components.dynamo_db import DynamoDbClient
 
 
 class SSMConfig:
@@ -282,7 +282,7 @@ class DynamoConfig:
             if self.test:
                 dynamo_config['table_name'] = 'autotest_config'
 
-            self.dynamo_client = DynamoDBClient(dynamo_config)
+            self.dynamo_client = DynamoDbClient(dynamo_config)
 
         return self.dynamo_client
 

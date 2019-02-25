@@ -11,7 +11,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
-from sosw.components.dynamo_db import DynamoDBClient, clean_dynamo_table
+from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
 class dynamodb_client_IntegrationTestCase(unittest.TestCase):
@@ -42,7 +42,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = ('range_col', 'N')
         self.KEYS = ('hash_col', 'range_col')
         self.table_name = 'autotest_dynamo_db'
-        self.dynamo_client = DynamoDBClient(config=self.TEST_CONFIG)
+        self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
 
     def tearDown(self):
@@ -114,7 +114,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         config = self.TEST_CONFIG.copy()
         config['dont_json_loads_results'] = True
 
-        self.dynamo_client = DynamoDBClient(config=config)
+        self.dynamo_client = DynamoDbClient(config=config)
 
         dynamo_row = {'hash_col': {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
                       'duck_quack': {'S': '{"quack": "duck"}'}}
@@ -135,7 +135,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         config = self.TEST_CONFIG.copy()
         config['dont_json_loads_results'] = False
 
-        self.dynamo_client = DynamoDBClient(config=config)
+        self.dynamo_client = DynamoDbClient(config=config)
 
         dynamo_row = {'hash_col': {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
                       'duck_quack': {'S': '{"quack": "duck"}'}}
@@ -309,7 +309,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'table_name':      'autotest_config'
         }
 
-        self.dynamo_client = DynamoDBClient(config=config)
+        self.dynamo_client = DynamoDbClient(config=config)
 
         row1 = {'env': 'cat', 'config_name': 'testzing', 'config_value': 'abc123'}
         row2 = {'env': 'cat', 'config_name': 'dont_get_this', 'config_value': 'abc123'}
