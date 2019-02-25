@@ -7,7 +7,9 @@ import logging
 import json
 import os
 import time
+
 from collections import defaultdict
+from typing import Dict, Optional
 
 from .benchmark import benchmark
 
@@ -172,7 +174,8 @@ class DynamoDBClient:
 
 
     @benchmark
-    def get_by_query(self, keys, table_name=None, index_name=None, strict=True, comparisons={}):
+    def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
+                     comparisons: Optional[Dict] = None, max_items: Optional[int] = None, strict: bool = True):
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -188,14 +191,16 @@ class DynamoDBClient:
 
         Optional
 
-        :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param str index_name: Name of the secondary index in the table. If not specified, will query the table itself.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
-            If false, will get all attributes. Default is True.
+        :param str table_name:  Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name:  Name of the secondary index in the table. If not specified, will query the table itself.
         :param dict comparisons: Type of comparison for each key. If a key is not mentioned, comparison type will be =.
-            Valid values: =, <, <=, >, >=, begins_with.
+            Valid values: `=`, `<`, `<=`, `>`, `>=`, `begins_with`.
             Comparisons only work for the range key.
             Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
+
+        :param int max_items:   Limit the number of items to fetch.
+        :param bool strict:     If True, will only get the attributes specified in the row mapper.
+                                If false, will get all attributes. Default is True.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
@@ -206,11 +211,15 @@ class DynamoDBClient:
         cond_expr_parts = []
 
         for key_attr_name in keys:
-            compr = comparisons.get(key_attr_name) or '='
+            if comparisons:
+                compr = comparisons.get(key_attr_name) or '='
+            else:
+                compr = '='
+
             if compr == 'begins_with':
                 cond_expr_parts.append(f"begins_with ({key_attr_name}, :{key_attr_name})")
             else:
-                assert compr in ('=', '<', '<=', '>', '>=', "Comparison not valid")
+                assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
                 cond_expr_parts.append(f"{key_attr_name} {compr} :{key_attr_name}")
 
         cond_expr = " AND ".join(cond_expr_parts)
@@ -225,6 +234,9 @@ class DynamoDBClient:
         if index_name:
             query_args['IndexName'] = index_name
 
+        if max_items:
+            query_args['PaginationConfig'] = {'MaxItems': max_items}
+
         logger.debug(f"Querying dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('query')
@@ -233,8 +245,10 @@ class DynamoDBClient:
         for page in response_iterator:
             result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
+            if max_items and len(result) >= max_items:
+                break
 
-        return result
+        return result[:max_items] if max_items else result
 
 
     @benchmark
@@ -357,10 +371,12 @@ class DynamoDBClient:
         db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
         logger.debug(f"batch_get_items_one_table response: {db_result}")
 
+
         # Check if we skipped something - if we did, try again.
         def is_action_incomplete(db_result):
             return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
+                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
+
 
         if is_action_incomplete(db_result):
             # Retry several times
