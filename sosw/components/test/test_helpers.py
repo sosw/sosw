@@ -277,7 +277,6 @@ class helpers_UnitTestCase(unittest.TestCase):
                          datetime.datetime(9999, 12, 30, 23, 59, 59),
                          "Failed with big, but valid datetime to datetime")
 
-
         self.assertEqual(validate_datetime_from_something(datetime.date(2018, 7, 5)), datetime.datetime(2018, 7, 5),
                          "Failed transforming date to datetime")
 
@@ -295,7 +294,7 @@ class helpers_UnitTestCase(unittest.TestCase):
                          "Failed from string YYYY-DD-MM")
 
         self.assertEqual(validate_datetime_from_something('2018-01-01 10:01:03'),
-                                                          datetime.datetime(2018, 1, 1, 10, 1, 3),
+                         datetime.datetime(2018, 1, 1, 10, 1, 3),
                          "Failed from string YYYY-DD-MM HH:MM:SS")
 
         self.assertRaises(ValueError, validate_datetime_from_something, 'somebadstring')
@@ -307,12 +306,11 @@ class helpers_UnitTestCase(unittest.TestCase):
         Passing supported types and expecting 'datetime.date' object to returns.
         """
         for input_type in [datetime.datetime.today(),
-                      datetime.date.today(),
-                      int(time.time()),
-                      time.time(),
-                      str(datetime.date.today()),
-                      str(datetime.datetime.today())]:
-
+                           datetime.date.today(),
+                           int(time.time()),
+                           time.time(),
+                           str(datetime.date.today()),
+                           str(datetime.datetime.today())]:
             self.assertIsInstance(validate_date_from_something(input_type), datetime.date)
 
 
@@ -326,8 +324,10 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_recursive_match_extract(self):
-        SRC = {"bar":[{"page":{"oid":234}},{"page":{"code":"exclude_me","id":123}},
-                      {"page":{"code":"ok","id":333}}],"name":"test"}
+        SRC = {
+            "bar": [{"page": {"oid": 234}}, {"page": {"code": "exclude_me", "id": 123}},
+                    {"page": {"code": "ok", "id": 333}}], "name": "test"
+        }
 
         self.assertEqual(recursive_matches_extract(SRC, 'name'), "test")
         self.assertEqual(recursive_matches_extract(SRC, 'bar.page.oid'), 234)
@@ -388,26 +388,56 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_construct_dates_from_event__conflict_of_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'st_date': '2018-01-01', 'days_back': 10}), \
-                    "Not raised conflict of attributes"
+        "Not raised conflict of attributes"
 
 
     def test_construct_dates_from_event__missing_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'bad_event': 'missing st_date and days_back'}), \
-                    "Not raised missing attributes in event"
+        "Not raised missing attributes in event"
 
 
     def test_construct_dates_from_event__ok(self):
 
         TESTS = {
-            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)): {'st_date': '2019-01-01', 'en_date': '2019-01-10'},
-            (datetime.date(2019, 1, 1), datetime.date.today()): {'st_date': '2019-01-01'},
-            (datetime.date(2018, 12, 31), datetime.date(2019, 1, 10)): {'days_back': 10, 'en_date': '2019-01-10'},
-            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)): {'days_back': '9', 'en_date': '2019-01-10'},
-            (datetime.date.today() - datetime.timedelta(days=10), datetime.date.today()): {'days_back': 10},
+            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)):
+                {'st_date': '2019-01-01', 'en_date': '2019-01-10'},
+            (datetime.date(2019, 1, 1), datetime.date.today()):
+                {'st_date': '2019-01-01'},
+            (datetime.date(2018, 12, 31), datetime.date(2019, 1, 10)):
+                {'days_back': 10, 'en_date': '2019-01-10'},
+            (datetime.date(2019, 1, 1), datetime.date(2019, 1, 10)):
+                {'days_back': '9', 'en_date': '2019-01-10'},
+            (datetime.date.today() - datetime.timedelta(days=10), datetime.date.today()):
+                {'days_back': 10},
         }
 
         for expected, payload in TESTS.items():
             self.assertEqual(expected, construct_dates_from_event(payload))
+
+
+    def test_validate_list_of_words_from_csv_or_list__raises(self):
+        TESTS = [
+            (TypeError, {'data': 42}),
+            (TypeError, {'data': None}),
+            (TypeError, {'data': {'dict': 'unsupported'}}),
+            (ValueError, {'data': 'Many words HeRe'}),
+            (ValueError, {'data': ['ok, ok2', 'Many words, in this data']}),
+            (TypeError, {'data': ['ok, ok2', 43]}),
+        ]
+
+        for exception, kwarg in TESTS:
+            self.assertRaises(exception, validate_list_of_words_from_csv_or_list, **kwarg)
+
+
+    def test_validate_list_of_words_from_csv_or_list__ok(self):
+        TESTS = [
+            (['ok', 'ok2'], 'ok,  ok2'),
+            (['ok', 'ok3', 'ok4'], 'ok,  ok3,ok4'),  # 3 elements CSV
+            (['ok', 'ok5'], ['ok', 'ok5']),  # Already a list
+            (['ok', 'ok5', 'ok6'], ['ok', 'ok5,ok6']),  # Flatten a list
+        ]
+        for expected, data in TESTS:
+            self.assertEqual(expected, validate_list_of_words_from_csv_or_list(data))
 
 
 if __name__ == '__main__':
