@@ -18,7 +18,7 @@ from sosw.test.variables import TEST_CONFIG
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
 
-    TEST_CONFIG = TEST_CONFIG
+    TEST_CONFIG = TEST_CONFIG['ecology_client_config']
 
     def setUp(self):
         """

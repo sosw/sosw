@@ -41,5 +41,5 @@ class EcologyManager(Processor):
         return [x[0] for x in ECO_STATUSES]
 
 
-    def get_worker_status(self, worker_id: int) -> int:
+    def get_labourer_status(self, labourer_id: int) -> int:
         return random.choice(self.eco_statuses)

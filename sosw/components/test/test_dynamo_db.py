@@ -172,14 +172,29 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
     def test_update__updates(self):
         keys = {'hash_col': 'cat', 'range_col': '123'}
-        row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
+        row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no', 'other_col': 'foo'}
         attributes_to_update = {'some_col': 'yes', 'new_col': 'yup'}
 
         self.dynamo_client.put(row, self.table_name)
 
-        self.dynamo_client.update(keys, attributes_to_update, None, self.table_name)
-
         client = boto3.client('dynamodb')
+
+        # First check that the row we are trying to update is PUT correctly.
+        initial_row = client.get_item(
+                Key={
+                    'hash_col':  {'S': row['hash_col']},
+                    'range_col': {'N': str(row['range_col'])}
+                },
+                TableName=self.table_name,
+        )['Item']
+
+        initial_row = self.dynamo_client.dynamo_to_dict(initial_row)
+
+        self.assertIsNotNone(initial_row)
+        self.assertEqual(initial_row['some_col'], 'no')
+        self.assertEqual(initial_row['other_col'], 'foo')
+
+        self.dynamo_client.update(keys, attributes_to_update, None, self.table_name)
 
         updated_row = client.get_item(
                 Key={
@@ -192,8 +207,9 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
 
         self.assertIsNotNone(updated_row)
-        self.assertEqual(updated_row['some_col'], 'yes')
-        self.assertEqual(updated_row['new_col'], 'yup')
+        self.assertEqual(updated_row['some_col'], 'yes'), "Updated field not really updated"
+        self.assertEqual(updated_row['new_col'], 'yup'), "New field was not created"
+        self.assertEqual(updated_row['other_col'], 'foo'), "This field should be preserved, update() damaged it"
 
 
     def test_update__increment(self):
@@ -219,6 +235,31 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.assertIsNotNone(updated_row)
         self.assertEqual(updated_row['some_counter'], 11)
+
+
+    def test_update__increment_2(self):
+        keys = {'hash_col': 'cat', 'range_col': '123'}
+        row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no', 'some_counter': 10}
+        attributes_to_increment = {'some_counter': 5}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.update(keys, {}, attributes_to_increment, self.table_name)
+
+        client = boto3.client('dynamodb')
+
+        updated_row = client.get_item(
+                Key={
+                    'hash_col':  {'S': row['hash_col']},
+                    'range_col': {'N': str(row['range_col'])}
+                },
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_counter'], 15)
 
 
     def test_update__increment_no_default(self):

@@ -12,6 +12,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from sosw.components.benchmark import benchmark
+from sosw.labourer import Labourer
 from sosw.app import Processor
 
 
@@ -21,19 +22,19 @@ logger.setLevel(logging.INFO)
 
 class TaskManager(Processor):
     DEFAULT_CONFIG = {
-        'init_clients':                ['DynamoDb'],
+        'init_clients':                ['DynamoDb', 'lambda'],
         'dynamo_db_config':            {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
             'row_mapper':       {
                 'task_id':      'S',
-                'worker_id':    'S',
+                'labourer_id':  'S',
                 'created_at':   'N',
                 'completed_at': 'N',
                 'greenfield':   'N',
                 'attempts':     'N',
             },
-            'required_fields':  ['task_id', 'worker_id', 'created_at', 'greenfield'],
+            'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
             # You can overwrite field names to match your DB schema. But the types should be the same.
             # By default takes the key itself.
@@ -54,12 +55,50 @@ class TaskManager(Processor):
         raise NotImplementedError
 
 
-    def invoke_task(self, task_id: str):
-        raise NotImplementedError
+    def invoke_task(self, task_id: str, labourer: Labourer):
+        """ Invoke the Lambda Function execution for `task` """
 
+        task = self.get_task_by_id(task_id=task_id)
+
+        self.update_invocation_count(task_id=task_id)
+
+        lambda_response = self.lambda_client.invoke(
+                FunctionName=labourer.arn,
+                InvocationType='Event',
+                Payload=task.get('payload')
+        )
+        logger.debug(lambda_response)
+
+        self.mark_task_invoked(task)
+
+
+    def mark_task_invoked(self, task: Dict):
+        """
+        Update the greenfield with the latest invocation timestamp + invocation_delta * number of attempts
+        :param task:
+        :return:
+        """
+
+        tf = self.get_db_field_name('task_id')  # Main key field
+        lf = self.get_db_field_name('labourer_id')  # Range key field
+        gf = self.get_db_field_name('greenfield')
+        af = self.get_db_field_name('attempts')
+
+        attempts = task.get(af, 0) + 1
+
+        self.dynamo_db_client.update(
+                {tf: task[tf], lf: task[lf]},
+                attributes_to_update={gf: int(time.time()) + (self.config['greenfield_invocation_delta'] * attempts)},
+                attributes_to_increment={af: 1})
 
     def close_task(self, task_id: str):
         raise NotImplementedError
+
+
+    def get_task_by_id(self, task_id: str) -> Dict:
+        """ Fetches the full data of the Task. """
+
+        return self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
 
 
     def _get_max_univoked_greenfield(self) -> int:
@@ -70,12 +109,12 @@ class TaskManager(Processor):
         return int(time.time()) + self.config['greenfield_invocation_delta']
 
 
-    def get_next_for_worker(self, worker_id: int, cnt: int = 1) -> List[Dict]:
+    def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:
         """
         Fetch the next in queue tasks for the Worker.
 
-        :param worker_id:   ID of the Worker from sosw config.
-        :param cnt:         Optional number of Tasks to fetch.
+        :param labourer:   Labourer to get next tasks for.
+        :param cnt:        Optional number of Tasks to fetch.
         """
 
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
@@ -83,7 +122,8 @@ class TaskManager(Processor):
 
         result = self.dynamo_db_client.get_by_query(
                 {
-                    self.get_db_field_name('worker_id'):  worker_id,
+                    self.get_db_field_name('labourer_id'
+                                           ''):           labourer.id,
                     self.get_db_field_name('greenfield'): max_greenfield
                 },
                 table_name=self.config['dynamo_db_config']['table_name'],
@@ -94,9 +134,9 @@ class TaskManager(Processor):
                     self.get_db_field_name('greenfield'): '<'
                 })
 
-        logger.debug(f"get_next_for_worker() received: {result}")
+        logger.debug(f"get_next_for_labourer() received: {result}")
 
-        return result
+        return [task[self.get_db_field_name('task_id')] for task in result]
 
 
     def __call__(self, event):

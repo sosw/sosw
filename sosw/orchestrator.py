@@ -1,13 +1,4 @@
-import boto3
-import logging
-import os
-
-from importlib import import_module
-from collections import defaultdict
-
-from sosw.app import Processor
-from sosw.managers.task import TaskManager
-
+__all__ = ['Orchestrator']
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
@@ -15,19 +6,22 @@ __version__ = "0.1"
 __license__ = "MIT"
 __status__ = "Development"
 
-__all__ = ['Orchestrator']
+import boto3
+import logging
+import math
+import os
+
+from importlib import import_module
+from collections import defaultdict
+from typing import List
+
+from sosw.app import Processor
+from sosw.labourer import Labourer
+from sosw.managers.task import TaskManager
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-
-class WorkerObj:
-    id = None
-
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs:
-            setattr(self, k, v)
 
 
 class Orchestrator(Processor):
@@ -36,46 +30,55 @@ class Orchestrator(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients':                  ['Task'],
-        'invocation_number_coefficient': {
-            0:   [0, 1],
-            0.5: [2],
-            1:   [3, 4]
+        'init_clients':                     ['Task', 'Ecology'],
+        'invocation_number_coefficient':    {
+            0: 0,
+            1: 0,
+            2: 0.5,
+            3: 0.75,
+            4: 1
         },
-        'workers':                       {}
+        'labourers':                        {},
+        'default_simultaneous_invocations': 2
     }
 
 
     def __call__(self, event):
-        workers = self.get_workers()
-        for worker in workers:
-            self.process_worker(worker.id)
+        labourers = self.get_labourers()
+        for labourer in labourers:
+            self.invoke_for_labourer(labourer)
 
 
-    def process_worker(self, worker_id: int):
-        number_of_tasks = self.get_desired_invocation_number_for_worker(worker_id=worker_id)
+    def invoke_for_labourer(self, labourer: Labourer):
+        number_of_tasks = self.get_desired_invocation_number_for_labourer(labourer=labourer)
 
-        tasks_to_process = self.task_client.get_next_for_worker(worker_id=worker_id, cnt=number_of_tasks)
+        tasks_to_process = self.task_client.get_next_for_labourer(worker=labourer, cnt=number_of_tasks)
         logger.info(tasks_to_process)
 
-        self.invoke_worker()
+        for task in tasks_to_process:
+            self.task_client.invoke_task(task_id=task, labourer=labourer)
 
 
-    def get_worker_setting(self, worker_id: int, attribute: str):
+    def get_labourer_setting(self, labourer: Labourer, attribute: str):
         """ Should probably try to use some default values, but for now we delegate this to whoever calls me. """
 
         try:
-            return self.config['workers'][worker_id][attribute]
+            return self.config['labourers'][labourer.id][attribute]
         except KeyError:
+            logger.info(f"CONFIG WAS: {self.config} and did not find: {attribute} for {labourer.id}")
             return None
 
 
-    def get_desired_invocation_number_for_worker(self, worker_id: int) -> int:
-        worker_status = self.ecology_client.get_worker_status(worker_id=worker_id)
+    def get_desired_invocation_number_for_labourer(self, labourer: Labourer) -> int:
+        labourer_status = self.ecology_client.get_labourer_status(labourer_id=labourer.id)
 
-        coefficient = next(k for k, v in self.config['invocation_number_coefficient'] if worker_status in v)
+        coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items() if labourer_status == k)
+
+        max_invocations = self.get_labourer_setting(labourer, 'max_simultaneous_invocations') \
+                          or self.config['default_simultaneous_invocations']
+
+        return math.floor(max_invocations * coefficient)
 
 
-
-    def get_workers(self):
-        return [WorkerObj(id=1)]
+    def get_labourers(self):
+        return [Labourer(id=1, arn='arn::aws::us-west-2:lambda:test_function')]
