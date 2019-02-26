@@ -34,10 +34,20 @@ class TaskManager(Processor):
                 'attempts':     'N',
             },
             'required_fields':  ['task_id', 'worker_id', 'created_at', 'greenfield'],
+
+            # You can overwrite field names to match your DB schema. But the types should be the same.
+            # By default takes the key itself.
+            'field_names':      {
+                'task_id': 'task_id',
+            }
         },
         'greenfield_invocation_delta': 31557600,  # 1 year.
-        'greenfield_field_name':       'greenfield',  # This is a pseudofield to track status and order of tasks as ints
     }
+
+
+    def get_db_field_name(self, key):
+        """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
+        return self.config['dynamo_db_config']['field_names'].get(key, key)
 
 
     def create_task(self, **kwargs):
@@ -71,29 +81,23 @@ class TaskManager(Processor):
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
         max_greenfield = self._get_max_univoked_greenfield()
 
-        result = self.dynamo_db_client.get_by_query({'worker_id': worker_id, 'greenfield': max_greenfield},
-                                                    table_name=self.config['dynamo_db_config']['table_name'],
-                                                    index_name=self.config['dynamo_db_config']['index_greenfield'],
-                                                    strict=True,
-                                                    max_items=cnt,
-                                                    comparisons={
-                                                        self.config['dynamo_db_config']['greenfield_field_name']: '<'
-                                                    })
+        result = self.dynamo_db_client.get_by_query(
+                {
+                    self.get_db_field_name('worker_id'):  worker_id,
+                    self.get_db_field_name('greenfield'): max_greenfield
+                },
+                table_name=self.config['dynamo_db_config']['table_name'],
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                strict=True,
+                max_items=cnt,
+                comparisons={
+                    self.get_db_field_name('greenfield'): '<'
+                })
+
         logger.debug(f"get_next_for_worker() received: {result}")
 
         return result
 
 
-    def get_workers(self):
-        return [1]
-
-
     def __call__(self, event):
-        workers = self.get_workers()
-
-        tasks_to_process = []
-        for worker_id in workers:
-            tasks_to_process = self.get_next_for_worker(worker_id=worker_id)
-            logger.info(tasks_to_process)
-
-        return tasks_to_process
+        raise NotImplemented

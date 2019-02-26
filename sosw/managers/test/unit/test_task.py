@@ -14,30 +14,11 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
-from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.managers.test.variables import TEST_CONFIG
 
 
-class TaskManager_IntegrationTestCase(unittest.TestCase):
-
-    TEST_CONFIG = {
-        'init_clients':            [],
-        'dynamo_db_client_config': {
-            'row_mapper':      {
-                'hash_col':  'S',
-                'range_col': 'N',
-            },
-            'required_fields': ['hash_col'],
-            'table_name':      'autotest_dynamo_db',
-        }
-    }
-
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Clean the classic autotest table.
-        """
-        clean_dynamo_table()
+class TaskManager_UnitTestCase(unittest.TestCase):
+    TEST_CONFIG = TEST_CONFIG
 
 
     def setUp(self):
@@ -56,10 +37,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        clean_dynamo_table(self.table_name, self.KEYS)
+        pass
 
 
     def test_get_max_univoked_greenfield(self):
         """ We allow round -2 here. The values are big, and we want to minimize random failures. """
         self.assertAlmostEqual(round(time.time() + self.manager.config['greenfield_invocation_delta'], -2),
                                round(self.manager._get_max_univoked_greenfield(), -2))
+
+
+    def test_get_db_field_name(self):
+        self.assertEqual(self.manager.get_db_field_name('task_id'), 'hash_col', "Configured field name failed")
+        self.assertEqual(self.manager.get_db_field_name('some_name'), 'some_name', "Default column name failed")
