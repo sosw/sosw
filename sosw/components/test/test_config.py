@@ -104,7 +104,7 @@ class DynamoConfigTestCase(unittest.TestCase):
         VALUE = 'exists'
         self.dynamo_config.update_config(name=KEY, val=VALUE)
         result = self.dynamo_client.get_by_query(keys={'env': 'dev', 'config_name': KEY})
-        self.assertEquals({'env': 'dev', 'config_name': KEY, 'config_value': VALUE}, result[0])
+        self.assertEqual({'env': 'dev', 'config_name': KEY, 'config_value': VALUE}, result[0])
 
 
 class ConfigTestCase(unittest.TestCase):

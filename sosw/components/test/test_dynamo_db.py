@@ -427,7 +427,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         result = self.dynamo_client.batch_get_items_one_table(keys_list_query)
 
-        self.assertEquals(len(result), 2)
+        self.assertEqual(len(result), 2)
 
         self.assertIn(rows[0], result)
         self.assertIn(rows[2], result)
