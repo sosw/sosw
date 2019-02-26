@@ -32,9 +32,10 @@ class app_TestCase(unittest.TestCase):
 
 
     def test_app_init__with_some_clients(self):
-        custom_config = {
+        custom_config = self.TEST_CONFIG.copy()
+        custom_config.update({
             'init_clients': ['Sns', 'Siblings']
-        }
+        })
 
         processor = Processor(custom_config=custom_config)
         self.assertIsInstance(getattr(processor, 'sns_client'), SnsManager,
