@@ -76,5 +76,6 @@ class Orchestrator(Processor):
         coefficient = next(k for k, v in self.config['invocation_number_coefficient'] if worker_status in v)
 
 
+
     def get_workers(self):
         return [WorkerObj(id=1)]

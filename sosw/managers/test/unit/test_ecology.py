@@ -14,22 +14,11 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.managers.ecology import EcologyManager
+from sosw.test.variables import TEST_CONFIG
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
 
-    TEST_CONFIG = {
-        'init_clients':            [],
-        'dynamo_db_config': {
-            'row_mapper':      {
-                'hash_col':  'S',
-                'range_col': 'N',
-            },
-            'required_fields': ['hash_col'],
-            'table_name':      'autotest_dynamo_db',
-        }
-    }
-
-
+    TEST_CONFIG = TEST_CONFIG
 
     def setUp(self):
         """

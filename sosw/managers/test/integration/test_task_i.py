@@ -15,7 +15,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
-from sosw.managers.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_CONFIG
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
