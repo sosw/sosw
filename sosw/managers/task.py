@@ -55,12 +55,13 @@ class TaskManager(Processor):
         raise NotImplementedError
 
 
-    def invoke_task(self, task_id: str, labourer: Labourer):
+    def invoke_task(self, labourer: Labourer, task_id: Optional[str] = None, task: Optional[Dict] = None):
         """ Invoke the Lambda Function execution for `task` """
 
-        task = self.get_task_by_id(task_id=task_id)
+        if not any([task, task_id]) or all([task, task_id]):
+            raise AttributeError(f"You must provide any of `task` or `task_id`.")
 
-        self.update_invocation_count(task_id=task_id)
+        task = self.get_task_by_id(task_id=task_id)
 
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,

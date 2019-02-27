@@ -15,11 +15,14 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
+from sosw.labourer import Labourer
 from sosw.test.variables import TEST_CONFIG
 
 
 class task_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_CONFIG['task_client_config']
+
+    LABOURER = Labourer(id=1, arn='bar')
 
 
     def setUp(self):
@@ -38,6 +41,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.config = self.TEST_CONFIG.copy()
         self.manager = TaskManager(custom_config=self.config)
+        self.manager.dynamo_db_client = MagicMock()
+        self.manager.lambda_client = MagicMock()
 
 
     def tearDown(self):
@@ -76,7 +81,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
 
         self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
-        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}),  "Attempts counter not increased"
+        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
         gf = call_kwargs['attributes_to_update']['other_int_col']
         self.assertEqual(round(gf, -2), round(time.time() + delta, -2)), "Greenfield was not updated"
@@ -92,7 +97,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
             'hash_col':      "task_id_42_256",  # Task ID
             'range_col':     42,  # Worker ID
             'other_int_col': greenfield,
-            'attempts': 3
+            'attempts':      3
         }
 
         # Do the actual tested job
@@ -104,9 +109,47 @@ class task_manager_UnitTestCase(unittest.TestCase):
         call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
 
         self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
-        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}),  "Attempts counter not increased"
+        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
         gf = call_kwargs['attributes_to_update']['other_int_col']
         self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
                          "Greenfield was increased with respect to number of attempts")
 
+
+    def test_invoke_task__validates_task(self):
+        self.assertRaises(AttributeError, self.manager.invoke_task, labourer=self.LABOURER), "Missing task and task_id"
+        self.assertRaises(AttributeError, self.manager.invoke_task, labourer=self.LABOURER, task_id='qwe',
+                          task={1: 2}), "Both task and task_id."
+
+
+    def test_invoke_task__calls__mark_task_invoked(self):
+        self.manager.mark_task_invoked = MagicMock()
+
+        self.manager.invoke_task(task_id='qwe', labourer=self.LABOURER)
+        self.manager.mark_task_invoked.assert_called_once()
+
+
+    def test_invoke_task__calls__get_task_by_id(self):
+        self.manager.get_task_by_id = MagicMock()
+
+        self.manager.invoke_task(task_id='qwe', labourer=self.LABOURER)
+        self.manager.get_task_by_id.assert_called_once()
+
+
+    def test_invoke_task__calls__lambda_client(self):
+        task = {
+            'hash_col':  "task_id_42_256",  # Task ID
+            'range_col': 42,  # Worker ID
+            'payload':   {'foo': 23}
+        }
+
+        self.manager.get_task_by_id = MagicMock(return_value=task)
+
+        self.manager.invoke_task(task_id='task_id_42_256', labourer=self.LABOURER)
+
+        self.manager.lambda_client.invoke.assert_called_once()
+
+        call_args, call_kwargs = self.manager.lambda_client.invoke.call_args
+
+        self.assertEqual(call_kwargs['FunctionName'], self.LABOURER.arn)
+        self.assertEqual(call_kwargs['Payload'], task['payload'])
