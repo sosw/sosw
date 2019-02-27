@@ -111,6 +111,16 @@ class TaskManager(Processor):
         return int(time.time()) + self.config['greenfield_invocation_delta']
 
 
+    def _get_invoked_expired_greenfield(self) -> int:
+        """
+        Returns the current date + configurable delta for greenfield not yet invoked.
+        """
+
+        raise NotImplemented
+
+        return int(time.time()) + self.config['greenfield_invocation_delta'] - max_duration_of_labourer
+
+
     def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:
         """
         Fetch the next in queue tasks for the Worker.
