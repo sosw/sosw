@@ -38,7 +38,12 @@ class Orchestrator(Processor):
             3: 0.75,
             4: 1
         },
-        'labourers':                        {},
+        'labourers':                        {
+            # 'some_function': {
+            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+            #     'max_simultaneous_invocations': 10,
+            # }
+        },
         'default_simultaneous_invocations': 2
     }
 
@@ -70,6 +75,14 @@ class Orchestrator(Processor):
 
 
     def get_desired_invocation_number_for_labourer(self, labourer: Labourer) -> int:
+        """
+        Decides the desired maximum number of simultaneous invocations for a specific Labourer.
+        The decision is based on the ecology status of the Labourer and the configs.
+
+        :param labourer: Labourer type.
+        :return: Number of invocations
+        """
+
         labourer_status = self.ecology_client.get_labourer_status(labourer_id=labourer.id)
 
         coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items() if labourer_status == k)
@@ -81,4 +94,9 @@ class Orchestrator(Processor):
 
 
     def get_labourers(self):
-        return [Labourer(id=1, arn='arn::aws::us-west-2:lambda:test_function')]
+        """
+        Return configured Labourers as a dict with 'name' as key.
+        Config of the Orchestrator expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
+        """
+
+        return {name: Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()}

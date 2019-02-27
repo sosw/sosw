@@ -23,8 +23,13 @@ class Labourer:
 
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if k in self.ATTRIBUTES:
+
+        if kwargs.pop('strict', False):
+            for k, v in kwargs.items():
+                if k in self.ATTRIBUTES:
+                    setattr(self, k, v)
+                else:
+                    raise AttributeError(f"Not supported attribute for Labourer: {k}")
+        else:
+            for k, v in kwargs.items():
                 setattr(self, k, v)
-            else:
-                raise AttributeError(f"Not supported attribute for Labourer: {k}")
