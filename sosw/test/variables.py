@@ -4,18 +4,18 @@ TEST_CONFIG = {
         'init_clients':     [],
         'dynamo_db_config': {
             'row_mapper':       {
-                'hash_col':  'S',
-                'range_col': 'N',
-                'other_int': 'N',
+                'task_id':  'S',
+                'labourer_id': 'S',
+                'greenfield': 'N',
                 'attempts':  'N',
             },
-            'required_fields':  ['hash_col'],
-            'table_name':       'autotest_dynamo_db',
-            'index_greenfield': 'autotest_index_int_int_index',
+            'required_fields':  ['task_id', 'labourer_id'],
+            'table_name':       'autotest_sosw_tasks',
+            'index_greenfield': 'autotest_sosw_tasks_greenfield',
             'field_names':      {
-                'task_id':     'hash_col',
-                'labourer_id': 'range_col',
-                'greenfield':  'other_int_col',
+                'task_id':     'task_id',
+                'labourer_id': 'labourer_id',
+                'greenfield':  'greenfield',
             }
         },
     },

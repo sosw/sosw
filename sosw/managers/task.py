@@ -92,6 +92,7 @@ class TaskManager(Processor):
                 attributes_to_update={gf: int(time.time()) + (self.config['greenfield_invocation_delta'] * attempts)},
                 attributes_to_increment={af: 1})
 
+
     def close_task(self, task_id: str):
         raise NotImplementedError
 
@@ -123,9 +124,8 @@ class TaskManager(Processor):
 
         result = self.dynamo_db_client.get_by_query(
                 {
-                    self.get_db_field_name('labourer_id'
-                                           ''):           labourer.id,
-                    self.get_db_field_name('greenfield'): max_greenfield
+                    self.get_db_field_name('labourer_id'): labourer.id,
+                    self.get_db_field_name('greenfield'):  max_greenfield
                 },
                 table_name=self.config['dynamo_db_config']['table_name'],
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
@@ -135,9 +135,34 @@ class TaskManager(Processor):
                     self.get_db_field_name('greenfield'): '<'
                 })
 
-        logger.debug(f"get_next_for_labourer() received: {result}")
+        logger.info(f"get_next_for_labourer() received: {result} from {self.config['dynamo_db_config']['table_name']} "
+                    f"for labourer: {labourer.id} max greenfield: {max_greenfield}")
 
         return [task[self.get_db_field_name('task_id')] for task in result]
+
+
+    def get_running_tasks_for_labourer_count(self, labourer: Labourer) -> int:
+        invoked = self.get_invoked_tasks_for_labourer(labourer=labourer)
+
+        raise NotImplemented
+
+
+    def get_expired_tasks_for_labourer(self, labourer: Labourer):
+        raise NotImplemented
+
+
+    def get_invoked_tasks_for_labourer(self, labourer: Labourer):
+        lf = self.get_db_field_name('labourer_id')
+        gf = self.get_db_field_name('greenfield')
+
+        return self.dynamo_db_client.get_by_query(
+                keys={
+                    lf: labourer.id,
+                    gf: time.time()
+                },
+                comparisons={gf: '>'},
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+        )
 
 
     def __call__(self, event):

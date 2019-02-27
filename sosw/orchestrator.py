@@ -83,7 +83,7 @@ class Orchestrator(Processor):
         :return: Number of invocations
         """
 
-        labourer_status = self.ecology_client.get_labourer_status(labourer_id=labourer.id)
+        labourer_status = self.ecology_client.get_labourer_status(labourer=labourer)
 
         coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items() if labourer_status == k)
 

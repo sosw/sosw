@@ -31,15 +31,15 @@ class task_manager_UnitTestCase(unittest.TestCase):
         This is responsibility of the test author to update these values if required from test.
         """
 
-        self.HASH_KEY = ('hash_col', 'S')
-        self.RANGE_KEY = ('range_col', 'N')
-        self.KEYS = ('hash_col', 'range_col')
-        self.table_name = 'autotest_dynamo_db'
-
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
         self.config = self.TEST_CONFIG.copy()
+
+        self.HASH_KEY = ('task_id', 'S')
+        self.RANGE_KEY = ('labourer_id', 'S')
+        self.table_name = self.config['dynamo_db_config']['table_name']
+
         self.manager = TaskManager(custom_config=self.config)
         self.manager.dynamo_db_client = MagicMock()
         self.manager.lambda_client = MagicMock()
@@ -56,7 +56,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_get_db_field_name(self):
-        self.assertEqual(self.manager.get_db_field_name('task_id'), 'hash_col', "Configured field name failed")
+        self.assertEqual(self.manager.get_db_field_name('task_id'), self.HASH_KEY[0], "Configured field name failed")
         self.assertEqual(self.manager.get_db_field_name('some_name'), 'some_name', "Default column name failed")
 
 
@@ -67,9 +67,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         delta = self.manager.config['greenfield_invocation_delta']
 
         task = {
-            'hash_col':      "task_id_42_256",  # Task ID
-            'range_col':     42,  # Worker ID
-            'other_int_col': greenfield
+            self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
+            self.RANGE_KEY[0]: 42,  # Worker ID
+            'greenfield':      greenfield
         }
 
         # Do the actual tested job
@@ -80,10 +80,11 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
 
-        self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
+        self.assertEqual(call_args[0],
+                         {self.HASH_KEY[0]: "task_id_42_256", self.RANGE_KEY[0]: 42}), "The key of task is missing"
         self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
-        gf = call_kwargs['attributes_to_update']['other_int_col']
+        gf = call_kwargs['attributes_to_update']['greenfield']
         self.assertEqual(round(gf, -2), round(time.time() + delta, -2)), "Greenfield was not updated"
 
 
@@ -94,10 +95,10 @@ class task_manager_UnitTestCase(unittest.TestCase):
         delta = self.manager.config['greenfield_invocation_delta']
 
         task = {
-            'hash_col':      "task_id_42_256",  # Task ID
-            'range_col':     42,  # Worker ID
-            'other_int_col': greenfield,
-            'attempts':      3
+            self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
+            self.RANGE_KEY[0]: 42,  # Worker ID
+            'greenfield':      greenfield,
+            'attempts':        3
         }
 
         # Do the actual tested job
@@ -108,10 +109,11 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
 
-        self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
+        self.assertEqual(call_args[0],
+                         {self.HASH_KEY[0]: "task_id_42_256", self.RANGE_KEY[0]: 42}), "The key of task is missing"
         self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
-        gf = call_kwargs['attributes_to_update']['other_int_col']
+        gf = call_kwargs['attributes_to_update']['greenfield']
         self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
                          "Greenfield was increased with respect to number of attempts")
 
@@ -138,9 +140,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_invoke_task__calls__lambda_client(self):
         task = {
-            'hash_col':  "task_id_42_256",  # Task ID
-            'range_col': 42,  # Worker ID
-            'payload':   {'foo': 23}
+            self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
+            self.RANGE_KEY[0]: 42,  # Worker ID
+            'payload':         {'foo': 23}
         }
 
         self.manager.get_task_by_id = MagicMock(return_value=task)

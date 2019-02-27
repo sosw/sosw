@@ -26,15 +26,11 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
         This is responsibility of the test author to update these values if required from test.
         """
 
-        self.HASH_KEY = ('hash_col', 'S')
-        self.RANGE_KEY = ('range_col', 'N')
-        self.KEYS = ('hash_col', 'range_col')
-        self.table_name = 'autotest_dynamo_db'
-
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
         self.config = self.TEST_CONFIG.copy()
+
         self.manager = EcologyManager(custom_config=self.config)
 
 

@@ -12,8 +12,9 @@ import time
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-from sosw.components.benchmark import benchmark
 from sosw.app import Processor
+from sosw.labourer import Labourer
+from sosw.components.benchmark import benchmark
 
 
 logger = logging.getLogger()
@@ -41,5 +42,9 @@ class EcologyManager(Processor):
         return [x[0] for x in ECO_STATUSES]
 
 
-    def get_labourer_status(self, labourer_id: int) -> int:
+    def get_labourer_status(self, labourer: Labourer) -> int:
         return random.choice(self.eco_statuses)
+
+
+    def get_running_tasks_for_labourer(self, labourer: Labourer):
+        pass
