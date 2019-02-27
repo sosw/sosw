@@ -7,6 +7,8 @@ from ..components.test.test_helpers import helpers_UnitTestCase
 from ..components.test.test_siblings import siblings_TestCase
 from ..components.test.test_sns import sns_TestCase
 
+from ..managers.test.unit.test_task import *
+from ..managers.test.unit.test_ecology import *
 
 def suite():
     test_suite = unittest.TestSuite()
@@ -16,6 +18,9 @@ def suite():
     test_suite.addTest(unittest.makeSuite(siblings_TestCase))
     test_suite.addTest(unittest.makeSuite(sns_TestCase))
     test_suite.addTest(unittest.makeSuite(ConfigTestCase))
+
+    test_suite.addTest(unittest.makeSuite(ecology_manager_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(task_manager_UnitTestCase))
 
     return test_suite
 

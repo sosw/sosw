@@ -1,8 +1,9 @@
 import boto3
 import logging
+import os
+import random
 import time
 import unittest
-import os
 
 from collections import defaultdict
 from unittest.mock import MagicMock, patch
@@ -17,7 +18,7 @@ from sosw.managers.task import TaskManager
 from sosw.test.variables import TEST_CONFIG
 
 
-class TaskManager_UnitTestCase(unittest.TestCase):
+class task_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_CONFIG['task_client_config']
 
 
@@ -32,12 +33,15 @@ class TaskManager_UnitTestCase(unittest.TestCase):
         self.KEYS = ('hash_col', 'range_col')
         self.table_name = 'autotest_dynamo_db'
 
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
         self.config = self.TEST_CONFIG.copy()
         self.manager = TaskManager(custom_config=self.config)
 
 
     def tearDown(self):
-        pass
+        self.patcher.stop()
 
 
     def test_get_max_univoked_greenfield(self):
@@ -49,3 +53,60 @@ class TaskManager_UnitTestCase(unittest.TestCase):
     def test_get_db_field_name(self):
         self.assertEqual(self.manager.get_db_field_name('task_id'), 'hash_col', "Configured field name failed")
         self.assertEqual(self.manager.get_db_field_name('some_name'), 'some_name', "Default column name failed")
+
+
+    def test_mark_task_invoked__calls_dynamo(self):
+        self.manager.dynamo_db_client = MagicMock()
+
+        greenfield = round(time.time() - random.randint(0, 1000))
+        delta = self.manager.config['greenfield_invocation_delta']
+
+        task = {
+            'hash_col':      "task_id_42_256",  # Task ID
+            'range_col':     42,  # Worker ID
+            'other_int_col': greenfield
+        }
+
+        # Do the actual tested job
+        self.manager.mark_task_invoked(task)
+
+        # Check the dynamo_client was called with correct payload to update
+        self.manager.dynamo_db_client.update.assert_called_once()
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
+
+        self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
+        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}),  "Attempts counter not increased"
+
+        gf = call_kwargs['attributes_to_update']['other_int_col']
+        self.assertEqual(round(gf, -2), round(time.time() + delta, -2)), "Greenfield was not updated"
+
+
+    def test_mark_task_invoked__greenfield_counts_attempts(self):
+        self.manager.dynamo_db_client = MagicMock()
+
+        greenfield = round(time.time() - random.randint(0, 1000))
+        delta = self.manager.config['greenfield_invocation_delta']
+
+        task = {
+            'hash_col':      "task_id_42_256",  # Task ID
+            'range_col':     42,  # Worker ID
+            'other_int_col': greenfield,
+            'attempts': 3
+        }
+
+        # Do the actual tested job
+        self.manager.mark_task_invoked(task)
+
+        # Check the dynamo_client was called with correct payload to update
+        self.manager.dynamo_db_client.update.assert_called_once()
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
+
+        self.assertEqual(call_args[0], {'hash_col': "task_id_42_256", 'range_col': 42}), "The key of task is missing"
+        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}),  "Attempts counter not increased"
+
+        gf = call_kwargs['attributes_to_update']['other_int_col']
+        self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
+                         "Greenfield was increased with respect to number of attempts")
+

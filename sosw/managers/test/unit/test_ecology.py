@@ -16,7 +16,7 @@ os.environ["autotest"] = "True"
 from sosw.managers.ecology import EcologyManager
 from sosw.test.variables import TEST_CONFIG
 
-class TaskManager_IntegrationTestCase(unittest.TestCase):
+class ecology_manager_UnitTestCase(unittest.TestCase):
 
     TEST_CONFIG = TEST_CONFIG['ecology_client_config']
 
@@ -31,12 +31,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.KEYS = ('hash_col', 'range_col')
         self.table_name = 'autotest_dynamo_db'
 
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
         self.config = self.TEST_CONFIG.copy()
         self.manager = EcologyManager(custom_config=self.config)
 
 
     def tearDown(self):
-        pass
+        self.patcher.stop()
 
 
     def test_eco_statuses(self):

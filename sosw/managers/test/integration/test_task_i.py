@@ -108,7 +108,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_mark_task_invoked(self):
-        greenfield = time.time() - random.randint(0, 10000)
+        greenfield = round(time.time() - random.randint(0, 1000))
+        delta = self.manager.config['greenfield_invocation_delta']
 
         row = {
             'hash_col':      "task_id_42_256",  # Task ID
@@ -116,13 +117,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             'other_int_col': greenfield
         }
         self.dynamo_client.put(row)
+        # print(f"Saved initial version with greenfield some date not long ago: {row}")
 
-
+        # Do the actual tested job
         self.manager.mark_task_invoked(row)
 
         result = self.dynamo_client.get_by_query({'hash_col': "task_id_42_256"}, strict=False)
+        # print(f"The new updated value of task is: {result}")
 
-        print(result)
-        # CONTINUE HERE
-        self.assertEqual(1,2)
+        # Rounded -2 we check that the greenfield was updated
+        self.assertAlmostEqual(round(time.time() + delta, -2), round(result[0]['other_int_col'], -2))
+
 
