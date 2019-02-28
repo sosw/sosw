@@ -44,7 +44,7 @@ class Processor:
         self.config = self.DEFAULT_CONFIG.copy()
         self.config.update(self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config.update(custom_config or {})
-        logger.info(f"Final processor config: {self.config}")
+        logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
 
