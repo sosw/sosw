@@ -46,6 +46,26 @@ class TaskManager(Processor):
     }
 
 
+    def register_labourers(self, labourers: List[Labourer]):
+        """ Sets timestamps on Labourer objects passed for registration. """
+
+        # This must be something ordered, because these methods depend on one another.
+        TIMES = (
+            ('start', lambda x: int(time.time())),
+            ('invoked', lambda x: x.get_timestamp('start') + self.config['greenfield_invocation_delta']),
+            ('expired', lambda x: x.get_timestamp('invoked') - (x.duration + x.cooldown)),
+        )
+
+        result = []
+        for labourer in labourers:
+            for k, method in [x for x in TIMES]:
+                labourer.set_timestamp(k, method(labourer))
+
+            result.append(labourer)
+
+        return result
+
+
     def get_db_field_name(self, key):
         """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
         return self.config['dynamo_db_config']['field_names'].get(key, key)

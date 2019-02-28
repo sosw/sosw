@@ -155,3 +155,19 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(call_kwargs['FunctionName'], self.LABOURER.arn)
         self.assertEqual(call_kwargs['Payload'], task['payload'])
+
+
+    def test_register_labourers(self):
+        lab = Labourer(id=42)
+
+        with patch('time.time') as t:
+            t.return_value = 123
+
+            self.manager.register_labourers(labourers=[lab])
+
+        invoke_time = 123 + self.manager.config['greenfield_invocation_delta']
+
+        self.assertEqual(lab.get_timestamp('start'), 123)
+        self.assertEqual(lab.get_timestamp('invoked'), invoke_time)
+        self.assertEqual(lab.get_timestamp('expired'), invoke_time - lab.duration - lab.cooldown)
+
