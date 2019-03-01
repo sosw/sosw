@@ -132,5 +132,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_invoked_tasks_for_labourer(self):
+        self.manager.register_labourers([self.LABOURER])
+
         self.setup_tasks(status='invoked')
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)

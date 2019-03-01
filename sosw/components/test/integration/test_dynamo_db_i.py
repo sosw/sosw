@@ -11,7 +11,6 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
@@ -264,11 +263,10 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_by_query__comparison_between(self):
-        keys = {'hash_col': 'cat', 'st_between_range_col': '3', 'en_between_range_col': '6'}
-
         # Put sample data
         x = [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x}, self.table_name) for x in range(10)]
 
+        keys = {'hash_col': 'cat', 'st_between_range_col': '3', 'en_between_range_col': '6'}
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': 'between'})
         # print(result)
         self.assertTrue(all(x['range_col'] in range(3, 7) for x in result))
@@ -277,6 +275,23 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         # print(result)
         self.assertTrue(all(x['range_col'] in range(3, 7) for x in result)), "Failed if unspecified comparison. " \
                                                                              "Should be automatic for :st_between_..."
+
+
+    def test_get_by_query__filter_expression(self):
+        # Put sample data
+        [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x}, self.table_name) for x in range(3)]
+        [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x, 'mark': 1}, self.table_name) for x in range(3,6)]
+
+        # Condition by range_col will return five rows out of six: 0 - 4
+        # Filter expression neggs the first three rows because they don't have `mark = 1`.
+        keys = {'hash_col': 'cat', 'range_col': 4}
+        result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': '<='},
+                                                 strict=False, filter_expression='mark = 1')
+        # print(result)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], {'hash_col': 'cat', 'range_col': 3, 'mark': 1})
+        self.assertEqual(result[1], {'hash_col': 'cat', 'range_col': 4, 'mark': 1})
 
 
     def test_get_by_query__comparison_begins_with(self):
