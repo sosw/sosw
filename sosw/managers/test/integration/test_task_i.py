@@ -136,3 +136,11 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.setup_tasks(status='invoked')
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)
+
+
+    def test_get_running_tasks_for_labourer(self):
+        raise NotImplementedError
+
+
+    def test_get_expired_tasks_for_labourer(self):
+        raise NotImplementedError

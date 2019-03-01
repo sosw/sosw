@@ -177,10 +177,6 @@ class TaskManager(Processor):
         raise NotImplemented
 
 
-    def get_expired_tasks_for_labourer(self, labourer: Labourer):
-        raise NotImplemented
-
-
     def get_invoked_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of current Labourer invoked during the current run of the Orchestrator. """
 
@@ -213,7 +209,7 @@ class TaskManager(Processor):
                     f"en_between_{gf}": labourer.get_timestamp('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression='closed '
+                filter_expression='attribute_not_exists closed'
         )
 
 
@@ -226,8 +222,8 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query(
                 keys={
                     lf: labourer.id,
-                    f"st_between_{gf}": labourer.get_timestamp('expired'),
-                    f"en_between_{gf}": labourer.get_timestamp('invoked'),
+                    f"st_between_{gf}": labourer.get_timestamp('start'),
+                    f"en_between_{gf}": labourer.get_timestamp('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
         )
