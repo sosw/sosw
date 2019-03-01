@@ -273,8 +273,11 @@ class DynamoDbClient:
 
     def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
         """
-        Converts FilterExpression to Dynamo syntax.
+        Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
+        https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
 
+        Supported: regular comparators, between, attribute_[not_]exists
+        
         :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
         """
 
@@ -282,10 +285,17 @@ class DynamoDbClient:
 
         words = [x.strip() for x in expression.split()]
 
-        # Filter Expression should be exactly 3 or 5 words.
-        if len(words) == 3:
+        # Filter Expression should be 2, 3 or 5 words. See doc for more details.
+        # This must be a function
+        if len(words) == 2:
+            operator, key = words
+            assert operator.lower() in ('attribute_exists', 'attribute_not_exists')
+            result_expr, result_values = f"{operator} ({key})", {}
+
+        # This must be a regular comparison
+        elif len(words) == 3:
             key, operator, value = words
-            assert operator in ('=', '<', '<=', '>', '>='), f"Unsupported operator for filtering: {expression}"
+            assert operator in ('=', '<>' '<', '<=', '>', '>='), f"Unsupported operator for filtering: {expression}"
             result_expr = f"{key} {operator} :{key}"
             result_values = self.dict_to_dynamo({key: words[-1]}, add_prefix=':', strict=False)
 

@@ -181,18 +181,57 @@ class TaskManager(Processor):
         raise NotImplemented
 
 
-    def get_invoked_tasks_for_labourer(self, labourer: Labourer):
+    def get_invoked_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        """ Return a list of tasks of current Labourer invoked during the current run of the Orchestrator. """
+
         lf = self.get_db_field_name('labourer_id')
         gf = self.get_db_field_name('greenfield')
 
         return self.dynamo_db_client.get_by_query(
                 keys={
                     lf: labourer.id,
-                    gf: time.time()
+                    gf: labourer.get_timestamp('invoked')
                 },
-                comparisons={gf: '>'},
+                comparisons={gf: '>='},
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
         )
+
+
+    def get_running_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        """
+        Return a list of tasks of Labourer previously invoked, but not yet closed or expired.
+        We assume they are still running.
+        """
+
+        lf = self.get_db_field_name('labourer_id')
+        gf = self.get_db_field_name('greenfield')
+
+        return self.dynamo_db_client.get_by_query(
+                keys={
+                    lf: labourer.id,
+                    f"st_between_{gf}": labourer.get_timestamp('expired'),
+                    f"en_between_{gf}": labourer.get_timestamp('invoked'),
+                },
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                filter_expression='closed '
+        )
+
+
+    def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """
+
+        lf = self.get_db_field_name('labourer_id')
+        gf = self.get_db_field_name('greenfield')
+
+        return self.dynamo_db_client.get_by_query(
+                keys={
+                    lf: labourer.id,
+                    f"st_between_{gf}": labourer.get_timestamp('expired'),
+                    f"en_between_{gf}": labourer.get_timestamp('invoked'),
+                },
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+        )
+
 
 
     def __call__(self, event):
