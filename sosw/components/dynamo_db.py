@@ -211,19 +211,29 @@ class DynamoDbClient:
         cond_expr_parts = []
 
         for key_attr_name in keys:
-            if comparisons:
+            # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
+            if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
+                compr = 'between'
+            elif key_attr_name.startswith('en_between_'):  # This attribute is used in the expression with st_between
+                continue
+            elif comparisons:
                 compr = comparisons.get(key_attr_name) or '='
             else:
                 compr = '='
 
             if compr == 'begins_with':
                 cond_expr_parts.append(f"begins_with ({key_attr_name}, :{key_attr_name})")
+
+            elif compr == 'between':
+                key = key_attr_name[11:]
+                cond_expr_parts.append(f"{key} between :st_between_{key} and :en_between_{key}")
             else:
                 assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
                 cond_expr_parts.append(f"{key_attr_name} {compr} :{key_attr_name}")
 
         cond_expr = " AND ".join(cond_expr_parts)
 
+        logger.debug(cond_expr, filter_values)
         query_args = {
             'TableName':                 table_name,
             'Select':                    'ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES',
