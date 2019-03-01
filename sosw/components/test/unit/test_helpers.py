@@ -1,6 +1,4 @@
 import datetime
-import logging
-import shutil
 import time
 import unittest
 import os
@@ -9,7 +7,7 @@ import os
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from ..helpers import *
+from sosw.components.helpers import *
 
 
 class helpers_UnitTestCase(unittest.TestCase):

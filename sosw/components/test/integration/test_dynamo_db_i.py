@@ -77,99 +77,6 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(len(items) > 0)
 
 
-    def test_dict_to_dynamo_strict(self):
-        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
-        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row)
-        expected = {'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'}}
-        for key in expected.keys():
-            self.assertDictEqual(expected[key], dynamo_row[key])
-
-
-    def test_dict_to_dynamo_not_strict(self):
-        dict_row = {'name': 'cat', 'age': 3}
-        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
-        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}}
-        for key in expected.keys():
-            self.assertDictEqual(expected[key], dynamo_row[key])
-
-
-    def test_dict_to_dynamo_prefix(self):
-        dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
-        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, add_prefix="#")
-        expected = {'#hash_col': {'S': 'cat'}, '#range_col': {'N': '123'}, '#some_col': {'S': 'no'}}
-        for key in expected.keys():
-            self.assertDictEqual(expected[key], dynamo_row[key])
-
-
-    def test_dynamo_to_dict(self):
-        dynamo_row = {
-            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key':   {'N': '42'}
-        }
-        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
-        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
-        self.assertDictEqual(dict_row, expected)
-
-
-    def test_dynamo_to_dict_no_strict_row_mapper(self):
-        dynamo_row = {
-            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}
-        }
-        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
-        expected = {
-            'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-            'extra_key_s': 'wowie'
-        }
-        self.assertDictEqual(dict_row, expected)
-
-
-    def test_dynamo_to_dict__dont_json_loads(self):
-        config = self.TEST_CONFIG.copy()
-        config['dont_json_loads_results'] = True
-
-        self.dynamo_client = DynamoDbClient(config=config)
-
-        dynamo_row = {
-            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-            'duck_quack': {'S': '{"quack": "duck"}'}
-        }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
-        }
-        self.assertDictEqual(res, expected)
-
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
-        }
-        self.assertDictEqual(res, expected)
-
-
-    def test_dynamo_to_dict__do_json_loads(self):
-        config = self.TEST_CONFIG.copy()
-        config['dont_json_loads_results'] = False
-
-        self.dynamo_client = DynamoDbClient(config=config)
-
-        dynamo_row = {
-            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-            'duck_quack': {'S': '{"quack": "duck"}'}
-        }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}, 'duck_quack': {"quack": "duck"}
-        }
-        self.assertDictEqual(res, expected)
-
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}
-        }
-        self.assertDictEqual(res, expected)
-
-
     def test_update__updates(self):
         keys = {'hash_col': 'cat', 'range_col': '123'}
         row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no', 'other_col': 'foo'}
@@ -364,8 +271,12 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': 'between'})
         # print(result)
+        self.assertTrue(all(x['range_col'] in range(3, 7) for x in result))
 
-        self.assertTrue(all(x['range_col'] in range(3,7) for x in  result))
+        result = self.dynamo_client.get_by_query(keys=keys)
+        # print(result)
+        self.assertTrue(all(x['range_col'] in range(3, 7) for x in result)), "Failed if unspecified comparison. " \
+                                                                             "Should be automatic for :st_between_..."
 
 
     def test_get_by_query__comparison_begins_with(self):
