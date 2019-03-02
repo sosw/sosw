@@ -278,9 +278,17 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_by_query__filter_expression(self):
+        """
+        This _integration_ test runs multiple checks with same sample data for several comparators.
+        Have a look at the manual if required:
+        https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+        """
+
         # Put sample data
         [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x}, self.table_name) for x in range(3)]
         [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x, 'mark': 1}, self.table_name) for x in range(3,6)]
+        self.dynamo_client.put({'hash_col': 'cat', 'range_col': 6, 'mark': 0}, self.table_name)
+        self.dynamo_client.put({'hash_col': 'cat', 'range_col': 7, 'mark': 'a'}, self.table_name)
 
         # Condition by range_col will return five rows out of six: 0 - 4
         # Filter expression neggs the first three rows because they don't have `mark = 1`.
@@ -292,6 +300,24 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], {'hash_col': 'cat', 'range_col': 3, 'mark': 1})
         self.assertEqual(result[1], {'hash_col': 'cat', 'range_col': 4, 'mark': 1})
+
+        # In the same test we check also some comparator _functions_.
+        result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': '<='},
+                                                 strict=False, filter_expression='attribute_exists mark')
+        # print(result)
+        self.assertEqual(len(result), 2)
+        self.assertEqual([x['range_col'] for x in result], list(range(3,5)))
+
+        self.assertEqual(result[0], {'hash_col': 'cat', 'range_col': 3, 'mark': 1})
+        self.assertEqual(result[1], {'hash_col': 'cat', 'range_col': 4, 'mark': 1})
+
+
+        result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': '<='},
+                                                 strict=False, filter_expression='attribute_not_exists mark')
+        # print(result)
+        self.assertEqual(len(result), 3)
+        self.assertEqual([x['range_col'] for x in result], list(range(3)))
+
 
 
     def test_get_by_query__comparison_begins_with(self):

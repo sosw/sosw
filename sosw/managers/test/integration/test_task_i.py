@@ -60,7 +60,11 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         if status == 'available':
             greenfield = round(time.time()) - random.randint(0, 10000)
         elif status == 'invoked':
-            greenfield = round(time.time()) + random.randint(1, 100) + self.manager.config['greenfield_invocation_delta']
+            greenfield = round(time.time()) + self.manager.config['greenfield_invocation_delta']
+        elif status == 'expired':
+            greenfield = round(time.time()) + random.randint(1000, 10000)
+        elif status == 'running':
+            greenfield = round(time.time()) + self.manager.config['greenfield_invocation_delta'] - 900
         else:
             raise ValueError(f"Unsupported `status`: {status}. Should be one of: 'available', 'invoked'.")
 
@@ -139,8 +143,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_running_tasks_for_labourer(self):
-        raise NotImplementedError
+        self.manager.register_labourers([self.LABOURER])
+
+        self.setup_tasks(status='running')
+        self.assertEqual(len(self.manager.get_running_tasks_for_labourer(self.LABOURER)), 3)
 
 
     def test_get_expired_tasks_for_labourer(self):
-        raise NotImplementedError
+        self.manager.register_labourers([self.LABOURER])
+
+        self.setup_tasks(status='expired')
+        self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
