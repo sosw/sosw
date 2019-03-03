@@ -49,12 +49,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.patcher.stop()
 
 
-    def test_get_max_univoked_greenfield(self):
-        """ We allow round -2 here. The values are big, and we want to minimize random failures. """
-        self.assertAlmostEqual(round(time.time() + self.manager.config['greenfield_invocation_delta'], -2),
-                               round(self.manager._get_max_univoked_greenfield(), -2))
-
-
     def test_get_db_field_name(self):
         self.assertEqual(self.manager.get_db_field_name('task_id'), self.HASH_KEY[0], "Configured field name failed")
         self.assertEqual(self.manager.get_db_field_name('some_name'), 'some_name', "Default column name failed")
@@ -88,34 +82,35 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(round(gf, -2), round(time.time() + delta, -2)), "Greenfield was not updated"
 
 
-    def test_mark_task_invoked__greenfield_counts_attempts(self):
-        self.manager.dynamo_db_client = MagicMock()
-
-        greenfield = round(time.time() - random.randint(0, 1000))
-        delta = self.manager.config['greenfield_invocation_delta']
-
-        task = {
-            self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
-            self.RANGE_KEY[0]: 42,  # Worker ID
-            'greenfield':      greenfield,
-            'attempts':        3
-        }
-
-        # Do the actual tested job
-        self.manager.mark_task_invoked(task)
-
-        # Check the dynamo_client was called with correct payload to update
-        self.manager.dynamo_db_client.update.assert_called_once()
-
-        call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
-
-        self.assertEqual(call_args[0],
-                         {self.HASH_KEY[0]: "task_id_42_256", self.RANGE_KEY[0]: 42}), "The key of task is missing"
-        self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
-
-        gf = call_kwargs['attributes_to_update']['greenfield']
-        self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
-                         "Greenfield was increased with respect to number of attempts")
+    # @unittest.skip("This behavior is deprecated")
+    # def test_mark_task_invoked__greenfield_counts_attempts(self):
+    #     self.manager.dynamo_db_client = MagicMock()
+    #
+    #     greenfield = round(time.time() - random.randint(0, 1000))
+    #     delta = self.manager.config['greenfield_invocation_delta']
+    #
+    #     task = {
+    #         self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
+    #         self.RANGE_KEY[0]: 42,  # Worker ID
+    #         'greenfield':      greenfield,
+    #         'attempts':        3
+    #     }
+    #
+    #     # Do the actual tested job
+    #     self.manager.mark_task_invoked(task)
+    #
+    #     # Check the dynamo_client was called with correct payload to update
+    #     self.manager.dynamo_db_client.update.assert_called_once()
+    #
+    #     call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
+    #
+    #     self.assertEqual(call_args[0],
+    #                      {self.HASH_KEY[0]: "task_id_42_256", self.RANGE_KEY[0]: 42}), "The key of task is missing"
+    #     self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
+    #
+    #     gf = call_kwargs['attributes_to_update']['greenfield']
+    #     self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
+    #                      "Greenfield was increased with respect to number of attempts")
 
 
     def test_invoke_task__validates_task(self):
@@ -171,3 +166,10 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_timestamp('invoked'), invoke_time)
         self.assertEqual(lab.get_timestamp('expired'), invoke_time - lab.duration - lab.cooldown)
 
+
+    def test_calculate_count_of_running_tasks_for_labourer(self):
+        lab = Labourer(id=42)
+        self.manager.get_running_tasks_for_labourer = MagicMock(return_value=[1, 2, 3])
+
+        self.assertEqual(self.manager.calculate_count_of_running_tasks_for_labourer(labourer=lab), 3)
+        self.manager.get_running_tasks_for_labourer.assert_called_once()

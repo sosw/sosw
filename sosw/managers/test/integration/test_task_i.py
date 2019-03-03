@@ -86,7 +86,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # time.sleep(5)
 
         result = self.manager.get_next_for_labourer(self.LABOURER)
-        print(result)
+        # print(result)
 
         self.assertEqual(len(result), 1, "Returned more than one task")
         self.assertIn(f'task_id_{self.LABOURER.id}_', result[0])
@@ -138,6 +138,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def test_get_invoked_tasks_for_labourer(self):
         self.manager.register_labourers([self.LABOURER])
 
+        self.setup_tasks(status='running')
+        self.setup_tasks(status='expired')
         self.setup_tasks(status='invoked')
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)
 
@@ -145,12 +147,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def test_get_running_tasks_for_labourer(self):
         self.manager.register_labourers([self.LABOURER])
 
+        self.setup_tasks(status='available')
         self.setup_tasks(status='running')
+        self.setup_tasks(status='expired')
         self.assertEqual(len(self.manager.get_running_tasks_for_labourer(self.LABOURER)), 3)
 
 
     def test_get_expired_tasks_for_labourer(self):
         self.manager.register_labourers([self.LABOURER])
 
+        self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)

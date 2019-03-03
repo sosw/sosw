@@ -95,7 +95,7 @@ class TaskManager(Processor):
 
     def mark_task_invoked(self, task: Dict):
         """
-        Update the greenfield with the latest invocation timestamp + invocation_delta * number of attempts
+        Update the greenfield with the latest invocation timestamp + invocation_delta
         :param task:
         :return:
         """
@@ -105,11 +105,9 @@ class TaskManager(Processor):
         gf = self.get_db_field_name('greenfield')
         af = self.get_db_field_name('attempts')
 
-        attempts = task.get(af, 0) + 1
-
         self.dynamo_db_client.update(
                 {tf: task[tf], lf: task[lf]},
-                attributes_to_update={gf: int(time.time()) + (self.config['greenfield_invocation_delta'] * attempts)},
+                attributes_to_update={gf: int(time.time()) + self.config['greenfield_invocation_delta']},
                 attributes_to_increment={af: 1})
 
 
@@ -123,34 +121,16 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
 
 
-    def _get_max_univoked_greenfield(self) -> int:
-        """
-        Returns the current date + configurable delta for greenfield not yet invoked.
-        """
-
-        return int(time.time()) + self.config['greenfield_invocation_delta']
-
-
-    def _get_invoked_expired_greenfield(self) -> int:
-        """
-        Returns the current date + configurable delta for greenfield not yet invoked.
-        """
-
-        raise NotImplemented
-
-        return int(time.time()) + self.config['greenfield_invocation_delta'] - max_duration_of_labourer
-
-
     def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:
         """
-        Fetch the next in queue tasks for the Worker.
+        Fetch the next task(s) from the queue for the Labourer.
 
         :param labourer:   Labourer to get next tasks for.
         :param cnt:        Optional number of Tasks to fetch.
         """
 
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
-        max_greenfield = self._get_max_univoked_greenfield()
+        max_greenfield = labourer.get_timestamp('start')
 
         result = self.dynamo_db_client.get_by_query(
                 {
@@ -171,26 +151,45 @@ class TaskManager(Processor):
         return [task[self.get_db_field_name('task_id')] for task in result]
 
 
-    def get_running_tasks_for_labourer_count(self, labourer: Labourer) -> int:
-        invoked = self.get_invoked_tasks_for_labourer(labourer=labourer)
+    def calculate_count_of_running_tasks_for_labourer(self, labourer: Labourer) -> int:
+        """
+        Returns a number of tasks we assume to be still running.
+        Theoretically they can be dead with Exception, but not yet expired.
+        """
 
-        raise NotImplemented
+        return len(self.get_running_tasks_for_labourer(labourer=labourer))
 
 
-    def get_invoked_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
-        """ Return a list of tasks of current Labourer invoked during the current run of the Orchestrator. """
+    def get_invoked_tasks_for_labourer(self, labourer: Labourer, closed: Optional[bool] = None) -> List[Dict]:
+        """
+        Return a list of tasks of current Labourer invoked during the current run of the Orchestrator.
+
+        If closed is provided:
+        * True - filter closed ones
+        * False - filter NOT closed ones
+        * None (default) - do not care about `closed` status.
+        """
 
         lf = self.get_db_field_name('labourer_id')
         gf = self.get_db_field_name('greenfield')
 
-        return self.dynamo_db_client.get_by_query(
-                keys={
-                    lf: labourer.id,
-                    gf: labourer.get_timestamp('invoked')
-                },
-                comparisons={gf: '>='},
-                index_name=self.config['dynamo_db_config']['index_greenfield'],
-        )
+        query_args = {
+            'keys':        {
+                lf: labourer.id,
+                gf: labourer.get_timestamp('invoked')
+            },
+            'comparisons': {gf: '>='},
+            'index_name':  self.config['dynamo_db_config']['index_greenfield'],
+        }
+
+        if closed is True:
+            query_args['filter_expression'] = 'attribute_exists closed'
+        elif closed is False:
+            query_args['filter_expression'] = 'attribute_not_exists closed'
+        else:
+            logger.debug(f"No filtering by closed status for {query_args}")
+
+        return self.dynamo_db_client.get_by_query(**query_args)
 
 
     def get_running_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
@@ -213,6 +212,18 @@ class TaskManager(Processor):
         )
 
 
+    def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        """
+        Return a list of tasks of the Labourer marked as closed.
+        Scavenger is supposed to archive them all so no special filtering is required here.
+
+        In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
+        (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+        """
+
+        return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
+
+
     def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """
 
@@ -221,14 +232,10 @@ class TaskManager(Processor):
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    lf: labourer.id,
+                    lf:                 labourer.id,
                     f"st_between_{gf}": labourer.get_timestamp('start'),
                     f"en_between_{gf}": labourer.get_timestamp('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
+                filter_expression='attribute_not_exists closed',
         )
-
-
-
-    def __call__(self, event):
-        raise NotImplemented
