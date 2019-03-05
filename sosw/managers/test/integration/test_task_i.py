@@ -72,9 +72,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         for worker_id in workers:
             for i in range(3):
                 row = {
-                    self.HASH_KEY[0]:      f"task_id_{worker_id}_{i}_{random.randint(0, 10000)}",  # Task ID
-                    self.RANGE_KEY[0]:     str(worker_id),  # Worker ID
-                    'greenfield': greenfield
+                    self.HASH_KEY[0]:  f"task_id_{worker_id}_{i}_{random.randint(0, 10000)}",  # Task ID
+                    self.RANGE_KEY[0]: str(worker_id),  # Worker ID
+                    'greenfield':      greenfield
                 }
                 print(f"Putting {row} to {self.table_name}")
                 self.dynamo_client.put(row, self.table_name)
@@ -99,7 +99,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # print(result)
 
         self.assertEqual(len(result), 3, "Should be just 3 tasks for this worker in setup")
-        self.assertTrue(all(f'task_id_{self.LABOURER.id}_' in task for task in result), "Returned some tasks of other Workers")
+        self.assertTrue(all(f'task_id_{self.LABOURER.id}_' in task for task in result),
+                        "Returned some tasks of other Workers")
 
 
     def test_get_next_for_worker__not_take_invoked(self):
@@ -110,29 +111,31 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # print(result)
 
         self.assertEqual(len(result), 3, "Should be just 3 tasks for this worker in setup. The other 3 are invoked.")
-        self.assertTrue(all(f'task_id_{self.LABOURER.id}_' in task for task in result), "Returned some tasks of other Workers")
+        self.assertTrue(all(f'task_id_{self.LABOURER.id}_' in task for task in result),
+                        "Returned some tasks of other Workers")
 
 
     def test_mark_task_invoked(self):
-        greenfield = round(time.time() - random.randint(0, 1000))
+        greenfield = round(time.time() - random.randint(100, 1000))
         delta = self.manager.config['greenfield_invocation_delta']
+        self.manager.register_labourers([self.LABOURER])
 
         row = {
-            self.HASH_KEY[0]:      f"task_id_{self.LABOURER.id}_256",  # Task ID
-            self.RANGE_KEY[0]:     self.LABOURER.id,  # Worker ID
-            'greenfield': greenfield
+            self.HASH_KEY[0]:  f"task_id_{self.LABOURER.id}_256",  # Task ID
+            self.RANGE_KEY[0]: self.LABOURER.id,  # Worker ID
+            'greenfield':      greenfield
         }
         self.dynamo_client.put(row)
         # print(f"Saved initial version with greenfield some date not long ago: {row}")
 
         # Do the actual tested job
-        self.manager.mark_task_invoked(row)
-
+        self.manager.mark_task_invoked(self.LABOURER, row)
+        time.sleep(1)
         result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, strict=False)
         # print(f"The new updated value of task is: {result}")
 
         # Rounded -2 we check that the greenfield was updated
-        self.assertAlmostEqual(round(time.time() + delta, -2), round(result[0]['greenfield'], -2))
+        self.assertAlmostEqual(round(int(time.time()) + delta, -2), round(result[0]['greenfield'], -2))
 
 
     def test_get_invoked_tasks_for_labourer(self):

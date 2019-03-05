@@ -277,7 +277,7 @@ class DynamoDbClient:
         https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
 
         Supported: regular comparators, between, attribute_[not_]exists
-        
+
         :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
         """
 
@@ -295,9 +295,12 @@ class DynamoDbClient:
         # This must be a regular comparison
         elif len(words) == 3:
             key, operator, value = words
-            assert operator in ('=', '<>' '<', '<=', '>', '>='), f"Unsupported operator for filtering: {expression}"
-            result_expr = f"{key} {operator} :{key}"
-            result_values = self.dict_to_dynamo({key: words[-1]}, add_prefix=':', strict=False)
+            assert operator in ('=', '<>', '<', '<=', '>', '>='), f"Unsupported operator for filtering: {expression}"
+
+            # It is important to add prefix to value here to avoid attribute naming conflicts for example
+            # in conditional_update expressions. e.g you update some field only if it's value is matching condition.
+            result_expr = f"{key} {operator} :filter_{key}"
+            result_values = self.dict_to_dynamo({f"filter_{key}": words[-1]}, add_prefix=':', strict=False)
 
         # This must be `between` statement.
         elif len(words) == 5:
@@ -505,7 +508,8 @@ class DynamoDbClient:
 
 
     @benchmark
-    def update(self, keys, attributes_to_update=None, attributes_to_increment=None, table_name=None):
+    def update(self, keys, attributes_to_update=None, attributes_to_increment=None,
+               condition_expression=None, table_name=None):
         """
         Updates an item in DynamoDB.
 
@@ -521,6 +525,7 @@ class DynamoDbClient:
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
             Example: {'some_counter': '3'}
+        :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
         """
 
@@ -559,6 +564,11 @@ class DynamoDbClient:
             'TableName':                 table_name,
             'UpdateExpression':          update_expr  # Ex. "SET #attr_name = :attr_name AND ..."
         }
+
+        if condition_expression:
+            expr, values = self._parse_filter_expression(condition_expression)
+            update_item_query['ConditionExpression'] = expr
+            update_item_query['ExpressionAttributeValues'].update(values)
 
         logger.info(f"Updating an item, query: {update_item_query}")
         response = self.dynamo_client.update_item(**update_item_query)

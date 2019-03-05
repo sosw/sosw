@@ -100,7 +100,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(initial_row['some_col'], 'no')
         self.assertEqual(initial_row['other_col'], 'foo')
 
-        self.dynamo_client.update(keys, attributes_to_update, None, self.table_name)
+        self.dynamo_client.update(keys, attributes_to_update, table_name=self.table_name)
 
         updated_row = client.get_item(
                 Key={
@@ -125,7 +125,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(row, self.table_name)
 
-        self.dynamo_client.update(keys, {}, attributes_to_increment, self.table_name)
+        self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         client = boto3.client('dynamodb')
 
@@ -150,7 +150,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(row, self.table_name)
 
-        self.dynamo_client.update(keys, {}, attributes_to_increment, self.table_name)
+        self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         client = boto3.client('dynamodb')
 
@@ -175,7 +175,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(row, self.table_name)
 
-        self.dynamo_client.update(keys, {}, attributes_to_increment, self.table_name)
+        self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         client = boto3.client('dynamodb')
 
@@ -190,6 +190,35 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
 
         self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_counter'], 3)
+
+
+    def test_update__condition_expression(self):
+        keys = {'hash_col': 'slime', 'range_col': '41'}
+        row = {'hash_col': 'slime', 'range_col': '41', 'some_col': 'no'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        # Should fail because conditional expression does not match
+        self.assertRaises(self.dynamo_client.dynamo_client.exceptions.ConditionalCheckFailedException,
+                          self.dynamo_client.update, keys, {},
+                          attributes_to_increment={'some_counter': '3'},
+                          condition_expression='some_col = yes', table_name=self.table_name)
+
+        # Should pass
+        self.dynamo_client.update(keys, {}, attributes_to_increment={'some_counter': '3'},
+                                  condition_expression='some_col = no', table_name=self.table_name)
+
+        client = boto3.client('dynamodb')
+        updated_row = client.get_item(
+                Key={
+                    'hash_col':  {'S': row['hash_col']},
+                    'range_col': {'N': str(row['range_col'])}
+                },
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
         self.assertEqual(updated_row['some_counter'], 3)
 
 
@@ -286,7 +315,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         # Put sample data
         [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x}, self.table_name) for x in range(3)]
-        [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x, 'mark': 1}, self.table_name) for x in range(3,6)]
+        [self.dynamo_client.put({'hash_col': 'cat', 'range_col': x, 'mark': 1}, self.table_name) for x in range(3, 6)]
         self.dynamo_client.put({'hash_col': 'cat', 'range_col': 6, 'mark': 0}, self.table_name)
         self.dynamo_client.put({'hash_col': 'cat', 'range_col': 7, 'mark': 'a'}, self.table_name)
 
@@ -306,18 +335,16 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
                                                  strict=False, filter_expression='attribute_exists mark')
         # print(result)
         self.assertEqual(len(result), 2)
-        self.assertEqual([x['range_col'] for x in result], list(range(3,5)))
+        self.assertEqual([x['range_col'] for x in result], list(range(3, 5)))
 
         self.assertEqual(result[0], {'hash_col': 'cat', 'range_col': 3, 'mark': 1})
         self.assertEqual(result[1], {'hash_col': 'cat', 'range_col': 4, 'mark': 1})
-
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={'range_col': '<='},
                                                  strict=False, filter_expression='attribute_not_exists mark')
         # print(result)
         self.assertEqual(len(result), 3)
         self.assertEqual([x['range_col'] for x in result], list(range(3)))
-
 
 
     def test_get_by_query__comparison_begins_with(self):

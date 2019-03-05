@@ -83,6 +83,19 @@ class TaskManager(Processor):
 
         task = self.get_task_by_id(task_id=task_id)
 
+        try:
+            self.mark_task_invoked(labourer, task)
+        except Exception as err:
+            if err.__class__.__name__ == 'ConditionalCheckFailedException':
+                logger.warning(f"Update failed due to already running task {task}. "
+                               f"Probably concurrent Orchestrator already invoked.")
+                self.stats['concurrent_task_invocations_skipped'] += 1
+                return
+            else:
+                logger.exception(err)
+                raise RuntimeError(err)
+
+
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,
                 InvocationType='Event',
@@ -90,14 +103,21 @@ class TaskManager(Processor):
         )
         logger.debug(lambda_response)
 
-        self.mark_task_invoked(task)
 
 
-    def mark_task_invoked(self, task: Dict):
+    def mark_task_invoked(self, labourer: Labourer, task: Dict, check_running: Optional[bool] = True):
         """
         Update the greenfield with the latest invocation timestamp + invocation_delta
-        :param task:
-        :return:
+
+        By default updates with a conditional expression that fails in case the current greenfield is already in
+        `invoked` state. If this check fails the function raises RuntimeError that should be handled
+        by the Orchestrator. This is very important to help duplicate invocations of the Worker by simultaneously
+        running Orchestrators.
+
+        :param labourer:        Labourer for the task
+        :param task:            Task dictionary
+        :param check_running:   If True (default) updates with conditional expression.
+        :raises RuntimeError
         """
 
         tf = self.get_db_field_name('task_id')  # Main key field
@@ -105,10 +125,14 @@ class TaskManager(Processor):
         gf = self.get_db_field_name('greenfield')
         af = self.get_db_field_name('attempts')
 
+        assert labourer.id == task[lf], f"Task doesn't belong to the Labourer {labourer}: {task}"
+
         self.dynamo_db_client.update(
-                {tf: task[tf], lf: task[lf]},
+                {tf: task[tf], lf: labourer.id},
                 attributes_to_update={gf: int(time.time()) + self.config['greenfield_invocation_delta']},
-                attributes_to_increment={af: 1})
+                attributes_to_increment={af: 1},
+                condition_expression=f"{gf} < {labourer.get_timestamp('start')}"
+        )
 
 
     def close_task(self, task_id: str):
@@ -203,7 +227,7 @@ class TaskManager(Processor):
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    lf: labourer.id,
+                    lf:                 labourer.id,
                     f"st_between_{gf}": labourer.get_timestamp('expired'),
                     f"en_between_{gf}": labourer.get_timestamp('invoked'),
                 },
