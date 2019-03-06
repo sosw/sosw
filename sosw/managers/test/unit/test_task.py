@@ -202,3 +202,17 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(self.manager.calculate_count_of_running_tasks_for_labourer(labourer=lab), 3)
         self.manager.get_running_tasks_for_labourer.assert_called_once()
+
+
+    def test_get_labourers(self):
+        self.config['labourers'] = {
+            'some_lambda': {'foo': 'bar', 'arn': '123'},
+            'some_lambda2': {'foo': 'baz'},
+        }
+        self.task_client = TaskManager(custom_config=self.config)
+
+        result = self.task_client.get_labourers()
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result['some_lambda'].foo, 'bar')
+        self.assertEqual(result['some_lambda'].arn, '123')
+        self.assertEqual(result['some_lambda2'].foo, 'baz')
