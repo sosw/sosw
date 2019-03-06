@@ -44,7 +44,7 @@ class Processor:
         self.config = self.DEFAULT_CONFIG.copy()
         self.config.update(self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config.update(custom_config or {})
-        logger.info(f"Final processor config: {self.config}")
+        logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
 
@@ -92,6 +92,7 @@ class Processor:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                     some_client_config = self.config.get(f"{module_name}_config")
+                    logger.info(f"Found config for {module_name}: {some_client_config}")
                     if some_client_config:
                         setattr(self, f"{module_name}_client", some_class(config=some_client_config))
                     else:
@@ -99,6 +100,7 @@ class Processor:
                     logger.info(f"Successfully registered {module_name}_client")
                     break
                 except:
+                    logger.exception(f"Failed suffix {suffix}")
                     pass
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "

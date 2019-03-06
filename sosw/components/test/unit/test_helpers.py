@@ -1,6 +1,4 @@
 import datetime
-import logging
-import shutil
 import time
 import unittest
 import os
@@ -9,7 +7,7 @@ import os
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from ..helpers import *
+from sosw.components.helpers import *
 
 
 class helpers_UnitTestCase(unittest.TestCase):
@@ -381,9 +379,9 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_convert_string_to_words(self):
-        self.assertEquals(convert_string_to_words('Best Dating NY'), 'best,dating,ny')
-        self.assertEquals(convert_string_to_words('   Best     Dating NY'), 'best,dating,ny')
-        self.assertEquals(convert_string_to_words('Best 42 daTing sites     '), 'best,42,dating,sites')
+        self.assertEqual(convert_string_to_words('Best Dating NY'), 'best,dating,ny')
+        self.assertEqual(convert_string_to_words('   Best     Dating NY'), 'best,dating,ny')
+        self.assertEqual(convert_string_to_words('Best 42 daTing sites     '), 'best,42,dating,sites')
 
 
     def test_construct_dates_from_event__conflict_of_attributes(self):
