@@ -66,13 +66,13 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
 
 
-    @unittest.skip("With mocked boto3 this doesn't pass.")
     @mock.patch("boto3.client")
     def test_app_init__with_some_invalid_client(self, mock_boto_client):
         custom_config = {
-            'init_clients': ['NotExists', 'Sns']
+            'init_clients': ['NotExists']
         }
-        self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
+        Processor(custom_config=custom_config)
+        mock_boto_client.assert_called_with('not_exists')
 
 
     @mock.patch("sosw.app.get_config")
