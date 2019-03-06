@@ -508,8 +508,9 @@ class DynamoDbClient:
 
 
     @benchmark
-    def update(self, keys, attributes_to_update=None, attributes_to_increment=None,
-               condition_expression=None, table_name=None):
+    def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
+               attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+               condition_expression: Optional[str] = None):
         """
         Updates an item in DynamoDB.
 
@@ -570,7 +571,7 @@ class DynamoDbClient:
             update_item_query['ConditionExpression'] = expr
             update_item_query['ExpressionAttributeValues'].update(values)
 
-        logger.info(f"Updating an item, query: {update_item_query}")
+        logger.debug(f"Updating an item, query: {update_item_query}")
         response = self.dynamo_client.update_item(**update_item_query)
         logger.debug(f"Update result: {response}")
         self.stats['dynamo_update_queries'] += 1
