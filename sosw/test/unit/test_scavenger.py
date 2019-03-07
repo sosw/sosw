@@ -5,7 +5,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 
 from sosw.scavenger import Scavenger
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_SCAVENGER_CONFIG
 
 
 os.environ["STAGE"] = "test"
@@ -13,7 +13,7 @@ os.environ["autotest"] = "True"
 
 
 class Scavenger_UnitTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG
+    TEST_CONFIG = TEST_SCAVENGER_CONFIG
 
 
     def setUp(self):
@@ -47,11 +47,10 @@ class Scavenger_UnitTestCase(unittest.TestCase):
 
 
     def test_call(self):
-        labourers = {
-            'some_lambda':    Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
-            'another_lambda': Labourer(id='another_lambda', arn='another_arn'),
-            'lambda3':        Labourer(id='lambda3', arn='arn3'),
-        }
+        labourers = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
+                     Labourer(id='another_lambda', arn='another_arn'),
+                     Labourer(id='lambda3', arn='arn3')
+                     ]
 
         expired_tasks = [
             {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
@@ -59,11 +58,13 @@ class Scavenger_UnitTestCase(unittest.TestCase):
             {'task_id': '125', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'}
         ]
 
+
         def get_expired_tasks(labourer):
             return {
                 'some_lambda':    [expired_tasks[0]],
                 'another_lambda': [expired_tasks[1], expired_tasks[2]]
             }.get(labourer.id, [])
+
 
         def get_closed_tasks(labourer):
             return {

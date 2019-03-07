@@ -35,7 +35,7 @@ class Scavenger(Processor):
 
     def __call__(self):
         # Get labourers
-        labourers = self.task_client.get_labourers()
+        labourers = self.task_client.register_labourers()
 
         # Handle expired tasks - close or allow to retry
         for name, labourer in labourers.items():

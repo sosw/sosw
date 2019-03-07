@@ -43,7 +43,8 @@ class Orchestrator(Processor):
 
 
     def __call__(self, event):
-        labourers = self.task_client.get_labourers()
+        labourers = self.task_client.register_labourers()
+
         for labourer in labourers:
             self.invoke_for_labourer(labourer)
 

@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 class TaskManager(Processor):
     DEFAULT_CONFIG = {
-        'init_clients':                ['DynamoDb', 'lambda'],
+        'init_clients':                ['DynamoDb', 'lambda', 'Ecology'],
         'dynamo_db_config':            {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
@@ -52,21 +52,24 @@ class TaskManager(Processor):
     }
 
 
-    def register_labourers(self, labourers: List[Labourer]):
-        """ Sets timestamps on Labourer objects passed for registration. """
+    def register_labourers(self) -> List[Labourer]:
+        """ Sets timestamps, health status and other custom attributes on Labourer objects passed for registration. """
 
         # This must be something ordered, because these methods depend on one another.
         TIMES = (
             ('start', lambda x: int(time.time())),
-            ('invoked', lambda x: x.get_timestamp('start') + self.config['greenfield_invocation_delta']),
-            ('expired', lambda x: x.get_timestamp('invoked') - (x.duration + x.cooldown)),
+            ('invoked', lambda x: x.get_attr('start') + self.config['greenfield_invocation_delta']),
+            ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
+            ('health', lambda x: self.ecology_client.get_labourer_status(x))
         )
+
+        labourers = self.get_labourers()
 
         result = []
         for labourer in labourers:
             for k, method in [x for x in TIMES]:
-                labourer.set_timestamp(k, method(labourer))
-
+                labourer.set_custom_attribute(k, method(labourer))
+                print(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
 
         return result
@@ -137,7 +140,7 @@ class TaskManager(Processor):
                 {tf: task[tf], lf: labourer.id},
                 attributes_to_update={gf: int(time.time()) + self.config['greenfield_invocation_delta']},
                 attributes_to_increment={af: 1},
-                condition_expression=f"{gf} < {labourer.get_timestamp('start')}"
+                condition_expression=f"{gf} < {labourer.get_attr('start')}"
         )
 
 
@@ -164,7 +167,7 @@ class TaskManager(Processor):
         """
 
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
-        max_greenfield = labourer.get_timestamp('start')
+        max_greenfield = labourer.get_attr('start')
 
         result = self.dynamo_db_client.get_by_query(
                 {
@@ -210,7 +213,7 @@ class TaskManager(Processor):
         query_args = {
             'keys':        {
                 lf: labourer.id,
-                gf: labourer.get_timestamp('invoked')
+                gf: labourer.get_attr('invoked')
             },
             'comparisons': {gf: '>='},
             'index_name':  self.config['dynamo_db_config']['index_greenfield'],
@@ -238,8 +241,8 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query(
                 keys={
                     lf:                 labourer.id,
-                    f"st_between_{gf}": labourer.get_timestamp('expired'),
-                    f"en_between_{gf}": labourer.get_timestamp('invoked'),
+                    f"st_between_{gf}": labourer.get_attr('expired'),
+                    f"en_between_{gf}": labourer.get_attr('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression='attribute_not_exists closed'
@@ -267,18 +270,18 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query(
                 keys={
                     lf:                 labourer.id,
-                    f"st_between_{gf}": labourer.get_timestamp('start'),
-                    f"en_between_{gf}": labourer.get_timestamp('expired'),
+                    f"st_between_{gf}": labourer.get_attr('start'),
+                    f"en_between_{gf}": labourer.get_attr('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression='attribute_not_exists closed',
         )
 
 
-    def get_labourers(self) -> Dict[str, Labourer]:
+    def get_labourers(self) -> List[Labourer]:
         """
-        Return configured Labourers as a dict with 'name' as key.
+        Return configured Labourers.
         Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
         """
 
-        return {name: Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()}
+        return [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]
