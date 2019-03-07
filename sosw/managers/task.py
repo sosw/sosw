@@ -43,6 +43,12 @@ class TaskManager(Processor):
             }
         },
         'greenfield_invocation_delta': 31557600,  # 1 year.
+        'labourers': {
+            # 'some_function': {
+            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+            #     'max_simultaneous_invocations': 10,
+            # }
+        },
     }
 
 
@@ -136,6 +142,10 @@ class TaskManager(Processor):
 
 
     def close_task(self, task_id: str):
+        raise NotImplementedError
+
+
+    def archive_task(self, task_id: str):
         raise NotImplementedError
 
 
@@ -263,3 +273,12 @@ class TaskManager(Processor):
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression='attribute_not_exists closed',
         )
+
+
+    def get_labourers(self) -> Dict[str, Labourer]:
+        """
+        Return configured Labourers as a dict with 'name' as key.
+        Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
+        """
+
+        return {name: Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()}

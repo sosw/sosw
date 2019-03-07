@@ -93,19 +93,3 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
             self.orchestrator.ecology_client.get_labourer_status.return_value = eco
 
             self.assertEqual(self.orchestrator.get_desired_invocation_number_for_labourer(Labourer(id=1)), expected)
-
-
-    def test_get_labourers(self):
-        self.custom_config['labourers'] = {
-            'some_lambda': {'foo': 'bar', 'arn': '123'},
-            'some_lambda2': {'foo': 'baz'},
-        }
-        self.orchestrator = Orchestrator(custom_config=self.custom_config)
-
-        result = self.orchestrator.get_labourers()
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result['some_lambda'].foo, 'bar')
-        self.assertEqual(result['some_lambda'].arn, '123')
-        self.assertEqual(result['some_lambda2'].foo, 'baz')
-
-

@@ -1,23 +1,29 @@
+TASKS_TABLE_CONFIG = {
+    'row_mapper':       {
+        'task_id':  'S',
+        'labourer_id': 'S',
+        'greenfield': 'N',
+        'attempts':  'N',
+    },
+    'required_fields':  ['task_id', 'labourer_id'],
+    'table_name':       'autotest_sosw_tasks',
+    'index_greenfield': 'autotest_sosw_tasks_greenfield',
+    'field_names':      {
+        'task_id':     'task_id',
+        'labourer_id': 'labourer_id',
+        'greenfield':  'greenfield',
+    }
+}
+
 TEST_CONFIG = {
     'init_clients':          [],
     'task_client_config':    {
         'init_clients':     [],
-        'dynamo_db_config': {
-            'row_mapper':       {
-                'task_id':  'S',
-                'labourer_id': 'S',
-                'greenfield': 'N',
-                'attempts':  'N',
-            },
-            'required_fields':  ['task_id', 'labourer_id'],
-            'table_name':       'autotest_sosw_tasks',
-            'index_greenfield': 'autotest_sosw_tasks_greenfield',
-            'field_names':      {
-                'task_id':     'task_id',
-                'labourer_id': 'labourer_id',
-                'greenfield':  'greenfield',
-            }
-        },
+        'dynamo_db_config': TASKS_TABLE_CONFIG,
+    },
+    'scavenger_client_config': {
+        'init_clients':     [],
+        'dynamo_db_config': TASKS_TABLE_CONFIG,
     },
     'ecology_client_config': {
         'test': True
