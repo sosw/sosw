@@ -11,6 +11,7 @@ from typing import Dict
 import time
 
 from sosw.app import Processor
+from sosw.labourer import Labourer
 
 
 logger = logging.getLogger()
@@ -34,25 +35,30 @@ class Scavenger(Processor):
 
 
     def __call__(self):
-        # Get labourers
         labourers = self.task_client.register_labourers()
 
-        # Handle expired tasks - close or allow to retry
-        for name, labourer in labourers.items():
-            expired_tasks = self.task_client.get_expired_tasks_for_labourer(labourer)
-            if expired_tasks:
-                labourer_health = self.ecology_client.get_labourer_status(labourer)
+        for labourer in labourers:
+            self.handle_expired_tasks_for_labourer(labourer)
 
-                for task in expired_tasks:
-                    self.process_expired_task(task, labourer_health)
+        for labourer in labourers:
+            self.archive_closed_tasks_for_labourer(labourer)
 
-        # Archive closed tasks
-        for name, labourer in labourers.items():
-            closed_tasks = self.task_client.get_closed_tasks_for_labourer(labourer)
 
-            for task in closed_tasks:
-                task_id = task[self.get_db_field_name('task_id')]
-                self.task_client.archive_task(task_id)
+    def handle_expired_tasks_for_labourer(self, labourer: Labourer):
+        expired_tasks = self.task_client.get_expired_tasks_for_labourer(labourer)
+        if expired_tasks:
+            labourer_health = self.ecology_client.get_labourer_status(labourer)
+
+            for task in expired_tasks:
+                self.process_expired_task(task, labourer_health)
+
+
+    def archive_closed_tasks_for_labourer(self, labourer: Labourer):
+        closed_tasks = self.task_client.get_closed_tasks_for_labourer(labourer)
+
+        for task in closed_tasks:
+            task_id = task[self.get_db_field_name('task_id')]
+            self.task_client.archive_task(task_id)
 
 
     def process_expired_task(self, task: Dict, labourer_health: int):

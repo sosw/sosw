@@ -46,18 +46,37 @@ class Scavenger_UnitTestCase(unittest.TestCase):
             pass
 
 
+    @property
+    def labourers(self):
+        return [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
+                Labourer(id='another_lambda', arn='another_arn'),
+                Labourer(id='lambda3', arn='arn3')]
+
+
     def test_call(self):
         labourers = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
                      Labourer(id='another_lambda', arn='another_arn'),
-                     Labourer(id='lambda3', arn='arn3')
-                     ]
+                     Labourer(id='lambda3', arn='arn3')]
 
+        health = 4
+
+        # Mock
+        self.scavenger.task_client.get_labourers = Mock(return_value=labourers)
+
+
+        # Call
+        self.scavenger()
+
+
+
+
+    def test_handle_expired_tasks_for_labourer(self):
+        health = 4
         expired_tasks = [
             {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
             {'task_id': '124', 'labourer_id': 'another_lambda', 'attempts': 4, 'greenfield': '321'},
             {'task_id': '125', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'}
         ]
-
 
         def get_expired_tasks(labourer):
             return {
@@ -72,19 +91,13 @@ class Scavenger_UnitTestCase(unittest.TestCase):
                 'another_lambda': [expired_tasks[1]]
             }.get(labourer.id, [])
 
-
-        health = 4
-
-        # Mock
-        self.scavenger.task_client.get_labourers = Mock(return_value=labourers)
         self.scavenger.ecology_client.get_labourer_status = Mock(return_value=health)
         self.scavenger.task_client.get_expired_tasks_for_labourer = MagicMock(side_effect=get_expired_tasks)
         self.scavenger.task_client.get_closed_tasks_for_labourer = MagicMock(side_effect=get_closed_tasks)
         self.scavenger.process_expired_task = Mock()
         self.scavenger.task_client.archive_task = Mock()
 
-        # Call
-        self.scavenger()
+        ## ----
 
         # Check mock calls
         self.scavenger.task_client.get_labourers.assert_called_once_with()
@@ -113,6 +126,13 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.archive_task.assert_has_calls([
             call('123'), call('124')
         ])
+
+
+        raise NotImplementedError
+
+
+    def test_archive_closed_tasks_for_labourer(self):
+        raise NotImplementedError
 
 
     def test_process_expired_task__close(self):
