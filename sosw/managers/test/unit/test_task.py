@@ -42,6 +42,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.manager = TaskManager(custom_config=self.config)
         self.manager.dynamo_db_client = MagicMock()
+        self.manager.ecology_client = MagicMock()
+        self.manager.ecology_client.get_labourer_status.return_value = 2
         self.manager.lambda_client = MagicMock()
 
 
@@ -191,9 +193,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         invoke_time = 123 + self.manager.config['greenfield_invocation_delta']
 
-        self.assertEqual(lab.get_timestamp('start'), 123)
-        self.assertEqual(lab.get_timestamp('invoked'), invoke_time)
-        self.assertEqual(lab.get_timestamp('expired'), invoke_time - lab.duration - lab.cooldown)
+        self.assertEqual(lab.get_attr('start'), 123)
+        self.assertEqual(lab.get_attr('invoked'), invoke_time)
+        self.assertEqual(lab.get_attr('expired'), invoke_time - lab.duration - lab.cooldown)
 
 
     def test_calculate_count_of_running_tasks_for_labourer(self):
