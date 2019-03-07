@@ -5,7 +5,7 @@ from copy import deepcopy
 from unittest.mock import Mock
 
 from sosw.scavenger import Scavenger
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_SCAVENGER_CONFIG
 from sosw.components.dynamo_db import DynamoDbClient
 
 
@@ -14,7 +14,7 @@ os.environ["autotest"] = "True"
 
 
 class Scavenger_IntegrationTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG['scavenger_client_config']
+    TEST_CONFIG = TEST_SCAVENGER_CONFIG
 
     def setUp(self):
         self.scavenger = Scavenger(self.TEST_CONFIG)
