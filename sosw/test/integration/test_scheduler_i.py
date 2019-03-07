@@ -44,13 +44,18 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
 
     def put_file(self, local=None, key=None):
-        with open(local or self.scheduler._local_queue_file, 'w') as f:
-            for _ in range(10):
-                f.write(f"hello Liat {random.randint(0,99)}\n")
+        self.make_local_file('Liat')
 
         self.s3_client.upload_file(Filename=local or self.scheduler._local_queue_file,
                                    Bucket='autotest-bucket',
                                    Key=key or self.scheduler._remote_queue_file)
+
+
+    def make_local_file(self, girl_name="Athena", fname=None, rows=10):
+
+        with open(fname or self.scheduler._local_queue_file, 'w') as f:
+            for i in range(rows):
+                f.write(f"hello {girl_name} {i} {random.randint(0,99)}\n")
 
 
     @staticmethod
@@ -107,9 +112,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
         self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
 
-        with open(self.scheduler._local_queue_file, 'w') as f:
-            for _ in range(10):
-                f.write(f"Hello Demida {random.randint(0,99)}\n")
+        self.make_local_file('Demida')
 
         self.scheduler.upload_and_unlock_queue_file()
 
@@ -120,6 +123,17 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
     def test_upload_and_unlock_queue_file__handles_existing_locked(self):
 
         self.put_file(key=self.scheduler._remote_queue_locked_file)
+
         # Check old artifacts
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
         self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
+
+        self.make_local_file('Nora')
+
+        self.scheduler.upload_and_unlock_queue_file()
+
+        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_file))
+
+
+

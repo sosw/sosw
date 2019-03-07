@@ -52,8 +52,19 @@ class Scheduler(Processor):
         self.st_time = time.time()
 
 
-    def parse_job(self, job):
-        pass
+    def parse_job(self, job: Dict):
+        """
+        Splits the Job to multiple tasks and writes them down in self._local_queue_file.
+
+        :param dict job:    Payload from Scheduled Rule.
+                            Should be already parsed from whatever payload to dict and contain the raw `job`
+        """
+
+        data = job if isinstance(job, dict) else json.loads(job)
+
+        labourer = Labourer(id=data[''])
+
+        raise Exception
 
 
     def process_file(self):
@@ -61,7 +72,7 @@ class Scheduler(Processor):
         file_name = self.get_and_lock_queue_file()
 
         if not file_name:
-            logger.info(f"No file received for popping.")
+            logger.info(f"No file in queue.")
             return
         else:
             while self.sufficient_execution_time_left:

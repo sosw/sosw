@@ -48,17 +48,17 @@ class Labourer_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.duration, 300)
 
 
-    def test_get_timestamps__raises(self):
+    def test_get_custom_attributes__raises(self):
 
         lab = Labourer(id=42)
-        self.assertRaises(ValueError, lab.get_timestamp, 'invalid')
-        self.assertRaises(AttributeError, lab.get_timestamp, 'start')
+        self.assertRaises(ValueError, lab.get_custom_attribute, 'invalid')
+        self.assertRaises(AttributeError, lab.get_custom_attribute, 'start')
 
 
-    def test_set_timestamps(self):
+    def test_set_custom_attributes(self):
         lab = Labourer(id=42)
 
         self.assertIsNone(getattr(lab, 'start', None))
-        lab.set_timestamp('start', time.time())
+        lab.set_custom_attribute('start', time.time())
 
         self.assertLessEqual(lab.start, time.time())
