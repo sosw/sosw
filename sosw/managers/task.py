@@ -52,8 +52,8 @@ class TaskManager(Processor):
     }
 
 
-    def register_labourers(self, labourers: List[Labourer]):
-        """ Sets timestamps on Labourer objects passed for registration. """
+    def register_labourers(self) -> List[Labourer]:
+        """ Sets timestamps, health status and other custom attributes on Labourer objects passed for registration. """
 
         # This must be something ordered, because these methods depend on one another.
         TIMES = (
@@ -63,11 +63,13 @@ class TaskManager(Processor):
             ('health', lambda x: self.ecology_client.get_labourer_status(x))
         )
 
+        labourers = self.get_labourers()
+
         result = []
         for labourer in labourers:
             for k, method in [x for x in TIMES]:
                 labourer.set_custom_attribute(k, method(labourer))
-
+                print(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
 
         return result
@@ -276,10 +278,10 @@ class TaskManager(Processor):
         )
 
 
-    def get_labourers(self) -> Dict[str, Labourer]:
+    def get_labourers(self) -> List[Labourer]:
         """
-        Return configured Labourers as a dict with 'name' as key.
+        Return configured Labourers.
         Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
         """
 
-        return {name: Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()}
+        return [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]

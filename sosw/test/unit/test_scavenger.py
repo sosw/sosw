@@ -5,7 +5,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 
 from sosw.scavenger import Scavenger
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_SCAVENGER_CONFIG
 
 
 os.environ["STAGE"] = "test"
@@ -13,7 +13,7 @@ os.environ["autotest"] = "True"
 
 
 class Scavenger_UnitTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG
+    TEST_CONFIG = TEST_SCAVENGER_CONFIG
 
 
     def setUp(self):

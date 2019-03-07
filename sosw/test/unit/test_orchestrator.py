@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from sosw.orchestrator import Orchestrator
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
 
 
 os.environ["STAGE"] = "test"
@@ -15,7 +15,7 @@ os.environ["autotest"] = "True"
 
 
 class Orchestrator_UnitTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG
+    TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG
 
 
     def setUp(self):

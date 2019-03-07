@@ -64,7 +64,7 @@ class Labourer:
 
 
 
-    def get_attr(self, name: str) -> int:
+    def get_attr(self, name: str):
         """ The Labourer must be first registered in TaskManager for this to work. """
 
         if name not in self.CUSTOM_ATTRIBUTES:

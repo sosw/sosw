@@ -16,12 +16,12 @@ os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG['task_client_config']
+    TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
     LABOURER = Labourer(id='some_lambda', arn='arn:aws:lambda:some_lambda')
 
 
