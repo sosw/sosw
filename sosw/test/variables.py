@@ -20,6 +20,7 @@ TEST_CONFIG = {
     'task_client_config':    {
         'init_clients':     [],
         'dynamo_db_config': TASKS_TABLE_CONFIG,
+        'sosw_closed_tasks_table': 'autotest_sosw_closed_tasks'
     },
     'scavenger_client_config': {
         'init_clients':     [],

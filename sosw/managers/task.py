@@ -42,6 +42,7 @@ class TaskManager(Processor):
                 'task_id': 'task_id',
             }
         },
+        'sosw_closed_tasks_table': 'sosw_closed_tasks',
         'greenfield_invocation_delta': 31557600,  # 1 year.
         'labourers': {
             # 'some_function': {
@@ -146,13 +147,32 @@ class TaskManager(Processor):
 
 
     def archive_task(self, task_id: str):
-        raise NotImplementedError
+        _ = self.get_db_field_name
+
+        # Get task
+        task = self.get_task_by_id(task_id)
+        completed_task = task.copy()
+
+        # Update labourer_id_task_status field.
+        is_completed = 1 if completed_task.get(_('completed_at')) else 0
+        labourer_id = completed_task.get(_('labourer_id'))
+        completed_task[_('labourer_id_task_status')] = f"{labourer_id}_{is_completed}"
+
+        # Add it to completed tasks table:
+        self.dynamo_db_client.put(completed_task, table_name=self.config.get('sosw_closed_tasks_table'))
+
+        keys = {
+            _('labourer_id'): completed_task[_('labourer_id')],
+            _('task_id'): completed_task[_('task_id')],
+        }
+        self.dynamo_db_client.delete(keys)
 
 
     def get_task_by_id(self, task_id: str) -> Dict:
         """ Fetches the full data of the Task. """
 
-        return self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
+        tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
+        return tasks[0] if tasks else None
 
 
     def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:

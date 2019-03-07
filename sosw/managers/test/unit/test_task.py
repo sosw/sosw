@@ -5,8 +5,7 @@ import random
 import time
 import unittest
 
-from collections import defaultdict
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -216,3 +215,22 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(result['some_lambda'].foo, 'bar')
         self.assertEqual(result['some_lambda'].arn, '123')
         self.assertEqual(result['some_lambda2'].foo, 'baz')
+
+
+    def test_archive_task(self):
+        task_id = '918273'
+        task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}', 'completed_at': '1551962375',
+                'closed_at': '111'}
+
+        # Mock
+        self.manager.dynamo_db_client = MagicMock()
+        self.manager.get_task_by_id = Mock(return_value=task)
+
+        # Call
+        self.manager.archive_task(task_id)
+
+        # Check calls
+        expected_completed_task = task.copy()
+        expected_completed_task['labourer_id_task_status'] = 'some_lambda_1'
+        self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG['sosw_closed_tasks_table'])
+        self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})

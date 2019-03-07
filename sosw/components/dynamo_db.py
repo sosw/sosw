@@ -577,6 +577,23 @@ class DynamoDbClient:
         self.stats['dynamo_update_queries'] += 1
 
 
+    def delete(self, keys: Dict, table_name: Optional[str] = None):
+        """
+
+        :param dict keys: Keys and values of the row we delete.
+        :param table_name:
+        """
+
+        table_name = self._get_validate_table_name(table_name)
+
+        keys = self.dict_to_dynamo(keys, strict=False)
+
+        self.dynamo_client.delete_item(
+                TableName=table_name,
+                Key=keys
+        )
+
+
     def _get_validate_table_name(self, table_name=None):
         if table_name is None:
             table_name = self.config.get('table_name')
@@ -585,7 +602,7 @@ class DynamoDbClient:
                 raise RuntimeError("Failed to dynamo action. no 'table_name' in config  and table_name wasn't "
                                    "specified in the arguments.")
         if os.environ.get('STAGE') == 'test':
-            assert table_name.startswith('autotest_') or table_name == 'config'
+            assert table_name.startswith('autotest_') or table_name == 'config', f"Bad table name in test: {table_name}"
 
         return table_name
 
