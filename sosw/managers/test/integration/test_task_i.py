@@ -48,7 +48,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
-
+        self.manager.ecology_client = MagicMock()
 
     def tearDown(self):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
@@ -115,10 +115,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                         "Returned some tasks of other Workers")
 
 
+    def register_labourers(self):
+        self.manager.get_labourers = MagicMock(return_value=[self.LABOURER])
+        self.manager.register_labourers()
+
+
     def test_mark_task_invoked(self):
         greenfield = round(time.time() - random.randint(100, 1000))
         delta = self.manager.config['greenfield_invocation_delta']
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         row = {
             self.HASH_KEY[0]:  f"task_id_{self.LABOURER.id}_256",  # Task ID
@@ -139,7 +144,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_invoked_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
@@ -148,7 +153,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_running_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='available')
         self.setup_tasks(status='running')
@@ -157,7 +162,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_expired_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
