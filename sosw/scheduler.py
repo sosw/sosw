@@ -11,6 +11,7 @@ import json
 import logging
 import math
 import os
+import re
 import time
 
 from importlib import import_module
@@ -51,6 +52,10 @@ class Scheduler(Processor):
         # FIXME this is a temporary solution. Should take remaining time from Context object.
         self.st_time = time.time()
 
+        job = self.extract_job_from_payload(event)
+
+        self.parse_job(job)
+
 
     def parse_job(self, job: Dict):
         """
@@ -78,6 +83,12 @@ class Scheduler(Processor):
         job['lambda_name'] = job['lambda_name']
 
         return job
+
+
+    def get_name_from_arn(self, data):
+        pattern = ":function:([0-9a-zA-Z_=,.@-]*)([:$#0-9a-zA-Z]*)?"
+
+        print(re.split(pattern, data))
 
 
     def process_file(self):

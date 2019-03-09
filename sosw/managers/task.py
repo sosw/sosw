@@ -69,7 +69,7 @@ class TaskManager(Processor):
         for labourer in labourers:
             for k, method in [x for x in TIMES]:
                 labourer.set_custom_attribute(k, method(labourer))
-                print(f"SET for {labourer}: {k} = {method(labourer)}")
+                logger.debug(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
 
         return result
