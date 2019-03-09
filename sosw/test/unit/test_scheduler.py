@@ -22,6 +22,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
     FNAME = '/tmp/aglaya.txt'
 
+
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
@@ -43,6 +44,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             os.remove(self.FNAME)
         except:
             pass
+
 
     def put_local_file(self, file_name=None, json=False):
         with open(file_name or self.scheduler._local_queue_file, 'w') as f:
@@ -136,3 +138,35 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             self.scheduler.upload_and_unlock_queue_file.assert_called_once()
 
+
+    def test_extract_job_from_payload(self):
+
+        TESTS = [
+            ({'job': {'lambda_name': 'foo', 'payload_attr': 'val'}}, {'lambda_name': 'foo', 'payload_attr': 'val'}),
+            ({'lambda_name': 'foo', 'payload_attr': 'val'}, {'lambda_name': 'foo', 'payload_attr': 'val'}),
+            ({'job': {'lambda_name': 'foo', 'payload_attr': 'val'}}, {'lambda_name': 'foo', 'payload_attr': 'val'}),
+
+            # JSONs
+            ('{"lambda_name": "foo", "payload_attr": "val"}', {'lambda_name': 'foo', 'payload_attr': 'val'}),
+            ('{"job": {"lambda_name": "foo", "payload_attr": "val"}}', {'lambda_name': 'foo', 'payload_attr': 'val'}),
+            ('{"job": "{\\"lambda_name\\": \\"foo\\", \\"payload_attr\\": \\"val\\"}"}',
+             {'lambda_name': 'foo', 'payload_attr': 'val'}),
+
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.scheduler.extract_job_from_payload(test), expected)
+
+
+    def test_extract_job_from_payload_raises(self):
+
+        TESTS = [
+            42,
+            {'payload_attr': 'val'},
+            "{'payload_attr': 'val'}",
+            {'job': {'payload_attr': 'val'}},
+            {"job": "bad one"},
+        ]
+
+        for test in TESTS:
+            self.assertRaises(Exception, self.scheduler.extract_job_from_payload, test)

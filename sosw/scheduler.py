@@ -60,11 +60,24 @@ class Scheduler(Processor):
                             Should be already parsed from whatever payload to dict and contain the raw `job`
         """
 
-        data = job if isinstance(job, dict) else json.loads(job)
-
-        labourer = Labourer(id=data[''])
+        labourer = Labourer(id=job['lambda_name'])
 
         raise Exception
+
+
+    def extract_job_from_payload(self, event: Dict):
+        """ Parse and basically validate job from the event. """
+
+        def load(obj):
+            return obj if isinstance(obj, dict) else json.loads(obj)
+
+        jh = load(event)
+        job = load(jh['job']) if 'job' in jh else jh
+
+        assert 'lambda_name' in job, f"Job is missing required parameter 'lambda_name': {job}"
+        job['lambda_name'] = job['lambda_name']
+
+        return job
 
 
     def process_file(self):

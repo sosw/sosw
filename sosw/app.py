@@ -5,8 +5,9 @@ import os
 from importlib import import_module
 from collections import defaultdict
 
-from sosw.components.helpers import *
+from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
+from sosw.components.helpers import *
 
 
 __author__ = "Nikolay Grishchenko"
@@ -14,7 +15,6 @@ __email__ = "dev@bimpression.com"
 __version__ = "0.3.1"
 __license__ = "MIT"
 __status__ = "Production"
-
 
 __all__ = ['Processor']
 
@@ -28,6 +28,9 @@ class Processor:
     """
 
     DEFAULT_CONFIG = {}
+    # TODO USE context.invoked_function_arn.
+    aws_account = None
+    aws_region = None
 
 
     def __init__(self, custom_config=None, **kwargs):
@@ -51,6 +54,7 @@ class Processor:
         self.register_clients(self.config.get('init_clients', []))
 
 
+    @benchmark
     def register_clients(self, clients):
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
@@ -130,6 +134,45 @@ class Processor:
         return get_config(name)
 
 
+    @property
+    def _account(self):
+        """
+        Get current AWS Account to construct different ARNs. The autodetection process is pretty heavy (~0.3 seconds),
+        so it is not called by default. This method should be used only if you really need it.
+
+        It is highly recommended to provide the value of aws_account in your configs.
+
+        Some things to note:
+         - We store this value in class variable for fast access
+         - If not yet set on the first call we initialise it.
+         - We first try from your config and only if not provided - use the autodetection.
+
+        TODO This method is overcomplicated. Change to to parsing the ARN from context object. But config can overwrite.
+        TODO https://github.com/bimpression/sosw/issues/40
+        """
+        if self.aws_account:
+            return self.aws_account
+
+        else:
+            try:
+                self.aws_account = self.config['aws_account']
+            except KeyError:
+                self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
+
+            return self.aws_account
+
+
+    @property
+    def _region(self):
+        # TODO Implement this to get it effectively from context object.
+        # TODO https://github.com/bimpression/sosw/issues/40
+        if self.aws_region:
+            return self.aws_region
+
+        else:
+            return 'us-west-2'
+
+
     def get_stats(self):
         """
         Return statistics of operations performed by current instance of the Class.
@@ -199,7 +242,6 @@ class Processor:
         raise RuntimeError(message)
 
 
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Destructor.
@@ -210,7 +252,6 @@ class Processor:
 
         Other database connections are also closed if found.
         """
-
 
         try:
             self.sql.sqldb.session.remove()
