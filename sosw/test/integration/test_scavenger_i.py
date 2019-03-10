@@ -45,7 +45,7 @@ class Scavenger_IntegrationTestCase(unittest.TestCase):
         task = tasks[0]
 
         expected_task = deepcopy(self.task)
-        expected_task[_('attempts')] = 3
+        expected_task[_('attempts')] = 2
         expected_task[_('greenfield')] = 9999
 
         self.assertDictEqual(task, expected_task)

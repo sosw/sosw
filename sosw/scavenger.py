@@ -98,8 +98,7 @@ class Scavenger(Processor):
 
         self.dynamo_db_client.update(
                 {_('task_id'): task[_('task_id')], _('labourer_id'): task[_('labourer_id')]},
-                attributes_to_update={_('greenfield'): new_greenfield},
-                attributes_to_increment={_('attempts'): 1}
+                attributes_to_update={_('greenfield'): new_greenfield}
         )
 
 
