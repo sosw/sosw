@@ -47,10 +47,8 @@ class Scavenger(Processor):
     def handle_expired_tasks_for_labourer(self, labourer: Labourer):
         expired_tasks = self.task_client.get_expired_tasks_for_labourer(labourer)
         if expired_tasks:
-            labourer_health = self.ecology_client.get_labourer_status(labourer)
-
             for task in expired_tasks:
-                self.process_expired_task(task, labourer_health)
+                self.process_expired_task(task)
 
 
     def archive_closed_tasks_for_labourer(self, labourer: Labourer):
@@ -61,33 +59,28 @@ class Scavenger(Processor):
             self.task_client.archive_task(task_id)
 
 
-    def process_expired_task(self, task: Dict, labourer_health: int):
+    def process_expired_task(self, task: Dict):
         _ = self.get_db_field_name
 
-        if self.should_retry_task(task, labourer_health):
+        if self.should_retry_task(task):
             self.allow_task_to_retry(task)
         else:
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
             self.task_client.close_task(task[_('task_id')])
 
 
-    def should_retry_task(self, task: Dict, labourer_health: int) -> bool:
+    def should_retry_task(self, task: Dict) -> bool:
         _ = self.get_db_field_name
 
         attempts = task.get(_('attempts'))
-        created_at = task.get(_('created_at'))
         labourer_id = task.get(_('labourer_id'))
 
-        if created_at < time.time() - self.config.get('max_retry_delta_ms'):
-            return False
-
-        if self.config.get(f'max_attempts_{labourer_id}') \
-                and attempts > self.config.get(f'max_attempts_{labourer_id}'):
+        if self.config.get(f'max_attempts_{labourer_id}') and attempts > self.config.get(f'max_attempts_{labourer_id}'):
             return False
         elif attempts > self.config.get('max_attempts'):
             return False
 
-        if labourer_health < self.config.get('min_labourer_health'):
+        if task.health < self.config.get('min_labourer_health_for_retry'):
             return False
 
         return True

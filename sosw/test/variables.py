@@ -1,3 +1,5 @@
+from sosw.labourer import Labourer
+
 TASKS_TABLE_CONFIG = {
     'row_mapper':       {
         'task_id':     'S',
@@ -47,3 +49,13 @@ TEST_SCHEDULER_CONFIG = {
     'init_clients':       [],
     'task_client_config': TEST_TASK_CLIENT_CONFIG,
 }
+
+EXPIRED_TASKS = [
+    {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
+    {'task_id': '124', 'labourer_id': 'another_lambda', 'attempts': 4, 'greenfield': '321'},
+    {'task_id': '125', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'}
+]
+
+LABOURERS = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
+             Labourer(id='another_lambda', arn='another_arn'),
+             Labourer(id='lambda3', arn='arn3')]

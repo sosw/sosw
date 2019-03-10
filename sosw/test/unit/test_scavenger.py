@@ -1,11 +1,12 @@
 import os
 import unittest
+from copy import deepcopy
 
 from unittest.mock import Mock, MagicMock, patch, call
 
 from sosw.scavenger import Scavenger
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_SCAVENGER_CONFIG
+from sosw.test.variables import TEST_SCAVENGER_CONFIG, EXPIRED_TASKS, LABOURERS
 
 
 os.environ["STAGE"] = "test"
@@ -46,93 +47,57 @@ class Scavenger_UnitTestCase(unittest.TestCase):
             pass
 
 
-    @property
-    def labourers(self):
-        return [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
-                Labourer(id='another_lambda', arn='another_arn'),
-                Labourer(id='lambda3', arn='arn3')]
-
-
     def test_call(self):
-        labourers = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
-                     Labourer(id='another_lambda', arn='another_arn'),
-                     Labourer(id='lambda3', arn='arn3')]
-
-        health = 4
-
         # Mock
-        self.scavenger.task_client.get_labourers = Mock(return_value=labourers)
-
+        self.scavenger.task_client.register_labourers = Mock(return_value=LABOURERS)
+        self.scavenger.handle_expired_tasks_for_labourer = Mock()
+        self.scavenger.archive_closed_tasks_for_labourer = Mock()
 
         # Call
         self.scavenger()
 
-
+        # Check call
+        self.assertEqual(self.scavenger.handle_expired_tasks_for_labourer.call_count, 3)
+        self.assertEqual(self.scavenger.archive_closed_tasks_for_labourer.call_count, 3)
 
 
     def test_handle_expired_tasks_for_labourer(self):
-        health = 4
-        expired_tasks = [
-            {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
-            {'task_id': '124', 'labourer_id': 'another_lambda', 'attempts': 4, 'greenfield': '321'},
-            {'task_id': '125', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'}
-        ]
+        labourer = LABOURERS[1]
+        expired_tasks_per_lambda = {
+            'some_lambda':    [EXPIRED_TASKS[0]],
+            'another_lambda': [EXPIRED_TASKS[1], EXPIRED_TASKS[2]]
+        }
 
-        def get_expired_tasks(labourer):
-            return {
-                'some_lambda':    [expired_tasks[0]],
-                'another_lambda': [expired_tasks[1], expired_tasks[2]]
-            }.get(labourer.id, [])
-
-
-        def get_closed_tasks(labourer):
-            return {
-                'some_lambda':    [expired_tasks[0]],
-                'another_lambda': [expired_tasks[1]]
-            }.get(labourer.id, [])
-
-        self.scavenger.ecology_client.get_labourer_status = Mock(return_value=health)
-        self.scavenger.task_client.get_expired_tasks_for_labourer = MagicMock(side_effect=get_expired_tasks)
-        self.scavenger.task_client.get_closed_tasks_for_labourer = MagicMock(side_effect=get_closed_tasks)
+        self.scavenger.task_client.get_expired_tasks_for_labourer = MagicMock(
+                side_effect=lambda l: expired_tasks_per_lambda.get(l.id, []))
         self.scavenger.process_expired_task = Mock()
-        self.scavenger.task_client.archive_task = Mock()
 
-        ## ----
+        # Call
+        self.scavenger.handle_expired_tasks_for_labourer(labourer)
 
-        # Check mock calls
-        self.scavenger.task_client.get_labourers.assert_called_once_with()
+        # Check call
+        self.scavenger.task_client.get_expired_tasks_for_labourer.assert_called_once_with(labourer)
 
-        self.assertEqual(self.scavenger.task_client.get_expired_tasks_for_labourer.call_count, 3)
-        self.scavenger.task_client.get_expired_tasks_for_labourer.assert_has_calls([
-            call(labourers['some_lambda']), call(labourers['another_lambda']), call(labourers['lambda3'])
-        ])
-
-        self.assertEqual(self.scavenger.ecology_client.get_labourer_status.call_count, 2)
-        self.scavenger.ecology_client.get_labourer_status.assert_has_calls([
-            call(labourers['some_lambda']), call(labourers['another_lambda'])
-        ])
-
-        self.assertEqual(self.scavenger.process_expired_task.call_count, 3)
-        self.scavenger.process_expired_task.assert_has_calls([
-            call(expired_tasks[0], health), call(expired_tasks[1], health), call(expired_tasks[2], health)
-        ])
-
-        self.assertEqual(self.scavenger.task_client.get_closed_tasks_for_labourer.call_count, 3)
-        self.scavenger.task_client.get_closed_tasks_for_labourer.assert_has_calls([
-            call(labourers['some_lambda']), call(labourers['another_lambda']), call(labourers['lambda3'])
-        ])
-
-        self.assertEqual(self.scavenger.task_client.archive_task.call_count, 2)
-        self.scavenger.task_client.archive_task.assert_has_calls([
-            call('123'), call('124')
-        ])
-
-
-        raise NotImplementedError
+        self.scavenger.process_expired_task.assert_has_calls(
+                [call(EXPIRED_TASKS[1]), call(EXPIRED_TASKS[2])]
+        )
 
 
     def test_archive_closed_tasks_for_labourer(self):
-        raise NotImplementedError
+        labourer = LABOURERS[0]
+        closed_tasks_per_lambda = {
+            'some_lambda':    [EXPIRED_TASKS[0]],
+            'another_lambda': [EXPIRED_TASKS[1]]
+        }
+
+        self.scavenger.task_client.get_closed_tasks_for_labourer = MagicMock(
+                side_effect=lambda l: closed_tasks_per_lambda.get(l.id, []))
+        self.scavenger.task_client.archive_task = Mock()
+
+        self.scavenger.archive_closed_tasks_for_labourer(labourer)
+
+        self.scavenger.task_client.get_closed_tasks_for_labourer.assert_called_once_with(labourer)
+        self.scavenger.task_client.archive_task.assert_called_once_with(EXPIRED_TASKS[0]['task_id'])
 
 
     def test_process_expired_task__close(self):
@@ -142,7 +107,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.close_task = Mock()
 
         # Call
-        self.scavenger.process_expired_task(self.task, 3)
+        self.scavenger.process_expired_task(self.task)
 
         # Check mock calls
         self.scavenger.task_client.close_task.assert_called_once_with('123')
@@ -156,7 +121,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.close_task = Mock()
 
         # Call
-        self.scavenger.process_expired_task(self.task, 3)
+        self.scavenger.process_expired_task(self.task)
 
         # Check mock calls
         self.scavenger.allow_task_to_retry.assert_called_once_with(self.task)
