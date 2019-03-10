@@ -244,3 +244,21 @@ class task_manager_UnitTestCase(unittest.TestCase):
         expected_completed_task['labourer_id_task_status'] = 'some_lambda_1'
         self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG['sosw_closed_tasks_table'])
         self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})
+
+
+    def test_close_task(self):
+        _ = self.manager.get_db_field_name
+        task_id = '918273'
+        labourer_id = 'some_lambda'
+
+        for completed in [True, False]:
+            # Mock
+            self.manager.dynamo_db_client = MagicMock()
+
+            # Call
+            self.manager.close_task(task_id, 'some_lambda', completed=completed)
+
+            # Check calls
+            self.manager.dynamo_db_client.update.assert_called_once_with(
+                    {_('task_id'): task_id, _('labourer_id'): labourer_id},
+                    attributes_to_update={_('closed_at'): int(time.time()), _('completed'): int(completed)})

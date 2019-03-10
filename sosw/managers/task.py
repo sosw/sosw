@@ -31,8 +31,10 @@ class TaskManager(Processor):
                 'labourer_id':  'S',
                 'created_at':   'N',
                 'completed_at': 'N',
+                'completed':    'N',
                 'greenfield':   'N',
                 'attempts':     'N',
+                'closed':       'N',
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -40,6 +42,7 @@ class TaskManager(Processor):
             # By default takes the key itself.
             'field_names':      {
                 'task_id': 'task_id',
+                'closed_at': 'closed'
             }
         },
         'sosw_closed_tasks_table': 'sosw_closed_tasks',
@@ -148,13 +151,13 @@ class TaskManager(Processor):
         )
 
 
-    def close_task(self, task_id: str, completed: bool):
+    def close_task(self, task_id: str, labourer_id: str, completed: bool):
         _ = self.get_db_field_name
 
         completed = int(completed)
 
         self.dynamo_db_client.update(
-                {_('task_id'): task_id},
+                {_('task_id'): task_id, _('labourer_id'): labourer_id},
                 attributes_to_update={_('closed_at'): int(time.time()), _('completed'): completed},
         )
 
@@ -237,22 +240,23 @@ class TaskManager(Processor):
         * None (default) - do not care about `closed` status.
         """
 
-        lf = self.get_db_field_name('labourer_id')
-        gf = self.get_db_field_name('greenfield')
+        # lf = self.get_db_field_name('labourer_id')
+        # gf = self.get_db_field_name('greenfield')
+        _ = self.get_db_field_name
 
         query_args = {
             'keys':        {
-                lf: labourer.id,
-                gf: labourer.get_attr('invoked')
+                _('labourer_id'): labourer.id,
+                _('greenfield'): labourer.get_attr('invoked')
             },
-            'comparisons': {gf: '>='},
+            'comparisons': {_('greenfield'): '>='},
             'index_name':  self.config['dynamo_db_config']['index_greenfield'],
         }
 
         if closed is True:
-            query_args['filter_expression'] = 'attribute_exists closed_at'
+            query_args['filter_expression'] = f"attribute_exists {_('closed_at')}"
         elif closed is False:
-            query_args['filter_expression'] = 'attribute_not_exists closed_at'
+            query_args['filter_expression'] = f"attribute_not_exists {_('closed_at')}"
         else:
             logger.debug(f"No filtering by closed status for {query_args}")
 
@@ -265,17 +269,16 @@ class TaskManager(Processor):
         We assume they are still running.
         """
 
-        lf = self.get_db_field_name('labourer_id')
-        gf = self.get_db_field_name('greenfield')
+        _ = self.get_db_field_name
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    lf:                 labourer.id,
-                    f"st_between_{gf}": labourer.get_attr('expired'),
-                    f"en_between_{gf}": labourer.get_attr('invoked'),
+                    _('labourer_id'):                 labourer.id,
+                    f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
+                    f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression='attribute_not_exists closed_at'
+                filter_expression=f'attribute_not_exists {_("closed_at")}'
         )
 
 
@@ -294,17 +297,16 @@ class TaskManager(Processor):
     def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """
 
-        lf = self.get_db_field_name('labourer_id')
-        gf = self.get_db_field_name('greenfield')
+        _ = self.get_db_field_name
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    lf:                 labourer.id,
-                    f"st_between_{gf}": labourer.get_attr('start'),
-                    f"en_between_{gf}": labourer.get_attr('expired'),
+                    _('labourer_id'):                 labourer.id,
+                    f"st_between_{_('greenfield')}": labourer.get_attr('start'),
+                    f"en_between_{_('greenfield')}": labourer.get_attr('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression='attribute_not_exists closed_at',
+                filter_expression=f"attribute_not_exists {_('closed_at')}",
         )
 
 

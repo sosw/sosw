@@ -111,7 +111,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.process_expired_task(self.labourer, self.task)
 
         # Check mock calls
-        self.scavenger.task_client.close_task.assert_called_once_with('123', completed=False)
+        self.scavenger.task_client.close_task.assert_called_once_with('123', self.labourer.id, completed=False)
         self.scavenger.allow_task_to_retry.assert_not_called()
 
 

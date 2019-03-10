@@ -167,3 +167,31 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
+
+
+    def test_close_task__completed(self):
+        # Create task with id=123
+        _ = self.manager.get_db_field_name
+        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
+        self.dynamo_client.put(task)
+
+        # Call
+        self.manager.close_task(task_id='123', labourer_id='lambda1', completed=True)
+
+        # Get from db, check
+        tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+        self.assertEqual(len(tasks), 1)
+        task_result = tasks[0]
+
+        expected_result = task.copy()
+        expected_result['completed'] = 1
+
+        for k in ['task_id', 'labourer_id', 'greenfield', 'attempts', 'completed']:
+            assert expected_result[k] == task_result[k]
+
+        self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
+        self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
+
+
+    # def test_archive_task(self):
+    #     raise NotImplementedError

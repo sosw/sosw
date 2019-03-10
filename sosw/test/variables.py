@@ -6,6 +6,8 @@ TASKS_TABLE_CONFIG = {
         'labourer_id': 'S',
         'greenfield':  'N',
         'attempts':    'N',
+        'closed':   'N',
+        'completed':   'N',
     },
     'required_fields':  ['task_id', 'labourer_id'],
     'table_name':       'autotest_sosw_tasks',
@@ -14,6 +16,7 @@ TASKS_TABLE_CONFIG = {
         'task_id':     'task_id',
         'labourer_id': 'labourer_id',
         'greenfield':  'greenfield',
+        'closed_at': 'closed'
     }
 }
 
