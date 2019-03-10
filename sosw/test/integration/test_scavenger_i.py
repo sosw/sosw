@@ -14,9 +14,11 @@ os.environ["autotest"] = "True"
 
 
 class Scavenger_IntegrationTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_SCAVENGER_CONFIG
+    TEST_CONFIG = deepcopy(TEST_SCAVENGER_CONFIG)
 
     def setUp(self):
+        self.TEST_CONFIG['init_clients'] = ['DynamoDb']
+
         self.scavenger = Scavenger(self.TEST_CONFIG)
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG['dynamo_db_config'])
 
