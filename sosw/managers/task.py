@@ -167,19 +167,19 @@ class TaskManager(Processor):
 
         # Get task
         task = self.get_task_by_id(task_id)
-        completed_task = task.copy()
 
         # Update labourer_id_task_status field.
-        is_completed = 1 if completed_task.get(_('completed_at')) else 0
-        labourer_id = completed_task.get(_('labourer_id'))
-        completed_task[_('labourer_id_task_status')] = f"{labourer_id}_{is_completed}"
+        is_completed = 1 if task.get(_('completed_at')) else 0
+        labourer_id = task.get(_('labourer_id'))
+        task[_('labourer_id_task_status')] = f"{labourer_id}_{is_completed}"
 
         # Add it to completed tasks table:
-        self.dynamo_db_client.put(completed_task, table_name=self.config.get('sosw_closed_tasks_table'))
+        self.dynamo_db_client.put(task, table_name=self.config.get('sosw_closed_tasks_table'))
 
+        # Delete it from tasks_table
         keys = {
-            _('labourer_id'): completed_task[_('labourer_id')],
-            _('task_id'): completed_task[_('task_id')],
+            _('labourer_id'): task[_('labourer_id')],
+            _('task_id'): task[_('task_id')],
         }
         self.dynamo_db_client.delete(keys)
 
