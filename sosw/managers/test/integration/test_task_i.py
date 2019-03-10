@@ -45,6 +45,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
+        self.completed_tasks_table = self.config['sosw_closed_tasks_table']
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
@@ -52,6 +53,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def tearDown(self):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
 
 
     def setup_tasks(self, status='available', mass=False):
@@ -170,8 +172,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_close_task__completed(self):
-        # Create task with id=123
         _ = self.manager.get_db_field_name
+        # Create task with id=123
         task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
         self.dynamo_client.put(task)
 
@@ -193,5 +195,20 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
 
 
-    # def test_archive_task(self):
-    #     raise NotImplementedError
+    def test_archive_task(self):
+        _ = self.manager.get_db_field_name
+        # Create task with id=123
+        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
+                _('closed_at'): 22332233, _('completed'): 1}
+        self.dynamo_client.put(task)
+
+        # Call
+        self.manager.archive_task('123')
+
+        # Check the task isn't in the tasks db, but is in the completed_tasks table
+        tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): 'lambda1'})
+        self.assertEqual(len(tasks), 0)
+
+        completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
+        self.assertEqual(len(completed_tasks), 1)
+        self.assertEqual(completed_tasks[0], task)
