@@ -80,7 +80,7 @@ class TaskManager(Processor):
         return result
 
 
-    def get_db_field_name(self, key):
+    def get_db_field_name(self, key: str) -> str:
         """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
         return self.config['dynamo_db_config']['field_names'].get(key, key)
 
@@ -118,7 +118,6 @@ class TaskManager(Processor):
         logger.debug(lambda_response)
 
 
-
     def mark_task_invoked(self, labourer: Labourer, task: Dict, check_running: Optional[bool] = True):
         """
         Update the greenfield with the latest invocation timestamp + invocation_delta
@@ -149,12 +148,15 @@ class TaskManager(Processor):
         )
 
 
-    def close_task(self, task_id: str):
-        raise NotImplementedError
+    def close_task(self, task_id: str, completed: bool):
+        _ = self.get_db_field_name
 
+        completed = int(completed)
 
-    def close_dead_task(self, task_id: str):
-        raise NotImplementedError
+        self.dynamo_db_client.update(
+                {_('task_id'): task_id},
+                attributes_to_update={_('closed_at'): int(time.time()), _('completed'): completed},
+        )
 
 
     def archive_task(self, task_id: str):
@@ -248,9 +250,9 @@ class TaskManager(Processor):
         }
 
         if closed is True:
-            query_args['filter_expression'] = 'attribute_exists closed'
+            query_args['filter_expression'] = 'attribute_exists closed_at'
         elif closed is False:
-            query_args['filter_expression'] = 'attribute_not_exists closed'
+            query_args['filter_expression'] = 'attribute_not_exists closed_at'
         else:
             logger.debug(f"No filtering by closed status for {query_args}")
 
@@ -273,7 +275,7 @@ class TaskManager(Processor):
                     f"en_between_{gf}": labourer.get_attr('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression='attribute_not_exists closed'
+                filter_expression='attribute_not_exists closed_at'
         )
 
 
@@ -302,7 +304,7 @@ class TaskManager(Processor):
                     f"en_between_{gf}": labourer.get_attr('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression='attribute_not_exists closed',
+                filter_expression='attribute_not_exists closed_at',
         )
 
 

@@ -82,7 +82,7 @@ class Scavenger(Processor):
             self.allow_task_to_retry(task)
         else:
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
-            self.task_client.close_dead_task(task[_('task_id')])
+            self.task_client.close_task(task[_('task_id')], completed=False)
 
 
     @staticmethod
