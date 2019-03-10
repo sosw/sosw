@@ -32,6 +32,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.get_db_field_name = MagicMock(side_effect=lambda x: x)
         _ = self.scavenger.get_db_field_name
 
+        self.labourer = Labourer(id='lambda3', arn='arn3')
         self.task = {
             _('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): '3525624', _('payload'): '{"a": 1}',
             _('closed'):  False, _('attempts'): 2
@@ -79,7 +80,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.get_expired_tasks_for_labourer.assert_called_once_with(labourer)
 
         self.scavenger.process_expired_task.assert_has_calls(
-                [call(EXPIRED_TASKS[1]), call(EXPIRED_TASKS[2])]
+                [call(EXPIRED_TASKS[1], labourer), call(EXPIRED_TASKS[2], labourer)]
         )
 
 
@@ -107,7 +108,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.close_dead_task = Mock()
 
         # Call
-        self.scavenger.process_expired_task(self.task)
+        self.scavenger.process_expired_task(self.labourer, self.task)
 
         # Check mock calls
         self.scavenger.task_client.close_dead_task.assert_called_once_with('123')
@@ -121,7 +122,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.close_dead_task = Mock()
 
         # Call
-        self.scavenger.process_expired_task(self.task)
+        self.scavenger.process_expired_task(self.labourer, self.task)
 
         # Check mock calls
         self.scavenger.allow_task_to_retry.assert_called_once_with(self.task)

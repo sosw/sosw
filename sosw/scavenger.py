@@ -85,7 +85,8 @@ class Scavenger(Processor):
             self.task_client.close_dead_task(task[_('task_id')])
 
 
-    def should_retry_task(self, labourer: Labourer, task: Dict) -> bool:
+    @staticmethod
+    def should_retry_task(labourer: Labourer, task: Dict) -> bool:
         attempts = task.get(_('attempts'))
 
         if hasattr(labourer, 'min_health_for_retry') and hasattr(labourer, 'health') \
