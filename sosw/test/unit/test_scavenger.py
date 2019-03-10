@@ -104,13 +104,13 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         # Mock
         self.scavenger.should_retry_task = Mock(return_value=False)
         self.scavenger.allow_task_to_retry = Mock()
-        self.scavenger.task_client.close_task = Mock()
+        self.scavenger.task_client.close_dead_task = Mock()
 
         # Call
         self.scavenger.process_expired_task(self.task)
 
         # Check mock calls
-        self.scavenger.task_client.close_task.assert_called_once_with('123')
+        self.scavenger.task_client.close_dead_task.assert_called_once_with('123')
         self.scavenger.allow_task_to_retry.assert_not_called()
 
 
@@ -118,14 +118,14 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         # Mock
         self.scavenger.should_retry_task = Mock(return_value=True)
         self.scavenger.allow_task_to_retry = Mock()
-        self.scavenger.task_client.close_task = Mock()
+        self.scavenger.task_client.close_dead_task = Mock()
 
         # Call
         self.scavenger.process_expired_task(self.task)
 
         # Check mock calls
         self.scavenger.allow_task_to_retry.assert_called_once_with(self.task)
-        self.scavenger.task_client.close_task.assert_not_called()
+        self.scavenger.task_client.close_dead_task.assert_not_called()
 
 
     @unittest.skip("Logic is not yet final")

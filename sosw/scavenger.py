@@ -21,10 +21,26 @@ logger.setLevel(logging.INFO)
 class Scavenger(Processor):
     DEFAULT_CONFIG = {
         'init_clients': ['Task', 'Ecology', 'Sns', 'DynamoDb'],
+        'dynamo_db_config': {
+            'row_mapper':       {
+                'task_id':     'S',
+                'labourer_id': 'S',
+                'greenfield':  'N',
+                'attempts':    'N',
+            },
+            'required_fields':  ['task_id', 'labourer_id'],
+            'table_name':       'sosw_tasks',
+            'index_greenfield': 'sosw_tasks_greenfield',
+            'field_names':      {
+                'task_id':     'task_id',
+                'labourer_id': 'labourer_id',
+                'greenfield':  'greenfield',
+            }
+        },
         'sns_config': {
             'recipient': 'arn:aws:sns:us-west-2:0000000000:sosw_info',
             'subject':   'SOSW Info'
-        },
+        }
     }
 
     # these clients will be initialized by Processor constructor
@@ -48,7 +64,7 @@ class Scavenger(Processor):
         expired_tasks = self.task_client.get_expired_tasks_for_labourer(labourer)
         if expired_tasks:
             for task in expired_tasks:
-                self.process_expired_task(task)
+                self.process_expired_task(task, labourer)
 
 
     def archive_closed_tasks_for_labourer(self, labourer: Labourer):
@@ -59,31 +75,24 @@ class Scavenger(Processor):
             self.task_client.archive_task(task_id)
 
 
-    def process_expired_task(self, task: Dict):
+    def process_expired_task(self, labourer: Labourer, task: Dict):
         _ = self.get_db_field_name
 
-        if self.should_retry_task(task):
+        if self.should_retry_task(labourer, task):
             self.allow_task_to_retry(task)
         else:
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
-            self.task_client.close_task(task[_('task_id')])
+            self.task_client.close_dead_task(task[_('task_id')])
 
 
-    def should_retry_task(self, task: Dict) -> bool:
-        _ = self.get_db_field_name
-
+    def should_retry_task(self, labourer: Labourer, task: Dict) -> bool:
         attempts = task.get(_('attempts'))
-        labourer_id = task.get(_('labourer_id'))
 
-        if self.config.get(f'max_attempts_{labourer_id}') and attempts > self.config.get(f'max_attempts_{labourer_id}'):
-            return False
-        elif attempts > self.config.get('max_attempts'):
+        if hasattr(labourer, 'min_health_for_retry') and hasattr(labourer, 'health') \
+                and labourer.health < labourer.min_health_for_retry:
             return False
 
-        if task.health < self.config.get('min_labourer_health_for_retry'):
-            return False
-
-        return True
+        return True if attempts < labourer.max_attempts else False
 
 
     def allow_task_to_retry(self, task: Dict):

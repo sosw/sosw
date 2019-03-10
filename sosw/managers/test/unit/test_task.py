@@ -37,7 +37,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.config = self.TEST_CONFIG.copy()
 
-        self.labourer =  deepcopy(self.LABOURER)
+        self.labourer = deepcopy(self.LABOURER)
 
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
@@ -189,7 +189,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_register_labourers(self):
-
         with patch('time.time') as t:
             t.return_value = 123
 
@@ -201,6 +200,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_attr('start'), 123)
         self.assertEqual(lab.get_attr('invoked'), invoke_time)
         self.assertEqual(lab.get_attr('expired'), invoke_time - lab.duration - lab.cooldown)
+        self.assertEqual(lab.get_attr('health'), 2)
+        self.assertEqual(lab.get_attr('max_attempts'), 3)
+        self.assertEqual(lab.get_attr('min_health_for_retry'), 1)
 
 
     def test_calculate_count_of_running_tasks_for_labourer(self):

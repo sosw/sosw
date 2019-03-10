@@ -24,6 +24,7 @@ TEST_ECOLOGY_CLIENT_CONFIG = {
 TEST_TASK_CLIENT_CONFIG = {
     'init_clients':          [],
     'dynamo_db_config':      TASKS_TABLE_CONFIG,
+    'sosw_closed_tasks_table': 'autotest_sosw_closed_tasks',
     'ecology_client_config': TEST_ECOLOGY_CLIENT_CONFIG,
     'labourers':             {
         'some_function': {

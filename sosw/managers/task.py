@@ -50,6 +50,8 @@ class TaskManager(Processor):
             #     'max_simultaneous_invocations': 10,
             # }
         },
+        'max_attempts': 3,
+        'min_health_for_retry': 1
     }
 
 
@@ -57,18 +59,20 @@ class TaskManager(Processor):
         """ Sets timestamps, health status and other custom attributes on Labourer objects passed for registration. """
 
         # This must be something ordered, because these methods depend on one another.
-        TIMES = (
+        custom_attributes = (
             ('start', lambda x: int(time.time())),
             ('invoked', lambda x: x.get_attr('start') + self.config['greenfield_invocation_delta']),
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
-            ('health', lambda x: self.ecology_client.get_labourer_status(x))
+            ('health', lambda x: self.ecology_client.get_labourer_status(x)),
+            ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
+            ('min_health_for_retry', lambda x: self.config.get(f'min_health_for_retry_{x.id}') or self.config['min_health_for_retry']),
         )
 
         labourers = self.get_labourers()
 
         result = []
         for labourer in labourers:
-            for k, method in [x for x in TIMES]:
+            for k, method in [x for x in custom_attributes]:
                 labourer.set_custom_attribute(k, method(labourer))
                 print(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
@@ -146,6 +150,10 @@ class TaskManager(Processor):
 
 
     def close_task(self, task_id: str):
+        raise NotImplementedError
+
+
+    def close_dead_task(self, task_id: str):
         raise NotImplementedError
 
 

@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 class Labourer:
     ATTRIBUTES = ('id', 'arn')
-    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health')
+    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health', 'max_attempts', 'min_health_for_retry')
     id = None
     arn = None
 
@@ -63,7 +63,6 @@ class Labourer:
         setattr(self, name, value)
 
 
-
     def get_attr(self, name: str):
         """ The Labourer must be first registered in TaskManager for this to work. """
 
@@ -73,5 +72,5 @@ class Labourer:
         try:
             return getattr(self, name)
         except AttributeError:
-            raise AttributeError(f"The Labourer is not yet registered in TaskManager, and doesn't have any timestamps. "
-                                 f"Use TaskManager.register_labourer() first.")
+            raise AttributeError(f"The Labourer is not yet registered in TaskManager, and doesn't have any custom "
+                                 f"attributes. Use TaskManager.register_labourer() first.")
