@@ -465,5 +465,17 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertIn(rows[2], result)
 
 
+    def test_delete(self):
+        self.dynamo_client.put({'hash_col': 'cat1', 'range_col': 123})
+        self.dynamo_client.put({'hash_col': 'cat2', 'range_col': 234})
+
+        self.dynamo_client.delete(keys={'hash_col': 'cat1', 'range_col': '123'})
+
+        items = self.dynamo_client.get_by_scan()
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0], {'hash_col': 'cat2', 'range_col': 234})
+
+
 if __name__ == '__main__':
     unittest.main()
