@@ -171,7 +171,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
 
 
-    def test_close_task__completed(self):
+    def test_close_task(self):
         _ = self.manager.get_db_field_name
         # Create task with id=123
         task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
