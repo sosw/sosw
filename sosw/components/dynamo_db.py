@@ -9,7 +9,7 @@ import os
 import time
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .benchmark import benchmark
 
@@ -176,7 +176,8 @@ class DynamoDbClient:
     @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = True) -> List[Dict]:
+                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False) \
+            -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -204,8 +205,9 @@ class DynamoDbClient:
             e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
         :param bool strict:     If True, will only get the attributes specified in the row mapper.
                                 If false, will get all attributes. Default is True.
+        :param bool return_count: if True, will return the number of items in the result instead of the items themselves
         :return: List of items from the table, each item in key-value format
-        :rtype: list
+            OR the count if `return_count` is True
         """
 
         table_name = self._get_validate_table_name(table_name)
@@ -236,10 +238,12 @@ class DynamoDbClient:
 
         cond_expr = " AND ".join(cond_expr_parts)
 
+        select = ('ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
+
         logger.debug(cond_expr, filter_values)
         query_args = {
             'TableName':                 table_name,
-            'Select':                    'ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES',
+            'Select':                    select,
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
             'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
@@ -263,6 +267,9 @@ class DynamoDbClient:
         response_iterator = paginator.paginate(**query_args)
         result = []
         for page in response_iterator:
+            if return_count:
+                return page['Count']
+
             result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:

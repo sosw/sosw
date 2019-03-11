@@ -406,6 +406,21 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(len(result), 499)
 
 
+    def test_get_by_query__return_count(self):
+        rows = [
+            {'hash_col': 'cat1', 'range_col': 121, 'some_col': 'test1'},
+            {'hash_col': 'cat1', 'range_col': 122, 'some_col': 'test2'},
+            {'hash_col': 'cat1', 'range_col': 123, 'some_col': 'test3'}
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, table_name=self.table_name)
+
+        result = self.dynamo_client.get_by_query({'hash_col': 'cat1'}, table_name=self.table_name, return_count=True)
+
+        self.assertEqual(result, 3)
+
+
     def test_get_by_scan__all(self):
         rows = [
             {'hash_col': 'cat1', 'range_col': 121, 'some_col': 'test1'},

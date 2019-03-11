@@ -212,3 +212,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
         self.assertEqual(len(completed_tasks), 1)
         self.assertEqual(completed_tasks[0], task)
+
+
+    def get_length_of_queue_for_labourer(self):
+        raise NotImplementedError

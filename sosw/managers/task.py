@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 from sosw.components.benchmark import benchmark
 from sosw.labourer import Labourer
 from sosw.app import Processor
+from sosw.components.helpers import one_or_none
 
 
 logger = logging.getLogger()
@@ -58,6 +59,8 @@ class TaskManager(Processor):
         'min_health_for_retry': 1
     }
 
+    __labourers = None
+
     def calculate_greenfield_for_retry_task_with_delay(self, task: Dict, delay: int):
         """
         Returned value is supposed to be some greenfield value assuming that we want the task to be invoked after
@@ -69,8 +72,10 @@ class TaskManager(Processor):
         :return:
         """
 
-        labourer = None
-        # labourer = self.get_labourer() OR receive from call arguments
+        _ = self.get_db_field_name
+
+        labourer_id = task[_('labourer_id')]
+        labourer = self.get_labourer(labourer_id)
 
         queue_length = self.get_length_of_queue_for_labourer(labourer=labourer)
 
@@ -94,10 +99,12 @@ class TaskManager(Processor):
     def get_queued_task_for_labourer_in_position(self):
         """ implement me """
 
+        pass
 
     def get_oldest_greenfield_for_labourer(self):
         """ Return value of oldest greenfield in queue. """
 
+        pass
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
         """
@@ -108,9 +115,13 @@ class TaskManager(Processor):
         :return:
         """
 
+        queue_count = self.dynamo_db_client.get_by_query(
+            keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
+            comparisons={'greenfield': '<='},
+            index_name=self.config['dynamo_db_config']['index_greenfield'],
+            return_count=True)
 
-
-
+        return queue_count
 
 
     def register_labourers(self) -> List[Labourer]:
@@ -133,10 +144,28 @@ class TaskManager(Processor):
         for labourer in labourers:
             for k, method in [x for x in custom_attributes]:
                 labourer.set_custom_attribute(k, method(labourer))
-                print(f"SET for {labourer}: {k} = {method(labourer)}")
+                logging.debug(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
 
+        self.__labourers = result
+
         return result
+
+
+    def get_labourers(self) -> List[Labourer]:
+        """
+        Return configured Labourers.
+        Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
+        """
+
+        if not self.__labourers:
+            self.__labourers = [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]
+
+        return self.__labourers
+
+
+    def get_labourer(self, labourer_id) -> Labourer:
+        return one_or_none(self.get_labourers(), lambda x: x.id == labourer_id)
 
 
     def get_db_field_name(self, key: str) -> str:
@@ -364,14 +393,3 @@ class TaskManager(Processor):
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression=f"attribute_not_exists {_('closed_at')}",
         )
-
-
-    def get_labourers(self) -> List[Labourer]:
-        """
-        Return configured Labourers.
-        Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
-        """
-
-        # TODO Should return self.labourers or smth
-
-        return [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]

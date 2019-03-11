@@ -114,7 +114,8 @@ class Scavenger(Processor):
 
 
     def recalculate_greenfield(self, task: Dict):
-        raise NotImplementedError
+        attempts = task[self.get_db_field_name('attempts')]
+        return self.task_client.calculate_greenfield_for_retry_task_with_delay(task, delay=attempts)
 
 
     def get_db_field_name(self, key: str) -> str:
