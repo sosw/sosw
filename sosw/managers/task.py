@@ -5,6 +5,7 @@ __version__ = "1.0"
 import boto3
 import json
 import logging
+import math
 import os
 import time
 
@@ -57,6 +58,60 @@ class TaskManager(Processor):
         'min_health_for_retry': 1
     }
 
+    def calculate_greenfield_for_retry_task_with_delay(self, task: Dict, delay: int):
+        """
+        Returned value is supposed to be some greenfield value assuming that we want the task to be invoked after
+        the time following the formula: `Labourer[maximum_runtime] * delay`
+
+
+        :param task:
+        :param delay: incremental coefficient for delay
+        :return:
+        """
+
+        labourer = None
+        # labourer = self.get_labourer() OR receive from call arguments
+
+        queue_length = self.get_length_of_queue_for_labourer(labourer=labourer)
+
+        wanted_delay = labourer.max_duration * delay
+
+        beginning_of_queue = self.get_oldest_greenfield_for_labourer()
+
+
+        # If queue is smaller than wanted delay we just put the new greenfield in the future.
+        if wanted_delay > queue_length * labourer.average_duration:
+            return time.time() + wanted_delay
+
+        # Find the position in queue
+        else:
+            wanted_position = math.ceil(wanted_delay / labourer.average_duration)
+
+            target = self.get_queued_task_for_labourer_in_position(wanted_position)
+            return target.greenfield - 1
+
+
+    def get_queued_task_for_labourer_in_position(self):
+        """ implement me """
+
+
+    def get_oldest_greenfield_for_labourer(self):
+        """ Return value of oldest greenfield in queue. """
+
+
+    def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
+        """
+        Approximate count of tasks still in queue for `labourer`.
+        Tasks with greenfield <= now()
+
+        :param labourer:
+        :return:
+        """
+
+
+
+
+
 
     def register_labourers(self) -> List[Labourer]:
         """ Sets timestamps, health status and other custom attributes on Labourer objects passed for registration. """
@@ -69,6 +124,7 @@ class TaskManager(Processor):
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
             ('min_health_for_retry', lambda x: self.config.get(f'min_health_for_retry_{x.id}') or self.config['min_health_for_retry']),
+            ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration_(x)),
         )
 
         labourers = self.get_labourers()
@@ -315,5 +371,7 @@ class TaskManager(Processor):
         Return configured Labourers.
         Config of the TaskManager expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
         """
+
+        # TODO Should return self.labourers or smth
 
         return [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]
