@@ -78,11 +78,9 @@ class TaskManager(Processor):
         labourer = self.get_labourer(labourer_id)
 
         queue_length = self.get_length_of_queue_for_labourer(labourer=labourer)
-
         wanted_delay = labourer.max_duration * delay
 
         beginning_of_queue = self.get_oldest_greenfield_for_labourer()
-
 
         # If queue is smaller than wanted delay we just put the new greenfield in the future.
         if wanted_delay > queue_length * labourer.average_duration:
@@ -136,6 +134,7 @@ class TaskManager(Processor):
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
             ('min_health_for_retry', lambda x: self.config.get(f'min_health_for_retry_{x.id}') or self.config['min_health_for_retry']),
             ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration_(x)),
+            ('max_duration', lambda x: self.ecology_client.get_labourer_max_duration_(x)),
         )
 
         labourers = self.get_labourers()
