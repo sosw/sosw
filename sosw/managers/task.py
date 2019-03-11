@@ -72,6 +72,8 @@ class TaskManager(Processor):
         :return:
         """
 
+        # TODO: this logic is not final
+
         _ = self.get_db_field_name
 
         labourer_id = task[_('labourer_id')]
@@ -97,12 +99,12 @@ class TaskManager(Processor):
     def get_queued_task_for_labourer_in_position(self):
         """ implement me """
 
-        pass
+        raise NotImplementedError
 
     def get_oldest_greenfield_for_labourer(self):
         """ Return value of oldest greenfield in queue. """
 
-        pass
+        raise NotImplementedError
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
         """
