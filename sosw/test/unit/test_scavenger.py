@@ -112,6 +112,14 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.archive_task.assert_not_called()
 
 
+    def test_calculate_delay_for_task_retry(self):
+        _ = self.scavenger.get_db_field_name
+        labourer = Labourer(id='some_lambda', arn='some_arn', max_duration=45)
+        task = {_('task_id'): '123', _('labourer_id'): 'some_lambda', _('payload'): '{}', _('attempts'): 5}
+        result = self.scavenger.calculate_delay_for_task_retry(labourer, task)
+        self.assertEqual(result, 225)
+
+
     @unittest.skip("Logic is not yet final")
     def test_should_retry_task(self):
         raise NotImplementedError
