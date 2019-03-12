@@ -7,7 +7,7 @@ TASKS_TABLE_CONFIG = {
         'greenfield':  'N',
         'attempts':    'N',
         'closed_at':   'N',
-        'completed':   'N',
+        'completed_at':   'N',
     },
     'required_fields':  ['task_id', 'labourer_id'],
     'table_name':       'autotest_sosw_tasks',

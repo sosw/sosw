@@ -33,7 +33,6 @@ class TaskManager(Processor):
                 'labourer_id':  'S',
                 'created_at':   'N',
                 'completed_at': 'N',
-                'completed':    'N',
                 'greenfield':   'N',
                 'attempts':     'N',
                 'closed_at':    'N',
