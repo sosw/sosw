@@ -40,7 +40,8 @@ class Scavenger(Processor):
         'sns_config': {
             'recipient': 'arn:aws:sns:us-west-2:0000000000:sosw_info',
             'subject':   'SOSW Info'
-        }
+        },
+        'retry_tasks_limit': 20  # TODO: What's the optimal number?
     }
 
     # these clients will be initialized by Processor constructor
@@ -50,7 +51,7 @@ class Scavenger(Processor):
     dynamo_db_client = None
 
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         labourers = self.task_client.register_labourers()
 
         for labourer in labourers:
@@ -102,7 +103,8 @@ class Scavenger(Processor):
         beginning of the queue.
         """
 
-        raise NotImplementedError
+        tasks_to_retry = self.task_client.get_tasks_to_retry_for_labourer(limit=self.config.get('retry_tasks_limit'))
+        self.task_client.retry_tasks(tasks_to_retry)
 
 
     def get_db_field_name(self, key: str) -> str:

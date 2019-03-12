@@ -254,3 +254,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                 self.assertEqual(result[k], task[k])
 
         self.assertTrue(time.time() + delay - 60 < result[_('wanted_launch_time')] < time.time() + delay + 60)
+
+
+    def test_get_tasks_to_retry_for_labourer(self):
+        raise NotImplementedError

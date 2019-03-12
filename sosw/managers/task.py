@@ -369,3 +369,17 @@ class TaskManager(Processor):
         # Delete task from tasks table
         delete_keys = {_('labourer_id'): task[_('labourer_id')], _('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(delete_keys)
+
+
+    def get_tasks_to_retry_for_labourer(self, labourer_id: str, limit: int) -> List[Dict]:
+        tasks = self.dynamo_db_client.get_by_query(
+                keys={_('labourer_id'): labourer_id, _('wanted_launch_time'): str(time.time())},
+                comparisons={_('wanted_launch_time'): "<="},
+                max_items=limit,
+                table_name=self.config['sosw_retry_tasks_table']
+        )
+        return tasks
+
+
+    def retry_tasks(self, tasks: List[Dict]):
+        raise NotImplementedError
