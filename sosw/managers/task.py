@@ -36,6 +36,7 @@ class TaskManager(Processor):
                 'greenfield':   'N',
                 'attempts':     'N',
                 'closed_at':    'N',
+                'wanted_laumch_time': 'N'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 

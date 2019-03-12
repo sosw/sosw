@@ -8,6 +8,7 @@ TASKS_TABLE_CONFIG = {
         'attempts':    'N',
         'closed_at':   'N',
         'completed_at':   'N',
+        'wanted_launch_time': 'N'
     },
     'required_fields':  ['task_id', 'labourer_id'],
     'table_name':       'autotest_sosw_tasks',

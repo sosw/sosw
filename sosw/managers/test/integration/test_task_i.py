@@ -18,6 +18,7 @@ from sosw.managers.task import TaskManager
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.helpers import first_or_none
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
@@ -32,8 +33,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
 
-        clean_dynamo_table()
-
 
     def setUp(self):
         """
@@ -46,6 +45,11 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
+        self.retry_tasks_table = self.config['sosw_retry_tasks_table']
+
+        clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
+        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
@@ -54,6 +58,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def tearDown(self):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
         clean_dynamo_table(self.completed_tasks_table, ('task_id',))
+        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
 
 
     def setup_tasks(self, status='available', mass=False):
@@ -223,3 +228,29 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def get_length_of_queue_for_labourer(self):
         raise NotImplementedError
+
+
+    def test_move_task_to_retry_table(self):
+        _ = self.manager.get_db_field_name
+        labourer_id = 'lambda1'
+        task = {_('task_id'): '123', _('labourer_id'): labourer_id, _('greenfield'): 8888, _('attempts'): 2}
+        delay = 300
+
+        self.dynamo_client.put(task)
+
+        self.manager.move_task_to_retry_table(task, delay)
+
+        result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): labourer_id})
+        self.assertEqual(len(result_tasks), 0)
+
+        result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id}, table_name=self.retry_tasks_table)
+        self.assertEqual(len(result_retry_tasks), 1)
+        result = first_or_none(result_retry_tasks)
+
+        for k in task:
+            self.assertEqual(task[k], result[k])
+        for k in result:
+            if k != _('wanted_launch_time'):
+                self.assertEqual(result[k], task[k])
+
+        self.assertTrue(time.time() + delay - 60 < result[_('wanted_launch_time')] < time.time() + delay + 60)
