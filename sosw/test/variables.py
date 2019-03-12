@@ -6,7 +6,7 @@ TASKS_TABLE_CONFIG = {
         'labourer_id': 'S',
         'greenfield':  'N',
         'attempts':    'N',
-        'closed':   'N',
+        'closed_at':   'N',
         'completed':   'N',
     },
     'required_fields':  ['task_id', 'labourer_id'],

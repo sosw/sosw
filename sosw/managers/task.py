@@ -36,7 +36,7 @@ class TaskManager(Processor):
                 'completed':    'N',
                 'greenfield':   'N',
                 'attempts':     'N',
-                'closed':       'N',
+                'closed_at':    'N',
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -253,7 +253,7 @@ class TaskManager(Processor):
         is_completed = 1 if task.get(_('completed_at')) else 0
         labourer_id = task.get(_('labourer_id'))
         task[_('labourer_id_task_status')] = f"{labourer_id}_{is_completed}"
-        task[_('closed_at')] = str(time.time())
+        task[_('closed_at')] = int(time.time())
 
         # Add it to completed tasks table:
         self.dynamo_db_client.put(task, table_name=self.config.get('sosw_closed_tasks_table'))

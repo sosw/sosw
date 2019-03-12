@@ -86,11 +86,11 @@ class Scavenger(Processor):
         Delete it from `sosw_tasks` table.
         """
 
-        retry_task = task.copy()
-        retry_task[_('retry_time')] = time.time()
-        self.dynamo_db_client.put()
-
         raise NotImplementedError
+
+        retry_task = task.copy()
+        retry_task[self.get_db_field_name('retry_time')] = time.time()
+        self.dynamo_db_client.put()
 
 
     def retry_tasks(self):

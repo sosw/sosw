@@ -174,11 +174,12 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def test_close_task(self):
         _ = self.manager.get_db_field_name
         # Create task with id=123
-        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
+        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
+                _('completed_at'): 123123}
         self.dynamo_client.put(task)
 
         # Call
-        self.manager.close_task(task_id='123', labourer_id='lambda1', completed=True)
+        self.manager.close_task(task_id='123', labourer_id='lambda1')
 
         # Get from db, check
         tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
@@ -186,9 +187,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         task_result = tasks[0]
 
         expected_result = task.copy()
-        expected_result['completed'] = 1
 
-        for k in ['task_id', 'labourer_id', 'greenfield', 'attempts', 'completed']:
+        for k in ['task_id', 'labourer_id', 'greenfield', 'attempts']:
             assert expected_result[k] == task_result[k]
 
         self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
@@ -198,8 +198,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def test_archive_task(self):
         _ = self.manager.get_db_field_name
         # Create task with id=123
-        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
-                _('closed_at'): 22332233, _('completed'): 1}
+        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
         self.dynamo_client.put(task)
 
         # Call
@@ -211,7 +210,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
         self.assertEqual(len(completed_tasks), 1)
-        self.assertEqual(completed_tasks[0], task)
+        completed_task = completed_tasks[0]
+
+        for k in task.keys():
+            self.assertEqual(task[k], completed_task[k])
+        for k in completed_task.keys():
+            if k != _('closed_at'):
+                self.assertEqual(task[k], completed_task[k])
+
+        self.assertTrue(time.time() - 360 < completed_task[_('closed_at')] < time.time())
 
 
     def get_length_of_queue_for_labourer(self):

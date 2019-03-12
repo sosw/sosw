@@ -80,7 +80,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.get_expired_tasks_for_labourer.assert_called_once_with(labourer)
 
         self.scavenger.process_expired_task.assert_has_calls(
-                [call(EXPIRED_TASKS[1], labourer), call(EXPIRED_TASKS[2], labourer)]
+                [call(labourer, EXPIRED_TASKS[1]), call(labourer, EXPIRED_TASKS[2])]
         )
 
 

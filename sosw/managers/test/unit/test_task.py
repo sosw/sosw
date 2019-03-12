@@ -250,14 +250,13 @@ class task_manager_UnitTestCase(unittest.TestCase):
         task_id = '918273'
         labourer_id = 'some_lambda'
 
-        for completed in [True, False]:
-            # Mock
-            self.manager.dynamo_db_client = MagicMock()
+        # Mock
+        self.manager.dynamo_db_client = MagicMock()
 
-            # Call
-            self.manager.close_task(task_id, 'some_lambda', completed=completed)
+        # Call
+        self.manager.close_task(task_id, 'some_lambda')
 
-            # Check calls
-            self.manager.dynamo_db_client.update.assert_called_once_with(
-                    {_('task_id'): task_id, _('labourer_id'): labourer_id},
-                    attributes_to_update={_('closed_at'): int(time.time()), _('completed'): int(completed)})
+        # Check calls
+        self.manager.dynamo_db_client.update.assert_called_once_with(
+                {_('task_id'): task_id, _('labourer_id'): labourer_id},
+                attributes_to_update={_('closed_at'): int(time.time())})
