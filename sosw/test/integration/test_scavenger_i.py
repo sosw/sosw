@@ -31,14 +31,14 @@ class Scavenger_IntegrationTestCase(unittest.TestCase):
         }
 
 
-    def test_allow_task_to_retry(self):
+    def test_put_task_to_retry_table(self):
         _ = self.scavenger.get_db_field_name
 
         self.scavenger.recalculate_greenfield = Mock(return_value=9999)
 
         self.dynamo_client.put(self.task, self.table_name)
 
-        self.scavenger.allow_task_to_retry(deepcopy(self.task))
+        self.scavenger.put_task_to_retry_table(deepcopy(self.task))
 
         tasks = self.dynamo_client.get_by_query(keys={_('task_id'): '123', _('labourer_id'): 'lambda1'})
         self.assertEqual(len(tasks), 1)

@@ -52,14 +52,14 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         # Mock
         self.scavenger.task_client.register_labourers = Mock(return_value=LABOURERS)
         self.scavenger.handle_expired_tasks_for_labourer = Mock()
-        self.scavenger.archive_closed_tasks_for_labourer = Mock()
+        self.scavenger.retry_tasks = Mock()
 
         # Call
         self.scavenger()
 
         # Check call
         self.assertEqual(self.scavenger.handle_expired_tasks_for_labourer.call_count, 3)
-        self.assertEqual(self.scavenger.archive_closed_tasks_for_labourer.call_count, 3)
+        self.scavenger.retry_tasks.assert_called_once()
 
 
     def test_handle_expired_tasks_for_labourer(self):
@@ -84,48 +84,31 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         )
 
 
-    def test_archive_closed_tasks_for_labourer(self):
-        labourer = LABOURERS[0]
-        closed_tasks_per_lambda = {
-            'some_lambda':    [EXPIRED_TASKS[0]],
-            'another_lambda': [EXPIRED_TASKS[1]]
-        }
-
-        self.scavenger.task_client.get_closed_tasks_for_labourer = MagicMock(
-                side_effect=lambda l: closed_tasks_per_lambda.get(l.id, []))
-        self.scavenger.task_client.archive_task = Mock()
-
-        self.scavenger.archive_closed_tasks_for_labourer(labourer)
-
-        self.scavenger.task_client.get_closed_tasks_for_labourer.assert_called_once_with(labourer)
-        self.scavenger.task_client.archive_task.assert_called_once_with(EXPIRED_TASKS[0]['task_id'])
-
-
     def test_process_expired_task__close(self):
         # Mock
         self.scavenger.should_retry_task = Mock(return_value=False)
-        self.scavenger.allow_task_to_retry = Mock()
-        self.scavenger.task_client.close_task = Mock()
+        self.scavenger.put_task_to_retry_table = Mock()
+        self.scavenger.task_client.archive_task = Mock()
 
         # Call
         self.scavenger.process_expired_task(self.labourer, self.task)
 
         # Check mock calls
-        self.scavenger.task_client.close_task.assert_called_once_with('123', self.labourer.id, completed=False)
-        self.scavenger.allow_task_to_retry.assert_not_called()
+        self.scavenger.task_client.archive_task.assert_called_once_with('123')
+        self.scavenger.task_client.put_task_to_retry_table.assert_not_called()
 
 
     def test_process_expired_task__dont_close(self):
         # Mock
         self.scavenger.should_retry_task = Mock(return_value=True)
-        self.scavenger.allow_task_to_retry = Mock()
+        self.scavenger.put_task_to_retry_table = Mock()
         self.scavenger.task_client.close_task = Mock()
 
         # Call
         self.scavenger.process_expired_task(self.labourer, self.task)
 
         # Check mock calls
-        self.scavenger.allow_task_to_retry.assert_called_once_with(self.task)
+        self.scavenger.put_task_to_retry_table.assert_called_once_with(self.task)
         self.scavenger.task_client.close_task.assert_not_called()
 
 

@@ -440,26 +440,26 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_one_or_none(self):
         # List
-        self.assertEqual(one_or_none([]), None)
-        self.assertEqual(one_or_none([1, 2]), 1)
-        self.assertEqual(one_or_none([1, 2, 3], lambda x: x == 2), 2)
-        self.assertEqual(one_or_none([1, 2, 3], lambda x: x == 10), None)
-        self.assertEqual(one_or_none(["a", "b"]), "a")
-        self.assertEqual(one_or_none(["a", "b"], lambda x: x == "b"), "b")
+        self.assertEqual(first_or_none([]), None)
+        self.assertEqual(first_or_none([1, 2]), 1)
+        self.assertEqual(first_or_none([1, 2, 3], lambda x: x == 2), 2)
+        self.assertEqual(first_or_none([1, 2, 3], lambda x: x == 10), None)
+        self.assertEqual(first_or_none(["a", "b"]), "a")
+        self.assertEqual(first_or_none(["a", "b"], lambda x: x == "b"), "b")
 
         # Tuple
-        self.assertEqual(one_or_none(tuple(), lambda x: x == 2), None)
-        self.assertEqual(one_or_none((1, 2, 3), lambda x: x == 2), 2)
+        self.assertEqual(first_or_none(tuple(), lambda x: x == 2), None)
+        self.assertEqual(first_or_none((1, 2, 3), lambda x: x == 2), 2)
 
         # Set
-        self.assertEqual(one_or_none(set()), None)
-        self.assertEqual(one_or_none({"a", "b"}, lambda x: x == "b"), "b")
+        self.assertEqual(first_or_none(set()), None)
+        self.assertEqual(first_or_none({"a", "b"}, lambda x: x == "b"), "b")
 
         # Dict
         d = {"a": 1, "b": 2}
-        self.assertEqual(one_or_none({}), None)
-        self.assertEqual(one_or_none(d), "a")
-        self.assertEqual(one_or_none(d, lambda x: d[x] == 2), "b")
+        self.assertEqual(first_or_none({}), None)
+        self.assertEqual(first_or_none(d), "a")
+        self.assertEqual(first_or_none(d, lambda x: d[x] == 2), "b")
 
 
 if __name__ == '__main__':

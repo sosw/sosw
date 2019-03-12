@@ -7,8 +7,8 @@ __license__ = "MIT"
 __status__ = "Development"
 
 import logging
-from typing import Dict
 import time
+from typing import Dict
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
@@ -35,7 +35,6 @@ class Scavenger(Processor):
                 'task_id':     'task_id',
                 'labourer_id': 'labourer_id',
                 'greenfield':  'greenfield',
-                'closed_at': 'closed'
             }
         },
         'sns_config': {
@@ -57,60 +56,50 @@ class Scavenger(Processor):
         for labourer in labourers:
             self.handle_expired_tasks_for_labourer(labourer)
 
-        for labourer in labourers:
-            self.archive_closed_tasks_for_labourer(labourer)
+        self.retry_tasks()
 
 
     def handle_expired_tasks_for_labourer(self, labourer: Labourer):
         expired_tasks = self.task_client.get_expired_tasks_for_labourer(labourer)
-        if expired_tasks:
-            for task in expired_tasks:
-                self.process_expired_task(task, labourer)
-
-
-    def archive_closed_tasks_for_labourer(self, labourer: Labourer):
-        closed_tasks = self.task_client.get_closed_tasks_for_labourer(labourer)
-
-        for task in closed_tasks:
-            task_id = task[self.get_db_field_name('task_id')]
-            self.task_client.archive_task(task_id)
+        for task in expired_tasks:
+            self.process_expired_task(labourer, task)
 
 
     def process_expired_task(self, labourer: Labourer, task: Dict):
         _ = self.get_db_field_name
 
         if self.should_retry_task(labourer, task):
-            self.allow_task_to_retry(task)
+            self.put_task_to_retry_table(task)
         else:
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
-            self.task_client.close_task(task[_('task_id')], labourer.id, completed=False)
+            self.task_client.archive_task(task[_('task_id')])
 
 
-    @staticmethod
-    def should_retry_task(labourer: Labourer, task: Dict) -> bool:
-        attempts = task.get(_('attempts'))
-
-        if hasattr(labourer, 'min_health_for_retry') and hasattr(labourer, 'health') \
-                and labourer.health < labourer.min_health_for_retry:
-            return False
-
+    def should_retry_task(self, labourer: Labourer, task: Dict) -> bool:
+        attempts = task.get(self.get_db_field_name('attempts'))
         return True if attempts < labourer.max_attempts else False
 
 
-    def allow_task_to_retry(self, task: Dict):
+    def put_task_to_retry_table(self, task: Dict):
         """
-        Puts the task at the beginning of the queue and updates task's attempts.
-        It will no longer be considered as expired.
+        Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
+        Delete it from `sosw_tasks` table.
         """
 
-        _ = self.get_db_field_name
+        retry_task = task.copy()
+        retry_task[_('retry_time')] = time.time()
+        self.dynamo_db_client.put()
 
-        new_greenfield = self.recalculate_greenfield(task)
+        raise NotImplementedError
 
-        self.dynamo_db_client.update(
-                {_('task_id'): task[_('task_id')], _('labourer_id'): task[_('labourer_id')]},
-                attributes_to_update={_('greenfield'): new_greenfield}
-        )
+
+    def retry_tasks(self):
+        """
+        Read from dynamo table `sosw_retry_tasks`, get tasks with retry_time <= now, and put them to `sosw_tasks` in the
+        beginning of the queue.
+        """
+
+        raise NotImplementedError
 
 
     def recalculate_greenfield(self, task: Dict):

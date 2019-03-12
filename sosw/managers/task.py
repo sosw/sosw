@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 from sosw.components.benchmark import benchmark
 from sosw.labourer import Labourer
 from sosw.app import Processor
-from sosw.components.helpers import one_or_none
+from sosw.components.helpers import first_or_none
 
 
 logger = logging.getLogger()
@@ -44,7 +44,6 @@ class TaskManager(Processor):
             # By default takes the key itself.
             'field_names':      {
                 'task_id': 'task_id',
-                'closed_at': 'closed'
             }
         },
         'sosw_closed_tasks_table': 'sosw_closed_tasks',
@@ -56,7 +55,6 @@ class TaskManager(Processor):
             # }
         },
         'max_attempts': 3,
-        'min_health_for_retry': 1
     }
 
     __labourers = None
@@ -134,7 +132,6 @@ class TaskManager(Processor):
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
-            ('min_health_for_retry', lambda x: self.config.get(f'min_health_for_retry_{x.id}') or self.config['min_health_for_retry']),
             ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration_(x)),
             ('max_duration', lambda x: self.ecology_client.get_labourer_max_duration_(x)),
         )
@@ -166,7 +163,7 @@ class TaskManager(Processor):
 
 
     def get_labourer(self, labourer_id) -> Labourer:
-        return one_or_none(self.get_labourers(), lambda x: x.id == labourer_id)
+        return first_or_none(self.get_labourers(), lambda x: x.id == labourer_id)
 
 
     def get_db_field_name(self, key: str) -> str:
@@ -237,14 +234,12 @@ class TaskManager(Processor):
         )
 
 
-    def close_task(self, task_id: str, labourer_id: str, completed: bool):
+    def close_task(self, task_id: str, labourer_id: str):
         _ = self.get_db_field_name
-
-        completed = int(completed)
 
         self.dynamo_db_client.update(
                 {_('task_id'): task_id, _('labourer_id'): labourer_id},
-                attributes_to_update={_('closed_at'): int(time.time()), _('completed'): completed},
+                attributes_to_update={_('closed_at'): int(time.time())},
         )
 
 
@@ -258,6 +253,7 @@ class TaskManager(Processor):
         is_completed = 1 if task.get(_('completed_at')) else 0
         labourer_id = task.get(_('labourer_id'))
         task[_('labourer_id_task_status')] = f"{labourer_id}_{is_completed}"
+        task[_('closed_at')] = str(time.time())
 
         # Add it to completed tasks table:
         self.dynamo_db_client.put(task, table_name=self.config.get('sosw_closed_tasks_table'))

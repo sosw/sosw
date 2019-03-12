@@ -23,7 +23,7 @@ __all__ = ['validate_account_to_dashed',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
-           'one_or_none'
+           'first_or_none'
            ]
 
 import re
@@ -618,7 +618,7 @@ def validate_list_of_words_from_csv_or_list(data: (str, list)) -> list:
     return result
 
 
-def one_or_none(items: Iterable, condition: Callable = None):
+def first_or_none(items: Iterable, condition: Callable = None):
     """
     Return first element in iterable to match condition or None
     """

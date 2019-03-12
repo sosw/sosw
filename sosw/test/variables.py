@@ -16,7 +16,6 @@ TASKS_TABLE_CONFIG = {
         'task_id':     'task_id',
         'labourer_id': 'labourer_id',
         'greenfield':  'greenfield',
-        'closed_at': 'closed'
     }
 }
 
