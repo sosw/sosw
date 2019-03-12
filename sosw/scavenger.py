@@ -69,7 +69,7 @@ class Scavenger(Processor):
         _ = self.get_db_field_name
 
         if self.should_retry_task(labourer, task):
-            self.put_task_to_retry_table(task)
+            self.move_task_to_retry_table(task, labourer)
         else:
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
             self.task_client.archive_task(task[_('task_id')])
@@ -80,17 +80,20 @@ class Scavenger(Processor):
         return True if attempts < labourer.max_attempts else False
 
 
-    def put_task_to_retry_table(self, task: Dict):
+    def move_task_to_retry_table(self, task: Dict, labourer: Labourer):
         """
         Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
         Delete it from `sosw_tasks` table.
         """
 
-        raise NotImplementedError
+        wanted_delay = self.calculate_delay_for_task_retry(labourer, task)
+        self.task_client.move_task_to_retry_table(task, wanted_delay)
 
-        retry_task = task.copy()
-        retry_task[self.get_db_field_name('retry_time')] = time.time()
-        self.dynamo_db_client.put()
+
+    def calculate_delay_for_task_retry(self, labourer: Labourer, task: Dict) -> int:
+        attempts = task[self.get_db_field_name('attempts')]
+        wanted_delay = labourer.max_duration * attempts
+        return wanted_delay
 
 
     def retry_tasks(self):
@@ -100,11 +103,6 @@ class Scavenger(Processor):
         """
 
         raise NotImplementedError
-
-
-    def recalculate_greenfield(self, task: Dict):
-        attempts = task[self.get_db_field_name('attempts')]
-        return self.task_client.calculate_greenfield_for_retry_task_with_delay(task, delay=attempts)
 
 
     def get_db_field_name(self, key: str) -> str:

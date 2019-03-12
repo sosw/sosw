@@ -46,6 +46,7 @@ class TaskManager(Processor):
             }
         },
         'sosw_closed_tasks_table': 'sosw_closed_tasks',
+        'sosw_retry_tasks_table': 'sosw_retry_tasks',
         'greenfield_invocation_delta': 31557600,  # 1 year.
         'labourers': {
             # 'some_function': {
@@ -58,45 +59,7 @@ class TaskManager(Processor):
 
     __labourers = None
 
-    def calculate_greenfield_for_retry_task_with_delay(self, task: Dict, delay: int):
-        """
-        Returned value is supposed to be some greenfield value assuming that we want the task to be invoked after
-        the time following the formula: `Labourer[maximum_runtime] * delay`
 
-
-        :param task:
-        :param delay: incremental coefficient for delay
-        :return:
-        """
-
-        # TODO: this logic is not final
-
-        _ = self.get_db_field_name
-
-        labourer_id = task[_('labourer_id')]
-        labourer = self.get_labourer(labourer_id)
-
-        queue_length = self.get_length_of_queue_for_labourer(labourer=labourer)
-        wanted_delay = labourer.max_duration * delay
-
-        beginning_of_queue = self.get_oldest_greenfield_for_labourer()
-
-        # If queue is smaller than wanted delay we just put the new greenfield in the future.
-        if wanted_delay > queue_length * labourer.average_duration:
-            return time.time() + wanted_delay
-
-        # Find the position in queue
-        else:
-            wanted_position = math.ceil(wanted_delay / labourer.average_duration)
-
-            target = self.get_queued_task_for_labourer_in_position(wanted_position)
-            return target.greenfield - 1
-
-
-    def get_queued_task_for_labourer_in_position(self):
-        """ implement me """
-
-        raise NotImplementedError
 
     def get_oldest_greenfield_for_labourer(self):
         """ Return value of oldest greenfield in queue. """
@@ -111,6 +74,8 @@ class TaskManager(Processor):
         :param labourer:
         :return:
         """
+
+        _ = self.get_db_field_name
 
         queue_count = self.dynamo_db_client.get_by_query(
             keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
@@ -258,10 +223,7 @@ class TaskManager(Processor):
         self.dynamo_db_client.put(task, table_name=self.config.get('sosw_closed_tasks_table'))
 
         # Delete it from tasks_table
-        keys = {
-            _('labourer_id'): task[_('labourer_id')],
-            _('task_id'): task[_('task_id')],
-        }
+        keys = {_('labourer_id'): task[_('labourer_id')], _('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(keys)
 
 
@@ -389,3 +351,20 @@ class TaskManager(Processor):
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression=f"attribute_not_exists {_('closed_at')}",
         )
+
+    def move_task_to_retry_table(self, task: Dict, wanted_delay: int):
+        """
+        Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
+        Delete it from `sosw_tasks` table.
+        """
+
+        _ = self.get_db_field_name
+
+        # Add task to retry table
+        retry_row = task.copy()
+        retry_row[_('wanted_launch_time')] = time.time() + wanted_delay
+        self.dynamo_db_client.put(retry_row, table_name=self.config.get('sosw_retry_tasks_table'))
+
+        # Delete task from tasks table
+        delete_keys = {_('labourer_id'): task[_('labourer_id')], _('task_id'): task[_('task_id')]}
+        self.dynamo_db_client.delete(delete_keys)

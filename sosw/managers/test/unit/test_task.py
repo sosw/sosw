@@ -260,3 +260,28 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.manager.dynamo_db_client.update.assert_called_once_with(
                 {_('task_id'): task_id, _('labourer_id'): labourer_id},
                 attributes_to_update={_('closed_at'): int(time.time())})
+
+
+    def move_task_to_retry_table(self):
+        task_id = '123'
+        task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}'}
+        delay = 350
+
+        # Mock
+        self.manager.dynamo_db_client = MagicMock()
+
+        self.manager.move_task_to_retry_table(task, delay)
+
+        retry_task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}'}
+        called_with_row = self.manager.dynamo_db_client.put.call_args[0][0]
+        called_with_table = self.manager.dynamo_db_client.put.call_args[0][2]
+
+        for k in retry_task:
+            self.assertEqual(retry_task[k], called_with_row[k])
+        for k in called_with_row:
+            if k != 'wanted_launch_time':
+                self.assertEqual(retry_task[k], called_with_row[k])
+
+        self.assertTrue(time.time() - 60 < called_with_row['wanted_launch_time'] < time.time() + 60)
+
+        self.assertEqual(called_with_table, self.config['sosw_retry_tasks_table'])
