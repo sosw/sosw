@@ -170,3 +170,17 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         for test in TESTS:
             self.assertRaises(Exception, self.scheduler.extract_job_from_payload, test)
+
+
+    def test_get_name_from_arn(self):
+
+        TESTS = [
+            ('bar_with_no_arn', 'bar_with_no_arn'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:$LATEST', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:12', 'bar'),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.scheduler.get_name_from_arn(test), expected)

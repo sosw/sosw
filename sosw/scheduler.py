@@ -73,8 +73,10 @@ class Scheduler(Processor):
     def extract_job_from_payload(self, event: Dict):
         """ Parse and basically validate job from the event. """
 
+
         def load(obj):
             return obj if isinstance(obj, dict) else json.loads(obj)
+
 
         jh = load(event)
         job = load(jh['job']) if 'job' in jh else jh
@@ -85,10 +87,13 @@ class Scheduler(Processor):
         return job
 
 
-    def get_name_from_arn(self, data):
-        pattern = ":function:([0-9a-zA-Z_=,.@-]*)([:$#0-9a-zA-Z]*)?"
+    def get_name_from_arn(self, arn):
+        """ Extract just the name of function from full ARN. Supports versions and aliases. """
 
-        print(re.split(pattern, data))
+        pattern = "(arn:aws:lambda:[0-9a-zA-Z-]{6,12}:[0-9]{12}:function:)?" \
+                  "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
+
+        return re.search(pattern, arn).group('name')
 
 
     def process_file(self):
@@ -116,7 +121,6 @@ class Scheduler(Processor):
     def _sleeptime_for_dynamo(self):
         # TODO Should use incremental sleeps based on Throttling. Probably interact with EcologyManager.
         return 0.2
-
 
 
     @staticmethod
