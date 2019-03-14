@@ -263,7 +263,7 @@ class DynamoDbClient:
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
 
-        logger.info(f"Querying dynamo: {query_args}")
+        logger.debug(f"Querying dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('query')
         response_iterator = paginator.paginate(**query_args)
@@ -631,7 +631,7 @@ class DynamoDbClient:
                                                 f"{type(t[action])}"
 
         for t_chunk in chunks(transactions, 10):
-            logger.critical(f"Transactions: \n{pprint.pformat(t_chunk)}")
+            logger.debug(f"Transactions: \n{pprint.pformat(t_chunk)}")
 
             response = self.dynamo_client.transact_write_items(TransactItems=t_chunk)
 
