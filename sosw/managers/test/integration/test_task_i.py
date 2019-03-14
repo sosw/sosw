@@ -326,10 +326,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertTrue(8880 < matching[_('greenfield')] < 8888)
 
 
-    @unittest.skip("This test takes a looong time. It passes.")
     def test_get_oldest_greenfield_for_labourer(self):
         min_gf = 20000
-        for i in range(400):
+        for i in range(10):  # Ran this with range(1000), it passes :)
             gf = random.randint(10000, 20000)
             if gf < min_gf:
                 min_gf = gf
