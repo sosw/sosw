@@ -58,7 +58,7 @@ TEST_SCHEDULER_CONFIG = {
     'task_client_config': TEST_TASK_CLIENT_CONFIG,
 }
 
-EXPIRED_TASKS = [
+TASKS = [
     {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
     {'task_id': '124', 'labourer_id': 'another_lambda', 'attempts': 4, 'greenfield': '321'},
     {'task_id': '125', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'}

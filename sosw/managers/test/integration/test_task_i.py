@@ -14,7 +14,7 @@ os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import first_or_none
 
@@ -226,10 +226,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(time.time() - 360 < completed_task[_('closed_at')] < time.time())
 
 
-    def get_length_of_queue_for_labourer(self):
-        raise NotImplementedError
-
-
     def test_move_task_to_retry_table(self):
         _ = self.manager.get_db_field_name
         labourer_id = 'lambda1'
@@ -339,3 +335,18 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         result = self.manager.get_oldest_greenfield_for_labourer('some_lambda')
 
         self.assertEqual(min_gf, result)
+
+
+    def test_get_length_of_queue_for_labourer(self):
+        labourer = Labourer(id='some_lambda', arn='some_arn')
+
+        num_of_tasks = 3  # Ran this with 464 tasks and it worked
+
+        for i in range(num_of_tasks):
+            row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': i}
+            self.dynamo_client.put(row)
+            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        queue_len = self.manager.get_length_of_queue_for_labourer(labourer)
+
+        self.assertEqual(queue_len, num_of_tasks)

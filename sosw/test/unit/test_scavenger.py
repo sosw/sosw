@@ -6,7 +6,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 
 from sosw.scavenger import Scavenger
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_SCAVENGER_CONFIG, EXPIRED_TASKS, LABOURERS
+from sosw.test.variables import TEST_SCAVENGER_CONFIG, TASKS, LABOURERS
 
 
 os.environ["STAGE"] = "test"
@@ -65,8 +65,8 @@ class Scavenger_UnitTestCase(unittest.TestCase):
     def test_handle_expired_tasks_for_labourer(self):
         labourer = LABOURERS[1]
         expired_tasks_per_lambda = {
-            'some_lambda':    [EXPIRED_TASKS[0]],
-            'another_lambda': [EXPIRED_TASKS[1], EXPIRED_TASKS[2]]
+            'some_lambda':    [TASKS[0]],
+            'another_lambda': [TASKS[1], TASKS[2]]
         }
 
         self.scavenger.task_client.get_expired_tasks_for_labourer = MagicMock(
@@ -80,7 +80,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.task_client.get_expired_tasks_for_labourer.assert_called_once_with(labourer)
 
         self.scavenger.process_expired_task.assert_has_calls(
-                [call(labourer, EXPIRED_TASKS[1]), call(labourer, EXPIRED_TASKS[2])]
+                [call(labourer, TASKS[1]), call(labourer, TASKS[2])]
         )
 
 
