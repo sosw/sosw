@@ -7,11 +7,13 @@ import logging
 import json
 import os
 import time
+import pprint
 
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
 from .benchmark import benchmark
+from .helpers import chunks
 
 
 logger = logging.getLogger()
@@ -261,7 +263,7 @@ class DynamoDbClient:
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
 
-        logger.debug(f"Querying dynamo: {query_args}")
+        logger.info(f"Querying dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('query')
         response_iterator = paginator.paginate(**query_args)
@@ -484,9 +486,9 @@ class DynamoDbClient:
         return query
 
 
-    def build_delete_query(self, row, table_name=None):
+    def build_delete_query(self, delete_keys: Dict, table_name: str = None):
         table_name = self._get_validate_table_name(table_name)
-        dynamo_formatted_row = self.dict_to_dynamo(row, strict=False)
+        dynamo_formatted_row = self.dict_to_dynamo(delete_keys, strict=False)
         query = {
             'TableName': table_name,
             'Key':       dynamo_formatted_row
@@ -591,14 +593,50 @@ class DynamoDbClient:
         :param table_name:
         """
 
-        table_name = self._get_validate_table_name(table_name)
+        query = self.build_delete_query(keys, table_name)
+        self.dynamo_client.delete_item(**query)
 
-        keys = self.dict_to_dynamo(keys, strict=False)
 
-        self.dynamo_client.delete_item(
-                TableName=table_name,
-                Key=keys
-        )
+    def make_put_transaction_item(self, row, table_name=None):
+        return {'Put': self.build_put_query(row, table_name)}
+
+
+    def make_delete_transaction_item(self, row, table_name):
+        return {'Delete': self.build_put_query(row, table_name)}
+
+
+    def transact_write(self, *transactions: Dict):
+        """
+        Executes many write transaction. Can execute operations on different tables.
+        Will split transactions to chunks - because transact_write_items accepts up to 10 actions.
+        WARNING: If you're expecting a transaction on more than 10 operations - AWS DynamoDB doesn't support it.
+
+        .. code-block:: python
+
+            dynamo_db_client = DynamoDbClient(config)
+            t1 = dynamo_db_client.make_put_transaction_item(row, table_name='table1')
+            t2 = dynamo_db_client.make_delete_transaction_item(row, table_name='table2')
+            dynamo_db_client.transact_write(t1, t2)
+
+        """
+
+        supported_actions = ['Put', 'Delete']
+        for t in transactions:
+            assert isinstance(t, dict), "transaction must be a dictionary"
+            assert len(t) == 1, "one transaction must contain only one operation"
+            action = list(t.keys())[0]
+            assert action in supported_actions, f"Bad action '{action}'. " \
+                                                f"Supported actions: {', '.join(supported_actions)}"
+            assert isinstance(t[action], dict), f"transaction[{action}] must be a dictionary. bad type: " \
+                                                f"{type(t[action])}"
+
+        for t_chunk in chunks(transactions, 10):
+            logger.critical(f"Transactions: \n{pprint.pformat(t_chunk)}")
+
+            response = self.dynamo_client.transact_write_items(TransactItems=t_chunk)
+
+            self.stats['dynamo_transact_write_operations'] += 1
+            logger.debug(f"Response from transact_write_items: {response}")
 
 
     def _get_validate_table_name(self, table_name=None):

@@ -2,20 +2,15 @@ __all__ = ['TaskManager']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
-import boto3
-import json
 import logging
-import math
-import os
 import time
 
-from collections import defaultdict
 from typing import Dict, List, Optional
 
-from sosw.components.benchmark import benchmark
 from sosw.labourer import Labourer
 from sosw.app import Processor
 from sosw.components.helpers import first_or_none
+from sosw.components.dynamo_db import DynamoDbClient
 
 
 logger = logging.getLogger()
@@ -36,7 +31,7 @@ class TaskManager(Processor):
                 'greenfield':   'N',
                 'attempts':     'N',
                 'closed_at':    'N',
-                'wanted_laumch_time': 'N'
+                'wanted_launch_time': 'N'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -60,12 +55,22 @@ class TaskManager(Processor):
 
     __labourers = None
 
+    # these clients will be initialized by Processor constructor
+    ecology_client = None
+    dynamo_db_client: DynamoDbClient = None
+    lambda_client = None
 
-
-    def get_oldest_greenfield_for_labourer(self):
+    def get_oldest_greenfield_for_labourer(self, labourer_id) -> int:
         """ Return value of oldest greenfield in queue. """
 
-        raise NotImplementedError
+        items = self.dynamo_db_client.get_by_query(
+                keys={_('labourer_id'): labourer_id, _('greenfield'): str(time.time())},
+                comparisons={_('greenfield'): '<='},
+                max_items=1)
+
+        if items:
+            first_task_in_queue = items[0]
+            return first_task_in_queue[_('greenfield')]
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
         """
@@ -372,6 +377,8 @@ class TaskManager(Processor):
 
 
     def get_tasks_to_retry_for_labourer(self, labourer_id: str, limit: int) -> List[Dict]:
+        _ = self.get_db_field_name
+
         tasks = self.dynamo_db_client.get_by_query(
                 keys={_('labourer_id'): labourer_id, _('wanted_launch_time'): str(time.time())},
                 comparisons={_('wanted_launch_time'): "<="},
@@ -381,5 +388,27 @@ class TaskManager(Processor):
         return tasks
 
 
-    def retry_tasks(self, tasks: List[Dict]):
-        raise NotImplementedError
+    def retry_tasks(self, labourer_id: str, tasks: List[Dict]):
+        """
+        Move tasks to tasks table, in beginning of the queue (with greenfield of a task that will be invoked next)
+        All tasks must belong to the same labourer.
+        """
+
+        _ = self.get_db_field_name
+
+        for task in tasks:
+            assert task[_('labourer_id')] == labourer_id, f"Task labourer_id must be {labourer_id}, " \
+                                                          f"bad value: {task[_('labourer_id')]}"
+
+        lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer_id)
+
+        for task in tasks:
+            # In a transaction, add task to tasks_table and delete from retry_table
+            del task['wanted_launch_time']
+            lowest_greenfield = lowest_greenfield - 1
+            task[_('greenfield')] = lowest_greenfield
+            put_query = self.dynamo_db_client.make_put_transaction_item(task)
+            delete_keys = {_('labourer_id'): labourer_id}
+            delete_query = self.dynamo_db_client.make_delete_transaction_item(
+                    delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+            self.dynamo_db_client.transact_write(put_query, delete_query)

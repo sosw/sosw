@@ -6,7 +6,7 @@ import unittest
 import os
 
 from collections import defaultdict
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -16,7 +16,7 @@ os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import first_or_none
 
@@ -55,10 +55,10 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
 
-    def tearDown(self):
-        clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
-        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
+    # def tearDown(self):
+    #     clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+    #     clean_dynamo_table(self.completed_tasks_table, ('task_id',))
+    #     clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
 
 
     def setup_tasks(self, status='available', mass=False):
@@ -257,4 +257,64 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_tasks_to_retry_for_labourer(self):
-        raise NotImplementedError
+        _ = self.manager.get_db_field_name
+        labourer_id = 'some_lambda'
+        tasks = RETRY_TASKS.copy()
+        # Add tasks to retry table
+        for task in tasks:
+            self.dynamo_client.put(task, self.config['sosw_retry_tasks_table'])
+
+        # Call
+        with patch('time.time') as t:
+            t.return_value = 9500
+            result_tasks = self.manager.get_tasks_to_retry_for_labourer(labourer_id, limit=20)
+
+            self.assertEqual(len(result_tasks), 2)
+
+            # Check it only gets tasks with timestamp <= now
+            self.assertIn(tasks[0], result_tasks)
+            self.assertIn(tasks[1], result_tasks)
+
+
+    def test_retry_tasks(self):
+        _ = self.manager.get_db_field_name
+        labourer_id = 'some_lambda'
+
+        self.manager.get_oldest_greenfield_for_labourer = Mock(return_value=8888)
+
+        # Add tasks to tasks_table
+        regular_tasks = [
+            {_('labourer_id'): labourer_id, _('task_id'): '444', _('arn'): 'some_arn', _('payload'): '{}', _('greenfield'): '8888'},
+            {_('labourer_id'): labourer_id, _('task_id'): '445', _('arn'): 'some_arn', _('payload'): '{}', _('greenfield'): '9999'},
+        ]
+        for task in regular_tasks:
+            self.dynamo_client.put(task)
+
+        # Add tasks to retry_table
+        retry_tasks = RETRY_TASKS.copy()
+        for task in retry_tasks:
+            self.dynamo_client.put(task, table_name=self.config['sosw_retry_tasks_table'])
+
+        # Use get_tasks_to_retry_for_labourer to get tasks
+        tasks = self.manager.get_tasks_to_retry_for_labourer(labourer_id, limit=100)
+
+        # Call
+        self.manager.retry_tasks(labourer_id, tasks)
+
+        # Check tasks moved to `tasks_table` with lowest greenfields
+        retry_table_items = self.dynamo_client.get_by_scan()
+        self.assertEqual(len(retry_table_items), 0)
+
+        tasks_table_items = self.dynamo_client.get_by_scan()
+        self.assertEqual(len(tasks_table_items), 5)
+
+        for reg_task in regular_tasks:
+            self.assertIn(reg_task, tasks_table_items)
+
+        for retry_task in retry_tasks:
+            matching = [x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')]][0]
+            logging.critical(f"matching: {matching}")
+
+            self.assertEqual(retry_task, matching)
+            raise Exception()
+

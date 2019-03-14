@@ -64,3 +64,18 @@ EXPIRED_TASKS = [
 LABOURERS = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
              Labourer(id='another_lambda', arn='another_arn'),
              Labourer(id='lambda3', arn='arn3')]
+
+RETRY_TASKS = [
+    {
+        'task_id':            '1', 'labourer_id': 'some_lambda', 'greenfield': 1234, 'attempts': 2,
+        'wanted_launch_time': 7777
+    },
+    {
+        'task_id':            '2', 'labourer_id': 'some_lambda', 'greenfield': 2345, 'attempts': 2,
+        'wanted_launch_time': 8888
+    },
+    {
+        'task_id':            '3', 'labourer_id': 'some_lambda', 'greenfield': 3456, 'attempts': 3,
+        'wanted_launch_time': 9999
+    },
+]
