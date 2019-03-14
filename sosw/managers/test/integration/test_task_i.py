@@ -324,7 +324,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def test_get_oldest_greenfield_for_labourer(self):
         min_gf = 20000
-        for i in range(10):  # Ran this with range(1000), it passes :)
+        for i in range(5):  # Ran this with range(1000), it passes :)
             gf = random.randint(10000, 20000)
             if gf < min_gf:
                 min_gf = gf

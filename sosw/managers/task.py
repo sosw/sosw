@@ -295,8 +295,6 @@ class TaskManager(Processor):
         * None (default) - do not care about `closed` status.
         """
 
-        # lf = self.get_db_field_name('labourer_id')
-        # gf = self.get_db_field_name('greenfield')
         _ = self.get_db_field_name
 
         query_args = {
