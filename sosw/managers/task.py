@@ -63,10 +63,13 @@ class TaskManager(Processor):
     def get_oldest_greenfield_for_labourer(self, labourer_id) -> int:
         """ Return value of oldest greenfield in queue. """
 
+        _ = self.get_db_field_name
+
         items = self.dynamo_db_client.get_by_query(
                 keys={_('labourer_id'): labourer_id, _('greenfield'): str(time.time())},
                 comparisons={_('greenfield'): '<='},
-                max_items=1)
+                max_items=1,
+                index_name=self.config['dynamo_db_config']['index_greenfield'])
 
         if items:
             first_task_in_queue = items[0]

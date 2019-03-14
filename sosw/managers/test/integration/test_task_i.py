@@ -55,10 +55,10 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
 
-    # def tearDown(self):
-    #     clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
-    #     clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-    #     clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
+    def tearDown(self):
+        clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
+        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
 
 
     def setup_tasks(self, status='available', mass=False):
@@ -318,3 +318,18 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertEqual(retry_task, matching)
             raise Exception()
 
+
+    @unittest.skip("This test takes a looong time. It passes.")
+    def test_get_oldest_greenfield_for_labourer(self):
+        min_gf = 20000
+        for i in range(400):
+            gf = random.randint(10000, 20000)
+            if gf < min_gf:
+                min_gf = gf
+            row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': gf}
+            self.dynamo_client.put(row)
+            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        result = self.manager.get_oldest_greenfield_for_labourer('some_lambda')
+
+        self.assertEqual(min_gf, result)
