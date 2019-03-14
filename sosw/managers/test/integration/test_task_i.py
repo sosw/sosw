@@ -1,11 +1,9 @@
-import boto3
 import logging
 import random
 import time
 import unittest
 import os
 
-from collections import defaultdict
 from unittest.mock import Mock, MagicMock, patch
 
 
@@ -286,14 +284,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         # Add tasks to tasks_table
         regular_tasks = [
-            {_('labourer_id'): labourer_id, _('task_id'): '444', _('arn'): 'some_arn', _('payload'): '{}', _('greenfield'): '8888'},
-            {_('labourer_id'): labourer_id, _('task_id'): '445', _('arn'): 'some_arn', _('payload'): '{}', _('greenfield'): '9999'},
+            {_('labourer_id'): labourer_id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 8888},
+            {_('labourer_id'): labourer_id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 9999},
         ]
         for task in regular_tasks:
             self.dynamo_client.put(task)
 
         # Add tasks to retry_table
         retry_tasks = RETRY_TASKS.copy()
+
         for task in retry_tasks:
             self.dynamo_client.put(task, table_name=self.config['sosw_retry_tasks_table'])
 
@@ -304,7 +303,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.manager.retry_tasks(labourer_id, tasks)
 
         # Check tasks moved to `tasks_table` with lowest greenfields
-        retry_table_items = self.dynamo_client.get_by_scan()
+        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
         self.assertEqual(len(retry_table_items), 0)
 
         tasks_table_items = self.dynamo_client.get_by_scan()
@@ -315,10 +314,16 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         for retry_task in retry_tasks:
             matching = [x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')]][0]
-            logging.critical(f"matching: {matching}")
 
-            self.assertEqual(retry_task, matching)
-            raise Exception()
+            for k in retry_task.keys():
+                if k not in [_('greenfield'), _('wanted_launch_time')]:
+                    self.assertEqual(retry_task[k], matching[k])
+
+            for k in matching.keys():
+                if k != _('greenfield'):
+                    self.assertEqual(retry_task[k], matching[k])
+
+            self.assertTrue(8880 < matching[_('greenfield')] < 8888)
 
 
     @unittest.skip("This test takes a looong time. It passes.")

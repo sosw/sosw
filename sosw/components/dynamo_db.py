@@ -602,7 +602,7 @@ class DynamoDbClient:
 
 
     def make_delete_transaction_item(self, row, table_name):
-        return {'Delete': self.build_put_query(row, table_name)}
+        return {'Delete': self.build_delete_query(row, table_name)}
 
 
     def transact_write(self, *transactions: Dict):

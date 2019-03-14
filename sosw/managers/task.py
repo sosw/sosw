@@ -24,14 +24,16 @@ class TaskManager(Processor):
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
             'row_mapper':       {
-                'task_id':      'S',
-                'labourer_id':  'S',
-                'created_at':   'N',
-                'completed_at': 'N',
-                'greenfield':   'N',
-                'attempts':     'N',
-                'closed_at':    'N',
-                'wanted_launch_time': 'N'
+                'task_id':            'S',
+                'labourer_id':        'S',
+                'created_at':         'N',
+                'completed_at':       'N',
+                'greenfield':         'N',
+                'attempts':           'N',
+                'closed_at':          'N',
+                'wanted_launch_time': 'N',
+                'arn':                'S',
+                'payload':            'S'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -43,6 +45,7 @@ class TaskManager(Processor):
         },
         'sosw_closed_tasks_table': 'sosw_closed_tasks',
         'sosw_retry_tasks_table': 'sosw_retry_tasks',
+        'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
         'greenfield_invocation_delta': 31557600,  # 1 year.
         'labourers': {
             # 'some_function': {
@@ -386,7 +389,8 @@ class TaskManager(Processor):
                 keys={_('labourer_id'): labourer_id, _('wanted_launch_time'): str(time.time())},
                 comparisons={_('wanted_launch_time'): "<="},
                 max_items=limit,
-                table_name=self.config['sosw_retry_tasks_table']
+                table_name=self.config['sosw_retry_tasks_table'],
+                index_name=self.config['sosw_retry_tasks_greenfield_index'],
         )
         return tasks
 
@@ -411,7 +415,7 @@ class TaskManager(Processor):
             lowest_greenfield = lowest_greenfield - 1
             task[_('greenfield')] = lowest_greenfield
             put_query = self.dynamo_db_client.make_put_transaction_item(task)
-            delete_keys = {_('labourer_id'): labourer_id}
+            delete_keys = {_('labourer_id'): labourer_id, _('task_id'): task[_('task_id')]}
             delete_query = self.dynamo_db_client.make_delete_transaction_item(
                     delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
             self.dynamo_db_client.transact_write(put_query, delete_query)
