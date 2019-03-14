@@ -47,18 +47,20 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
         self.retry_tasks_table = self.config['sosw_retry_tasks_table']
 
-        clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
-        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
+        self.clean_task_tables()
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
 
     def tearDown(self):
+        self.clean_task_tables()
+
+
+    def clean_task_tables(self):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
         clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'wanted_launch_time'))
+        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
 
 
     def setup_tasks(self, status='available', mass=False):
