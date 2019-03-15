@@ -379,12 +379,12 @@ class TaskManager(Processor):
         self.dynamo_db_client.delete(delete_keys)
 
 
-    def get_tasks_to_retry_for_labourer(self, labourer_id: str, limit: int) -> List[Dict]:
+    def get_tasks_to_retry_for_labourer(self, labourer: Labourer, limit: int) -> List[Dict]:
         _ = self.get_db_field_name
 
         # TODO Continue here. The Scavenger calls me differently. Test doesn't raise!!!
         tasks = self.dynamo_db_client.get_by_query(
-                keys={_('labourer_id'): labourer_id, _('desired_launch_time'): str(time.time())},
+                keys={_('labourer_id'): labourer.id, _('desired_launch_time'): str(labourer.get_attr('start'))},
                 comparisons={_('desired_launch_time'): "<="},
                 max_items=limit,
                 table_name=self.config['sosw_retry_tasks_table'],

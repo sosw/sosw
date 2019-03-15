@@ -286,3 +286,11 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertTrue(time.time() - 60 < called_with_row['desired_launch_time'] < time.time() + 60)
 
         self.assertEqual(called_with_table, self.config['sosw_retry_tasks_table'])
+
+
+    def test_get_tasks_to_retry_for_labourer(self):
+
+        # Requires Labourer and task
+        self.assertRaises(TypeError, self.manager.get_tasks_to_retry_for_labourer)
+
+        r  = self.manager.get_tasks_to_retry_for_labourer()
