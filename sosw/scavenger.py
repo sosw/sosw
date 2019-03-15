@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 class Scavenger(Processor):
     DEFAULT_CONFIG = {
-        'init_clients': ['Task', 'Ecology', 'Sns', 'DynamoDb'],
+        'init_clients': ['Task', 'Ecology', 'Sns'],
         'dynamo_db_config': {
             'row_mapper':       {
                 'task_id':     'S',
@@ -48,7 +48,6 @@ class Scavenger(Processor):
     task_client = None
     ecology_client = None
     sns_client = None
-    dynamo_db_client = None
 
 
     def __call__(self, *args, **kwargs):

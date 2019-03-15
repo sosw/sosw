@@ -176,28 +176,29 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
 
 
-    def test_close_task(self):
-        _ = self.manager.get_db_field_name
-        # Create task with id=123
-        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
-                _('completed_at'): 123123}
-        self.dynamo_client.put(task)
-
-        # Call
-        self.manager.close_task(task_id='123', labourer_id='lambda1')
-
-        # Get from db, check
-        tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
-        self.assertEqual(len(tasks), 1)
-        task_result = tasks[0]
-
-        expected_result = task.copy()
-
-        for k in ['task_id', 'labourer_id', 'greenfield', 'attempts']:
-            assert expected_result[k] == task_result[k]
-
-        self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
-        self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
+    # @unittest.skip("Function currently depricated")
+    # def test_close_task(self):
+    #     _ = self.manager.get_db_field_name
+    #     # Create task with id=123
+    #     task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
+    #             _('completed_at'): 123123}
+    #     self.dynamo_client.put(task)
+    #
+    #     # Call
+    #     self.manager.close_task(task_id='123', labourer_id='lambda1')
+    #
+    #     # Get from db, check
+    #     tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+    #     self.assertEqual(len(tasks), 1)
+    #     task_result = tasks[0]
+    #
+    #     expected_result = task.copy()
+    #
+    #     for k in ['task_id', 'labourer_id', 'greenfield', 'attempts']:
+    #         assert expected_result[k] == task_result[k]
+    #
+    #     self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
+    #     self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
 
 
     def test_archive_task(self):
@@ -246,10 +247,10 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         for k in task:
             self.assertEqual(task[k], result[k])
         for k in result:
-            if k != _('wanted_launch_time'):
+            if k != _('desired_launch_time'):
                 self.assertEqual(result[k], task[k])
 
-        self.assertTrue(time.time() + delay - 60 < result[_('wanted_launch_time')] < time.time() + delay + 60)
+        self.assertTrue(time.time() + delay - 60 < result[_('desired_launch_time')] < time.time() + delay + 60)
 
 
     def test_get_tasks_to_retry_for_labourer(self):
@@ -312,7 +313,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             matching = [x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')]][0]
 
             for k in retry_task.keys():
-                if k not in [_('greenfield'), _('wanted_launch_time')]:
+                if k not in [_('greenfield'), _('desired_launch_time')]:
                     self.assertEqual(retry_task[k], matching[k])
 
             for k in matching.keys():

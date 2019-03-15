@@ -19,21 +19,21 @@ logger.setLevel(logging.INFO)
 
 class TaskManager(Processor):
     DEFAULT_CONFIG = {
-        'init_clients':                ['DynamoDb', 'lambda', 'Ecology'],
-        'dynamo_db_config':            {
+        'init_clients':                      ['DynamoDb', 'lambda', 'Ecology'],
+        'dynamo_db_config':                  {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
             'row_mapper':       {
-                'task_id':            'S',
-                'labourer_id':        'S',
-                'created_at':         'N',
-                'completed_at':       'N',
-                'greenfield':         'N',
-                'attempts':           'N',
-                'closed_at':          'N',
-                'wanted_launch_time': 'N',
-                'arn':                'S',
-                'payload':            'S'
+                'task_id':             'S',
+                'labourer_id':         'S',
+                'created_at':          'N',
+                'completed_at':        'N',
+                'greenfield':          'N',
+                'attempts':            'N',
+                'closed_at':           'N',
+                'desired_launch_time': 'N',
+                'arn':                 'S',
+                'payload':             'S'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -43,17 +43,17 @@ class TaskManager(Processor):
                 'task_id': 'task_id',
             }
         },
-        'sosw_closed_tasks_table': 'sosw_closed_tasks',
-        'sosw_retry_tasks_table': 'sosw_retry_tasks',
+        'sosw_closed_tasks_table':           'sosw_closed_tasks',
+        'sosw_retry_tasks_table':            'sosw_retry_tasks',
         'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
-        'greenfield_invocation_delta': 31557600,  # 1 year.
-        'labourers': {
+        'greenfield_invocation_delta':       31557600,  # 1 year.
+        'labourers':                         {
             # 'some_function': {
             #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
             #     'max_simultaneous_invocations': 10,
             # }
         },
-        'max_attempts': 3,
+        'max_attempts':                      3,
     }
 
     __labourers = None
@@ -62,6 +62,7 @@ class TaskManager(Processor):
     ecology_client = None
     dynamo_db_client: DynamoDbClient = None
     lambda_client = None
+
 
     def get_oldest_greenfield_for_labourer(self, labourer_id) -> int:
         """ Return value of oldest greenfield in queue. """
@@ -78,6 +79,7 @@ class TaskManager(Processor):
             first_task_in_queue = items[0]
             return first_task_in_queue[_('greenfield')]
 
+
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
         """
         Approximate count of tasks still in queue for `labourer`.
@@ -90,10 +92,10 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         queue_count = self.dynamo_db_client.get_by_query(
-            keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
-            comparisons={'greenfield': '<='},
-            index_name=self.config['dynamo_db_config']['index_greenfield'],
-            return_count=True)
+                keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
+                comparisons={'greenfield': '<='},
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                return_count=True)
 
         return queue_count
 
@@ -171,7 +173,6 @@ class TaskManager(Processor):
                 logger.exception(err)
                 raise RuntimeError(err)
 
-
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,
                 InvocationType='Event',
@@ -195,29 +196,26 @@ class TaskManager(Processor):
         :raises RuntimeError
         """
 
-        tf = self.get_db_field_name('task_id')  # Main key field
-        lf = self.get_db_field_name('labourer_id')  # Range key field
-        gf = self.get_db_field_name('greenfield')
-        af = self.get_db_field_name('attempts')
-
-        assert labourer.id == task[lf], f"Task doesn't belong to the Labourer {labourer}: {task}"
-
-        self.dynamo_db_client.update(
-                {tf: task[tf], lf: labourer.id},
-                attributes_to_update={gf: int(time.time()) + self.config['greenfield_invocation_delta']},
-                attributes_to_increment={af: 1},
-                condition_expression=f"{gf} < {labourer.get_attr('start')}"
-        )
-
-
-    def close_task(self, task_id: str, labourer_id: str):
         _ = self.get_db_field_name
 
+        assert labourer.id == task[_('labourer_id')], f"Task doesn't belong to the Labourer {labourer}: {task}"
+
         self.dynamo_db_client.update(
-                {_('task_id'): task_id, _('labourer_id'): labourer_id},
-                attributes_to_update={_('closed_at'): int(time.time())},
+                {_('task_id'): task[_('task_id')], _('labourer_id'): labourer.id},
+                attributes_to_update={_('greenfield'): int(time.time()) + self.config['greenfield_invocation_delta']},
+                attributes_to_increment={_('attempts'): 1},
+                condition_expression=f"{_('greenfield')} < {labourer.get_attr('start')}"
         )
 
+
+    # Depricated
+    # def close_task(self, task_id: str, labourer_id: str):
+    #     _ = self.get_db_field_name
+    #
+    #     self.dynamo_db_client.update(
+    #             {_('task_id'): task_id, _('labourer_id'): labourer_id},
+    #             attributes_to_update={_('closed_at'): int(time.time())},
+    #     )
 
     def archive_task(self, task_id: str):
         _ = self.get_db_field_name
@@ -300,7 +298,7 @@ class TaskManager(Processor):
         query_args = {
             'keys':        {
                 _('labourer_id'): labourer.id,
-                _('greenfield'): labourer.get_attr('invoked')
+                _('greenfield'):  labourer.get_attr('invoked')
             },
             'comparisons': {_('greenfield'): '>='},
             'index_name':  self.config['dynamo_db_config']['index_greenfield'],
@@ -326,7 +324,7 @@ class TaskManager(Processor):
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    _('labourer_id'):                 labourer.id,
+                    _('labourer_id'):                labourer.id,
                     f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
                     f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
                 },
@@ -354,13 +352,14 @@ class TaskManager(Processor):
 
         return self.dynamo_db_client.get_by_query(
                 keys={
-                    _('labourer_id'):                 labourer.id,
+                    _('labourer_id'):                labourer.id,
                     f"st_between_{_('greenfield')}": labourer.get_attr('start'),
                     f"en_between_{_('greenfield')}": labourer.get_attr('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression=f"attribute_not_exists {_('closed_at')}",
         )
+
 
     def move_task_to_retry_table(self, task: Dict, wanted_delay: int):
         """
@@ -372,7 +371,7 @@ class TaskManager(Processor):
 
         # Add task to retry table
         retry_row = task.copy()
-        retry_row[_('wanted_launch_time')] = time.time() + wanted_delay
+        retry_row[_('desired_launch_time')] = int(time.time()) + wanted_delay
         self.dynamo_db_client.put(retry_row, table_name=self.config.get('sosw_retry_tasks_table'))
 
         # Delete task from tasks table
@@ -383,9 +382,10 @@ class TaskManager(Processor):
     def get_tasks_to_retry_for_labourer(self, labourer_id: str, limit: int) -> List[Dict]:
         _ = self.get_db_field_name
 
+        # TODO Continue here. The Scavenger calls me differently. Test doesn't raise!!!
         tasks = self.dynamo_db_client.get_by_query(
-                keys={_('labourer_id'): labourer_id, _('wanted_launch_time'): str(time.time())},
-                comparisons={_('wanted_launch_time'): "<="},
+                keys={_('labourer_id'): labourer_id, _('desired_launch_time'): str(time.time())},
+                comparisons={_('desired_launch_time'): "<="},
                 max_items=limit,
                 table_name=self.config['sosw_retry_tasks_table'],
                 index_name=self.config['sosw_retry_tasks_greenfield_index'],
@@ -409,7 +409,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             # In a transaction, add task to tasks_table and delete from retry_table
-            del task['wanted_launch_time']
+            del task['desired_launch_time']
             lowest_greenfield = lowest_greenfield - 1
             task[_('greenfield')] = lowest_greenfield
             put_query = self.dynamo_db_client.make_put_transaction_item(task)

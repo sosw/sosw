@@ -245,21 +245,22 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})
 
 
-    def test_close_task(self):
-        _ = self.manager.get_db_field_name
-        task_id = '918273'
-        labourer_id = 'some_lambda'
-
-        # Mock
-        self.manager.dynamo_db_client = MagicMock()
-
-        # Call
-        self.manager.close_task(task_id, 'some_lambda')
-
-        # Check calls
-        self.manager.dynamo_db_client.update.assert_called_once_with(
-                {_('task_id'): task_id, _('labourer_id'): labourer_id},
-                attributes_to_update={_('closed_at'): int(time.time())})
+    # @unittest.skip("Function currently depricated")
+    # def test_close_task(self):
+    #     _ = self.manager.get_db_field_name
+    #     task_id = '918273'
+    #     labourer_id = 'some_lambda'
+    #
+    #     # Mock
+    #     self.manager.dynamo_db_client = MagicMock()
+    #
+    #     # Call
+    #     self.manager.close_task(task_id, 'some_lambda')
+    #
+    #     # Check calls
+    #     self.manager.dynamo_db_client.update.assert_called_once_with(
+    #             {_('task_id'): task_id, _('labourer_id'): labourer_id},
+    #             attributes_to_update={_('closed_at'): int(time.time())})
 
 
     def move_task_to_retry_table(self):
@@ -279,9 +280,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         for k in retry_task:
             self.assertEqual(retry_task[k], called_with_row[k])
         for k in called_with_row:
-            if k != 'wanted_launch_time':
+            if k != 'desired_launch_time':
                 self.assertEqual(retry_task[k], called_with_row[k])
 
-        self.assertTrue(time.time() - 60 < called_with_row['wanted_launch_time'] < time.time() + 60)
+        self.assertTrue(time.time() - 60 < called_with_row['desired_launch_time'] < time.time() + 60)
 
         self.assertEqual(called_with_table, self.config['sosw_retry_tasks_table'])
