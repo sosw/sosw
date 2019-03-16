@@ -1,9 +1,11 @@
+import boto3
 import logging
 import random
 import time
 import unittest
 import os
 
+from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
 
 
@@ -21,7 +23,7 @@ from sosw.components.helpers import first_or_none
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
-    LABOURER = Labourer(id='some_lambda', arn='arn:aws:lambda:some_lambda')
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
 
 
     @classmethod
@@ -50,6 +52,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
+
+        self.labourer = deepcopy(self.LABOURER)
+
 
     def tearDown(self):
         self.clean_task_tables()
@@ -255,7 +260,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def test_get_tasks_to_retry_for_labourer(self):
         _ = self.manager.get_db_field_name
-        labourer_id = 'some_lambda'
+
         tasks = RETRY_TASKS.copy()
         # Add tasks to retry table
         for task in tasks:
@@ -264,25 +269,30 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # Call
         with patch('time.time') as t:
             t.return_value = 9500
-            result_tasks = self.manager.get_tasks_to_retry_for_labourer(labourer_id, limit=20)
+            labourer = self.manager.register_labourers()[0]
 
-            self.assertEqual(len(result_tasks), 2)
+        result_tasks = self.manager.get_tasks_to_retry_for_labourer(labourer, limit=20)
 
-            # Check it only gets tasks with timestamp <= now
-            self.assertIn(tasks[0], result_tasks)
-            self.assertIn(tasks[1], result_tasks)
+        self.assertEqual(len(result_tasks), 2)
+
+        # Check it only gets tasks with timestamp <= now
+        self.assertIn(tasks[0], result_tasks)
+        self.assertIn(tasks[1], result_tasks)
 
 
     def test_retry_tasks(self):
         _ = self.manager.get_db_field_name
-        labourer_id = 'some_lambda'
+
+        with patch('time.time') as t:
+            t.return_value = 9500
+            labourer = self.manager.register_labourers()[0]
 
         self.manager.get_oldest_greenfield_for_labourer = Mock(return_value=8888)
 
         # Add tasks to tasks_table
         regular_tasks = [
-            {_('labourer_id'): labourer_id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 8888},
-            {_('labourer_id'): labourer_id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 9999},
+            {_('labourer_id'): labourer.id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 8888},
+            {_('labourer_id'): labourer.id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 9999},
         ]
         for task in regular_tasks:
             self.dynamo_client.put(task)
@@ -293,24 +303,34 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         for task in retry_tasks:
             self.dynamo_client.put(task, table_name=self.config['sosw_retry_tasks_table'])
 
+        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
+        self.assertEqual(len(retry_table_items), len(retry_tasks))
+
         # Use get_tasks_to_retry_for_labourer to get tasks
-        tasks = self.manager.get_tasks_to_retry_for_labourer(labourer_id, limit=100)
+        tasks = self.manager.get_tasks_to_retry_for_labourer(labourer)
 
         # Call
-        self.manager.retry_tasks(labourer_id, tasks)
+        self.manager.retry_tasks(labourer, tasks)
+
+        # Check removed 2 out of 3 tasks from retry queue. One is desired to be launched later.
+        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
+        self.assertEqual(len(retry_table_items), 1)
 
         # Check tasks moved to `tasks_table` with lowest greenfields
-        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
-        self.assertEqual(len(retry_table_items), 0)
-
         tasks_table_items = self.dynamo_client.get_by_scan()
-        self.assertEqual(len(tasks_table_items), 5)
+        for x in tasks_table_items:
+            print(x)
+        self.assertEqual(len(tasks_table_items), 4)
 
         for reg_task in regular_tasks:
             self.assertIn(reg_task, tasks_table_items)
 
         for retry_task in retry_tasks:
-            matching = [x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')]][0]
+            try:
+                matching = next(x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')])
+            except StopIteration:
+                print(f"Task not retried {retry_task}. Probably not yet desired.")
+                continue
 
             for k in retry_task.keys():
                 if k not in [_('greenfield'), _('desired_launch_time')]:
@@ -320,20 +340,30 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                 if k != _('greenfield'):
                     self.assertEqual(retry_task[k], matching[k])
 
-            self.assertTrue(8880 < matching[_('greenfield')] < 8888)
+            print(f"New greenfield of a retried task: {matching[_('greenfield')]}")
+            self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
+
+
+    @patch.object(boto3, '__version__', return_value='1.9.53')
+    def test_retry_tasks__old_boto(self, n):
+        self.test_retry_tasks()
 
 
     def test_get_oldest_greenfield_for_labourer(self):
+        with patch('time.time') as t:
+            t.return_value = 9500
+            labourer = self.manager.register_labourers()[0]
+
         min_gf = 20000
         for i in range(5):  # Ran this with range(1000), it passes :)
             gf = random.randint(10000, 20000)
             if gf < min_gf:
                 min_gf = gf
-            row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': gf}
+            row = {'labourer_id': f"{labourer.id}", 'task_id': f"task-{i}", 'greenfield': gf}
             self.dynamo_client.put(row)
             time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
-        result = self.manager.get_oldest_greenfield_for_labourer('some_lambda')
+        result = self.manager.get_oldest_greenfield_for_labourer(labourer)
 
         self.assertEqual(min_gf, result)
 

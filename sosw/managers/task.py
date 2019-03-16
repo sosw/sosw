@@ -2,9 +2,11 @@ __all__ = ['TaskManager']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+import boto3
 import logging
 import time
 
+from pkg_resources import parse_version
 from typing import Dict, List, Optional
 
 from sosw.labourer import Labourer
@@ -64,13 +66,13 @@ class TaskManager(Processor):
     lambda_client = None
 
 
-    def get_oldest_greenfield_for_labourer(self, labourer_id) -> int:
+    def get_oldest_greenfield_for_labourer(self, labourer: Labourer) -> int:
         """ Return value of oldest greenfield in queue. """
 
         _ = self.get_db_field_name
 
         items = self.dynamo_db_client.get_by_query(
-                keys={_('labourer_id'): labourer_id, _('greenfield'): str(time.time())},
+                keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
                 comparisons={_('greenfield'): '<='},
                 max_items=1,
                 index_name=self.config['dynamo_db_config']['index_greenfield'])
@@ -394,7 +396,7 @@ class TaskManager(Processor):
         return tasks
 
 
-    def retry_tasks(self, labourer_id: str, tasks: List[Dict]):
+    def retry_tasks(self, labourer: Labourer, tasks: List[Dict]):
         """
         Move tasks to tasks table, in beginning of the queue (with greenfield of a task that will be invoked next)
         All tasks must belong to the same labourer.
@@ -403,18 +405,27 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         for task in tasks:
-            assert task[_('labourer_id')] == labourer_id, f"Task labourer_id must be {labourer_id}, " \
+            assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
                                                           f"bad value: {task[_('labourer_id')]}"
 
-        lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer_id)
+        lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
         for task in tasks:
-            # In a transaction, add task to tasks_table and delete from retry_table
             del task['desired_launch_time']
             lowest_greenfield = lowest_greenfield - 1
             task[_('greenfield')] = lowest_greenfield
-            put_query = self.dynamo_db_client.make_put_transaction_item(task)
-            delete_keys = {_('labourer_id'): labourer_id, _('task_id'): task[_('task_id')]}
-            delete_query = self.dynamo_db_client.make_delete_transaction_item(
-                    delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
-            self.dynamo_db_client.transact_write(put_query, delete_query)
+            delete_keys = {_('labourer_id'): labourer.id, _('task_id'): task[_('task_id')]}
+
+            # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table
+            # https://github.com/boto/boto3/issues/1791: It's available for 1.9.54+
+            if parse_version(str(boto3.__version__)) >= parse_version('1.9.54'):
+                put_query = self.dynamo_db_client.make_put_transaction_item(task)
+                delete_query = self.dynamo_db_client.make_delete_transaction_item(
+                        delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+                self.dynamo_db_client.transact_write(put_query, delete_query)
+
+            else:
+                logger.info("Looks like you are running an ancient copy of boto3 still in old Environment of Lambda."
+                            "Salut to AWS from March 2019.")
+                self.dynamo_db_client.put(task)
+                self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))

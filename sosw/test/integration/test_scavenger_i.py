@@ -31,7 +31,7 @@ class Scavenger_IntegrationTestCase(unittest.TestCase):
         }
 
 
-    def test_put_task_to_retry_table(self):
-        _ = self.scavenger.get_db_field_name
-
-        raise NotImplementedError
+    # def test_put_task_to_retry_table(self):
+    #     _ = self.scavenger.get_db_field_name
+    #
+    #     raise NotImplementedError
