@@ -4,10 +4,11 @@ import os
 import random
 import time
 import unittest
+import uuid
 
 from collections import defaultdict
 from copy import deepcopy
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -37,7 +38,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.config = self.TEST_CONFIG.copy()
 
-        self.labourer =  deepcopy(self.LABOURER)
+        self.labourer = deepcopy(self.LABOURER)
 
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
@@ -189,7 +190,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_register_labourers(self):
-
         with patch('time.time') as t:
             t.return_value = 123
 
@@ -201,6 +201,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_attr('start'), 123)
         self.assertEqual(lab.get_attr('invoked'), invoke_time)
         self.assertEqual(lab.get_attr('expired'), invoke_time - lab.duration - lab.cooldown)
+        self.assertEqual(lab.get_attr('health'), 2)
+        self.assertEqual(lab.get_attr('max_attempts'), 3)
 
 
     def test_calculate_count_of_running_tasks_for_labourer(self):
@@ -223,3 +225,117 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(result[0].foo, 'bar')
         self.assertEqual(result[0].arn, '123')
         self.assertEqual(result[1].foo, 'baz')
+
+
+    def test_archive_task(self):
+        task_id = '918273'
+        task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}', 'completed_at': '1551962375',
+                'closed_at': '111'}
+
+        # Mock
+        self.manager.dynamo_db_client = MagicMock()
+        self.manager.get_task_by_id = Mock(return_value=task)
+
+        # Call
+        self.manager.archive_task(task_id)
+
+        # Check calls
+        expected_completed_task = task.copy()
+        expected_completed_task['labourer_id_task_status'] = 'some_lambda_1'
+        self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG['sosw_closed_tasks_table'])
+        self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})
+
+
+    # @unittest.skip("Function currently depricated")
+    # def test_close_task(self):
+    #     _ = self.manager.get_db_field_name
+    #     task_id = '918273'
+    #     labourer_id = 'some_lambda'
+    #
+    #     # Mock
+    #     self.manager.dynamo_db_client = MagicMock()
+    #
+    #     # Call
+    #     self.manager.close_task(task_id, 'some_lambda')
+    #
+    #     # Check calls
+    #     self.manager.dynamo_db_client.update.assert_called_once_with(
+    #             {_('task_id'): task_id, _('labourer_id'): labourer_id},
+    #             attributes_to_update={_('closed_at'): int(time.time())})
+
+
+    def move_task_to_retry_table(self):
+        task_id = '123'
+        task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}'}
+        delay = 350
+
+        # Mock
+        self.manager.dynamo_db_client = MagicMock()
+
+        self.manager.move_task_to_retry_table(task, delay)
+
+        retry_task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}'}
+        called_with_row = self.manager.dynamo_db_client.put.call_args[0][0]
+        called_with_table = self.manager.dynamo_db_client.put.call_args[0][2]
+
+        for k in retry_task:
+            self.assertEqual(retry_task[k], called_with_row[k])
+        for k in called_with_row:
+            if k != 'desired_launch_time':
+                self.assertEqual(retry_task[k], called_with_row[k])
+
+        self.assertTrue(time.time() - 60 < called_with_row['desired_launch_time'] < time.time() + 60)
+
+        self.assertEqual(called_with_table, self.config['sosw_retry_tasks_table'])
+
+
+    def test_get_tasks_to_retry_for_labourer(self):
+
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        TASK = {'labourer_id': 'some_lambda', 'task_id': str(uuid.uuid4()), 'greenfield': 122}
+
+        # Requires Labourer
+        self.assertRaises(TypeError, self.manager.get_tasks_to_retry_for_labourer)
+
+        self.manager.dynamo_db_client.get_by_query.return_value = [TASK]
+
+        r = self.manager.get_tasks_to_retry_for_labourer(labourer=labourer)
+
+        self.manager.dynamo_db_client.get_by_query.assert_called_once()
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0]['task_id'], TASK['task_id'])
+
+
+    def test_get_tasks_to_retry_for_labourer__respects_greenfield(self):
+
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        self.manager.get_tasks_to_retry_for_labourer(labourer=labourer, limit=1)
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.get_by_query.call_args
+        self.assertEqual(call_kwargs['keys']['desired_launch_time'], '123')
+        self.assertEqual(call_kwargs['comparisons']['desired_launch_time'], '<=')
+
+
+    def test_get_tasks_to_retry_for_labourer__limit(self):
+
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        TASK = {'labourer_id': 'some_lambda', 'task_id': str(uuid.uuid4()), 'greenfield': 122}
+        mock_get_by_query = lambda **kwargs: [TASK for _ in range(kwargs.get('max_items', 42))]
+
+        self.manager.dynamo_db_client.get_by_query.side_effect = mock_get_by_query
+
+        r = self.manager.get_tasks_to_retry_for_labourer(labourer=labourer, limit=1)
+
+        self.manager.dynamo_db_client.get_by_query.assert_called_once()
+        self.assertEqual(len(r), 1)
+
+

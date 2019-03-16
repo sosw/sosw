@@ -23,11 +23,13 @@ __all__ = ['validate_account_to_dashed',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
+           'first_or_none'
            ]
 
 import re
 import uuid
 import datetime
+from typing import Iterable, Callable
 
 
 def validate_account_to_dashed(account):
@@ -614,3 +616,19 @@ def validate_list_of_words_from_csv_or_list(data: (str, list)) -> list:
         raise ValueError(f"data for validate_list_of_words_from_csv_or_list() should be csv of WORDS or list: {data}")
 
     return result
+
+
+def first_or_none(items: Iterable, condition: Callable = None):
+    """
+    Return first element in iterable to match condition or None
+    """
+
+    if not condition:
+        def condition(*args, **kwargs):
+            return True
+
+    for item in items:
+        if condition(item):
+            return item
+
+    return None
