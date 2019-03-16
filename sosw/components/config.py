@@ -343,8 +343,8 @@ class ConfigSource:
         return self.default_source.get_config(name)
 
 
-    def update_config(self, name, val):
-        return self.default_source.update_config(name, val)
+    def update_config(self, name, val, **kwargs):
+        return self.default_source.update_config(name, val, **kwargs)
 
 
     def get_credentials_by_prefix(self, prefix):
