@@ -438,5 +438,29 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(expected, validate_list_of_words_from_csv_or_list(data))
 
 
+    def test_one_or_none(self):
+        # List
+        self.assertEqual(first_or_none([]), None)
+        self.assertEqual(first_or_none([1, 2]), 1)
+        self.assertEqual(first_or_none([1, 2, 3], lambda x: x == 2), 2)
+        self.assertEqual(first_or_none([1, 2, 3], lambda x: x == 10), None)
+        self.assertEqual(first_or_none(["a", "b"]), "a")
+        self.assertEqual(first_or_none(["a", "b"], lambda x: x == "b"), "b")
+
+        # Tuple
+        self.assertEqual(first_or_none(tuple(), lambda x: x == 2), None)
+        self.assertEqual(first_or_none((1, 2, 3), lambda x: x == 2), 2)
+
+        # Set
+        self.assertEqual(first_or_none(set()), None)
+        self.assertEqual(first_or_none({"a", "b"}, lambda x: x == "b"), "b")
+
+        # Dict
+        d = {"a": 1, "b": 2}
+        self.assertEqual(first_or_none({}), None)
+        self.assertEqual(first_or_none(d), "a")
+        self.assertEqual(first_or_none(d, lambda x: d[x] == 2), "b")
+
+
 if __name__ == '__main__':
     unittest.main()
