@@ -4,6 +4,7 @@ import os
 import random
 import time
 import unittest
+import uuid
 
 from collections import defaultdict
 from copy import deepcopy
@@ -290,7 +291,51 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_get_tasks_to_retry_for_labourer(self):
 
-        # Requires Labourer and task
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        TASK = {'labourer_id': 'some_lambda', 'task_id': str(uuid.uuid4()), 'greenfield': 122}
+
+        # Requires Labourer
         self.assertRaises(TypeError, self.manager.get_tasks_to_retry_for_labourer)
 
-        r  = self.manager.get_tasks_to_retry_for_labourer()
+        self.manager.dynamo_db_client.get_by_query.return_value = [TASK]
+
+        r = self.manager.get_tasks_to_retry_for_labourer(labourer=labourer)
+
+        self.manager.dynamo_db_client.get_by_query.assert_called_once()
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0]['task_id'], TASK['task_id'])
+
+
+    def test_get_tasks_to_retry_for_labourer__respects_greenfield(self):
+
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        self.manager.get_tasks_to_retry_for_labourer(labourer=labourer, limit=1)
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.get_by_query.call_args
+        self.assertEqual(call_kwargs['keys']['desired_launch_time'], '123')
+        self.assertEqual(call_kwargs['comparisons']['desired_launch_time'], '<=')
+
+
+    def test_get_tasks_to_retry_for_labourer__limit(self):
+
+        with patch('time.time') as t:
+            t.return_value = 123
+            labourer = self.manager.register_labourers()[0]
+
+        TASK = {'labourer_id': 'some_lambda', 'task_id': str(uuid.uuid4()), 'greenfield': 122}
+        mock_get_by_query = lambda **kwargs: [TASK for _ in range(kwargs.get('max_items', 42))]
+
+        self.manager.dynamo_db_client.get_by_query.side_effect = mock_get_by_query
+
+        r = self.manager.get_tasks_to_retry_for_labourer(labourer=labourer, limit=1)
+
+        self.manager.dynamo_db_client.get_by_query.assert_called_once()
+        self.assertEqual(len(r), 1)
+
+

@@ -381,29 +381,39 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(row3 in result)
 
 
-    @unittest.skip("This test takes too long time to run every time. It passes.")
     def test_get_by_query__max_items(self):
+        # This function can also be used for some benchmarking, just change to bigger amounts manually.
+        INITIAL_TASKS = 5 # Change to 500 to run benchmarking, and uncomment raise at the end of the test.
 
-        for x in range(1000, 2000):
+        for x in range(1000, 1000 + INITIAL_TASKS):
             row = {'hash_col': f"key", 'range_col': x}
             self.dynamo_client.put(row, self.table_name)
-            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+            if INITIAL_TASKS > 10:
+                time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
         st = time.perf_counter()
         result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=3)
         bm = time.perf_counter() - st
-        # print(f"Benchmark: {bm}")
+        print(f"Benchmark: {bm}")
 
         self.assertEqual(len(result), 3)
         self.assertLess(bm, 0.1)
 
-        st = time.perf_counter()
-        result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=499)
-        bm = time.perf_counter() - st
-        # print(f"Benchmark: {bm}")
-        self.assertLess(bm, 0.1)
+        # Check unspecified limit.
+        result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name)
+        self.assertEqual(len(result), INITIAL_TASKS)
 
-        self.assertEqual(len(result), 499)
+        # Benchmarking
+        if INITIAL_TASKS >= 500:
+            st = time.perf_counter()
+            result = self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=499)
+            bm = time.perf_counter() - st
+            print(f"Benchmark: {bm}")
+            self.assertLess(bm, 0.1)
+
+            self.assertEqual(len(result), 499)
+            # Uncomment this see benchmark
+            # self.assertEqual(1, 2)
 
 
     def test_get_by_query__return_count(self):
