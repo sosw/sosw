@@ -27,7 +27,7 @@ class SnsManager():
     call of commit() or during the destruction of the class.
 
     The method doesn't yet support batching messages for multiple recipients, so in case you try to
-    change the recipient it automatically sends all the currently batched messages to the old recipient.
+    change the recipient it automatically sends all the currently batched messages to the previous recipient.
     """
 
 
@@ -38,16 +38,23 @@ class SnsManager():
         """
 
         self.stats = defaultdict(int)
-        self.session = boto3.Session(region_name=kwargs.get('region', 'us-west-2'))
-        self.resource = self.session.client('sns')
 
-        self.recipient = kwargs.get('recipient')
-        self.subject = kwargs.get('subject')
+        if 'config' in kwargs:
+            self.recipient = kwargs['config'].get('recipient')
+            self.subject = kwargs['config'].get('subject')
+        else:
+            self.recipient = kwargs.get('recipient')
+            self.subject = kwargs.get('subject')
+
         self.queue = []
 
-        self.test = kwargs.get('test')
+        self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
         if self.test:
             self.recipient = 'arn:aws:sns:us-west-2:000000000000:autotest_topic'
+
+        if not self.test:
+            self.session = boto3.Session(region_name=kwargs.get('region', 'us-west-2'))
+            self.resource = self.session.client('sns')
 
 
     def __del__(self):
@@ -65,10 +72,11 @@ class SnsManager():
         Commits the self.queue if there are any messages in it.
         """
 
-        if self.queue:
-            self.commit()
+        if getattr(self, name) != value:
+            if self.queue:
+                self.commit()
 
-        setattr(self, name, value)
+            setattr(self, name, value)
 
 
     def set_recipient(self, arn):

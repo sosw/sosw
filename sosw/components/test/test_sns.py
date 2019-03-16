@@ -31,6 +31,15 @@ class sns_TestCase(unittest.TestCase):
         pass
 
 
+    def test_init__reads_config(self):
+
+        sns = SnsManager(config={'subject': 'subj', 'recepient': 'arn::some_topic'})
+
+        self.assertEqual(sns.recipient, 'arn:aws:sns:us-west-2:000000000000:autotest_topic',
+                         "The Topic must be automatically reset for test")
+        self.assertEqual(sns.subject, 'subj', "Subject was not set during __init__ from config.")
+
+
     def test_queue_message(self):
         self.sns.send_message("test message")
         self.assertEqual(len(self.sns.queue), 1, "Default send_message() did not queue the message.")
@@ -54,6 +63,12 @@ class sns_TestCase(unittest.TestCase):
         self.assertEqual(len(self.sns.queue), 0, "On change subject the queue should be committed.")
 
 
+    def test_no_commit_on_change_subject_if_subject_is_same(self):
+        self.sns.send_message("test message")
+        self.sns.set_subject("Autotest SNS Subject")
+        self.assertEqual(len(self.sns.queue), 1, "On change subject the queue should be committed.")
+
+
     def test_no_commit_on_same_subject(self):
         self.sns.send_message("test message")
         self.sns.send_message("test message", subject="Autotest SNS Subject")
@@ -73,6 +88,14 @@ class sns_TestCase(unittest.TestCase):
 
         self.sns.set_recipient('arn:aws:sns:new_recipient')
         self.assertEqual(len(self.sns.queue), 0)
+
+
+    def test_no_commit_on_change_recipient_if_recipient_is_same(self):
+        self.sns.send_message("test message")
+        self.assertEqual(len(self.sns.queue), 1, f"Initial send_message() did not queue the message")
+
+        self.sns.set_recipient('arn:aws:sns:us-west-2:000000000000:autotest_topic')
+        self.assertEqual(len(self.sns.queue), 1)
 
 
     def test_validate_recipient(self):

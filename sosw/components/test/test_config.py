@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sosw.components.dynamo_db import DynamoDBClient, clean_dynamo_table
+from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.config import SSMConfig, DynamoConfig, ConfigSource
 
 
@@ -48,7 +48,7 @@ class DynamoConfigTestCase(unittest.TestCase):
 
     def setUp(self):
         config = self.TEST_CONFIG.copy()
-        self.dynamo_client = DynamoDBClient(config)
+        self.dynamo_client = DynamoDbClient(config)
         self.dynamo_config = DynamoConfig(test=True)
 
 
@@ -104,7 +104,7 @@ class DynamoConfigTestCase(unittest.TestCase):
         VALUE = 'exists'
         self.dynamo_config.update_config(name=KEY, val=VALUE)
         result = self.dynamo_client.get_by_query(keys={'env': 'dev', 'config_name': KEY})
-        self.assertEquals({'env': 'dev', 'config_name': KEY, 'config_value': VALUE}, result[0])
+        self.assertEqual({'env': 'dev', 'config_name': KEY, 'config_value': VALUE}, result[0])
 
 
 class ConfigTestCase(unittest.TestCase):

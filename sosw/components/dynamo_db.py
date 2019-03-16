@@ -1,22 +1,26 @@
-__all__ = ['DynamoDBClient', 'clean_dynamo_table']
+__all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel"
-__version__ = "1.5"
+__version__ = "1.6"
 
 import boto3
 import logging
 import json
 import os
 import time
+import pprint
+
 from collections import defaultdict
+from typing import Dict, List, Optional, Tuple, Union
 
 from .benchmark import benchmark
+from .helpers import chunks
 
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class DynamoDBClient:
+class DynamoDbClient:
     """
     Has default methods for different types of DynamoDB tables.
 
@@ -42,7 +46,7 @@ class DynamoDBClient:
 
 
     def __init__(self, config):
-        assert isinstance(config, dict), "Config must be provided during DynamoDBClient initialization"
+        assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
         # If this is a test, make sure the table is a test table
         if os.environ.get('STAGE') == 'test' and 'table_name' in config:
@@ -97,8 +101,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
         else:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
@@ -116,8 +120,8 @@ class DynamoDBClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDBClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDBClient now supports only "
+                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
                                            f"'S' or 'N' types. Others must be JSON-ified.")
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
@@ -172,7 +176,10 @@ class DynamoDBClient:
 
 
     @benchmark
-    def get_by_query(self, keys, table_name=None, index_name=None, strict=True, comparisons={}):
+    def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
+                     comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
+                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False) \
+            -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -188,16 +195,21 @@ class DynamoDBClient:
 
         Optional
 
-        :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param str index_name: Name of the secondary index in the table. If not specified, will query the table itself.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
-            If false, will get all attributes. Default is True.
+        :param str table_name:  Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name:  Name of the secondary index in the table. If not specified, will query the table itself.
         :param dict comparisons: Type of comparison for each key. If a key is not mentioned, comparison type will be =.
-            Valid values: =, <, <=, >, >=, begins_with.
+            Valid values: `=`, `<`, `<=`, `>`, `>=`, `begins_with`.
             Comparisons only work for the range key.
             Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
+
+        :param int max_items:   Limit the number of items to fetch.
+        :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
+            e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+        :param bool strict:     If True, will only get the attributes specified in the row mapper.
+                                If false, will get all attributes. Default is True.
+        :param bool return_count: if True, will return the number of items in the result instead of the items themselves
         :return: List of items from the table, each item in key-value format
-        :rtype: list
+            OR the count if `return_count` is True
         """
 
         table_name = self._get_validate_table_name(table_name)
@@ -206,24 +218,50 @@ class DynamoDBClient:
         cond_expr_parts = []
 
         for key_attr_name in keys:
-            compr = comparisons.get(key_attr_name) or '='
+            # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
+            if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
+                compr = 'between'
+            elif key_attr_name.startswith('en_between_'):  # This attribute is used in the expression with st_between
+                continue
+            elif comparisons:
+                compr = comparisons.get(key_attr_name) or '='
+            else:
+                compr = '='
+
             if compr == 'begins_with':
                 cond_expr_parts.append(f"begins_with ({key_attr_name}, :{key_attr_name})")
+
+            elif compr == 'between':
+                key = key_attr_name[11:]
+                cond_expr_parts.append(f"{key} between :st_between_{key} and :en_between_{key}")
             else:
-                assert compr in ('=', '<', '<=', '>', '>=', "Comparison not valid")
+                assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
                 cond_expr_parts.append(f"{key_attr_name} {compr} :{key_attr_name}")
 
         cond_expr = " AND ".join(cond_expr_parts)
 
+        select = ('ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
+
+        logger.debug(cond_expr, filter_values)
         query_args = {
             'TableName':                 table_name,
-            'Select':                    'ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES',
+            'Select':                    select,
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
             'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
 
+        # In case we have a filter expression, we parse it and add variables (values) to the ExpressionAttributeValues
+        # Expression is also transformed to use these variables.
+        if filter_expression:
+            expr, values = self._parse_filter_expression(filter_expression)
+            query_args['FilterExpression'] = expr
+            query_args['ExpressionAttributeValues'].update(values)
+
         if index_name:
             query_args['IndexName'] = index_name
+
+        if max_items:
+            query_args['PaginationConfig'] = {'MaxItems': max_items}
 
         logger.debug(f"Querying dynamo: {query_args}")
 
@@ -231,10 +269,60 @@ class DynamoDBClient:
         response_iterator = paginator.paginate(**query_args)
         result = []
         for page in response_iterator:
+            if return_count:
+                return page['Count']
+
             result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
+            if max_items and len(result) >= max_items:
+                break
 
-        return result
+        return result[:max_items] if max_items else result
+
+
+    def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
+        """
+        Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
+        https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+
+        Supported: regular comparators, between, attribute_[not_]exists
+
+        :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
+        """
+
+        assert isinstance(expression, str), f"Filter expression must be a string: {expression}"
+
+        words = [x.strip() for x in expression.split()]
+
+        # Filter Expression should be 2, 3 or 5 words. See doc for more details.
+        # This must be a function
+        if len(words) == 2:
+            operator, key = words
+            assert operator.lower() in ('attribute_exists', 'attribute_not_exists')
+            result_expr, result_values = f"{operator} ({key})", {}
+
+        # This must be a regular comparison
+        elif len(words) == 3:
+            key, operator, value = words
+            assert operator in ('=', '<>', '<', '<=', '>', '>='), f"Unsupported operator for filtering: {expression}"
+
+            # It is important to add prefix to value here to avoid attribute naming conflicts for example
+            # in conditional_update expressions. e.g you update some field only if it's value is matching condition.
+            result_expr = f"{key} {operator} :filter_{key}"
+            result_values = self.dict_to_dynamo({f"filter_{key}": words[-1]}, add_prefix=':', strict=False)
+
+        # This must be `between` statement.
+        elif len(words) == 5:
+            assert (words[1].lower(), words[3].lower()) == ('between', 'and'), \
+                f"Unsupported expression for Filtering: {expression}"
+            key = words[0]
+            result_expr = f"{key} between :st_between_{key} and :en_between_{key}"
+            result_values = self.dict_to_dynamo({f"st_between_{key}": words[2],
+                                                 f"en_between_{key}": words[4]}, add_prefix=':', strict=False)
+        else:
+            raise ValueError(f"Unsupported expression for Filtering: {expression}")
+
+        return result_expr, result_values
 
 
     @benchmark
@@ -357,10 +445,12 @@ class DynamoDBClient:
         db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
         logger.debug(f"batch_get_items_one_table response: {db_result}")
 
+
         # Check if we skipped something - if we did, try again.
         def is_action_incomplete(db_result):
             return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
+                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
+
 
         if is_action_incomplete(db_result):
             # Retry several times
@@ -396,9 +486,9 @@ class DynamoDBClient:
         return query
 
 
-    def build_delete_query(self, row, table_name=None):
+    def build_delete_query(self, delete_keys: Dict, table_name: str = None):
         table_name = self._get_validate_table_name(table_name)
-        dynamo_formatted_row = self.dict_to_dynamo(row, strict=False)
+        dynamo_formatted_row = self.dict_to_dynamo(delete_keys, strict=False)
         query = {
             'TableName': table_name,
             'Key':       dynamo_formatted_row
@@ -427,7 +517,9 @@ class DynamoDBClient:
 
 
     @benchmark
-    def update(self, keys, attributes_to_update=None, attributes_to_increment=None, table_name=None):
+    def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
+               attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+               condition_expression: Optional[str] = None):
         """
         Updates an item in DynamoDB.
 
@@ -443,6 +535,7 @@ class DynamoDBClient:
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
             Example: {'some_counter': '3'}
+        :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
         """
 
@@ -482,10 +575,68 @@ class DynamoDBClient:
             'UpdateExpression':          update_expr  # Ex. "SET #attr_name = :attr_name AND ..."
         }
 
-        logger.info(f"Updating an item, query: {update_item_query}")
+        if condition_expression:
+            expr, values = self._parse_filter_expression(condition_expression)
+            update_item_query['ConditionExpression'] = expr
+            update_item_query['ExpressionAttributeValues'].update(values)
+
+        logger.debug(f"Updating an item, query: {update_item_query}")
         response = self.dynamo_client.update_item(**update_item_query)
         logger.debug(f"Update result: {response}")
         self.stats['dynamo_update_queries'] += 1
+
+
+    def delete(self, keys: Dict, table_name: Optional[str] = None):
+        """
+
+        :param dict keys: Keys and values of the row we delete.
+        :param table_name:
+        """
+
+        query = self.build_delete_query(keys, table_name)
+        self.dynamo_client.delete_item(**query)
+
+
+    def make_put_transaction_item(self, row, table_name=None):
+        return {'Put': self.build_put_query(row, table_name)}
+
+
+    def make_delete_transaction_item(self, row, table_name):
+        return {'Delete': self.build_delete_query(row, table_name)}
+
+
+    def transact_write(self, *transactions: Dict):
+        """
+        Executes many write transaction. Can execute operations on different tables.
+        Will split transactions to chunks - because transact_write_items accepts up to 10 actions.
+        WARNING: If you're expecting a transaction on more than 10 operations - AWS DynamoDB doesn't support it.
+
+        .. code-block:: python
+
+            dynamo_db_client = DynamoDbClient(config)
+            t1 = dynamo_db_client.make_put_transaction_item(row, table_name='table1')
+            t2 = dynamo_db_client.make_delete_transaction_item(row, table_name='table2')
+            dynamo_db_client.transact_write(t1, t2)
+
+        """
+
+        supported_actions = ['Put', 'Delete']
+        for t in transactions:
+            assert isinstance(t, dict), "transaction must be a dictionary"
+            assert len(t) == 1, "one transaction must contain only one operation"
+            action = list(t.keys())[0]
+            assert action in supported_actions, f"Bad action '{action}'. " \
+                                                f"Supported actions: {', '.join(supported_actions)}"
+            assert isinstance(t[action], dict), f"transaction[{action}] must be a dictionary. bad type: " \
+                                                f"{type(t[action])}"
+
+        for t_chunk in chunks(transactions, 10):
+            logger.debug(f"Transactions: \n{pprint.pformat(t_chunk)}")
+
+            response = self.dynamo_client.transact_write_items(TransactItems=t_chunk)
+
+            self.stats['dynamo_transact_write_operations'] += 1
+            logger.debug(f"Response from transact_write_items: {response}")
 
 
     def _get_validate_table_name(self, table_name=None):
@@ -496,7 +647,7 @@ class DynamoDBClient:
                 raise RuntimeError("Failed to dynamo action. no 'table_name' in config  and table_name wasn't "
                                    "specified in the arguments.")
         if os.environ.get('STAGE') == 'test':
-            assert table_name.startswith('autotest_') or table_name == 'config'
+            assert table_name.startswith('autotest_') or table_name == 'config', f"Bad table name in test: {table_name}"
 
         return table_name
 

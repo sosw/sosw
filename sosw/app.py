@@ -44,7 +44,7 @@ class Processor:
         self.config = self.DEFAULT_CONFIG.copy()
         self.config.update(self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config.update(custom_config or {})
-        logger.info(f"Final processor config: {self.config}")
+        logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
 
@@ -73,23 +73,26 @@ class Processor:
         for service in clients:
             module_name = camel_case_to_underscore(service)
             try:
-                # FIXME you probably need __name__ here or smth.
                 some_module = import_module(f"sosw.components.{module_name}")
-                # some_module = import_module(f"{__name__}.components.{module_name}")
             except:
-
-                # The other supported option is to load boto3 client if it exists.
+                # Also try to import from the components directory owned by the Lambda itself.
                 try:
-                    setattr(self, f"{module_name}_client", boto3.client(module_name))
-                    continue
+                    some_module = import_module(f"components.{module_name}")
                 except:
-                    logger.error(f"Failed to import module for service {module_name}. Component naming problem.")
-                    raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
+
+                    # The other supported option is to load boto3 client if it exists.
+                    try:
+                        setattr(self, f"{module_name}_client", boto3.client(module_name))
+                        continue
+                    except:
+                        logger.error(f"Failed to import module for service {module_name}. Component naming problem.")
+                        raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
 
             for suffix in client_suffixes:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                     some_client_config = self.config.get(f"{module_name}_config")
+                    logger.info(f"Found config for {module_name}: {some_client_config}")
                     if some_client_config:
                         setattr(self, f"{module_name}_client", some_class(config=some_client_config))
                     else:
@@ -97,6 +100,7 @@ class Processor:
                     logger.info(f"Successfully registered {module_name}_client")
                     break
                 except:
+                    logger.exception(f"Failed suffix {suffix}")
                     pass
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
