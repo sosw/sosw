@@ -150,27 +150,26 @@ class Processor:
         TODO This method is overcomplicated. Change to to parsing the ARN from context object. But config can overwrite.
         TODO https://github.com/bimpression/sosw/issues/40
         """
-        if self.aws_account:
-            return self.aws_account
-
-        else:
+        if not self.aws_account:
             try:
                 self.aws_account = self.config['aws_account']
             except KeyError:
                 self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
 
-            return self.aws_account
+        return self.aws_account
 
 
     @property
     def _region(self):
         # TODO Implement this to get it effectively from context object.
         # TODO https://github.com/bimpression/sosw/issues/40
-        if self.aws_region:
-            return self.aws_region
+        if not self.aws_region:
+            try:
+                self.aws_region = self.config['aws_region']
+            except KeyError:
+                self.aws_region = 'us-west-2'
 
-        else:
-            return 'us-west-2'
+        return self.aws_region
 
 
     def get_stats(self):

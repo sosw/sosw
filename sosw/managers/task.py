@@ -145,7 +145,7 @@ class TaskManager(Processor):
         return self.__labourers
 
 
-    def get_labourer(self, labourer_id) -> Labourer:
+    def get_labourer(self, labourer_id: str) -> Labourer:
         return first_or_none(self.get_labourers(), lambda x: x.id == labourer_id)
 
 

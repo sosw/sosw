@@ -85,12 +85,11 @@ class app_UnitTestCase(unittest.TestCase):
         mock_ssm.assert_called_once_with('test_func_config')
 
 
-    @unittest.skip("https://github.com/bimpression/sosw/issues/40")
-    def test__account(self):
-        raise NotImplementedError
-
-
-    @unittest.skip("https://github.com/bimpression/sosw/issues/40")
-    def test__region(self):
-        raise NotImplementedError
-
+    # @unittest.skip("https://github.com/bimpression/sosw/issues/40")
+    # def test__account(self):
+    #     raise NotImplementedError
+    #
+    #
+    # @unittest.skip("https://github.com/bimpression/sosw/issues/40")
+    # def test__region(self):
+    #     raise NotImplementedError

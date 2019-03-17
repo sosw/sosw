@@ -45,7 +45,17 @@ class Scheduler(Processor):
         'queue_bucket':    'autotest-bucket',
         'shutdown_period': 60,
         'rows_to_process': 50,
+        'job_schema':      {
+            'chunkable_attrs': ['section', 'seller', 'product']
+        }
     }
+
+    # these clients will be initialized by Processor constructor
+    task_client: TaskManager = None
+    s3_client = None
+    sns_client = None
+    base_query = ...
+
 
 
     def __call__(self, event):
@@ -65,7 +75,9 @@ class Scheduler(Processor):
                             Should be already parsed from whatever payload to dict and contain the raw `job`
         """
 
-        labourer = Labourer(id=job['lambda_name'])
+        labourer = self.task_client.get_labourer(labourer_id=job['lambda_name'])
+
+
 
         raise Exception
 
@@ -88,7 +100,7 @@ class Scheduler(Processor):
 
 
     def get_name_from_arn(self, arn):
-        """ Extract just the name of function from full ARN. Supports versions and aliases. """
+        """ Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN). """
 
         pattern = "(arn:aws:lambda:[0-9a-zA-Z-]{6,12}:[0-9]{12}:function:)?" \
                   "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
