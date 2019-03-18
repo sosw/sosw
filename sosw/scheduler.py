@@ -16,6 +16,7 @@ import time
 
 from importlib import import_module
 from collections import defaultdict
+from collections import OrderedDict
 from typing import List, Optional, Dict
 
 from sosw.app import Processor
@@ -46,7 +47,13 @@ class Scheduler(Processor):
         'shutdown_period': 60,
         'rows_to_process': 50,
         'job_schema':      {
-            'chunkable_attrs': ['section', 'seller', 'product']
+            # Starting Python 3.6 this is a side-effect, since 3.7 - feature.
+            # Dicts are ordered by initial insertion time.
+            'chunkable_attrs': {
+                'section': {},
+                'store':  {},
+                'product': {},
+            }
         }
     }
 
@@ -55,7 +62,6 @@ class Scheduler(Processor):
     s3_client = None
     sns_client = None
     base_query = ...
-
 
 
     def __call__(self, event):
@@ -77,9 +83,31 @@ class Scheduler(Processor):
 
         labourer = self.task_client.get_labourer(labourer_id=job['lambda_name'])
 
-
-
         raise Exception
+
+
+    def needs_chunking(self, attr, data):
+
+        if any(x for x in [f"isolate_{attr}", f"isolate_{attr}s"] if x in data):
+            return True
+
+        chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
+
+        try:
+            next_attr = chunkable_attrs[chunkable_attrs.index(attr) + 1]
+        except IndexError:
+            next_attr = None
+
+        result = False
+
+
+        if next_attr:
+            result = self.needs_chunking(next_attr, data)
+
+        # if any of next chunkable attrs exist:
+        #     return True
+
+        return result
 
 
     def extract_job_from_payload(self, event: Dict):

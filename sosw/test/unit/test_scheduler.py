@@ -184,3 +184,23 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(self.scheduler.get_name_from_arn(test), expected)
+
+
+    def test_needs_chunking(self):
+
+        PAYLOAD = {
+            # 'isolate_sections': False,
+            'sections':         {
+                'funerals':    {
+                    'isolate_stores': True,
+                    'stores': ['flowers', 'caskets']
+                },
+                'conversions': {
+                    'stores': ['training', 'baptizing', 'circumcision']
+                }
+            }
+        }
+
+        self.assertTrue(self.scheduler.needs_chunking('sections', PAYLOAD))
+        self.assertTrue(self.scheduler.needs_chunking('section', PAYLOAD))
+        self.assertTrue(self.scheduler.needs_chunking('stores', PAYLOAD['sections']['funerals']))
