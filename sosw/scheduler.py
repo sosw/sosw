@@ -83,13 +83,33 @@ class Scheduler(Processor):
 
         labourer = self.task_client.get_labourer(labourer_id=job['lambda_name'])
 
+        if not self.config['job_schema']['chunkable_attrs']:
+            data = job.get('payload', {})
+        else:
+            data = self.construct_job_data(job)
+
         raise Exception
+
+
+    def construct_job_data(self, job):
+
+        chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
+
+        data = dict()
+        for key in chunkable_attrs:
+            pass
+
+
+
 
 
     def needs_chunking(self, attr, data):
 
-        if any(x for x in [f"isolate_{attr}", f"isolate_{attr}s"] if x in data):
+        attrs = [f"isolate_{attr.rstrip('s')}", f"isolate_{attr}", f"isolate_{attr}s"]
+
+        if any(True for x in attrs if x in data):
             return True
+
 
         chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
 
