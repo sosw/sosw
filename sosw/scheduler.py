@@ -17,15 +17,17 @@ import time
 from importlib import import_module
 from collections import defaultdict
 from collections import OrderedDict
+from collections import Iterable
 from typing import List, Optional, Dict
 
 from sosw.app import Processor
+from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Scheduler(Processor):
@@ -51,7 +53,7 @@ class Scheduler(Processor):
             # Dicts are ordered by initial insertion time.
             'chunkable_attrs': {
                 'section': {},
-                'store':  {},
+                'store':   {},
                 'product': {},
             }
         }
@@ -62,6 +64,13 @@ class Scheduler(Processor):
     s3_client = None
     sns_client = None
     base_query = ...
+
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
 
 
     def __call__(self, event):
@@ -83,51 +92,113 @@ class Scheduler(Processor):
 
         labourer = self.task_client.get_labourer(labourer_id=job['lambda_name'])
 
-        if not self.config['job_schema']['chunkable_attrs']:
+        if not self.chunkable_attrs:
             data = job.get('payload', {})
         else:
             data = self.construct_job_data(job)
 
-        raise Exception
+        self.create_tasks(data)
+
+
+    def create_tasks(self, data: dict):
+        raise NotImplemented
 
 
     def construct_job_data(self, job):
 
-        chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
-
         data = dict()
-        for key in chunkable_attrs:
+        for key in self.chunkable_attrs:
             pass
 
 
+    @staticmethod
+    def get_index_from_list(attr, data):
+        """ Finds the index ignoring the 's' at the end of attribute. """
 
+        assert isinstance(data, Iterable), f"Non iterable data for get_index_from_list: {data}"
+        assert isinstance(attr, str), f"Non-string attr for get_index_from_list: {type(attr)}"
+
+        attrs = [attr, attr.rstrip('s'), f"{attr}s"]
+        for a in attrs:
+            try:
+                return list(data).index(a)
+            except ValueError:
+                pass
+        raise ValueError(f"Not found {attr} in {data}")
 
 
     def needs_chunking(self, attr, data):
 
+
+        # TODO Continue here. Tests fail for recursive calls.
+
         attrs = [f"isolate_{attr.rstrip('s')}", f"isolate_{attr}", f"isolate_{attr}s"]
 
-        if any(True for x in attrs if x in data):
+        if any(data[x] for x in attrs if x in data):
+            logger.info(f"Got requirement to isolate {attr} in the current scope: {data}")
             return True
 
-
-        chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
-
         try:
-            next_attr = chunkable_attrs[chunkable_attrs.index(attr) + 1]
-        except IndexError:
+            next_attr = self.chunkable_attrs[self.get_index_from_list(attr, self.chunkable_attrs) + 1]
+        except (IndexError, KeyError, TypeError, ValueError):
+            # try:
+            #     next_attr = self.chunkable_attrs[self.chunkable_attrs.index(attr.strip('s')) + 1]
+            # except (ValueError, KeyError):
             next_attr = None
 
-        result = False
+        # result = False
 
-
+        logger.info(f"Found next attr {next_attr}, for {attr} from {data}")
+        # We are not yet lowest level going recursive
         if next_attr:
-            result = self.needs_chunking(next_attr, data)
+            current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, attr)
+            logger.info(f"For {attr} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
+
+            for val in current_vals:
+
+                for name, subdata in val.items():
+                    logger.info(f"Analysing {next_attr} in {subdata}")
+                    if not subdata:
+                        continue
+                    # elif next_attr in subdata:
+                    #     return True
+                    logger.info(f"Going recursive for {next_attr} in {subdata}")
+                    if self.needs_chunking(next_attr, subdata):
+                        logger.info(f"Returning True for {next_attr} from {subdata}")
+                        return True
+
+
+        return False
+        #
+        #
+        #
+        # # Could be single or plural
+        # for a in [next_attr, f"{next_attr}s"]:
+        #
+        #     # Check if we have values for attr
+        #     if data.get(a):
+        #         assert isinstance(data[a], Iterable)
+        #         for val in data[a]:
+        #             result = self.needs_chunking(next_attr, data[a])
+        #             if result:
+        #                 break
+        #         else:
+        #             continue
+        #     else:
+        #         logger.debug(f"Did not find any value for {a}")
+        #         continue
+        #
+        #     logger.debug(f"We found some value or {next_attr}, so we are done here. Otherwise will raise.")
+        #     break
+        #
+        # else:
+        #     raise RuntimeError(f"Missing attributes in the payload that were supposed to be chunked. "
+        #                        f"Nieither singular, nor plural {next_attr} found")
 
         # if any of next chunkable attrs exist:
         #     return True
 
-        return result
+        # return result
 
 
     def extract_job_from_payload(self, event: Dict):

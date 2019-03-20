@@ -5,7 +5,9 @@ import subprocess
 import time
 import unittest
 
+from copy import deepcopy
 from pathlib import Path
+import pprint
 from unittest import mock
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -21,6 +23,37 @@ os.environ["autotest"] = "True"
 class Scheduler_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
     FNAME = '/tmp/aglaya.txt'
+
+    PAYLOAD = {
+        'sections': {
+            'section_funerals':    {
+                'stores': {
+                    'store_flowers': None,
+                    'store_caskets': None,
+                }
+            },
+            'section_conversions': {
+                'stores': {
+                    'store_training':     {
+                        'products': {
+                            'product_history': None,
+                            'product_prayer':  None,
+                            'product_books':   {
+                                'product_versions':
+                                    {
+                                        'product_version_audio': None,
+                                        'product_version_paper': None,
+                                    }
+                            }
+                        }
+                    },
+                    'store_baptizing':    None,
+                    'store_circumcision': None
+                }
+            },
+            'section_gifts':       None
+        }
+    }
 
 
     def setUp(self):
@@ -52,7 +85,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 if json:
                     f.write('{"key": "val", "number": "42", "boolean": true}\n')
                 else:
-                    f.write(f"Hello Aglaya {x} {random.randint(0,99)}\n")
+                    f.write(f"Hello Aglaya {x} {random.randint(0, 99)}\n")
 
 
     @staticmethod
@@ -186,21 +219,51 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.scheduler.get_name_from_arn(test), expected)
 
 
-    def test_needs_chunking(self):
+    def test_needs_chunking__isolate_root(self):
 
-        PAYLOAD = {
-            # 'isolate_sections': False,
-            'sections':         {
-                'funerals':    {
-                    'isolate_stores': True,
-                    'stores': ['flowers', 'caskets']
-                },
-                'conversions': {
-                    'stores': ['training', 'baptizing', 'circumcision']
-                }
-            }
-        }
+        pl = deepcopy(self.PAYLOAD)
+        self.assertFalse(self.scheduler.needs_chunking('sections', pl))
 
-        self.assertTrue(self.scheduler.needs_chunking('sections', PAYLOAD))
-        self.assertTrue(self.scheduler.needs_chunking('section', PAYLOAD))
-        self.assertTrue(self.scheduler.needs_chunking('stores', PAYLOAD['sections']['funerals']))
+        pl = deepcopy(self.PAYLOAD)
+        pl['isolate_sections'] = True
+        self.assertTrue(self.scheduler.needs_chunking('sections', pl))
+
+
+    def test_needs_chunking__isolate_subdata(self):
+
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_funerals']['isolate_stores'] = True
+
+        self.assertTrue(self.scheduler.needs_chunking('sections', pl))
+        self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_funerals']))
+        self.assertFalse(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
+
+
+    def test_needs_chunking__isolate_subdata_deep(self):
+
+        pl = deepcopy(self.PAYLOAD)
+        # pl['sections']['section_conversions']['isolate_stores'] = True
+        pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
+        pprint.pprint(pl)
+        self.assertFalse(self.scheduler.needs_chunking('stores', pl['sections']['section_funerals']))
+        self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
+        self.assertTrue(self.scheduler.needs_chunking(
+                'products', pl['sections']['section_conversions']['stores']['store_training']))
+        # self.assertTrue(self.scheduler.needs_chunking('products', pl['sections']['section_conversions']['products']['books']))
+
+        # TODO Continue here. Fails.
+        self.assertTrue(self.scheduler.needs_chunking('sections', pl))
+
+
+    def test_get_index_from_list(self):
+
+        TESTS = [
+            (0, 'a', ['a', 'b', 'c']),
+            (0, 'name', ['names', 'b', 'c']),
+            (2, 'c', ['a', 'b', 'c']),
+            (1, 'b', {'a': 1, 'b': 2, 'c': 3}),
+            (1, 'bob', {'a': 1, 'bobs': 2, 'c': 3}),
+        ]
+
+        for expected, attr, data in TESTS:
+            self.assertEqual(expected, self.scheduler.get_index_from_list(attr, data))
