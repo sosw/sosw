@@ -61,7 +61,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
-        self.custom_config = self.TEST_CONFIG.copy()
+        self.custom_config = deepcopy(self.TEST_CONFIG)
         self.scheduler = Scheduler(self.custom_config)
         self.scheduler.st_time = time.time()
 
@@ -92,6 +92,20 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     @staticmethod
     def line_count(file):
         return int(subprocess.check_output('wc -l {}'.format(file), shell=True).split()[0])
+
+
+    def test_init__chunkable_attrs_not_end_with_s(self):
+        config = self.custom_config
+        config['job_schema']['chunkable_attrs'] = [('bad_name_ending_with_s', {})]
+        self.assertRaises(AssertionError, Scheduler, custom_config=config)
+
+
+    def test_get_next_chunkable_attr(self):
+        self.assertEqual(self.scheduler.get_next_chunkable_attr('store'), 'product')
+        self.assertEqual(self.scheduler.get_next_chunkable_attr('stores'), 'product')
+        self.assertEqual(self.scheduler.get_next_chunkable_attr('section'), 'store')
+        self.assertIsNone(self.scheduler.get_next_chunkable_attr('product'))
+        self.assertIsNone(self.scheduler.get_next_chunkable_attr('bad_name'))
 
 
     def test__queue_bucket(self):
@@ -266,3 +280,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         for expected, attr, data in TESTS:
             self.assertEqual(expected, self.scheduler.get_index_from_list(attr, data))
+
+
+    def test_construct_job_data(self):
+
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
+
+        r = self.scheduler.construct_job_data(job=pl)
+        pprint.pprint(r)
+
+        self.assertIsNone(1)

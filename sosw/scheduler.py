@@ -18,6 +18,7 @@ from importlib import import_module
 from collections import defaultdict
 from collections import OrderedDict
 from collections import Iterable
+from copy import deepcopy
 from typing import List, Optional, Dict
 
 from sosw.app import Processor
@@ -28,6 +29,16 @@ from sosw.managers.task import TaskManager
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
+
+
+def single_or_plural(attr):
+    """ Simple function. Gives versions with 's' at the end and without it. """
+    return list(set([attr, attr.rstrip('s'), f"{attr}s"]))
+
+
+def plural(attr):
+    """ Simple function. Gives plural form with 's' at the end. """
+    return f"{attr.rstrip('s')}s"
 
 
 class Scheduler(Processor):
@@ -52,9 +63,6 @@ class Scheduler(Processor):
             # Starting Python 3.6 this is a side-effect, since 3.7 - feature.
             # Dicts are ordered by initial insertion time.
             'chunkable_attrs': {
-                'section': {},
-                'store':   {},
-                'product': {},
             }
         }
     }
@@ -70,7 +78,10 @@ class Scheduler(Processor):
 
         super().__init__(*args, **kwargs)
 
-        self.chunkable_attrs = list(self.config['job_schema']['chunkable_attrs'].keys())
+        self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
+        assert not any(x.endswith('s') for x in self.chunkable_attrs), \
+            f"We do not currently support attributes that end with 's'. " \
+                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -104,11 +115,41 @@ class Scheduler(Processor):
         raise NotImplemented
 
 
-    def construct_job_data(self, job):
+    def construct_job_data(self, job: dict, skeleton: Dict = None, attr: str = None) -> List:
 
-        data = dict()
-        for key in self.chunkable_attrs:
-            pass
+        # TODO continue here. Not yet operational
+
+        skeleton = deepcopy(skeleton) or {}
+        attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
+        if not attr:
+            return [job]
+
+        assert attr in self.chunkable_attrs, \
+            f"construct_job_data() recieved unsupported 'attr': {attr}. " \
+                f"Valid ones according to your config are: {self.chunkable_attrs}"
+
+        data = []
+        attrs = single_or_plural(attr)
+
+        if self.needs_chunking(attr, job):
+            for a in attrs:
+                current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, a)
+                logger.info(f"For {a} got current_vals: {current_vals} from {data}.")
+
+                for val in current_vals:
+                    if isinstance(val, dict):
+                        data.extend(self.construct_job_data(job=val, skeleton=skeleton, attr=attr))
+                    elif val is None:
+                        task = deepcopy(skeleton)
+                        task[plural(attr)] = [a]
+                        data.append(task)
+        else:
+            logger.info(f"No need for chunking for attr: {attr} in job: {job}")
+            task = deepcopy(skeleton)
+            task[plural(attr)] = next(job.get(a) for a in attrs)
+            data.append(task)
+
+        return data
 
 
     @staticmethod
@@ -118,7 +159,7 @@ class Scheduler(Processor):
         assert isinstance(data, Iterable), f"Non iterable data for get_index_from_list: {data}"
         assert isinstance(attr, str), f"Non-string attr for get_index_from_list: {type(attr)}"
 
-        attrs = [attr, attr.rstrip('s'), f"{attr}s"]
+        attrs = single_or_plural(attr)
         for a in attrs:
             try:
                 return list(data).index(a)
@@ -127,10 +168,15 @@ class Scheduler(Processor):
         raise ValueError(f"Not found {attr} in {data}")
 
 
-    @staticmethod
-    def single_or_plural(attr):
-        """ Simple function. Gives versions with 's' at the end and without it. """
-        return list(set([attr, attr.rstrip('s'), f"{attr}s"]))
+    def get_next_chunkable_attr(self, attr):
+        """ Return the next by order after `attr` chunkable attribute. """
+
+        attrs = single_or_plural(attr)
+        for a in attrs:
+            try:
+                return self.chunkable_attrs[self.get_index_from_list(a, self.chunkable_attrs) + 1]
+            except (IndexError, KeyError, TypeError, ValueError):
+                pass
 
 
     def needs_chunking(self, attr: str, data: Dict) -> bool:
@@ -142,19 +188,14 @@ class Scheduler(Processor):
         :param data:    Input dictionary to analyse.
         """
 
-        attrs = self.single_or_plural(attr)
+        attrs = single_or_plural(attr)
         isolate_attrs = [f"isolate_{a}" for a in attrs]
 
         if any(data[x] for x in isolate_attrs if x in data):
             logger.debug(f"Got requirement to isolate {attr} in the current scope: {data}")
             return True
 
-        for a in attrs:
-            try:
-                next_attr = self.chunkable_attrs[self.get_index_from_list(attr, self.chunkable_attrs) + 1]
-                break
-            except (IndexError, KeyError, TypeError, ValueError):
-                next_attr = None
+        next_attr = self.get_next_chunkable_attr(attr)
 
         logger.debug(f"Found next attr {next_attr}, for {attr} from {data}")
         # We are not yet lowest level going recursive
