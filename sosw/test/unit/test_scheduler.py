@@ -1,4 +1,5 @@
 import boto3
+import logging
 import os
 import random
 import subprocess
@@ -242,16 +243,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_needs_chunking__isolate_subdata_deep(self):
 
         pl = deepcopy(self.PAYLOAD)
-        # pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
-        pprint.pprint(pl)
+        # pprint.pprint(pl)
+
         self.assertFalse(self.scheduler.needs_chunking('stores', pl['sections']['section_funerals']))
         self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
         self.assertTrue(self.scheduler.needs_chunking(
                 'products', pl['sections']['section_conversions']['stores']['store_training']))
-        # self.assertTrue(self.scheduler.needs_chunking('products', pl['sections']['section_conversions']['products']['books']))
 
-        # TODO Continue here. Fails.
         self.assertTrue(self.scheduler.needs_chunking('sections', pl))
 
 

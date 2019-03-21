@@ -127,78 +127,54 @@ class Scheduler(Processor):
         raise ValueError(f"Not found {attr} in {data}")
 
 
-    def needs_chunking(self, attr, data):
+    @staticmethod
+    def single_or_plural(attr):
+        """ Simple function. Gives versions with 's' at the end and without it. """
+        return list(set([attr, attr.rstrip('s'), f"{attr}s"]))
 
 
-        # TODO Continue here. Tests fail for recursive calls.
+    def needs_chunking(self, attr: str, data: Dict) -> bool:
+        """
+        Recursively analyses the data and identifies if the current level of data should be chunked.
+        This could happen if either isolate_attr marker in the current scope or recursively in any of sub-elements.
 
-        attrs = [f"isolate_{attr.rstrip('s')}", f"isolate_{attr}", f"isolate_{attr}s"]
+        :param attr:    Name of attribute you want to check for chunking.
+        :param data:    Input dictionary to analyse.
+        """
 
-        if any(data[x] for x in attrs if x in data):
-            logger.info(f"Got requirement to isolate {attr} in the current scope: {data}")
+        attrs = self.single_or_plural(attr)
+        isolate_attrs = [f"isolate_{a}" for a in attrs]
+
+        if any(data[x] for x in isolate_attrs if x in data):
+            logger.debug(f"Got requirement to isolate {attr} in the current scope: {data}")
             return True
 
-        try:
-            next_attr = self.chunkable_attrs[self.get_index_from_list(attr, self.chunkable_attrs) + 1]
-        except (IndexError, KeyError, TypeError, ValueError):
-            # try:
-            #     next_attr = self.chunkable_attrs[self.chunkable_attrs.index(attr.strip('s')) + 1]
-            # except (ValueError, KeyError):
-            next_attr = None
+        for a in attrs:
+            try:
+                next_attr = self.chunkable_attrs[self.get_index_from_list(attr, self.chunkable_attrs) + 1]
+                break
+            except (IndexError, KeyError, TypeError, ValueError):
+                next_attr = None
 
-        # result = False
-
-        logger.info(f"Found next attr {next_attr}, for {attr} from {data}")
+        logger.debug(f"Found next attr {next_attr}, for {attr} from {data}")
         # We are not yet lowest level going recursive
         if next_attr:
-            current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, attr)
-            logger.info(f"For {attr} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
+            for a in attrs:
+                current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, a)
+                logger.debug(f"For {a} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
 
-            for val in current_vals:
+                for val in current_vals:
 
-                for name, subdata in val.items():
-                    logger.info(f"Analysing {next_attr} in {subdata}")
-                    if not subdata:
-                        continue
-                    # elif next_attr in subdata:
-                    #     return True
-                    logger.info(f"Going recursive for {next_attr} in {subdata}")
-                    if self.needs_chunking(next_attr, subdata):
-                        logger.info(f"Returning True for {next_attr} from {subdata}")
-                        return True
-
+                    for name, subdata in val.items():
+                        logger.debug(f"Analysing {next_attr} in {subdata}")
+                        if not subdata:
+                            continue
+                        logger.debug(f"Going recursive for {next_attr} in {subdata}")
+                        if self.needs_chunking(next_attr, subdata):
+                            logger.debug(f"Returning True for {next_attr} from {subdata}")
+                            return True
 
         return False
-        #
-        #
-        #
-        # # Could be single or plural
-        # for a in [next_attr, f"{next_attr}s"]:
-        #
-        #     # Check if we have values for attr
-        #     if data.get(a):
-        #         assert isinstance(data[a], Iterable)
-        #         for val in data[a]:
-        #             result = self.needs_chunking(next_attr, data[a])
-        #             if result:
-        #                 break
-        #         else:
-        #             continue
-        #     else:
-        #         logger.debug(f"Did not find any value for {a}")
-        #         continue
-        #
-        #     logger.debug(f"We found some value or {next_attr}, so we are done here. Otherwise will raise.")
-        #     break
-        #
-        # else:
-        #     raise RuntimeError(f"Missing attributes in the payload that were supposed to be chunked. "
-        #                        f"Nieither singular, nor plural {next_attr} found")
-
-        # if any of next chunkable attrs exist:
-        #     return True
-
-        # return result
 
 
     def extract_job_from_payload(self, event: Dict):
