@@ -60,10 +60,11 @@ class Scheduler(Processor):
         'shutdown_period': 60,
         'rows_to_process': 50,
         'job_schema':      {
-            # Starting Python 3.6 this is a side-effect, since 3.7 - feature.
-            # Dicts are ordered by initial insertion time.
-            'chunkable_attrs': {
-            }
+            'chunkable_attrs': [
+                # ('section', {}),
+                # ('store', {}),
+                # ('product', {}),
+            ]
         }
     }
 
@@ -121,33 +122,50 @@ class Scheduler(Processor):
 
         skeleton = deepcopy(skeleton) or {}
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
+
+        # We have to return here the full job to let it work correctly with recursive calls.
         if not attr:
             return [job]
 
-        assert attr in self.chunkable_attrs, \
-            f"construct_job_data() recieved unsupported 'attr': {attr}. " \
-                f"Valid ones according to your config are: {self.chunkable_attrs}"
+        # assert attr in self.chunkable_attrs, \
+        #     f"construct_job_data() recieved unsupported 'attr': {attr}. " \
+        #         f"Valid ones according to your config are: {self.chunkable_attrs}"
 
         data = []
-        attrs = single_or_plural(attr)
 
-        if self.needs_chunking(attr, job):
-            for a in attrs:
+        logger.info(f"Testing for chunking {attr} from {job}")
+        if self.needs_chunking(plural(attr), job):
+            next_attr = self.get_next_chunkable_attr(attr)
+            for a in single_or_plural(attr):
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, a)
-                logger.info(f"For {a} got current_vals: {current_vals} from {data}.")
+                logger.info(f"For {a} with next: {next_attr} we got current_vals: {current_vals} from {job}.")
 
                 for val in current_vals:
-                    if isinstance(val, dict):
-                        data.extend(self.construct_job_data(job=val, skeleton=skeleton, attr=attr))
-                    elif val is None:
-                        task = deepcopy(skeleton)
-                        task[plural(attr)] = [a]
-                        data.append(task)
+
+                    for name, subdata in val.items():
+                        if isinstance(subdata, dict):
+                            logger.info(f"We call recursive for {next_attr}: {subdata}")
+
+                            data.extend(self.construct_job_data(job=subdata, skeleton=skeleton, attr=next_attr))
+                        elif subdata is None:
+                            logger.info(f"We add task for {a}: {subdata} we add task")
+                            task = deepcopy(skeleton)
+                            task[plural(attr)] = [a]
+                            data.append(task)
+                        else:
+                            logger.warning(f"Some unsupported type of val: {subdata} for attribute {a}")
         else:
             logger.info(f"No need for chunking for attr: {attr} in job: {job}")
             task = deepcopy(skeleton)
-            task[plural(attr)] = next(job.get(a) for a in attrs)
+            if any(a in job for a in single_or_plural(attr)):
+
+                # TODO Continue here!
+                task[plural(attr)] = next(job[a] for a in single_or_plural(attr) if a in job)
+            else:
+                task[plural(attr)] = job
+            logger.info(f"Appending task to data: {task}")
             data.append(task)
+
 
         return data
 

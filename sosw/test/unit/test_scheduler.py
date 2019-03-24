@@ -264,7 +264,6 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
         self.assertTrue(self.scheduler.needs_chunking(
                 'products', pl['sections']['section_conversions']['stores']['store_training']))
-
         self.assertTrue(self.scheduler.needs_chunking('sections', pl))
 
 
@@ -282,6 +281,16 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(expected, self.scheduler.get_index_from_list(attr, data))
 
 
+    def test_construct_job_data__not_chunkable_config(self):
+        self.scheduler.chunkable_attrs = []
+        pl = deepcopy(self.PAYLOAD)
+
+        r = self.scheduler.construct_job_data(job=pl)
+        # pprint.pprint(r)
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0], pl)
+
+
     def test_construct_job_data(self):
 
         pl = deepcopy(self.PAYLOAD)
@@ -290,4 +299,5 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         r = self.scheduler.construct_job_data(job=pl)
         pprint.pprint(r)
 
+        self.assertEqual(len(r), 7)
         self.assertIsNone(1)
