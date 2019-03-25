@@ -297,7 +297,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
 
         r = self.scheduler.construct_job_data(job=pl)
-        pprint.pprint(r)
+        for row in r:
+            pprint.pprint(r)
+            print('\n\n\n')
 
         self.assertEqual(len(r), 7)
         self.assertIsNone(1)

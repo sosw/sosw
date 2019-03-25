@@ -120,7 +120,7 @@ class Scheduler(Processor):
 
         # TODO continue here. Not yet operational
 
-        skeleton = deepcopy(skeleton) or {}
+        skel = deepcopy(skeleton) or {}
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
 
         # We have to return here the full job to let it work correctly with recursive calls.
@@ -135,28 +135,37 @@ class Scheduler(Processor):
 
         logger.info(f"Testing for chunking {attr} from {job}")
         if self.needs_chunking(plural(attr), job):
+
             next_attr = self.get_next_chunkable_attr(attr)
-            for a in single_or_plural(attr):
-                current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, a)
-                logger.info(f"For {a} with next: {next_attr} we got current_vals: {current_vals} from {job}.")
+
+            for possible_attr in single_or_plural(attr):
+                current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
+                logger.info(f"For {possible_attr} with next: {next_attr} we got current_vals: {current_vals} from {job}.")
 
                 for val in current_vals:
+                    # logger.info(f"Iterating {val}")
 
                     for name, subdata in val.items():
-                        if isinstance(subdata, dict):
-                            logger.info(f"We call recursive for {next_attr}: {subdata}")
+                        # logger.info(f"SubIterating `{name}` with {subdata}")
+                        task = deepcopy(skel)
 
-                            data.extend(self.construct_job_data(job=subdata, skeleton=skeleton, attr=next_attr))
+                        if not plural(attr) in task:
+                            task[plural(attr)] = [name]
+                        else:
+                            task[plural(attr)].append(name)
+
+                        if isinstance(subdata, dict):
+                            logger.info(f"We call recursive for {next_attr} with task: {task} from subdata: {subdata}")
+
+                            data.extend(self.construct_job_data(job=subdata, skeleton=task, attr=next_attr))
                         elif subdata is None:
-                            logger.info(f"We add task for {a}: {subdata} we add task")
-                            task = deepcopy(skeleton)
-                            task[plural(attr)] = [a]
+                            logger.info(f"We add task for {possible_attr}: {subdata} we add task")
                             data.append(task)
                         else:
-                            logger.warning(f"Some unsupported type of val: {subdata} for attribute {a}")
+                            logger.warning(f"Some unsupported type of val: {subdata} for attribute {possible_attr}")
         else:
             logger.info(f"No need for chunking for attr: {attr} in job: {job}")
-            task = deepcopy(skeleton)
+            task = deepcopy(skel)
             if any(a in job for a in single_or_plural(attr)):
 
                 # TODO Continue here!
