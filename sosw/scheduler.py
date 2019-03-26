@@ -19,7 +19,7 @@ from collections import defaultdict
 from collections import OrderedDict
 from collections import Iterable
 from copy import deepcopy
-from typing import List, Optional, Dict
+from typing import List, Set, Tuple, Union, Optional, Dict
 
 from sosw.app import Processor
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict
@@ -39,6 +39,10 @@ def single_or_plural(attr):
 def plural(attr):
     """ Simple function. Gives plural form with 's' at the end. """
     return f"{attr.rstrip('s')}s"
+
+
+class InvalidJob(ValueError):
+    pass
 
 
 class Scheduler(Processor):
@@ -82,7 +86,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -116,9 +120,40 @@ class Scheduler(Processor):
         raise NotImplemented
 
 
-    def construct_job_data(self, job: dict, skeleton: Dict = None, attr: str = None) -> List:
+    def validate_list_of_vals(self, data: Union[List, Set, Tuple, Dict]) -> List:
+        """
+        Supported resulting values: str, int, float.
 
-        # TODO continue here. Not yet operational
+        Expects a simple iterable of supported values or a dictionary with values = None.
+        The keys then are treated as resulting values and if they validate, are returned as a list.
+        """
+
+        if isinstance(data, (list, set, tuple)):
+            if not all(isinstance(v, (str, int, float)) for v in data):
+                raise InvalidJob(f"Job has values with embedded data, but chunking is not requested. "
+                                 f"You should either append 'isolate_ATTRIBUTE' flag or make values appropriate. "
+                                 f"Should be a flat list or a dict with None - values. Your job was: {data}")
+            return data
+
+        elif isinstance(data, dict):
+            if not all(v is None for v in data.values()):
+                raise InvalidJob(f"Job have values with embedded data, but chunking is not requested. "
+                                 f"You should either append 'isolate_ATTRIBUTE' flag or make values appropriate. "
+                                 f"Should be a flat list or a dict with None - values. Your job was: {data}")
+
+            return list(data.keys())
+
+        else:
+            raise InvalidJob(f"A Job without chunking enabled should have value either as a simple iterable "
+                             f"(list, set, tuple), or a dict with all the values = None."
+                             f"You provided {type(data)}: {data}")
+
+
+    def construct_job_data(self, job: dict, skeleton: Dict = None, attr: str = None) -> List:
+        """
+        Recursively parses a job, validates everything and chunks to simple tasks what should be chunked.
+        The Scenario of chunking and isolation is worth another story, so you should put a link here once it is ready.
+        """
 
         skel = deepcopy(skeleton) or {}
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
@@ -127,55 +162,71 @@ class Scheduler(Processor):
         if not attr:
             return [job]
 
-        # assert attr in self.chunkable_attrs, \
-        #     f"construct_job_data() recieved unsupported 'attr': {attr}. " \
-        #         f"Valid ones according to your config are: {self.chunkable_attrs}"
-
         data = []
 
-        logger.info(f"Testing for chunking {attr} from {job}")
+        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
+
+        # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), job):
 
+            # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
 
+            # Here and manu places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
-                logger.info(f"For {possible_attr} with next: {next_attr} we got current_vals: {current_vals} from {job}.")
+                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}.")
 
-                for val in current_vals:
-                    # logger.info(f"Iterating {val}")
+                # For dictionaries we have to either go deeper recursively, or just flatten keys if values are None-s.
+                if all(isinstance(v, dict) for v in current_vals):
+                    for val in current_vals:
+                        for name, subdata in val.items():
+                            logger.debug(f"SubIterating `{name}` with {subdata}")
 
-                    for name, subdata in val.items():
-                        # logger.info(f"SubIterating `{name}` with {subdata}")
+                            task = deepcopy(skel)
+                            task[plural(attr)] = [name]
+
+                            if isinstance(subdata, dict):
+                                if not next_attr:
+                                    raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
+                                                     f"In order to chunk this, you should support this level in: "
+                                                     f"`config.job_schema.chunkable_attrs`. "
+                                                     f"If you want to pass custom payload - put it as `payload` in "
+                                                     f"your job. Job was: {job}")
+
+                                logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                data.extend(self.construct_job_data(job=subdata, skeleton=task, attr=next_attr))
+
+                            # If None-s we just add a task. `Name` (which is actually a value in this scenario)
+                            # was already added when creating task skeleton.
+                            elif subdata is None:
+                                logger.debug(f"Appending task to data for {name} from {val}")
+                                data.append(task)
+
+                            else:
+                                raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
+
+                # If current vals are not dictionaries, we just validate that they are flat supported values
+                else:
+                    vals = self.validate_list_of_vals(current_vals)
+
+                    for val in vals:
                         task = deepcopy(skel)
+                        task[plural(attr)] = [val]
+                        data.append(task)
 
-                        # if not plural(attr) in task:
-                        task[plural(attr)] = [name]
-                        # else:
-                        #     task[plural(attr)].append(name)
-
-                        if isinstance(subdata, dict):
-                            logger.info(f"We call recursive for {next_attr} with task: {task} from subdata: {subdata}")
-
-                            data.extend(self.construct_job_data(job=subdata, skeleton=task, attr=next_attr))
-                        elif subdata is None:
-                            logger.info(f"We add task for {possible_attr}: {subdata} we add task")
-                            data.append(task)
-                        else:
-                            logger.warning(f"Some unsupported type of val: {subdata} for attribute {possible_attr}")
         else:
-            logger.info(f"No need for chunking for attr: {attr} in job: {job}. Skel is: {skel}")
+            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skel}")
             task = deepcopy(skel)
+
             for a in single_or_plural(attr):
                 if a in job:
-                    logger.info(f"got {attr} in {job}")
-                    # TODO Continue here!
-                    task[plural(attr)] = list(job[a].keys())
+                    vals = self.validate_list_of_vals(job[a])
+                    task[plural(attr)] = vals
                     break
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
-                # task[plural(attr)] = job.keys()
-            logger.info(f"Appending task to data: {task}")
+            logger.debug(f"Appending task to data: {task}")
             data.append(task)
 
         return data

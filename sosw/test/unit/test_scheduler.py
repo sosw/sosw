@@ -12,7 +12,7 @@ import pprint
 from unittest import mock
 from unittest.mock import MagicMock, PropertyMock, patch
 
-from sosw.scheduler import Scheduler
+from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 
@@ -25,12 +25,22 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
     FNAME = '/tmp/aglaya.txt'
 
+    # Warning! Tthis Payload is not operational as it is. Should add `isolate_SOMETHING` in several places.
     PAYLOAD = {
         'sections': {
             'section_funerals':    {
                 'stores': {
                     'store_flowers': None,
                     'store_caskets': None,
+                },
+            },
+            'section_weddings':    {
+                'stores': {
+                    'store_flowers': None,
+                    'store_limos':   None,
+                    'store_music':   {
+                        'products': ['product_march', 'product_chorus', 740],
+                    },
                 }
             },
             'section_conversions': {
@@ -39,13 +49,6 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                         'products': {
                             'product_history': None,
                             'product_prayer':  None,
-                            'product_books':   {
-                                'product_versions':
-                                    {
-                                        'product_version_audio': None,
-                                        'product_version_paper': None,
-                                    }
-                            }
                         }
                     },
                     'store_baptizing':    None,
@@ -291,15 +294,71 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(r[0], pl)
 
 
+    def test_construct_job_data__raises_unchunkable_subtask(self):
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
+        pl['sections']['section_conversions']['stores']['store_training']['products']['product_books'] = {
+            'product_versions':
+                {
+                    'product_version_audio': None,
+                    'product_version_paper': None,
+                }
+        }
+
+        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+
+
+    def test_construct_job_data__raises__unsupported_vals__string(self):
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
+
+        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+
+
+    def test_construct_job_data__raises__unsupported_vals__list_not_as_value(self):
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['stores']['store_training'] = ['just_a_string']
+
+        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+
+
+    def check_number_of_tasks(self, expected_map, response):
+        for key, val, expected in expected_map:
+            r = filter(lambda task: task.get(key) == [val], response)
+            # print(f"TEST OF FILTER: {t}: {len(list(t))}")
+            self.assertEqual(len(list(r)), expected)
+
+
     def test_construct_job_data(self):
 
         pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_weddings']['stores']['store_music']['isolate_products'] = True
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
 
-        r = self.scheduler.construct_job_data(job=pl)
-        for row in r:
-            pprint.pprint(row)
-            print('\n\n\n')
+        response = self.scheduler.construct_job_data(job=pl)
 
-        self.assertEqual(len(r), 7)
-        self.assertIsNone(1)
+        # for row in response:
+        #     pprint.pprint(row)
+        #     print('\n')
+
+        NUMBER_TASKS_EXPECTED = [
+            ('sections', 'section_funerals', 1),
+            ('sections', 'section_weddings', 5),
+            ('sections', 'section_conversions', 4),
+            ('stores', 'store_training', 2),
+            ('stores', 'store_baptizing', 1),
+            ('sections', 'section_gifts', 1),
+        ]
+
+        self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
+
+
+    def test_validate_list_of_vals(self):
+        TESTS = [
+            ({'a': None, 'b': None}, ['a', 'b']),
+            (['a', 'b', 42], ['a', 'b', 42]),
+            ([], []),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.scheduler.validate_list_of_vals(test), expected)
