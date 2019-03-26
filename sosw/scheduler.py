@@ -149,10 +149,10 @@ class Scheduler(Processor):
                         # logger.info(f"SubIterating `{name}` with {subdata}")
                         task = deepcopy(skel)
 
-                        if not plural(attr) in task:
-                            task[plural(attr)] = [name]
-                        else:
-                            task[plural(attr)].append(name)
+                        # if not plural(attr) in task:
+                        task[plural(attr)] = [name]
+                        # else:
+                        #     task[plural(attr)].append(name)
 
                         if isinstance(subdata, dict):
                             logger.info(f"We call recursive for {next_attr} with task: {task} from subdata: {subdata}")
@@ -164,17 +164,19 @@ class Scheduler(Processor):
                         else:
                             logger.warning(f"Some unsupported type of val: {subdata} for attribute {possible_attr}")
         else:
-            logger.info(f"No need for chunking for attr: {attr} in job: {job}")
+            logger.info(f"No need for chunking for attr: {attr} in job: {job}. Skel is: {skel}")
             task = deepcopy(skel)
-            if any(a in job for a in single_or_plural(attr)):
-
-                # TODO Continue here!
-                task[plural(attr)] = next(job[a] for a in single_or_plural(attr) if a in job)
+            for a in single_or_plural(attr):
+                if a in job:
+                    logger.info(f"got {attr} in {job}")
+                    # TODO Continue here!
+                    task[plural(attr)] = list(job[a].keys())
+                    break
             else:
-                task[plural(attr)] = job
+                logger.error(f"Did not find values for {attr} in job: {job}")
+                # task[plural(attr)] = job.keys()
             logger.info(f"Appending task to data: {task}")
             data.append(task)
-
 
         return data
 

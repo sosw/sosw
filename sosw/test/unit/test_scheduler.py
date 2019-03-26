@@ -298,7 +298,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         r = self.scheduler.construct_job_data(job=pl)
         for row in r:
-            pprint.pprint(r)
+            pprint.pprint(row)
             print('\n\n\n')
 
         self.assertEqual(len(r), 7)
