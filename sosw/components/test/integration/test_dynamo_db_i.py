@@ -348,7 +348,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_by_query__comparison_begins_with(self):
-        self.table_name = 'autotest_config'  # This table has a string range key
+        self.table_name = 'autotest_config_component'  # This table has a string range key
         self.HASH_KEY = ('env', 'S')
         self.RANGE_KEY = ('config_name', 'S')
         self.KEYS = ('env', 'config_name')
@@ -359,7 +359,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
                 'config_value': 'S'
             },
             'required_fields': ['env', 'config_name', 'config_value'],
-            'table_name':      'autotest_config'
+            'table_name':      'autotest_config_component'
         }
 
         self.dynamo_client = DynamoDbClient(config=config)
@@ -383,7 +383,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__max_items(self):
         # This function can also be used for some benchmarking, just change to bigger amounts manually.
-        INITIAL_TASKS = 5 # Change to 500 to run benchmarking, and uncomment raise at the end of the test.
+        INITIAL_TASKS = 5  # Change to 500 to run benchmarking, and uncomment raise at the end of the test.
 
         for x in range(1000, 1000 + INITIAL_TASKS):
             row = {'hash_col': f"key", 'range_col': x}
@@ -429,6 +429,21 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         result = self.dynamo_client.get_by_query({'hash_col': 'cat1'}, table_name=self.table_name, return_count=True)
 
         self.assertEqual(result, 3)
+
+
+    def test_get_by_query__reverse(self):
+        rows = [
+            {'hash_col': 'cat1', 'range_col': 121, 'some_col': 'test1'},
+            {'hash_col': 'cat1', 'range_col': 122, 'some_col': 'test2'},
+            {'hash_col': 'cat1', 'range_col': 123, 'some_col': 'test3'}
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, table_name=self.table_name)
+
+        result = self.dynamo_client.get_by_query({'hash_col': 'cat1'}, table_name=self.table_name, desc=True)
+
+        self.assertEqual(result[0], rows[-1])
 
 
     def test_get_by_scan__all(self):

@@ -224,6 +224,8 @@ class DynamoConfig:
         """
 
         dynamo_client = self._get_dynamo_client()
+        if os.environ.get('STAGE') == 'test' or os.environ.get('autotest') == 'True':
+            dynamo_client.config['table_name'] = 'autotest_config'
 
         items = dynamo_client.get_by_query(keys={'env': env, 'config_name': name})
         item = items[0] if items else None
@@ -280,7 +282,7 @@ class DynamoConfig:
             dynamo_config = self.config.get('dynamo_client_config')
 
             if self.test:
-                dynamo_config['table_name'] = 'autotest_config'
+                dynamo_config['table_name'] = 'autotest_config_component'
 
             self.dynamo_client = DynamoDbClient(dynamo_config)
 

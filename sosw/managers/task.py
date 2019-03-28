@@ -69,8 +69,13 @@ class TaskManager(Processor):
     lambda_client = None
 
 
-    def get_oldest_greenfield_for_labourer(self, labourer: Labourer) -> int:
-        """ Return value of oldest greenfield in queue. """
+    def get_oldest_greenfield_for_labourer(self, labourer: Labourer, reverse: bool = False) -> int:
+        """
+        Return value of oldest greenfield in queue.
+        This means the beginning of the queue if you need FIFO behaviour.
+
+        :param reverse
+        """
 
         _ = self.get_db_field_name
 
@@ -83,6 +88,15 @@ class TaskManager(Processor):
         if items:
             first_task_in_queue = items[0]
             return first_task_in_queue[_('greenfield')]
+
+        # TODO Implement reverse call
+
+
+    def get_newest_greenfield_for_labourer(self, labourer: Labourer) -> int:
+        """
+        Return value of the newest greenfield in queue. This means the end of the queue or latest added.
+        """
+        raise NotImplemented
 
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
