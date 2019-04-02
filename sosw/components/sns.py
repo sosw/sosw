@@ -138,5 +138,7 @@ class SnsManager():
             self.queue.append(message)
 
         if forse_commit:
+            if subject and not self.subject:
+                self.subject = subject
             logger.info("The caller asked to forse_commit, so we commit the queue immediately.")
             self.commit()
