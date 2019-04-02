@@ -206,7 +206,7 @@ class DynamoConfig:
                     'config_value': 'S'
                 },
                 'required_fields': ['env', 'config_name', 'config_value'],
-                'table_name':      'config'
+                'table_name':      'config' if not self.test else 'autotest_config'
             }
         }
 
