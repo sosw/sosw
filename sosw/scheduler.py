@@ -116,7 +116,7 @@ class Scheduler(Processor):
         self.create_tasks(labourer, data)
 
 
-    def create_tasks(self, labourer: Labourer, data: dict):
+    def create_tasks(self, labourer: Labourer, data: List):
         """
         Iterate tasks from `data` and queue them as new tasks for `labourer`.
         """
