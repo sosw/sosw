@@ -79,24 +79,27 @@ class TaskManager(Processor):
 
         _ = self.get_db_field_name
 
-        items = self.dynamo_db_client.get_by_query(
+        q = dict(
                 keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
                 comparisons={_('greenfield'): '<='},
                 max_items=1,
-                index_name=self.config['dynamo_db_config']['index_greenfield'])
+                index_name=self.config['dynamo_db_config']['index_greenfield']
+        )
+        if reverse:
+            q['desc'] = True
+
+        items = self.dynamo_db_client.get_by_query(**q)
 
         if items:
             first_task_in_queue = items[0]
             return first_task_in_queue[_('greenfield')]
-
-        # TODO Implement reverse call
 
 
     def get_newest_greenfield_for_labourer(self, labourer: Labourer) -> int:
         """
         Return value of the newest greenfield in queue. This means the end of the queue or latest added.
         """
-        raise NotImplemented
+        return self.get_oldest_greenfield_for_labourer(labourer, reverse=True)
 
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
@@ -423,7 +426,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                                                          f"bad value: {task[_('labourer_id')]}"
+                f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 

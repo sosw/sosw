@@ -349,23 +349,28 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.test_retry_tasks()
 
 
-    def test_get_oldest_greenfield_for_labourer(self):
+    def test_get_oldest_greenfield_for_labourer__get_newest_greenfield_for_labourer(self):
         with patch('time.time') as t:
             t.return_value = 9500
             labourer = self.manager.register_labourers()[0]
 
         min_gf = 20000
+        max_gf = 10000
         for i in range(5):  # Ran this with range(1000), it passes :)
             gf = random.randint(10000, 20000)
             if gf < min_gf:
                 min_gf = gf
+            if gf > max_gf:
+                max_gf = gf
             row = {'labourer_id': f"{labourer.id}", 'task_id': f"task-{i}", 'greenfield': gf}
             self.dynamo_client.put(row)
             time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
         result = self.manager.get_oldest_greenfield_for_labourer(labourer)
-
         self.assertEqual(min_gf, result)
+
+        newest = self.manager.get_newest_greenfield_for_labourer(labourer)
+        self.assertEqual(max_gf, newest)
 
 
     def test_get_length_of_queue_for_labourer(self):
