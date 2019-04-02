@@ -7,15 +7,16 @@ import json
 import logging
 import os
 import time
+import uuid
 
 from pkg_resources import parse_version
 from typing import Dict, List, Optional
 
-from sosw.components.benchmark import benchmark
-from sosw.labourer import Labourer
 from sosw.app import Processor
-from sosw.components.helpers import first_or_none
+from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
+from sosw.components.helpers import first_or_none
+from sosw.labourer import Labourer
 
 
 logger = logging.getLogger()
@@ -45,13 +46,14 @@ class TaskManager(Processor):
             # You can overwrite field names to match your DB schema. But the types should be the same.
             # By default takes the key itself.
             'field_names':      {
-                'task_id': 'task_id',
+                'task_id': 'task_id',  # This is just an example
             }
         },
         'sosw_closed_tasks_table':           'sosw_closed_tasks',
         'sosw_retry_tasks_table':            'sosw_retry_tasks',
         'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
         'greenfield_invocation_delta':       31557600,  # 1 year.
+        'greenfield_task_step':              1000,
         'labourers':                         {
             # 'some_function': {
             #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
@@ -73,8 +75,6 @@ class TaskManager(Processor):
         """
         Return value of oldest greenfield in queue.
         This means the beginning of the queue if you need FIFO behaviour.
-
-        :param reverse
         """
 
         _ = self.get_db_field_name
@@ -93,6 +93,11 @@ class TaskManager(Processor):
         if items:
             first_task_in_queue = items[0]
             return first_task_in_queue[_('greenfield')]
+
+        # Logically this is 0 (aka beginning of the Epoch), but we sometimes want to put earlier than the oldest task,
+        # so let us assume we begin one step ahead of The zero.
+        else:
+            return 0 + self.config['greenfield_task_step']
 
 
     def get_newest_greenfield_for_labourer(self, labourer: Labourer) -> int:
@@ -171,8 +176,43 @@ class TaskManager(Processor):
         return self.config['dynamo_db_config']['field_names'].get(key, key)
 
 
-    def create_task(self, **kwargs):
-        raise NotImplementedError
+    def create_task(self, labourer: Labourer, **kwargs):
+        """
+        Schedule a new task.
+        """
+
+        _ = self.get_db_field_name
+
+        new_task = {}
+
+        # First thing we try to get the data from the task provided. We'll calculate and append required fields later.
+        for key, value in kwargs.items():
+            # We have to JSON-ify the complex data types, to make this method universal.
+            if isinstance(value, (dict, list, tuple)):
+                value = str(json.dumps(value))
+            new_task[key] = str(value)
+
+        # Some common function we may need to generate default values.
+        autogenerators = {
+            _('task_id'):     lambda: str(uuid.uuid1().hex),
+            _('labourer_id'): lambda: str(labourer.id),
+            _('created_at'):  lambda: str(time.time()),
+            _('greenfield'):  lambda: self.get_newest_greenfield_for_labourer(labourer),
+            _('attempts'):    lambda: '0',
+        }
+
+        # Auto generate missing required fields for task.
+        for key in self.config['dynamo_db_config'].get('required_fields', []):
+            if key not in new_task:
+                try:
+                    new_task[key] = autogenerators[key]()
+                except KeyError:
+                    raise ValueError(f"Required key {key} is missing in task {kwargs} "
+                                     f"and we don't have any auto generator for it.")
+
+        # Saving to DynamoDB.
+        self.dynamo_db_client.put(new_task)
+        logger.debug(f"Created a task: {new_task}")
 
 
     def invoke_task(self, labourer: Labourer, task_id: Optional[str] = None, task: Optional[Dict] = None):

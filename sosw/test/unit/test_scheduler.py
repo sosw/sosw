@@ -23,6 +23,7 @@ os.environ["autotest"] = "True"
 
 class Scheduler_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
     FNAME = '/tmp/aglaya.txt'
 
     # Warning! Tthis Payload is not operational as it is. Should add `isolate_SOMETHING` in several places.
@@ -362,3 +363,19 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(self.scheduler.validate_list_of_vals(test), expected)
+
+
+    def test_create_tasks(self):
+        self.scheduler.task_client = MagicMock()
+
+        self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}])
+
+        self.scheduler.task_client.create_task.assert_called_once()
+
+
+    def test_create_tasks_multiple(self):
+        self.scheduler.task_client = MagicMock()
+
+        self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}, {}, {}])
+
+        self.assertEqual(self.scheduler.task_client.create_task.call_count, 3)

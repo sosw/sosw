@@ -339,3 +339,41 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(len(r), 1)
 
 
+    def test_get_oldest_greenfield_for_labourer__no_queued_tasks(self):
+
+        self.manager.dynamo_db_client.get_by_query.return_value = []
+
+        result = self.manager.get_oldest_greenfield_for_labourer(labourer=self.LABOURER)
+
+        self.assertEqual(result, 0 + self.manager.config['greenfield_task_step'])
+
+
+    def test_get_newest_greenfield_for_labourer__no_queued_tasks(self):
+
+        self.manager.dynamo_db_client.get_by_query.return_value = []
+
+        result = self.manager.get_newest_greenfield_for_labourer(labourer=self.LABOURER)
+
+        self.assertEqual(result, 0 + self.manager.config['greenfield_task_step'])
+
+
+    def test_create_task(self):
+
+        TASK = dict(labourer=self.LABOURER, payload={'foo': 42})
+        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value='5000')
+
+        self.manager.create_task(**TASK)
+
+        self.manager.dynamo_db_client.put.assert_called_once()
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.put.call_args
+        arg = call_args[0]
+        print('########')
+        print(arg, call_kwargs)
+
+        self.assertEqual(str(arg['labourer_id']), str(self.LABOURER.id))
+        self.assertEqual(str(arg['greenfield']), str(5000))
+        self.assertEqual(str(arg['payload']), '{"foo": 42}')
+
+        for field in self.manager.config['dynamo_db_config']['required_fields']:
+            self.assertIn(field, arg.keys())

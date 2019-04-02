@@ -13,7 +13,7 @@ TASKS_TABLE_CONFIG = {
         'arn':                 'S',
         'payload':             'S'
     },
-    'required_fields':  ['task_id', 'labourer_id'],
+    'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
     'table_name':       'autotest_sosw_tasks',
     'index_greenfield': 'autotest_sosw_tasks_greenfield',
     'field_names':      {
