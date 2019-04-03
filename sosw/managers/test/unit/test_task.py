@@ -205,12 +205,17 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_attr('max_attempts'), 3)
 
 
-    def test_calculate_count_of_running_tasks_for_labourer(self):
-        lab = Labourer(id=42)
-        self.manager.get_running_tasks_for_labourer = MagicMock(return_value=[1, 2, 3])
+    def test_get_count_of_running_tasks_for_labourer(self):
 
-        self.assertEqual(self.manager.calculate_count_of_running_tasks_for_labourer(labourer=lab), 3)
-        self.manager.get_running_tasks_for_labourer.assert_called_once()
+        labourer = self.manager.register_labourers()[0]
+        self.manager.dynamo_db_client.get_by_query.return_value = 3
+
+        self.assertEqual(self.manager.get_count_of_running_tasks_for_labourer(labourer=labourer), 3)
+        self.manager.dynamo_db_client.get_by_query.assert_called_once()
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.get_by_query.call_args
+        self.assertTrue(call_kwargs['return_count'])
+
 
 
     def test_get_labourers(self):

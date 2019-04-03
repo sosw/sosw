@@ -10,7 +10,7 @@ import time
 import uuid
 
 from pkg_resources import parse_version
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
 from sosw.components.benchmark import benchmark
@@ -336,15 +336,6 @@ class TaskManager(Processor):
         return [task[self.get_db_field_name('task_id')] for task in result]
 
 
-    def calculate_count_of_running_tasks_for_labourer(self, labourer: Labourer) -> int:
-        """
-        Returns a number of tasks we assume to be still running.
-        Theoretically they can be dead with Exception, but not yet expired.
-        """
-
-        return len(self.get_running_tasks_for_labourer(labourer=labourer))
-
-
     def get_invoked_tasks_for_labourer(self, labourer: Labourer, closed: Optional[bool] = None) -> List[Dict]:
         """
         Return a list of tasks of current Labourer invoked during the current run of the Orchestrator.
@@ -376,15 +367,18 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query(**query_args)
 
 
-    def get_running_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+    def get_running_tasks_for_labourer(self, labourer: Labourer, count: bool = False) -> Union[List[Dict], int]:
         """
         Return a list of tasks of Labourer previously invoked, but not yet closed or expired.
         We assume they are still running.
+
+        If `count` is specified as True will return just the number of tasks, not the items themselves.
+        Much cheaper.
         """
 
         _ = self.get_db_field_name
 
-        return self.dynamo_db_client.get_by_query(
+        q = dict(
                 keys={
                     _('labourer_id'):                labourer.id,
                     f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
@@ -394,18 +388,32 @@ class TaskManager(Processor):
                 filter_expression=f'attribute_not_exists {_("closed_at")}'
         )
 
+        if count:
+            q['return_count'] = True
 
-    def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        return self.dynamo_db_client.get_by_query(**q)
+
+
+    def get_count_of_running_tasks_for_labourer(self, labourer: Labourer) -> int:
         """
-        Return a list of tasks of the Labourer marked as closed.
-        Scavenger is supposed to archive them all so no special filtering is required here.
-
-        In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
-        (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+        Returns a number of tasks we assume to be still running.
+        Theoretically they can be dead with Exception, but not yet expired.
         """
 
-        return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
+        return self.get_running_tasks_for_labourer(labourer=labourer, count=True)
 
+
+    # Deprecated...
+    # def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+    #     """
+    #     Return a list of tasks of the Labourer marked as closed.
+    #     Scavenger is supposed to archive them all so no special filtering is required here.
+    #
+    #     In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
+    #     (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+    #     """
+    #
+    #     return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
 
     def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """
@@ -466,7 +474,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                f"bad value: {task[_('labourer_id')]}"
+                                                          f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
