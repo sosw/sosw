@@ -95,10 +95,12 @@ class Scheduler(Processor):
 
         job = self.extract_job_from_payload(event)
 
-        self.parse_job(job)
+        self.parse_job_to_file(job)
+
+        self.process_file()
 
 
-    def parse_job(self, job: Dict):
+    def parse_job_to_file(self, job: Dict):
         """
         Splits the Job to multiple tasks and writes them down in self._local_queue_file.
 
@@ -106,23 +108,32 @@ class Scheduler(Processor):
                             Should be already parsed from whatever payload to dict and contain the raw `job`
         """
 
-        labourer = self.task_client.get_labourer(labourer_id=job['lambda_name'])
+        if os.path.isfile(self._local_queue_file):
+            logger.critical(f"The current Lambda container is already having some unprocessed file. "
+                            f"You probably did not clean it correctly after processing. "
+                            f"Should probably just clean the file now, but during beta version we raise an stop "
+                            f"processing new ones.")
+            raise RuntimeError(f"The current Lambda container is already having some unprocessed file.")
 
-        if not self.chunkable_attrs:
-            data = job.get('payload', {})
+        labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
+
+        if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
+            data = [{'labourer_id': labourer.id, **job}]
         else:
-            data = self.construct_job_data(job)
+            data = self.construct_job_data(job, skeleton={'labourer_id': labourer.id})
 
-        self.create_tasks(labourer, data)
+        with open(self._local_queue_file, 'w') as f:
+            for row in data:
+                f.write(f"{json.dumps(row)}\n")
 
 
-    def create_tasks(self, labourer: Labourer, data: List):
-        """
-        Iterate tasks from `data` and queue them as new tasks for `labourer`.
-        """
-
-        for task in data:
-            self.task_client.create_task(labourer=labourer, payload=task)
+    # def create_tasks(self, labourer: Labourer, data: List):
+    #     """
+    #     Iterate tasks from `data` and queue them as new tasks for `labourer`.
+    #     """
+    #
+    #     for task in data:
+    #         self.task_client.create_task(labourer=labourer, payload=task)
 
 
     def validate_list_of_vals(self, data: Union[List, Set, Tuple, Dict]) -> List:
@@ -344,7 +355,7 @@ class Scheduler(Processor):
 
                 for task in data:
                     logger.info(task)
-                    self.task_client.create_task(json.loads(task))
+                    self.task_client.create_task(labourer=NotImplemented, **json.loads(task))
                     time.sleep(self._sleeptime_for_dynamo)
 
             self.upload_and_unlock_queue_file()
@@ -383,6 +394,11 @@ class Scheduler(Processor):
 
             os.remove(file_name)
             os.rename(tmp_file, file_name)
+
+            # If there is no dat remaining in the file we remove it.
+            if os.path.getsize(file_name) == 0:
+                os.remove(file_name)
+
         except FileNotFoundError:
             pass
 
@@ -400,31 +416,37 @@ class Scheduler(Processor):
         return (time.time() - self.st_time) < (300 - self.config['shutdown_period'])
 
 
-    def get_and_lock_queue_file(self):
+    def get_and_lock_queue_file(self) -> str:
         """
-        Download the version of queue file from S3 and move the file in S3 to `locked_` by prefix state.
+        Either take a new (recently created) file in local /tmp/, or download the version of queue file from S3.
+        We move the file in S3 to `locked_` by prefix state or simply upload the new one there in `locked_` state.
 
-        :return: Local path to the downloaded file.
+        :return: Local path to the file.
         """
 
-        try:
-            self.s3_client.download_file(Bucket=self._queue_bucket, Key=self._remote_queue_file,
-                                         Filename=self._local_queue_file)
-        except self.s3_client.exceptions.ClientError:
-            self.stats['non_existing_remote_queue'] += 1
-            logger.exception(f"Not found remote file to download")
+        if not os.path.isfile(self._local_queue_file):
+            try:
+                self.s3_client.download_file(Bucket=self._queue_bucket, Key=self._remote_queue_file,
+                                             Filename=self._local_queue_file)
+            except self.s3_client.exceptions.ClientError:
+                self.stats['non_existing_remote_queue'] += 1
+                logger.exception(f"Not found remote file to download")
 
+            else:
+                self.s3_client.copy_object(Bucket=self._queue_bucket,
+                                           CopySource=f"{self._queue_bucket}/{self._remote_queue_file}",
+                                           Key=self._remote_queue_locked_file)
+
+                self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_file)
+
+                logger.debug(f"Downloaded a copy of {self._local_queue_file} for processing "
+                             f"and moved the remote one to {self._remote_queue_locked_file}.")
+
+        # If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.
         else:
-            self.s3_client.copy_object(Bucket=self._queue_bucket,
-                                       CopySource=f"{self._queue_bucket}/{self._remote_queue_file}",
+            self.s3_client.upload_file(Filename=self._local_queue_file, Bucket=self._queue_bucket,
                                        Key=self._remote_queue_locked_file)
-
-            self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_file)
-
-            logger.debug(f"Downloaded a copy of {self._local_queue_file} for processing "
-                         f"and moved the remote one to {self._remote_queue_locked_file}.")
-
-            return f"/tmp/{self.config['queue_file']}"
+        return self._local_queue_file
 
 
     def upload_and_unlock_queue_file(self):
@@ -453,6 +475,7 @@ class Scheduler(Processor):
     @property
     def _local_queue_file(self):
         """ Full path of local file with queue of tasks not yet in DynamoDB. """
+        # TODO should add some labourer id here and some job ID or something.
         return f"/tmp/{self.config['queue_file'].strip('/')}"
 
 

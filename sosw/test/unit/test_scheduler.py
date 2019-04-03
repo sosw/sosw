@@ -1,4 +1,5 @@
 import boto3
+import json
 import logging
 import os
 import random
@@ -15,6 +16,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
+from sosw.test.helpers_test import count_rows
 
 
 os.environ["STAGE"] = "test"
@@ -67,6 +69,12 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
         self.scheduler = Scheduler(self.custom_config)
+
+        self.scheduler.s3_client = MagicMock()
+        self.scheduler.sns_client = MagicMock()
+        self.scheduler.task_client = MagicMock()
+        self.scheduler.task_client.get_labourer.return_value = self.LABOURER
+
         self.scheduler.st_time = time.time()
 
 
@@ -78,10 +86,11 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         except:
             pass
 
-        try:
-            os.remove(self.FNAME)
-        except:
-            pass
+        for fname in [self.scheduler._local_queue_file, self.FNAME]:
+            try:
+                os.remove(fname)
+            except:
+                pass
 
 
     def put_local_file(self, file_name=None, json=False):
@@ -148,7 +157,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         # Catch StopIteration and return only remaining.
         r = self.scheduler.pop_rows_from_file(self.FNAME, rows=42)
-        self.assertEqual(self.line_count(self.FNAME), 0)
+        self.assertFalse(os.path.isfile(self.FNAME))
         self.assertEqual(len(r), 4)
 
 
@@ -172,6 +181,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         # Empty file
         Path(self.FNAME).touch()
         self.assertEqual(self.scheduler.pop_rows_from_file(self.FNAME), list())
+
+        self.assertFalse(os.path.isfile(self.FNAME))
 
 
     def test_process_file(self):
@@ -365,17 +376,89 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.scheduler.validate_list_of_vals(test), expected)
 
 
-    def test_create_tasks(self):
-        self.scheduler.task_client = MagicMock()
+    # def test_create_tasks(self):
+    #     self.scheduler.task_client = MagicMock()
+    #
+    #     self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}])
+    #
+    #     self.scheduler.task_client.create_task.assert_called_once()
+    #
+    #
+    # def test_create_tasks_multiple(self):
+    #     self.scheduler.task_client = MagicMock()
+    #
+    #     self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}, {}, {}])
+    #
+    #     self.assertEqual(self.scheduler.task_client.create_task.call_count, 3)
+    #
 
-        self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}])
+    def test_get_and_lock_queue_file__s3_calls(self):
 
-        self.scheduler.task_client.create_task.assert_called_once()
+        r = self.scheduler.get_and_lock_queue_file()
+
+        self.assertEqual(r, self.scheduler._local_queue_file)
+
+        self.scheduler.s3_client.download_file.assert_called_once()
+        self.scheduler.s3_client.copy_object.assert_called_once()
+        self.scheduler.s3_client.delete_object.assert_called_once()
+        self.scheduler.s3_client.upload_file.assert_not_called()
 
 
-    def test_create_tasks_multiple(self):
-        self.scheduler.task_client = MagicMock()
+    def test_get_and_lock_queue_file__local_file_exists(self):
 
-        self.scheduler.create_tasks(labourer=self.LABOURER, data=[{'payload': 42}, {}, {}])
+        with patch('os.path.isfile') as isfile_mock:
+            isfile_mock.return_value = True
 
-        self.assertEqual(self.scheduler.task_client.create_task.call_count, 3)
+            r = self.scheduler.get_and_lock_queue_file()
+
+        self.assertEqual(r, self.scheduler._local_queue_file)
+
+        self.scheduler.s3_client.download_file.assert_not_called()
+        self.scheduler.s3_client.copy_object.assert_not_called()
+        self.scheduler.s3_client.delete_object.assert_not_called()
+
+        self.scheduler.s3_client.upload_file.assert_called_once()
+
+
+    def test_parse_job_to_file(self):
+
+        SAMPLE_SIMPLE_JOB = {
+            'lambda_name':      self.LABOURER.id,
+            'some_payload': 'foo',
+        }
+
+        self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
+
+        self.assertEqual(count_rows(self.scheduler._local_queue_file), 1)
+
+        with open(self.scheduler._local_queue_file, 'r') as f:
+            row = json.loads(f.read())
+            print(row)
+
+            self.assertEqual(row['labourer_id'], self.LABOURER.id)
+            self.assertEqual(row['some_payload'], 'foo')
+
+
+    def test_parse_job_to_file__multiple_rows(self):
+
+        SAMPLE_SIMPLE_JOB = {
+            'lambda_name':      self.LABOURER.id,
+            "isolate_sections": True,
+            'sections':         {
+                'section_technic':   None,
+                'section_furniture': None,
+            },
+        }
+
+        self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
+
+        self.assertEqual(count_rows(self.scheduler._local_queue_file), 2)
+
+        with open(self.scheduler._local_queue_file, 'r') as f:
+            for row in f.readlines():
+                # print(row)
+                parsed_row = json.loads(row)
+
+                self.assertEqual(parsed_row['labourer_id'], self.LABOURER.id)
+                self.assertEqual(len(parsed_row['sections']), 1)
+                self.assertIn(parsed_row['sections'][0], SAMPLE_SIMPLE_JOB['sections'])
