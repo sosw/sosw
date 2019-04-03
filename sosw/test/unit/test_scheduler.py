@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
-from sosw.test.helpers_test import count_rows
+from sosw.test.helpers_test import line_count
 
 
 os.environ["STAGE"] = "test"
@@ -429,7 +429,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(count_rows(self.scheduler._local_queue_file), 1)
+        self.assertEqual(line_count(self.scheduler._local_queue_file), 1)
 
         with open(self.scheduler._local_queue_file, 'r') as f:
             row = json.loads(f.read())
@@ -452,7 +452,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(count_rows(self.scheduler._local_queue_file), 2)
+        self.assertEqual(line_count(self.scheduler._local_queue_file), 2)
 
         with open(self.scheduler._local_queue_file, 'r') as f:
             for row in f.readlines():
