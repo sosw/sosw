@@ -457,9 +457,12 @@ class Scheduler(Processor):
         # TODO Otherwise your `_remote_queue_file` will likely get overwritten by someone.
         """
 
-        self.s3_client.upload_file(Filename=self._local_queue_file, Bucket=self._queue_bucket,
-                                   Key=self._remote_queue_file)
+        # If there is data left unprocessed in the file, upload it for future processing by siblings or someone else.
+        if os.path.isfile(self._local_queue_file):
+            self.s3_client.upload_file(Filename=self._local_queue_file, Bucket=self._queue_bucket,
+                                       Key=self._remote_queue_file)
 
+        # Delete the locked file from S3 (aka unlock)
         try:
             self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_locked_file)
         except self.s3_client.exceptions.ClientError:

@@ -462,3 +462,21 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 self.assertEqual(parsed_row['labourer_id'], self.LABOURER.id)
                 self.assertEqual(len(parsed_row['sections']), 1)
                 self.assertIn(parsed_row['sections'][0], SAMPLE_SIMPLE_JOB['sections'])
+
+
+    def test_call__sample(self):
+        SAMPLE_SIMPLE_JOB = {
+            'lambda_name':      self.LABOURER.id,
+            'some_payload': 'foo',
+        }
+
+        r = self.scheduler(SAMPLE_SIMPLE_JOB)
+        print(r)
+
+        self.scheduler.task_client.create_task.assert_called_once()
+
+        self.scheduler.s3_client.download_file.assert_not_called()
+        self.scheduler.s3_client.copy_object.assert_not_called()
+
+        self.scheduler.s3_client.upload_file.assert_called_once()
+        self.scheduler.s3_client.delete_object.assert_called_once()
