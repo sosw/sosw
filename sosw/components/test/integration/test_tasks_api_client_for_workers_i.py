@@ -2,7 +2,11 @@ import logging
 import unittest
 import os
 import boto3
-from ..tasks_api_client_for_workers import *
+
+from unittest.mock import patch, MagicMock
+
+from sosw.components.tasks_api_client_for_workers import *
+
 
 logger = logging.getLogger()
 
@@ -10,17 +14,18 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 TASK_ID = 'test_task_id'
-CREATED_MS = '1'
-TABLE_NAME = 'autotest_abs_tasks_running'
+LABOURER_ID = 'some_lambda'
+TABLE_NAME = 'autotest_sosw_tasks'
+
 TEST_ITEM = {
-            'created_ms': CREATED_MS,
-            'task_id': TASK_ID
-            }
+    'task_id':     TASK_ID,
+    'labourer_id': LABOURER_ID
+}
 
 TEST_ITEM_DICT = {
-            'created_ms': {'N': CREATED_MS},
-            'task_id': {'S': TASK_ID}
-            }
+    'task_id':     {'S': TASK_ID},
+    'labourer_id': {'S': LABOURER_ID}
+}
 
 
 class tasks_api_client_for_workers_TestCase(unittest.TestCase):
@@ -33,7 +38,8 @@ class tasks_api_client_for_workers_TestCase(unittest.TestCase):
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
             logger.info("Item created successfully.")
         else:
-            logger.info("Item creation has failed.")
+            raise RuntimeError("Item creation has failed.")
+
 
     def tearDown(self):
         """ Cleaning up the created item from dynamo DB """
@@ -42,20 +48,18 @@ class tasks_api_client_for_workers_TestCase(unittest.TestCase):
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
             logger.info("Item deleted successfully.")
         else:
-            logger.info("Item deletion has failed.")
+            raise RuntimeError("Item deletion has failed.")
+
 
     def test_close_task(self):
         """ Testing the 'close_task()' function """
+        with patch('time.time') as t:
+            t.return_value = 9500
+            close_task(TEST_ITEM)
 
-        close_task(TEST_ITEM)
         result = self.client.get_item(TableName=TABLE_NAME, Key=TEST_ITEM_DICT)['Item']
-        self.assertEqual(result['task_id'], {'S': TASK_ID}, 'TASK_ID assertion failed.')
-        self.assertEqual(result['created_ms'], {'N': CREATED_MS}, 'CREATED_MS assertion failed.')
-
-
-    def test_validation(self):
-        item = {'created_ms': {'N': 'abc'}, 'task_id': {'S': 'foo'}}
-        self.assertRaises(AssertionError, close_task, item, "Hash Key should be validated for numeric")
+        self.assertEqual(result['task_id'], {'S': TASK_ID})
+        self.assertEqual(result['completed_at'], {'N': '9500'})
 
 
 if __name__ == '__main__':

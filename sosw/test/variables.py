@@ -1,18 +1,19 @@
 from sosw.labourer import Labourer
 
+
 TASKS_TABLE_CONFIG = {
     'row_mapper':       {
-        'task_id':            'S',
-        'labourer_id':        'S',
-        'greenfield':         'N',
-        'attempts':           'N',
-        'closed_at':          'N',
-        'completed_at':       'N',
+        'task_id':             'S',
+        'labourer_id':         'S',
+        'greenfield':          'N',
+        'attempts':            'N',
+        'closed_at':           'N',
+        'completed_at':        'N',
         'desired_launch_time': 'N',
-        'arn':                'S',
-        'payload':            'S'
+        'arn':                 'S',
+        'payload':             'S'
     },
-    'required_fields':  ['task_id', 'labourer_id'],
+    'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
     'table_name':       'autotest_sosw_tasks',
     'index_greenfield': 'autotest_sosw_tasks_greenfield',
     'field_names':      {
@@ -56,6 +57,13 @@ TEST_SCAVENGER_CONFIG = {
 TEST_SCHEDULER_CONFIG = {
     'init_clients':       [],
     'task_client_config': TEST_TASK_CLIENT_CONFIG,
+    'job_schema':         {
+        'chunkable_attrs': [
+            ('section', {}),
+            ('store', {}),
+            ('product', {}),
+        ]
+    }
 }
 
 TASKS = [
@@ -70,16 +78,16 @@ LABOURERS = [Labourer(id='some_lambda', arn='some_arn', some_attr='yes'),
 
 RETRY_TASKS = [
     {
-        'task_id':            '1', 'labourer_id': 'some_function', 'greenfield': 1234, 'attempts': 2,
+        'task_id':             '1', 'labourer_id': 'some_function', 'greenfield': 1234, 'attempts': 2,
         'desired_launch_time': 7777, 'arn': 'some_arn', 'payload': {}
     },
     {
-        'task_id':            '2', 'labourer_id': 'some_function', 'greenfield': 2345, 'attempts': 2,
+        'task_id':             '2', 'labourer_id': 'some_function', 'greenfield': 2345, 'attempts': 2,
         'desired_launch_time': 8888, 'arn': 'some_arn', 'payload': {}
     },
-# This one is not supposed to be launched
+    # This one is not supposed to be launched
     {
-        'task_id':            '3', 'labourer_id': 'some_function', 'greenfield': 3456, 'attempts': 3,
+        'task_id':             '3', 'labourer_id': 'some_function', 'greenfield': 3456, 'attempts': 3,
         'desired_launch_time': 9999, 'arn': 'some_arn', 'payload': {}
     },
 ]

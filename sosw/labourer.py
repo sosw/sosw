@@ -59,7 +59,7 @@ class Labourer:
 
         if name not in self.CUSTOM_ATTRIBUTES:
             raise ValueError(f"Supported values are: {', '.join(self.CUSTOM_ATTRIBUTES)}")
-        print(f"Set {name, value}")
+        logger.debug(f"Labourer {self.id} set custom attribute {name} with {value}")
         setattr(self, name, value)
 
 

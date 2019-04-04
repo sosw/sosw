@@ -3,16 +3,20 @@ __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
 import boto3
+import json
 import logging
+import os
 import time
+import uuid
 
 from pkg_resources import parse_version
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
-from sosw.labourer import Labourer
 from sosw.app import Processor
-from sosw.components.helpers import first_or_none
+from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
+from sosw.components.helpers import first_or_none
+from sosw.labourer import Labourer
 
 
 logger = logging.getLogger()
@@ -42,13 +46,14 @@ class TaskManager(Processor):
             # You can overwrite field names to match your DB schema. But the types should be the same.
             # By default takes the key itself.
             'field_names':      {
-                'task_id': 'task_id',
+                'task_id': 'task_id',  # This is just an example
             }
         },
         'sosw_closed_tasks_table':           'sosw_closed_tasks',
         'sosw_retry_tasks_table':            'sosw_retry_tasks',
         'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
         'greenfield_invocation_delta':       31557600,  # 1 year.
+        'greenfield_task_step':              1000,
         'labourers':                         {
             # 'some_function': {
             #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
@@ -66,20 +71,40 @@ class TaskManager(Processor):
     lambda_client = None
 
 
-    def get_oldest_greenfield_for_labourer(self, labourer: Labourer) -> int:
-        """ Return value of oldest greenfield in queue. """
+    def get_oldest_greenfield_for_labourer(self, labourer: Labourer, reverse: bool = False) -> int:
+        """
+        Return value of oldest greenfield in queue.
+        This means the beginning of the queue if you need FIFO behaviour.
+        """
 
         _ = self.get_db_field_name
 
-        items = self.dynamo_db_client.get_by_query(
+        q = dict(
                 keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
                 comparisons={_('greenfield'): '<='},
                 max_items=1,
-                index_name=self.config['dynamo_db_config']['index_greenfield'])
+                index_name=self.config['dynamo_db_config']['index_greenfield']
+        )
+        if reverse:
+            q['desc'] = True
+
+        items = self.dynamo_db_client.get_by_query(**q)
 
         if items:
             first_task_in_queue = items[0]
             return first_task_in_queue[_('greenfield')]
+
+        # Logically this is 0 (aka beginning of the Epoch), but we sometimes want to put earlier than the oldest task,
+        # so let us assume we begin one step ahead of The zero.
+        else:
+            return 0 + self.config['greenfield_task_step']
+
+
+    def get_newest_greenfield_for_labourer(self, labourer: Labourer) -> int:
+        """
+        Return value of the newest greenfield in queue. This means the end of the queue or latest added.
+        """
+        return self.get_oldest_greenfield_for_labourer(labourer, reverse=True)
 
 
     def get_length_of_queue_for_labourer(self, labourer: Labourer) -> int:
@@ -122,7 +147,7 @@ class TaskManager(Processor):
         for labourer in labourers:
             for k, method in [x for x in custom_attributes]:
                 labourer.set_custom_attribute(k, method(labourer))
-                logging.debug(f"SET for {labourer}: {k} = {method(labourer)}")
+                logger.debug(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
 
         self.__labourers = result
@@ -142,7 +167,7 @@ class TaskManager(Processor):
         return self.__labourers
 
 
-    def get_labourer(self, labourer_id) -> Labourer:
+    def get_labourer(self, labourer_id: str) -> Labourer:
         return first_or_none(self.get_labourers(), lambda x: x.id == labourer_id)
 
 
@@ -151,8 +176,43 @@ class TaskManager(Processor):
         return self.config['dynamo_db_config']['field_names'].get(key, key)
 
 
-    def create_task(self, **kwargs):
-        raise NotImplementedError
+    def create_task(self, labourer: Labourer, **kwargs):
+        """
+        Schedule a new task.
+        """
+
+        _ = self.get_db_field_name
+
+        new_task = {}
+
+        # First thing we try to get the data from the task provided. We'll calculate and append required fields later.
+        for key, value in kwargs.items():
+            # We have to JSON-ify the complex data types, to make this method universal.
+            if isinstance(value, (dict, list, tuple)):
+                value = str(json.dumps(value))
+            new_task[key] = str(value)
+
+        # Some common function we may need to generate default values.
+        autogenerators = {
+            _('task_id'):     lambda: str(uuid.uuid1().hex),
+            _('labourer_id'): lambda: str(labourer.id),
+            _('created_at'):  lambda: str(time.time()),
+            _('greenfield'):  lambda: self.get_newest_greenfield_for_labourer(labourer),
+            _('attempts'):    lambda: '0',
+        }
+
+        # Auto generate missing required fields for task.
+        for key in self.config['dynamo_db_config'].get('required_fields', []):
+            if key not in new_task:
+                try:
+                    new_task[key] = autogenerators[key]()
+                except KeyError:
+                    raise ValueError(f"Required key {key} is missing in task {kwargs} "
+                                     f"and we don't have any auto generator for it.")
+
+        # Saving to DynamoDB.
+        self.dynamo_db_client.put(new_task)
+        logger.debug(f"Created a task: {new_task}")
 
 
     def invoke_task(self, labourer: Labourer, task_id: Optional[str] = None, task: Optional[Dict] = None):
@@ -276,15 +336,6 @@ class TaskManager(Processor):
         return [task[self.get_db_field_name('task_id')] for task in result]
 
 
-    def calculate_count_of_running_tasks_for_labourer(self, labourer: Labourer) -> int:
-        """
-        Returns a number of tasks we assume to be still running.
-        Theoretically they can be dead with Exception, but not yet expired.
-        """
-
-        return len(self.get_running_tasks_for_labourer(labourer=labourer))
-
-
     def get_invoked_tasks_for_labourer(self, labourer: Labourer, closed: Optional[bool] = None) -> List[Dict]:
         """
         Return a list of tasks of current Labourer invoked during the current run of the Orchestrator.
@@ -316,15 +367,18 @@ class TaskManager(Processor):
         return self.dynamo_db_client.get_by_query(**query_args)
 
 
-    def get_running_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+    def get_running_tasks_for_labourer(self, labourer: Labourer, count: bool = False) -> Union[List[Dict], int]:
         """
         Return a list of tasks of Labourer previously invoked, but not yet closed or expired.
         We assume they are still running.
+
+        If `count` is specified as True will return just the number of tasks, not the items themselves.
+        Much cheaper.
         """
 
         _ = self.get_db_field_name
 
-        return self.dynamo_db_client.get_by_query(
+        q = dict(
                 keys={
                     _('labourer_id'):                labourer.id,
                     f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
@@ -334,18 +388,32 @@ class TaskManager(Processor):
                 filter_expression=f'attribute_not_exists {_("closed_at")}'
         )
 
+        if count:
+            q['return_count'] = True
 
-    def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        return self.dynamo_db_client.get_by_query(**q)
+
+
+    def get_count_of_running_tasks_for_labourer(self, labourer: Labourer) -> int:
         """
-        Return a list of tasks of the Labourer marked as closed.
-        Scavenger is supposed to archive them all so no special filtering is required here.
-
-        In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
-        (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+        Returns a number of tasks we assume to be still running.
+        Theoretically they can be dead with Exception, but not yet expired.
         """
 
-        return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
+        return self.get_running_tasks_for_labourer(labourer=labourer, count=True)
 
+
+    # Deprecated...
+    # def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+    #     """
+    #     Return a list of tasks of the Labourer marked as closed.
+    #     Scavenger is supposed to archive them all so no special filtering is required here.
+    #
+    #     In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
+    #     (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+    #     """
+    #
+    #     return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
 
     def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """

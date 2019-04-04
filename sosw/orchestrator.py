@@ -6,17 +6,12 @@ __version__ = "0.1"
 __license__ = "MIT"
 __status__ = "Development"
 
-import boto3
 import logging
 import math
-import os
-
-from importlib import import_module
-from collections import defaultdict
-from typing import List
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
+from sosw.managers.ecology import EcologyManager
 from sosw.managers.task import TaskManager
 
 
@@ -44,6 +39,8 @@ class Orchestrator(Processor):
         'default_simultaneous_invocations': 2
     }
 
+    task_client: TaskManager = None
+    ecology_client: EcologyManager = None
 
     def __call__(self, event):
         labourers = self.task_client.register_labourers()
@@ -53,9 +50,13 @@ class Orchestrator(Processor):
 
 
     def invoke_for_labourer(self, labourer: Labourer):
+        """
+        Invokes required queued tasks for `labourer`.
+        """
+
         number_of_tasks = self.get_desired_invocation_number_for_labourer(labourer=labourer)
 
-        tasks_to_process = self.task_client.get_next_for_labourer(worker=labourer, cnt=number_of_tasks)
+        tasks_to_process = self.task_client.get_next_for_labourer(labourer=labourer, cnt=number_of_tasks)
         logger.info(tasks_to_process)
 
         for task in tasks_to_process:

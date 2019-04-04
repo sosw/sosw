@@ -1,7 +1,6 @@
 import boto3
 import os
 import random
-import subprocess
 import unittest
 
 from unittest.mock import MagicMock, patch
@@ -9,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from sosw.scheduler import Scheduler
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
-
+from sosw.test.helpers_test import line_count
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
@@ -43,12 +42,18 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
             return False
 
 
-    def put_file(self, local=None, key=None):
+    def put_file(self, local=None, key=None, only_remote=False):
         self.make_local_file('Liat')
 
         self.s3_client.upload_file(Filename=local or self.scheduler._local_queue_file,
                                    Bucket='autotest-bucket',
                                    Key=key or self.scheduler._remote_queue_file)
+
+        if only_remote:
+            try:
+                os.remove(local or self.scheduler._local_queue_file)
+            except:
+                pass
 
 
     def make_local_file(self, girl_name="Athena", fname=None, rows=10):
@@ -56,11 +61,6 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         with open(fname or self.scheduler._local_queue_file, 'w') as f:
             for i in range(rows):
                 f.write(f"hello {girl_name} {i} {random.randint(0,99)}\n")
-
-
-    @staticmethod
-    def line_count(file):
-        return int(subprocess.check_output('wc -l {}'.format(file), shell=True).split()[0])
 
 
     def setUp(self):
@@ -78,17 +78,18 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.clean_bucket()
 
         try:
+            os.remove(self.scheduler._local_queue_file)
+        except:
+            pass
+
+        try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
         except:
             pass
 
 
-    def test_true(self):
-        self.assertEqual(1, 1)
-
-
     def test_get_and_lock_queue_file(self):
-        self.put_file()
+        self.put_file(only_remote=True)
 
         # Check old artifacts
         self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
@@ -101,7 +102,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
         self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
 
-        number_of_lines = self.line_count(self.scheduler._local_queue_file)
+        number_of_lines = line_count(self.scheduler._local_queue_file)
         # print(f"Number of lines: {number_of_lines}")
         self.assertTrue(number_of_lines, 10)
 
