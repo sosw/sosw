@@ -178,8 +178,8 @@ class DynamoDbClient:
     @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False) \
-            -> Union[List[Dict], int]:
+                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
+                     desc: bool = False) -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -207,7 +207,10 @@ class DynamoDbClient:
             e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
         :param bool strict:     If True, will only get the attributes specified in the row mapper.
                                 If false, will get all attributes. Default is True.
-        :param bool return_count: if True, will return the number of items in the result instead of the items themselves
+        :param bool return_count: If True, will return the number of items in the result instead of the items themselves
+        :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
+                             To reverse the order set the argument `desc = True`.
+
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
         """
@@ -262,6 +265,9 @@ class DynamoDbClient:
 
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
+
+        if desc:
+            query_args['ScanIndexForward'] = False
 
         logger.debug(f"Querying dynamo: {query_args}")
 
