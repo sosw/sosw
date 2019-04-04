@@ -1,13 +1,9 @@
 __all__ = ['Orchestrator']
 
-__author__ = "Nikolay Grishchenko"
-__email__ = "dev@bimpression.com"
-__version__ = "0.1"
-__license__ = "MIT"
-__status__ = "Development"
-
 import logging
 import math
+
+from typing import List
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
@@ -15,16 +11,20 @@ from sosw.managers.ecology import EcologyManager
 from sosw.managers.task import TaskManager
 
 
+__author__ = "Nikolay Grishchenko"
+__email__ = "dev@bimpression.com"
+__version__ = "0.1"
+__license__ = "MIT"
+__status__ = "Development"
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
 class Orchestrator(Processor):
     """
-    Orchestrator class.
-    Not yet migrated to `sosw` from private repository.
-
-    Coming soon...
+    | Orchestrator class.
+    | Iterates the pre-configured Labourers and invokes appropriate number of Tasks for each one.
     """
 
     DEFAULT_CONFIG = {
@@ -42,7 +42,9 @@ class Orchestrator(Processor):
     task_client: TaskManager = None
     ecology_client: EcologyManager = None
 
+
     def __call__(self, event):
+
         labourers = self.task_client.register_labourers()
 
         for labourer in labourers:
@@ -78,7 +80,6 @@ class Orchestrator(Processor):
         Decides the desired maximum number of simultaneous invocations for a specific Labourer.
         The decision is based on the ecology status of the Labourer and the configs.
 
-        :param labourer: Labourer type.
         :return: Number of invocations
         """
 
@@ -92,5 +93,10 @@ class Orchestrator(Processor):
         return math.floor(max_invocations * coefficient)
 
 
-    def get_labourers(self):
+    def get_labourers(self) -> List[Labourer]:
+        """
+        Gets a list of pre-configured Labourers from TaskManager.
+
+        :return:
+        """
         return self.task_client.get_labourers()
