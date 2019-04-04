@@ -41,18 +41,13 @@ class Orchestrator(Processor):
             3: 0.75,
             4: 1
         },
-        'labourers':                        {
-            # 'some_function': {
-            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
-            #     'max_simultaneous_invocations': 10,
-            # }
-        },
         'default_simultaneous_invocations': 2
     }
 
 
     def __call__(self, event):
-        labourers = self.get_labourers()
+        labourers = self.task_client.register_labourers()
+
         for labourer in labourers:
             self.invoke_for_labourer(labourer)
 
@@ -97,9 +92,4 @@ class Orchestrator(Processor):
 
 
     def get_labourers(self):
-        """
-        Return configured Labourers as a dict with 'name' as key.
-        Config of the Orchestrator expects 'labourers' as a dict 'name_of_lambda': {'some_setting': 'value1'}
-        """
-
-        return {name: Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()}
+        return self.task_client.get_labourers()
