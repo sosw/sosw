@@ -14,8 +14,12 @@ Documentation is on the way full speed, for now you can read informative docstri
 
    convention
    components
+   managers
+
    processor
    orchestrator
+   scheduler
+   scavenger
    worker
 
 
