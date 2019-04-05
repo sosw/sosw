@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 class Labourer:
     ATTRIBUTES = ('id', 'arn')
-    TIMESTAMPS = ('start', 'invoked', 'expired')
+    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health', 'max_attempts', 'average_duration', 'max_duration')
     id = None
     arn = None
 
@@ -54,23 +54,23 @@ class Labourer:
                 setattr(self, k, v)
 
 
-    def set_timestamp(self, name: str, value: int):
+    def set_custom_attribute(self, name: str, value: int):
         """ Set timestamp attributes with some validation. Normally TaskManager is supposed to call me. """
 
-        if name not in self.TIMESTAMPS:
-            raise ValueError(f"Supported values are: {', '.join(self.TIMESTAMPS)}")
-        print(f"Set {name, value}")
+        if name not in self.CUSTOM_ATTRIBUTES:
+            raise ValueError(f"Supported values are: {', '.join(self.CUSTOM_ATTRIBUTES)}")
+        logger.debug(f"Labourer {self.id} set custom attribute {name} with {value}")
         setattr(self, name, value)
 
 
-    def get_timestamp(self, name: str) -> int:
+    def get_attr(self, name: str):
         """ The Labourer must be first registered in TaskManager for this to work. """
 
-        if name not in self.TIMESTAMPS:
-            raise ValueError(f"Supported values are: {', '.join(self.TIMESTAMPS)}")
+        if name not in self.CUSTOM_ATTRIBUTES:
+            raise ValueError(f"Supported values are: {', '.join(self.CUSTOM_ATTRIBUTES)}")
 
         try:
             return getattr(self, name)
         except AttributeError:
-            raise AttributeError(f"The Labourer is not yet registered in TaskManager, and doesn't have any timestamps. "
-                                 f"Use TaskManager.register_labourer() first.")
+            raise AttributeError(f"The Labourer is not yet registered in TaskManager, and doesn't have any custom "
+                                 f"attributes. Use TaskManager.register_labourer() first.")

@@ -12,11 +12,15 @@ os.environ["autotest"] = "True"
 
 class Labourer_UnitTestCase(unittest.TestCase):
 
-    def test_init(self):
-        lab = Labourer(id=42, arn='arn::aws::lambda')
 
-        self.assertEqual(lab.id, 42)
-        self.assertEqual(lab.arn, 'arn::aws::lambda')
+    def setUp(self):
+        self.labourer = Labourer(id=42, arn='arn::aws::lambda')
+
+
+    def test_init(self):
+
+        self.assertEqual(self.labourer.id, 42)
+        self.assertEqual(self.labourer.arn, 'arn::aws::lambda')
 
 
     def test_init_attrs(self):
@@ -39,8 +43,7 @@ class Labourer_UnitTestCase(unittest.TestCase):
 
 
     def test_set_defaults(self):
-        lab = Labourer(id=42)
-        self.assertEqual(lab.duration, 900)
+        self.assertEqual(self.labourer.duration, 900)
 
 
     def test_set_defaults_overrides(self):
@@ -48,17 +51,15 @@ class Labourer_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.duration, 300)
 
 
-    def test_get_timestamps__raises(self):
+    def test_get_attr(self):
 
-        lab = Labourer(id=42)
-        self.assertRaises(ValueError, lab.get_timestamp, 'invalid')
-        self.assertRaises(AttributeError, lab.get_timestamp, 'start')
+        self.assertRaises(ValueError, self.labourer.get_attr, 'invalid')
+        self.assertRaises(AttributeError, self.labourer.get_attr, 'start')
 
 
-    def test_set_timestamps(self):
-        lab = Labourer(id=42)
+    def test_set_custom_attributes(self):
 
-        self.assertIsNone(getattr(lab, 'start', None))
-        lab.set_timestamp('start', time.time())
+        self.assertIsNone(getattr(self.labourer, 'start', None))
+        self.labourer.set_custom_attribute('start', time.time())
 
-        self.assertLessEqual(lab.start, time.time())
+        self.assertLessEqual(self.labourer.start, time.time())

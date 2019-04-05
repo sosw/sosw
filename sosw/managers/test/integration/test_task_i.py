@@ -5,8 +5,8 @@ import time
 import unittest
 import os
 
-from collections import defaultdict
-from unittest.mock import MagicMock, patch
+from copy import deepcopy
+from unittest.mock import Mock, MagicMock, patch
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -16,13 +16,14 @@ os.environ["autotest"] = "True"
 
 from sosw.managers.task import TaskManager
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_CONFIG
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.helpers import first_or_none
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
-    TEST_CONFIG = TEST_CONFIG['task_client_config']
-    LABOURER = Labourer(id='some_lambda', arn='arn:aws:lambda:some_lambda')
+    TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
 
 
     @classmethod
@@ -31,8 +32,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         Clean the classic autotest table.
         """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
-
-        clean_dynamo_table()
 
 
     def setUp(self):
@@ -45,13 +44,26 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
+        self.completed_tasks_table = self.config['sosw_closed_tasks_table']
+        self.retry_tasks_table = self.config['sosw_retry_tasks_table']
+
+        self.clean_task_tables()
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
+        self.manager.ecology_client = MagicMock()
+
+        self.labourer = deepcopy(self.LABOURER)
 
 
     def tearDown(self):
+        self.clean_task_tables()
+
+
+    def clean_task_tables(self):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
+        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
 
 
     def setup_tasks(self, status='available', mass=False):
@@ -115,10 +127,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                         "Returned some tasks of other Workers")
 
 
+    def register_labourers(self):
+        self.manager.get_labourers = MagicMock(return_value=[self.LABOURER])
+        self.manager.register_labourers()
+
+
     def test_mark_task_invoked(self):
         greenfield = round(time.time() - random.randint(100, 1000))
         delta = self.manager.config['greenfield_invocation_delta']
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         row = {
             self.HASH_KEY[0]:  f"task_id_{self.LABOURER.id}_256",  # Task ID
@@ -139,7 +156,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_invoked_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
@@ -148,7 +165,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_running_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='available')
         self.setup_tasks(status='running')
@@ -157,8 +174,215 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_expired_tasks_for_labourer(self):
-        self.manager.register_labourers([self.LABOURER])
+        self.register_labourers()
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
+
+
+    # @unittest.skip("Function currently depricated")
+    # def test_close_task(self):
+    #     _ = self.manager.get_db_field_name
+    #     # Create task with id=123
+    #     task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
+    #             _('completed_at'): 123123}
+    #     self.dynamo_client.put(task)
+    #
+    #     # Call
+    #     self.manager.close_task(task_id='123', labourer_id='lambda1')
+    #
+    #     # Get from db, check
+    #     tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+    #     self.assertEqual(len(tasks), 1)
+    #     task_result = tasks[0]
+    #
+    #     expected_result = task.copy()
+    #
+    #     for k in ['task_id', 'labourer_id', 'greenfield', 'attempts']:
+    #         assert expected_result[k] == task_result[k]
+    #
+    #     self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
+    #     self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
+
+
+    def test_archive_task(self):
+        _ = self.manager.get_db_field_name
+        # Create task with id=123
+        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
+        self.dynamo_client.put(task)
+
+        # Call
+        self.manager.archive_task('123')
+
+        # Check the task isn't in the tasks db, but is in the completed_tasks table
+        tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): 'lambda1'})
+        self.assertEqual(len(tasks), 0)
+
+        completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
+        self.assertEqual(len(completed_tasks), 1)
+        completed_task = completed_tasks[0]
+
+        for k in task.keys():
+            self.assertEqual(task[k], completed_task[k])
+        for k in completed_task.keys():
+            if k != _('closed_at'):
+                self.assertEqual(task[k], completed_task[k])
+
+        self.assertTrue(time.time() - 360 < completed_task[_('closed_at')] < time.time())
+
+
+    def test_move_task_to_retry_table(self):
+        _ = self.manager.get_db_field_name
+        labourer_id = 'lambda1'
+        task = {_('task_id'): '123', _('labourer_id'): labourer_id, _('greenfield'): 8888, _('attempts'): 2}
+        delay = 300
+
+        self.dynamo_client.put(task)
+
+        self.manager.move_task_to_retry_table(task, delay)
+
+        result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): labourer_id})
+        self.assertEqual(len(result_tasks), 0)
+
+        result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id}, table_name=self.retry_tasks_table)
+        self.assertEqual(len(result_retry_tasks), 1)
+        result = first_or_none(result_retry_tasks)
+
+        for k in task:
+            self.assertEqual(task[k], result[k])
+        for k in result:
+            if k != _('desired_launch_time'):
+                self.assertEqual(result[k], task[k])
+
+        self.assertTrue(time.time() + delay - 60 < result[_('desired_launch_time')] < time.time() + delay + 60)
+
+
+    def test_get_tasks_to_retry_for_labourer(self):
+        _ = self.manager.get_db_field_name
+
+        tasks = RETRY_TASKS.copy()
+        # Add tasks to retry table
+        for task in tasks:
+            self.dynamo_client.put(task, self.config['sosw_retry_tasks_table'])
+
+        # Call
+        with patch('time.time') as t:
+            t.return_value = 9500
+            labourer = self.manager.register_labourers()[0]
+
+        result_tasks = self.manager.get_tasks_to_retry_for_labourer(labourer, limit=20)
+
+        self.assertEqual(len(result_tasks), 2)
+
+        # Check it only gets tasks with timestamp <= now
+        self.assertIn(tasks[0], result_tasks)
+        self.assertIn(tasks[1], result_tasks)
+
+
+    def test_retry_tasks(self):
+        _ = self.manager.get_db_field_name
+
+        with patch('time.time') as t:
+            t.return_value = 9500
+            labourer = self.manager.register_labourers()[0]
+
+        self.manager.get_oldest_greenfield_for_labourer = Mock(return_value=8888)
+
+        # Add tasks to tasks_table
+        regular_tasks = [
+            {_('labourer_id'): labourer.id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 8888},
+            {_('labourer_id'): labourer.id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 9999},
+        ]
+        for task in regular_tasks:
+            self.dynamo_client.put(task)
+
+        # Add tasks to retry_table
+        retry_tasks = RETRY_TASKS.copy()
+
+        for task in retry_tasks:
+            self.dynamo_client.put(task, table_name=self.config['sosw_retry_tasks_table'])
+
+        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
+        self.assertEqual(len(retry_table_items), len(retry_tasks))
+
+        # Use get_tasks_to_retry_for_labourer to get tasks
+        tasks = self.manager.get_tasks_to_retry_for_labourer(labourer)
+
+        # Call
+        self.manager.retry_tasks(labourer, tasks)
+
+        # Check removed 2 out of 3 tasks from retry queue. One is desired to be launched later.
+        retry_table_items = self.dynamo_client.get_by_scan(table_name=self.retry_tasks_table)
+        self.assertEqual(len(retry_table_items), 1)
+
+        # Check tasks moved to `tasks_table` with lowest greenfields
+        tasks_table_items = self.dynamo_client.get_by_scan()
+        for x in tasks_table_items:
+            print(x)
+        self.assertEqual(len(tasks_table_items), 4)
+
+        for reg_task in regular_tasks:
+            self.assertIn(reg_task, tasks_table_items)
+
+        for retry_task in retry_tasks:
+            try:
+                matching = next(x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')])
+            except StopIteration:
+                print(f"Task not retried {retry_task}. Probably not yet desired.")
+                continue
+
+            for k in retry_task.keys():
+                if k not in [_('greenfield'), _('desired_launch_time')]:
+                    self.assertEqual(retry_task[k], matching[k])
+
+            for k in matching.keys():
+                if k != _('greenfield'):
+                    self.assertEqual(retry_task[k], matching[k])
+
+            print(f"New greenfield of a retried task: {matching[_('greenfield')]}")
+            self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
+
+
+    @patch.object(boto3, '__version__', return_value='1.9.53')
+    def test_retry_tasks__old_boto(self, n):
+        self.test_retry_tasks()
+
+
+    def test_get_oldest_greenfield_for_labourer__get_newest_greenfield_for_labourer(self):
+        with patch('time.time') as t:
+            t.return_value = 9500
+            labourer = self.manager.register_labourers()[0]
+
+        min_gf = 20000
+        max_gf = 10000
+        for i in range(5):  # Ran this with range(1000), it passes :)
+            gf = random.randint(10000, 20000)
+            if gf < min_gf:
+                min_gf = gf
+            if gf > max_gf:
+                max_gf = gf
+            row = {'labourer_id': f"{labourer.id}", 'task_id': f"task-{i}", 'greenfield': gf}
+            self.dynamo_client.put(row)
+            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        result = self.manager.get_oldest_greenfield_for_labourer(labourer)
+        self.assertEqual(min_gf, result)
+
+        newest = self.manager.get_newest_greenfield_for_labourer(labourer)
+        self.assertEqual(max_gf, newest)
+
+
+    def test_get_length_of_queue_for_labourer(self):
+        labourer = Labourer(id='some_lambda', arn='some_arn')
+
+        num_of_tasks = 3  # Ran this with 464 tasks and it worked
+
+        for i in range(num_of_tasks):
+            row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': i}
+            self.dynamo_client.put(row)
+            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        queue_len = self.manager.get_length_of_queue_for_labourer(labourer)
+
+        self.assertEqual(queue_len, num_of_tasks)
