@@ -1,11 +1,12 @@
 .. _bi_doc_convention:
 
-================================
-Better Impression Doc Convention
-================================
+==============
+Doc Convention
+==============
 
 This document states the convention that we follow for writing Documentation and especially docstrings for
-classes and functions.
+classes and functions in Better Impression. This convention is based on
+[https://www.python.org/dev/peps/pep-0008/](PEP8), with minor styling changes listed below.
 
 
 Basics

@@ -1,3 +1,6 @@
+__all__ = ['Processor']
+
+
 import boto3
 import logging
 import os
@@ -16,7 +19,6 @@ __version__ = "0.3.1"
 __license__ = "MIT"
 __status__ = "Production"
 
-__all__ = ['Processor']
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -24,7 +26,9 @@ logger.setLevel(logging.INFO)
 
 class Processor:
     """
-    Core Processor class template.
+    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
+    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
+    `Worker` class in case you are running functions under `sosw` orchestration.
     """
 
     DEFAULT_CONFIG = {}

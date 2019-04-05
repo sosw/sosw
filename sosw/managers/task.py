@@ -24,6 +24,16 @@ logger.setLevel(logging.INFO)
 
 
 class TaskManager(Processor):
+    """
+    TaskManager is the core class used by most SOSW Lambdas. It handles all the operations with tasks thus
+    the configuration of this Manager is essential during your SOSW implementation.
+
+    The default version of TaskManager works with DynamoDB tables to store and analyze the state of Tasks.
+    This could be upgraded in future versions to work with other persistent storage or DBs.
+
+    The very important concept to understand about Task workflow is `greenfield`. :ref:`Read more <greenfield>`.
+    """
+
     DEFAULT_CONFIG = {
         'init_clients':                      ['DynamoDb', 'lambda', 'Ecology'],
         'dynamo_db_config':                  {
