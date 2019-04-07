@@ -273,7 +273,7 @@ class TaskManager(Processor):
         assert labourer.id == task[_('labourer_id')], f"Task doesn't belong to the Labourer {labourer}: {task}"
 
         self.dynamo_db_client.update(
-                {_('task_id'): task[_('task_id')], _('labourer_id'): labourer.id},
+                {_('task_id'): task[_('task_id')]},
                 attributes_to_update={_('greenfield'): int(time.time()) + self.config['greenfield_invocation_delta']},
                 attributes_to_increment={_('attempts'): 1},
                 condition_expression=f"{_('greenfield')} < {labourer.get_attr('start')}"
@@ -305,7 +305,7 @@ class TaskManager(Processor):
         self.dynamo_db_client.put(task, table_name=self.config.get('sosw_closed_tasks_table'))
 
         # Delete it from tasks_table
-        keys = {_('labourer_id'): task[_('labourer_id')], _('task_id'): task[_('task_id')]}
+        keys = {_('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(keys)
 
 
@@ -455,7 +455,7 @@ class TaskManager(Processor):
         self.dynamo_db_client.put(retry_row, table_name=self.config.get('sosw_retry_tasks_table'))
 
         # Delete task from tasks table
-        delete_keys = {_('labourer_id'): task[_('labourer_id')], _('task_id'): task[_('task_id')]}
+        delete_keys = {_('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(delete_keys)
 
 

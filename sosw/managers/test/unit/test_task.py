@@ -84,7 +84,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(call_args[0],
                          {
-                             self.HASH_KEY[0]: f"task_id_{self.labourer.id}_256", self.RANGE_KEY[0]: self.labourer.id
+                             self.HASH_KEY[0]: f"task_id_{self.labourer.id}_256"
                          }), "The key of task is missing"
         self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
@@ -248,7 +248,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         expected_completed_task = task.copy()
         expected_completed_task['labourer_id_task_status'] = 'some_lambda_1'
         self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG['sosw_closed_tasks_table'])
-        self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})
+        self.manager.dynamo_db_client.delete.assert_called_once_with({'task_id': task_id})
 
 
     # @unittest.skip("Function currently depricated")

@@ -52,11 +52,13 @@ class Scheduler(Processor):
 
     DEFAULT_CONFIG = {
         'init_clients':    ['Task', 's3', 'Sns'],
-        'labourers':       {
-            # 'some_function': {
-            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
-            #     'max_simultaneous_invocations': 10,
-            # }
+        'task_config':     {
+            'labourers': {
+                # 'some_function': {
+                #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+                #     'max_simultaneous_invocations': 10,
+                # }
+            },
         },
         's3_prefix':       'sosw/scheduler',
         'queue_file':      'tasks_queue.txt',
@@ -86,7 +88,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -134,7 +136,6 @@ class Scheduler(Processor):
     #
     #     for task in data:
     #         self.task_client.create_task(labourer=labourer, payload=task)
-
 
     def validate_list_of_vals(self, data: Union[List, Set, Tuple, Dict]) -> List:
         """

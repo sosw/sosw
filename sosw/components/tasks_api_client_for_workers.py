@@ -39,16 +39,13 @@ def close_task(event, table=None, hash_key='task_id', range_key='labourer_id'):
     table_name = table or ('autotest_sosw_tasks' if test else 'sosw_tasks')
 
     hk = str(event.get(hash_key))
-    rk = str(event.get(range_key, os.environ.get('AWS_LAMBDA_FUNCTION_NAME')))
+    # rk = str(event.get(range_key, os.environ.get('AWS_LAMBDA_FUNCTION_NAME')))
 
     client = boto3.client('dynamodb')
 
     if hk:
         response = client.update_item(TableName=table_name,
-                                      Key={
-                                          hash_key: {'S': hk},
-                                          range_key: {'S': rk}
-                                      },
+                                      Key={hash_key: {'S': hk}},
                                       UpdateExpression=" SET completed_at = :now",
                                       ExpressionAttributeValues={':now': {'N': str(time.time())}})
         logger.info(f"Marked task {hk} as completed")

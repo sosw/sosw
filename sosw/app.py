@@ -63,7 +63,7 @@ class Processor:
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
 
-        Clients are imported from `components`. Name of the module must be underscored name of Client.
+        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.
         Name of the Class must be name of `client` with either of the suffixes ('Manager' or 'Client').
 
         .. warning::
@@ -72,43 +72,60 @@ class Processor:
            If you follow these rules and put the module in package `components` of your Lambda,
            you can just provide the `clients` in custom_config when initializing the Processor.
 
+        TODO This method supports a too many ways of class initialization for backwards compatibility
+        that it becomes a mess soon. Need to describe best practices and start deprecation in future versions.
+
         :param list clients:    List of names of clients.
         """
 
         client_suffixes = ['Manager', 'Client']
 
+        import_paths = [
+            lambda x: f"components.{x}",
+            lambda x: f"managers.{x}",
+            lambda x: f"sosw.components.{x}",
+            lambda x: f"sosw.managers.{x}",
+        ]
+
         # # Initialize required clients
         for service in clients:
             module_name = camel_case_to_underscore(service)
-            try:
-                some_module = import_module(f"sosw.components.{module_name}")
-            except:
-                # Also try to import from the components directory owned by the Lambda itself.
-                try:
-                    some_module = import_module(f"components.{module_name}")
-                except:
 
-                    # The other supported option is to load boto3 client if it exists.
-                    try:
-                        setattr(self, f"{module_name}_client", boto3.client(module_name))
-                        continue
-                    except:
-                        logger.error(f"Failed to import module for service {module_name}. Component naming problem.")
-                        raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
+            for path in import_paths:
+                try:
+                    some_module = import_module(path(module_name))
+                    logger.debug(f"Imported {service} from {path(module_name)}")
+                    break
+                except:
+                    pass
+
+            else:
+                # The other supported option is to load boto3 client if it exists.
+                try:
+                    setattr(self, f"{module_name}_client", boto3.client(module_name))
+                    continue
+                except:
+                    raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
 
             for suffix in client_suffixes:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                     some_client_config = self.config.get(f"{module_name}_config")
-                    logger.info(f"Found config for {module_name}: {some_client_config}")
+                    logger.debug(f"Found config for {module_name}: {some_client_config}")
+
+                    # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
                     if some_client_config:
-                        setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+                        if suffix == 'Manager':
+                            setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
+                        elif suffix == 'Client':
+                            setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+
                     else:
                         setattr(self, f"{module_name}_client", some_class())
                     logger.info(f"Successfully registered {module_name}_client")
                     break
-                except:
-                    logger.exception(f"Failed suffix {suffix}")
+                except AttributeError:
+                    logger.info(f"Failed suffix {suffix}")
                     pass
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
