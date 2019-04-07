@@ -207,7 +207,8 @@ class TaskManager(Processor):
             _('task_id'):     lambda: str(uuid.uuid1().hex),
             _('labourer_id'): lambda: str(labourer.id),
             _('created_at'):  lambda: str(time.time()),
-            _('greenfield'):  lambda: self.get_newest_greenfield_for_labourer(labourer),
+            _('greenfield'):  lambda: self.get_newest_greenfield_for_labourer(labourer)
+                                      + self.config['greenfield_task_step'],
             _('attempts'):    lambda: '0',
         }
 

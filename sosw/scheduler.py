@@ -356,7 +356,9 @@ class Scheduler(Processor):
 
                 for task in data:
                     logger.info(task)
-                    self.task_client.create_task(labourer=NotImplemented, **json.loads(task))
+                    t = json.loads(task)
+                    labourer = self.task_client.get_labourer(t['labourer_id'])
+                    self.task_client.create_task(labourer=labourer, **json.loads(t))
                     time.sleep(self._sleeptime_for_dynamo)
 
             self.upload_and_unlock_queue_file()
