@@ -113,10 +113,13 @@ class Processor:
                     some_client_config = self.config.get(f"{module_name}_config")
                     logger.debug(f"Found config for {module_name}: {some_client_config}")
 
-                    # We send configs in two ways as `config` and `custom_config` for some backwards compatibility.
+                    # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
                     if some_client_config:
-                        setattr(self, f"{module_name}_client",
-                                some_class(config=some_client_config, custom_config=some_client_config))
+                        if suffix == 'Manager':
+                            setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
+                        elif suffix == 'Client':
+                            setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+
                     else:
                         setattr(self, f"{module_name}_client", some_class())
                     logger.info(f"Successfully registered {module_name}_client")
