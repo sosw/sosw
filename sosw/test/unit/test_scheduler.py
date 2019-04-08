@@ -97,7 +97,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         with open(file_name or self.scheduler._local_queue_file, 'w') as f:
             for x in range(10):
                 if json:
-                    f.write('{"key": "val", "number": "42", "boolean": true}\n')
+                    f.write('{"key": "val", "number": "42", "boolean": true, "labourer_id": "some_function"}\n')
                 else:
                     f.write(f"Hello Aglaya {x} {random.randint(0, 99)}\n")
 
@@ -322,6 +322,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_construct_job_data__raises__unsupported_vals__string(self):
         pl = deepcopy(self.PAYLOAD)
+
+        pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
 
         self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
@@ -329,9 +331,24 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_construct_job_data__raises__unsupported_vals__list_not_as_value(self):
         pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = ['just_a_string']
 
         self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+
+
+    def test_construct_job_data__not_raises__notchunkable__if_no_isolation(self):
+        pl = deepcopy(self.PAYLOAD)
+
+        pl['isolate_sections'] = True
+        pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
+
+        r = self.scheduler.construct_job_data(job=pl)
+        val = r[2]
+        # print(f"We chunked only first level (sections). The currently interesting is section #3, "
+        #       f"where we put custom unchunkable payload: {val}")
+
+        self.assertEqual(val['stores']['store_training'], 'some_string')
 
 
     def check_number_of_tasks(self, expected_map, response):
@@ -368,14 +385,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_construct_job_data__unchunckable_preserve_custom_attrs(self):
 
         pl = {'sections': {
-            {'section_funerals': {'custom': 'data'}},
-            {'section_weddings': None},
+            'section_funerals': {'custom': 'data'},
+            'section_weddings': None,
         }}
 
         response = self.scheduler.construct_job_data(job=pl)
-        print(response)
+        # print(response)
 
-        self.assertEqual(1, 2)
+        self.assertEqual([pl], response)
 
 
     def test_validate_list_of_vals(self):
@@ -483,6 +500,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'some_payload': 'foo',
         }
 
+        print(json.dumps(SAMPLE_SIMPLE_JOB))
         r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
         print(r)
 

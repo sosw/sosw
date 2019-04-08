@@ -238,8 +238,12 @@ class Scheduler(Processor):
 
             for a in single_or_plural(attr):
                 if a in job:
-                    vals = self.validate_list_of_vals(job[a])
-                    task[plural(attr)] = vals
+                    try:
+                        vals = self.validate_list_of_vals(job[a])
+                        task[plural(attr)] = vals
+                    except InvalidJob:
+                        # If a custom payload is not following the chunking convention - just translate it as is.
+                        task.update(job)
                     break
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
@@ -358,7 +362,7 @@ class Scheduler(Processor):
                     logger.info(task)
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
-                    self.task_client.create_task(labourer=labourer, **json.loads(t))
+                    self.task_client.create_task(labourer=labourer, **t)
                     time.sleep(self._sleeptime_for_dynamo)
 
             self.upload_and_unlock_queue_file()

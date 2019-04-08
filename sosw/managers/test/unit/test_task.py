@@ -365,7 +365,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
     def test_create_task(self):
 
         TASK = dict(labourer=self.LABOURER, payload={'foo': 42})
-        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value='5000')
+        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value=5000)
 
         self.manager.create_task(**TASK)
 
