@@ -2,6 +2,7 @@ import boto3
 import os
 import unittest
 
+from copy import deepcopy
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -22,7 +23,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
-        self.custom_config = self.TEST_CONFIG.copy()
+        self.custom_config = deepcopy(self.TEST_CONFIG)
         self.orchestrator = Orchestrator(self.custom_config)
 
 

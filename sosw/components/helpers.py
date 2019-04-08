@@ -643,7 +643,7 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     Recursively updates the dictionary `d` with another one `u`.
     Values of `u` overwrite in case of type conflict.
 
-    Lists, sets and tuple values of `d` and `u` are merged.
+    List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
     """
 
     new = deepcopy(d)
@@ -651,9 +651,17 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     for k, v in u.items():
         if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
             new[k] = recursive_update(d.get(k, {}), v)
+
         elif isinstance(v, (set, list, tuple)):
-            if isinstance(d[k], (set, list, tuple)):
-                new[k] = list(set(list(d[k]) + v))
+            if isinstance(d.get(k), (set, list, tuple)):
+                # Merge lists of uniques. I really want this helper to eat anything and return what it should. :)
+                nv = list(set(d[k])) + list(v)
+                try:
+                    # The types of values in list could be unhashable, so it is not that easy filter uniques.
+                    new[k] = list(set(nv))
+                except TypeError:
+                    # In this case we just merge lists as is.
+                    new[k] = nv
             else:
                 new[k] = v
         else:
