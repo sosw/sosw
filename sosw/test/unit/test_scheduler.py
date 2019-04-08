@@ -365,6 +365,19 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
 
 
+    def test_construct_job_data__unchunckable_preserve_custom_attrs(self):
+
+        pl = {'sections': {
+            {'section_funerals': {'custom': 'data'}},
+            {'section_weddings': None},
+        }}
+
+        response = self.scheduler.construct_job_data(job=pl)
+        print(response)
+
+        self.assertEqual(1, 2)
+
+
     def test_validate_list_of_vals(self):
         TESTS = [
             ({'a': None, 'b': None}, ['a', 'b']),
@@ -470,7 +483,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'some_payload': 'foo',
         }
 
-        r = self.scheduler(SAMPLE_SIMPLE_JOB)
+        r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
         print(r)
 
         self.scheduler.task_client.create_task.assert_called_once()

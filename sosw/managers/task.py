@@ -102,12 +102,12 @@ class TaskManager(Processor):
 
         if items:
             first_task_in_queue = items[0]
-            return first_task_in_queue[_('greenfield')]
+            return int(first_task_in_queue[_('greenfield')])
 
         # Logically this is 0 (aka beginning of the Epoch), but we sometimes want to put earlier than the oldest task,
         # so let us assume we begin one step ahead of The zero.
         else:
-            return 0 + self.config['greenfield_task_step']
+            return 0 + int(self.config['greenfield_task_step'])
 
 
     def get_newest_greenfield_for_labourer(self, labourer: Labourer) -> int:
@@ -207,8 +207,8 @@ class TaskManager(Processor):
             _('task_id'):     lambda: str(uuid.uuid1().hex),
             _('labourer_id'): lambda: str(labourer.id),
             _('created_at'):  lambda: str(time.time()),
-            _('greenfield'):  lambda: self.get_newest_greenfield_for_labourer(labourer)
-                                      + self.config['greenfield_task_step'],
+            _('greenfield'):  lambda: str(self.get_newest_greenfield_for_labourer(labourer)
+                                          + int(self.config['greenfield_task_step'])),
             _('attempts'):    lambda: '0',
         }
 
@@ -485,7 +485,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                                                          f"bad value: {task[_('labourer_id')]}"
+                f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 

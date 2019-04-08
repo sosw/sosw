@@ -377,7 +377,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         print(arg, call_kwargs)
 
         self.assertEqual(str(arg['labourer_id']), str(self.LABOURER.id))
-        self.assertEqual(str(arg['greenfield']), str(5000))
+        self.assertEqual(str(arg['greenfield']), str(6000))
         self.assertEqual(str(arg['payload']), '{"foo": 42}')
 
         for field in self.manager.config['dynamo_db_config']['required_fields']:
