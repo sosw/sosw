@@ -68,7 +68,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
-        with patch('boto3'):
+        with patch('boto3.client'):
             self.scheduler = Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()

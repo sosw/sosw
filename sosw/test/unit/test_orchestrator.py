@@ -24,7 +24,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
-        with patch('boto3'):
+        with patch('boto3.client'):
             self.orchestrator = Orchestrator(self.custom_config)
 
 
