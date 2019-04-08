@@ -477,6 +477,73 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(len(r['l']), 2)
         self.assertEqual(r['l'], [25, 26])
 
+        # self.assertTrue(0)
+
+
+    def test_recursive_update_2(self):
+        a = {
+            'a': 1,
+            'b': {
+                'b1': 2,
+                'b2': 3,
+                'b3': 'bar',
+                'b4': ['boo', 123]
+            },
+        }
+        b = {
+            'a': 1,
+            'b': {
+                'b1': 'foo',
+                'b3': 'baz',
+                'b4': ['moo'],
+            },
+        }
+
+        self.assertEqual(recursive_update(a, b)['a'], 1)
+        self.assertEqual(recursive_update(a, b)['b']['b2'], 3)
+        self.assertEqual(recursive_update(a, b)['b']['b1'], 'foo')
+        self.assertEqual(recursive_update(a, b)['b']['b3'], 'baz')
+        self.assertEqual(set(recursive_update(a, b)['b']['b4']), {'boo', 123, 'moo'})
+
+
+    def test_recursive_update__inserts_new_keys(self):
+        a = {
+            'a': 1,
+            'b': {
+                'b1': 2,
+                'b2': {
+                    'b21': {
+                        'b211': 211
+                    }
+                },
+            },
+        }
+        b = {
+            'a': 1,
+            'b': {
+                'b2': {
+                    'b21': 42
+                },
+                'b1': 4,
+                'b3': 5
+            },
+            'c': 6,
+        }
+
+        self.assertEqual(recursive_update(a, b)['a'], 1)
+        self.assertEqual(recursive_update(a, b)['b']['b1'], 4)
+        self.assertEqual(recursive_update(a, b)['b']['b3'], 5)
+        self.assertEqual(recursive_update(a, b)['b']['b2']['b21'], 42)
+        self.assertEqual(recursive_update(a, b)['c'], 6)
+        # self.assertEqual(1,2)
+
+
+    def test_recursive_update__does_overwrite_with_none(self):
+        a = {'a': 1, 'b': {'b1': 21}}
+        b = {'b': None}
+
+        self.assertIsNone(recursive_update(a, b)['b'])
+
 
 if __name__ == '__main__':
     unittest.main()

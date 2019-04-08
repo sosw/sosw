@@ -653,7 +653,7 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
             new[k] = recursive_update(d.get(k, {}), v)
         elif isinstance(v, (set, list, tuple)):
             if isinstance(d[k], (set, list, tuple)):
-                new[k] = list(set(d[k] + v))
+                new[k] = list(set(list(d[k]) + v))
             else:
                 new[k] = v
         else:
