@@ -24,7 +24,8 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
-        self.orchestrator = Orchestrator(self.custom_config)
+        with patch('boto3'):
+            self.orchestrator = Orchestrator(self.custom_config)
 
 
     def tearDown(self):

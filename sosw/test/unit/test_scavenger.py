@@ -22,7 +22,8 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = self.TEST_CONFIG.copy()
-        self.scavenger = Scavenger(self.custom_config)
+        with patch('boto3'):
+            self.scavenger = Scavenger(self.custom_config)
 
         # Mock clients
         self.scavenger.task_client = MagicMock()

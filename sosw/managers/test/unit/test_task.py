@@ -44,7 +44,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
 
-        self.manager = TaskManager(custom_config=self.config)
+        with patch('boto3'):
+            self.manager = TaskManager(custom_config=self.config)
         self.manager.dynamo_db_client = MagicMock()
         self.manager.ecology_client = MagicMock()
         self.manager.ecology_client.get_labourer_status.return_value = 2
