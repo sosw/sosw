@@ -438,7 +438,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(expected, validate_list_of_words_from_csv_or_list(data))
 
 
-    def test_one_or_none(self):
+    def test_first_or_none(self):
         # List
         self.assertEqual(first_or_none([]), None)
         self.assertEqual(first_or_none([1, 2]), 1)
@@ -460,6 +460,22 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(first_or_none({}), None)
         self.assertEqual(first_or_none(d), "a")
         self.assertEqual(first_or_none(d, lambda x: d[x] == 2), "b")
+
+
+    def test_recursive_update(self):
+
+        d = {'a': 1, 'b': 2, 'g': {41: 41}, 'l': [25]}
+        u = {'c': 3, 'b': {'b1': 11}, 'g': {'g1': 'g1'}, 'l': [25, 26]}
+
+        r = recursive_update(d, u)
+        self.assertEqual(r['a'], 1)
+        self.assertEqual(r['b']['b1'], 11)
+        self.assertEqual(r['c'], 3)
+        self.assertEqual(r['g']['g1'], 'g1')
+        self.assertEqual(r['g'][41], 41)
+
+        self.assertEqual(len(r['l']), 2)
+        self.assertEqual(r['l'], [25, 26])
 
 
 if __name__ == '__main__':

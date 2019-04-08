@@ -23,13 +23,17 @@ __all__ = ['validate_account_to_dashed',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
-           'first_or_none'
+           'first_or_none',
+           'recursive_update',
            ]
 
 import re
+import collections
 import uuid
 import datetime
-from typing import Iterable, Callable
+
+from copy import deepcopy
+from typing import Iterable, Callable, Dict, Mapping
 
 
 def validate_account_to_dashed(account):
@@ -632,3 +636,27 @@ def first_or_none(items: Iterable, condition: Callable = None):
             return item
 
     return None
+
+
+def recursive_update(d: Dict, u: Mapping) -> Dict:
+    """
+    Recursively updates the dictionary `d` with another one `u`.
+    Values of `u` overwrite in case of type conflict.
+
+    Lists, sets and tuple values of `d` and `u` are merged.
+    """
+
+    new = deepcopy(d)
+
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
+            new[k] = recursive_update(d.get(k, {}), v)
+        elif isinstance(v, (set, list, tuple)):
+            if isinstance(d[k], (set, list, tuple)):
+                new[k] = list(set(d[k] + v))
+            else:
+                new[k] = v
+        else:
+            new[k] = v
+
+    return new
