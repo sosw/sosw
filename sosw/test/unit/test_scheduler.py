@@ -68,6 +68,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
+
         with patch('boto3.client'):
             self.scheduler = Scheduler(self.custom_config)
 
@@ -111,7 +112,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_init__chunkable_attrs_not_end_with_s(self):
         config = self.custom_config
         config['job_schema']['chunkable_attrs'] = [('bad_name_ending_with_s', {})]
-        self.assertRaises(AssertionError, Scheduler, custom_config=config)
+
+        with patch('boto3.client'):
+            self.assertRaises(AssertionError, Scheduler, custom_config=config)
 
 
     def test_get_next_chunkable_attr(self):

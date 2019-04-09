@@ -36,7 +36,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
-        self.config = self.TEST_CONFIG.copy()
+        self.config = deepcopy(self.TEST_CONFIG)
 
         self.labourer = deepcopy(self.LABOURER)
 
@@ -46,6 +46,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         with patch('boto3.client'):
             self.manager = TaskManager(custom_config=self.config)
+
         self.manager.dynamo_db_client = MagicMock()
         self.manager.ecology_client = MagicMock()
         self.manager.ecology_client.get_labourer_status.return_value = 2
@@ -218,13 +219,14 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertTrue(call_kwargs['return_count'])
 
 
-
     def test_get_labourers(self):
         self.config['labourers'] = {
             'some_lambda': {'foo': 'bar', 'arn': '123'},
             'some_lambda2': {'foo': 'baz'},
         }
-        self.task_client = TaskManager(custom_config=self.config)
+
+        with patch('boto3.client'):
+            self.task_client = TaskManager(custom_config=self.config)
 
         result = self.task_client.get_labourers()
         self.assertEqual(len(result), 2)

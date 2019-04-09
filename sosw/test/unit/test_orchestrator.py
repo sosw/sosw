@@ -27,6 +27,8 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         with patch('boto3.client'):
             self.orchestrator = Orchestrator(self.custom_config)
 
+        self.orchestrator.ecology_client = MagicMock()
+
 
     def tearDown(self):
         self.patcher.stop()
@@ -47,7 +49,9 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         custom_config['labourers'] = {
             42: {'foo': 'bar'},
         }
-        orchestrator = Orchestrator(custom_config)
+
+        with patch('boto3.client'):
+            orchestrator = Orchestrator(custom_config)
 
         self.assertEqual(orchestrator.get_labourer_setting(Labourer(id=42), 'foo'), 'bar')
         self.assertEqual(orchestrator.get_labourer_setting(Labourer(id=42), 'faz'), None)
@@ -68,14 +72,16 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         }
 
         self.custom_config['labourers'] = {42: {'max_simultaneous_invocations': 5}}
-        self.orchestrator = Orchestrator(self.custom_config)
 
-        self.orchestrator.ecology_client = MagicMock()
+        with patch('boto3.client'):
+            orchestrator = Orchestrator(self.custom_config)
+
+        orchestrator.ecology_client = MagicMock()
 
         for eco, expected in TESTS.items():
-            self.orchestrator.ecology_client.get_labourer_status.return_value = eco
+            orchestrator.ecology_client.get_labourer_status.return_value = eco
 
-            self.assertEqual(self.orchestrator.get_desired_invocation_number_for_labourer(Labourer(id=42)), expected)
+            self.assertEqual(orchestrator.get_desired_invocation_number_for_labourer(Labourer(id=42)), expected)
 
 
     def test_get_desired_invocation_number_for_labourer__default(self):
@@ -88,8 +94,6 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
             3: 1,
             4: 2
         }
-
-        self.orchestrator.ecology_client = MagicMock()
 
         for eco, expected in TESTS.items():
             self.orchestrator.ecology_client.get_labourer_status.return_value = eco
