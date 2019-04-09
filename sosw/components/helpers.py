@@ -23,13 +23,17 @@ __all__ = ['validate_account_to_dashed',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
-           'first_or_none'
+           'first_or_none',
+           'recursive_update',
            ]
 
 import re
+import collections
 import uuid
 import datetime
-from typing import Iterable, Callable
+
+from copy import deepcopy
+from typing import Iterable, Callable, Dict, Mapping
 
 
 def validate_account_to_dashed(account):
@@ -632,3 +636,35 @@ def first_or_none(items: Iterable, condition: Callable = None):
             return item
 
     return None
+
+
+def recursive_update(d: Dict, u: Mapping) -> Dict:
+    """
+    Recursively updates the dictionary `d` with another one `u`.
+    Values of `u` overwrite in case of type conflict.
+
+    List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
+    """
+
+    new = deepcopy(d)
+
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
+            new[k] = recursive_update(d.get(k, {}), v)
+
+        elif isinstance(v, (set, list, tuple)):
+            if isinstance(d.get(k), (set, list, tuple)):
+                # Merge lists of uniques. I really want this helper to eat anything and return what it should. :)
+                nv = list(set(d[k])) + list(v)
+                try:
+                    # The types of values in list could be unhashable, so it is not that easy filter uniques.
+                    new[k] = list(set(nv))
+                except TypeError:
+                    # In this case we just merge lists as is.
+                    new[k] = nv
+            else:
+                new[k] = v
+        else:
+            new[k] = v
+
+    return new

@@ -68,7 +68,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
-        self.scheduler = Scheduler(self.custom_config)
+
+        with patch('boto3.client'):
+            self.scheduler = Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
@@ -97,7 +99,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         with open(file_name or self.scheduler._local_queue_file, 'w') as f:
             for x in range(10):
                 if json:
-                    f.write('{"key": "val", "number": "42", "boolean": true}\n')
+                    f.write('{"key": "val", "number": "42", "boolean": true, "labourer_id": "some_function"}\n')
                 else:
                     f.write(f"Hello Aglaya {x} {random.randint(0, 99)}\n")
 
@@ -110,7 +112,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_init__chunkable_attrs_not_end_with_s(self):
         config = self.custom_config
         config['job_schema']['chunkable_attrs'] = [('bad_name_ending_with_s', {})]
-        self.assertRaises(AssertionError, Scheduler, custom_config=config)
+
+        with patch('boto3.client'):
+            self.assertRaises(AssertionError, Scheduler, custom_config=config)
 
 
     def test_get_next_chunkable_attr(self):
@@ -322,6 +326,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_construct_job_data__raises__unsupported_vals__string(self):
         pl = deepcopy(self.PAYLOAD)
+
+        pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
 
         self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
@@ -329,9 +335,24 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_construct_job_data__raises__unsupported_vals__list_not_as_value(self):
         pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = ['just_a_string']
 
         self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+
+
+    def test_construct_job_data__not_raises__notchunkable__if_no_isolation(self):
+        pl = deepcopy(self.PAYLOAD)
+
+        pl['isolate_sections'] = True
+        pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
+
+        r = self.scheduler.construct_job_data(job=pl)
+        val = r[2]
+        # print(f"We chunked only first level (sections). The currently interesting is section #3, "
+        #       f"where we put custom unchunkable payload: {val}")
+
+        self.assertEqual(val['stores']['store_training'], 'some_string')
 
 
     def check_number_of_tasks(self, expected_map, response):
@@ -363,6 +384,19 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         ]
 
         self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
+
+
+    def test_construct_job_data__unchunckable_preserve_custom_attrs(self):
+
+        pl = {'sections': {
+            'section_funerals': {'custom': 'data'},
+            'section_weddings': None,
+        }}
+
+        response = self.scheduler.construct_job_data(job=pl)
+        # print(response)
+
+        self.assertEqual([pl], response)
 
 
     def test_validate_list_of_vals(self):
@@ -470,7 +504,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'some_payload': 'foo',
         }
 
-        r = self.scheduler(SAMPLE_SIMPLE_JOB)
+        print(json.dumps(SAMPLE_SIMPLE_JOB))
+        r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
         print(r)
 
         self.scheduler.task_client.create_task.assert_called_once()

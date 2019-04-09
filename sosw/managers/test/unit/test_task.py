@@ -36,7 +36,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
-        self.config = self.TEST_CONFIG.copy()
+        self.config = deepcopy(self.TEST_CONFIG)
 
         self.labourer = deepcopy(self.LABOURER)
 
@@ -44,7 +44,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
 
-        self.manager = TaskManager(custom_config=self.config)
+        with patch('boto3.client'):
+            self.manager = TaskManager(custom_config=self.config)
+
         self.manager.dynamo_db_client = MagicMock()
         self.manager.ecology_client = MagicMock()
         self.manager.ecology_client.get_labourer_status.return_value = 2
@@ -217,13 +219,14 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertTrue(call_kwargs['return_count'])
 
 
-
     def test_get_labourers(self):
         self.config['labourers'] = {
             'some_lambda': {'foo': 'bar', 'arn': '123'},
             'some_lambda2': {'foo': 'baz'},
         }
-        self.task_client = TaskManager(custom_config=self.config)
+
+        with patch('boto3.client'):
+            self.task_client = TaskManager(custom_config=self.config)
 
         result = self.task_client.get_labourers()
         self.assertEqual(len(result), 2)
@@ -365,7 +368,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
     def test_create_task(self):
 
         TASK = dict(labourer=self.LABOURER, payload={'foo': 42})
-        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value='5000')
+        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value=5000)
 
         self.manager.create_task(**TASK)
 
@@ -377,7 +380,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         print(arg, call_kwargs)
 
         self.assertEqual(str(arg['labourer_id']), str(self.LABOURER.id))
-        self.assertEqual(str(arg['greenfield']), str(5000))
+        self.assertEqual(str(arg['greenfield']), str(6000))
         self.assertEqual(str(arg['payload']), '{"foo": 42}')
 
         for field in self.manager.config['dynamo_db_config']['required_fields']:

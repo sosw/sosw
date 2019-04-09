@@ -438,7 +438,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(expected, validate_list_of_words_from_csv_or_list(data))
 
 
-    def test_one_or_none(self):
+    def test_first_or_none(self):
         # List
         self.assertEqual(first_or_none([]), None)
         self.assertEqual(first_or_none([1, 2]), 1)
@@ -460,6 +460,89 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(first_or_none({}), None)
         self.assertEqual(first_or_none(d), "a")
         self.assertEqual(first_or_none(d, lambda x: d[x] == 2), "b")
+
+
+    def test_recursive_update(self):
+
+        d = {'a': 1, 'b': 2, 'g': {41: 41}, 'l': [25]}
+        u = {'c': 3, 'b': {'b1': 11}, 'g': {'g1': 'g1'}, 'l': [25, 26]}
+
+        r = recursive_update(d, u)
+        self.assertEqual(r['a'], 1)
+        self.assertEqual(r['b']['b1'], 11)
+        self.assertEqual(r['c'], 3)
+        self.assertEqual(r['g']['g1'], 'g1')
+        self.assertEqual(r['g'][41], 41)
+
+        self.assertEqual(len(r['l']), 2)
+        self.assertEqual(r['l'], [25, 26])
+
+        # self.assertTrue(0)
+
+
+    def test_recursive_update_2(self):
+        a = {
+            'a': 1,
+            'b': {
+                'b1': 2,
+                'b2': 3,
+                'b3': 'bar',
+                'b4': ['boo', 123]
+            },
+        }
+        b = {
+            'a': 1,
+            'b': {
+                'b1': 'foo',
+                'b3': 'baz',
+                'b4': ['moo'],
+            },
+        }
+
+        self.assertEqual(recursive_update(a, b)['a'], 1)
+        self.assertEqual(recursive_update(a, b)['b']['b2'], 3)
+        self.assertEqual(recursive_update(a, b)['b']['b1'], 'foo')
+        self.assertEqual(recursive_update(a, b)['b']['b3'], 'baz')
+        self.assertEqual(set(recursive_update(a, b)['b']['b4']), {'boo', 123, 'moo'})
+
+
+    def test_recursive_update__inserts_new_keys(self):
+        a = {
+            'a': 1,
+            'b': {
+                'b1': 2,
+                'b2': {
+                    'b21': {
+                        'b211': 211
+                    }
+                },
+            },
+        }
+        b = {
+            'a': 1,
+            'b': {
+                'b2': {
+                    'b21': 42
+                },
+                'b1': 4,
+                'b3': 5
+            },
+            'c': 6,
+        }
+
+        self.assertEqual(recursive_update(a, b)['a'], 1)
+        self.assertEqual(recursive_update(a, b)['b']['b1'], 4)
+        self.assertEqual(recursive_update(a, b)['b']['b3'], 5)
+        self.assertEqual(recursive_update(a, b)['b']['b2']['b21'], 42)
+        self.assertEqual(recursive_update(a, b)['c'], 6)
+        # self.assertEqual(1,2)
+
+
+    def test_recursive_update__does_overwrite_with_none(self):
+        a = {'a': 1, 'b': {'b1': 21}}
+        b = {'b': None}
+
+        self.assertIsNone(recursive_update(a, b)['b'])
 
 
 if __name__ == '__main__':
