@@ -545,5 +545,26 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIsNone(recursive_update(a, b)['b'])
 
 
+    def test_trim_arn_to_name(self):
+
+        TESTS = [
+            ('bar_with_no_arn', 'bar_with_no_arn'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:$LATEST', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:12', 'bar'),
+            ('arn:aws:lambda:us-west-2:000000000000:function:bar:12', 'bar'),
+            ('arn:aws:s3:::autotest-sosw', 'autotest-sosw'),
+            ('arn:aws:iam::000000000000:role/aws-code-deploy-role', 'aws-code-deploy-role'),
+            ('arn:aws:rds:us-west-2:000000000000:cluster:aws-cluster-01', 'aws-cluster-01'),
+            ('arn:aws:rds:us-west-2:000000000000:db:aws-01-00', 'aws-01-00'),
+            ('arn:aws:events:us-west-2:123456000000:rule/aws-sr-01', 'aws-sr-01'),
+            ('arn:aws:dynamodb:us-west-2:123456000321:table/sosw_tasks', 'sosw_tasks'),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(trim_arn_to_name(test), expected)
+
+
 if __name__ == '__main__':
     unittest.main()

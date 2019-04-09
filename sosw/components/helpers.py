@@ -25,6 +25,7 @@ __all__ = ['validate_account_to_dashed',
            'validate_list_of_words_from_csv_or_list',
            'first_or_none',
            'recursive_update',
+           'trim_arn_to_name',
            ]
 
 import re
@@ -668,3 +669,22 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
             new[k] = v
 
     return new
+
+
+def trim_arn_to_name(arn: str) -> str:
+    """
+    Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).
+
+    More information about ARN Format:
+    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    """
+
+    # Special handling for super global services (e.g. S3 buckets)
+    if arn.count(':') < 6 and '/' not in arn:
+        return arn.split(':')[-1]
+
+    # Seems a little messy, but passes more/less any test of different ARNs we tried.
+    pattern = "(arn:aws:[0-9a-zA-Z-]{2,20}:[0-9a-zA-Z-]{0,12}:[0-9]{12}:[0-9a-zA-Z-]{2,20}[:/])?" \
+              "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
+
+    return re.search(pattern, arn).group('name')

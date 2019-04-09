@@ -22,7 +22,7 @@ from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
 from sosw.app import Processor
-from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict
+from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -331,18 +331,9 @@ class Scheduler(Processor):
         job = load(jh['job']) if 'job' in jh else jh
 
         assert 'lambda_name' in job, f"Job is missing required parameter 'lambda_name': {job}"
-        job['lambda_name'] = job['lambda_name']
+        job['lambda_name'] = trim_arn_to_name(job['lambda_name'])
 
         return job
-
-
-    def get_name_from_arn(self, arn):
-        """ Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN). """
-
-        pattern = "(arn:aws:lambda:[0-9a-zA-Z-]{6,12}:[0-9]{12}:function:)?" \
-                  "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
-
-        return re.search(pattern, arn).group('name')
 
 
     def process_file(self):
