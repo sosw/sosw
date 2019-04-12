@@ -15,6 +15,7 @@ import re
 import time
 
 from importlib import import_module
+from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 from collections import Iterable
@@ -119,8 +120,11 @@ class Scheduler(Processor):
 
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
 
+        # In case there is not chunking required, we just schedule `task` directly from the `job`.
         if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
             data = [{'labourer_id': labourer.id, **job}]
+
+        # Else there is much more logic how to chunk the job to tasks.
         else:
             data = self.construct_job_data(job, skeleton={'labourer_id': labourer.id})
 
@@ -166,20 +170,79 @@ class Scheduler(Processor):
                              f"You provided {type(data)}: {data}")
 
 
-    def construct_job_data(self, job: dict, skeleton: Dict = None, attr: str = None) -> List:
+
+    def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
+        """
+        There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
+        """
+
+        data = []
+        skeleton = deepcopy(skeleton) or {}
+        job = deepcopy(job)
+
+        period = job.pop('period', None)
+
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back']
+
+        # if period:
+        #     for key in PERIOD_KEYS:
+        #         for k in job:
+        #             period = re.match(key, k)
+        #             if period:
+        #                 logger.info(f"Found key: {period}")
+        #                 break
+
+        data.append({**job, **skeleton})
+
+        return data
+
+
+    def construct_job_data(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
+        """
+        Chunks the job to tasks using several layers. Each layer is represented with a `chunker` method.
+        All chunkers should accept `job` and optional `skeleton` for tasks and return a list of tasks.
+        If there is nothing to chunk for some chunker, return same `job` (with injected `skeleton`) wrapped in a list.
+
+        Default chunkers:
+
+        - Date list chunking
+        - Recursive chunking for `chunkable_attrs`
+
+        """
+
+        CHUNKERS = [self.chunk_dates, self.chunk_job]
+
+        data = [job]
+        skeleton = deepcopy(skeleton) or {}
+
+        for chunker in CHUNKERS:
+            chunked = []  # Container for results of current chunker method.
+            for task in data:
+                logging.debug(f"Chunking {task} with {chunker}")
+                chunked.extend(chunker(job=task))
+
+            data = deepcopy(chunked)
+
+        # Inject the skeleton to the resulting tasks
+        for task in data:
+            task.update(skeleton)
+
+        return data
+
+
+    def chunk_job(self, job: dict, skeleton: Dict = None, attr: str = None) -> List[Dict]:
         """
         Recursively parses a job, validates everything and chunks to simple tasks what should be chunked.
         The Scenario of chunking and isolation is worth another story, so you should put a link here once it is ready.
         """
 
+        data = []
         skel = deepcopy(skeleton) or {}
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
 
         # We have to return here the full job to let it work correctly with recursive calls.
         if not attr:
             return [job]
-
-        data = []
 
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
 
@@ -212,7 +275,7 @@ class Scheduler(Processor):
                                                      f"your job. Job was: {job}")
 
                                 logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
-                                data.extend(self.construct_job_data(job=subdata, skeleton=task, attr=next_attr))
+                                data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
 
                             # If None-s we just add a task. `Name` (which is actually a value in this scenario)
                             # was already added when creating task skeleton.

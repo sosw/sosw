@@ -287,18 +287,84 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         for expected, attr, data in TESTS:
             self.assertEqual(expected, self.scheduler.get_index_from_list(attr, data))
 
+# construct_job_data
+# construct_job_data
+# construct_job_data
 
-    def test_construct_job_data__not_chunkable_config(self):
+    def test_construct_job_data(self):
+
+        self.scheduler.chunk_dates = MagicMock(return_value=[{'a': 'foo'}, {'b': 'bar'}])
+        self.scheduler.chunk_job = MagicMock()
+
+        r = self.scheduler.construct_job_data({'pl': 1})
+
+        self.scheduler.chunk_dates.assert_called_once()
+        self.scheduler.chunk_job.assert_called()
+        self.assertEqual(self.scheduler.chunk_job.call_count, 2)
+
+
+    def test_construct_job_data__preserve_skeleton_through_chunkers(self):
+
+        r = self.scheduler.construct_job_data({'pl': 1}, skeleton={'labourer_id': 'some'})
+        print(r)
+
+        for task in r:
+            self.assertEqual(task['labourer_id'], 'some')
+
+
+    def test_chunk_dates__(self):
+        TASK = {
+            'period': 'last_42_days',
+            'a': 'foo'
+        }
+        SKELETON = {'labourer_id': 'some'}
+
+        r = self.scheduler.chunk_dates(job=TASK, skeleton=SKELETON)
+
+        for task in r:
+            self.assertEqual(task['labourer_id'], 'some')
+
+
+    def test_chunk_dates__includes_skeleton(self):
+        TASK = {
+            'a': 'foo'
+        }
+        SKELETON = {'labourer_id': 'some'}
+
+        r = self.scheduler.chunk_dates(job=TASK, skeleton=SKELETON)
+
+        for task in r:
+            self.assertEqual(task['labourer_id'], 'some')
+            self.assertEqual(task['a'], 'foo')
+
+
+    def test_chunk_dates__pops_period(self):
+        TASK = {
+            'period': 'last_42_days',
+            'a': 'foo'
+        }
+
+        r = self.scheduler.chunk_dates(job=TASK)
+
+        self.assertIn('period', TASK, "DANGER! Modified initial job!")
+        for task in r:
+            self.assertNotIn('period', task)
+            self.assertEqual(task['a'], 'foo')
+
+
+
+
+    def test_chunk_job__not_chunkable_config(self):
         self.scheduler.chunkable_attrs = []
         pl = deepcopy(self.PAYLOAD)
 
-        r = self.scheduler.construct_job_data(job=pl)
+        r = self.scheduler.chunk_job(job=pl)
         # pprint.pprint(r)
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0], pl)
 
 
-    def test_construct_job_data__raises_unchunkable_subtask(self):
+    def test_chunk_job__raises_unchunkable_subtask(self):
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
         pl['sections']['section_conversions']['stores']['store_training']['products']['product_books'] = {
@@ -309,36 +375,37 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 }
         }
 
-        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+        self.assertRaises(InvalidJob, self.scheduler.chunk_job, job=pl)
 
 
-    def test_construct_job_data__raises__unsupported_vals__string(self):
+    def test_chunk_job__raises__unsupported_vals__string(self):
         pl = deepcopy(self.PAYLOAD)
 
         pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
 
-        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+        self.assertRaises(InvalidJob, self.scheduler.chunk_job, job=pl)
 
 
-    def test_construct_job_data__raises__unsupported_vals__list_not_as_value(self):
+    def test_chunk_job__raises__unsupported_vals__list_not_as_value(self):
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_conversions']['isolate_stores'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = ['just_a_string']
 
-        self.assertRaises(InvalidJob, self.scheduler.construct_job_data, job=pl)
+        self.assertRaises(InvalidJob, self.scheduler.chunk_job, job=pl)
 
 
-    def test_construct_job_data__not_raises__notchunkable__if_no_isolation(self):
+    def test_chunk_job__not_raises__notchunkable__if_no_isolation(self):
         pl = deepcopy(self.PAYLOAD)
 
         pl['isolate_sections'] = True
         pl['sections']['section_conversions']['stores']['store_training'] = 'some_string'
 
-        r = self.scheduler.construct_job_data(job=pl)
+        r = self.scheduler.chunk_job(job=pl)
         val = r[2]
-        # print(f"We chunked only first level (sections). The currently interesting is section #3, "
-        #       f"where we put custom unchunkable payload: {val}")
+        print(r)
+        print(f"We chunked only first level (sections). The currently interesting is section #3, "
+              f"where we put custom unchunkable payload: {val}")
 
         self.assertEqual(val['stores']['store_training'], 'some_string')
 
@@ -350,13 +417,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(len(list(r)), expected)
 
 
-    def test_construct_job_data(self):
+    def test_chunk_job(self):
 
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_weddings']['stores']['store_music']['isolate_products'] = True
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
 
-        response = self.scheduler.construct_job_data(job=pl)
+        response = self.scheduler.chunk_job(job=pl)
 
         # for row in response:
         #     pprint.pprint(row)
@@ -374,14 +441,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
 
 
-    def test_construct_job_data__unchunckable_preserve_custom_attrs(self):
+    def test_chunk_job__unchunckable_preserve_custom_attrs(self):
 
         pl = {'sections': {
             'section_funerals': {'custom': 'data'},
             'section_weddings': None,
         }}
 
-        response = self.scheduler.construct_job_data(job=pl)
+        response = self.scheduler.chunk_job(job=pl)
         # print(response)
 
         self.assertEqual([pl], response)
@@ -480,6 +547,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             for row in f.readlines():
                 # print(row)
                 parsed_row = json.loads(row)
+                print(parsed_row)
 
                 self.assertEqual(parsed_row['labourer_id'], self.LABOURER.id)
                 self.assertEqual(len(parsed_row['sections']), 1)
