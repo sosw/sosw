@@ -1,4 +1,5 @@
 import boto3
+import json
 import logging
 import os
 import random
@@ -36,7 +37,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
 
-        self.config = self.TEST_CONFIG.copy()
+        self.config = deepcopy(self.TEST_CONFIG)
 
         self.labourer = deepcopy(self.LABOURER)
 
@@ -44,7 +45,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
 
-        self.manager = TaskManager(custom_config=self.config)
+        with patch('boto3.client'):
+            self.manager = TaskManager(custom_config=self.config)
+
         self.manager.dynamo_db_client = MagicMock()
         self.manager.ecology_client = MagicMock()
         self.manager.ecology_client.get_labourer_status.return_value = 2
@@ -84,7 +87,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(call_args[0],
                          {
-                             self.HASH_KEY[0]: f"task_id_{self.labourer.id}_256", self.RANGE_KEY[0]: self.labourer.id
+                             self.HASH_KEY[0]: f"task_id_{self.labourer.id}_256"
                          }), "The key of task is missing"
         self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
 
@@ -217,13 +220,14 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertTrue(call_kwargs['return_count'])
 
 
-
     def test_get_labourers(self):
         self.config['labourers'] = {
-            'some_lambda': {'foo': 'bar', 'arn': '123'},
+            'some_lambda':  {'foo': 'bar', 'arn': '123'},
             'some_lambda2': {'foo': 'baz'},
         }
-        self.task_client = TaskManager(custom_config=self.config)
+
+        with patch('boto3.client'):
+            self.task_client = TaskManager(custom_config=self.config)
 
         result = self.task_client.get_labourers()
         self.assertEqual(len(result), 2)
@@ -234,8 +238,10 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_archive_task(self):
         task_id = '918273'
-        task = {'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}', 'completed_at': '1551962375',
-                'closed_at': '111'}
+        task = {
+            'labourer_id': 'some_lambda', 'task_id': task_id, 'payload': '{}', 'completed_at': '1551962375',
+            'closed_at':   '111'
+        }
 
         # Mock
         self.manager.dynamo_db_client = MagicMock()
@@ -247,8 +253,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
         # Check calls
         expected_completed_task = task.copy()
         expected_completed_task['labourer_id_task_status'] = 'some_lambda_1'
-        self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG['sosw_closed_tasks_table'])
-        self.manager.dynamo_db_client.delete.assert_called_once_with({'labourer_id': 'some_lambda', 'task_id': task_id})
+        self.manager.dynamo_db_client.put.assert_called_once_with(expected_completed_task, table_name=self.TEST_CONFIG[
+            'sosw_closed_tasks_table'])
+        self.manager.dynamo_db_client.delete.assert_called_once_with({'task_id': task_id})
 
 
     # @unittest.skip("Function currently depricated")
@@ -267,7 +274,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
     #     self.manager.dynamo_db_client.update.assert_called_once_with(
     #             {_('task_id'): task_id, _('labourer_id'): labourer_id},
     #             attributes_to_update={_('closed_at'): int(time.time())})
-
 
     def move_task_to_retry_table(self):
         task_id = '123'
@@ -365,20 +371,56 @@ class task_manager_UnitTestCase(unittest.TestCase):
     def test_create_task(self):
 
         TASK = dict(labourer=self.LABOURER, payload={'foo': 42})
-        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value='5000')
+        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value=5000)
+
+        with patch('time.time') as t:
+            t.return_value = 1234567
+            self.manager.create_task(**TASK)
+
+        self.manager.dynamo_db_client.put.assert_called_once()
+
+        call_args, call_kwargs = self.manager.dynamo_db_client.put.call_args
+        arg = call_args[0]
+        # print('########')
+        # print(arg, call_kwargs)
+
+        self.assertEqual(str(arg['labourer_id']), str(self.LABOURER.id))
+        self.assertEqual(str(arg['created_at']), str(1234567))
+        self.assertEqual(str(arg['greenfield']), str(6000))
+        self.assertEqual(str(arg['attempts']), str(0))
+        self.assertEqual(str(arg['payload']), '{"foo": 42}')
+
+        for field in self.manager.config['dynamo_db_config']['required_fields']:
+            self.assertIn(field, arg.keys())
+
+
+    def test_create_task__combine_complex_payload(self):
+        TASK = dict(labourer=self.LABOURER, payload={'foo': 42}, shops=[1, 3], lloyd='green ninja')
+        self.manager.get_newest_greenfield_for_labourer = MagicMock(return_value=5000)
 
         self.manager.create_task(**TASK)
 
         self.manager.dynamo_db_client.put.assert_called_once()
 
         call_args, call_kwargs = self.manager.dynamo_db_client.put.call_args
-        arg = call_args[0]
-        print('########')
-        print(arg, call_kwargs)
+        payload = call_args[0]['payload']
+        payload = json.loads(payload)
+        # print('########')
+        # print(payload)
 
-        self.assertEqual(str(arg['labourer_id']), str(self.LABOURER.id))
-        self.assertEqual(str(arg['greenfield']), str(5000))
-        self.assertEqual(str(arg['payload']), '{"foo": 42}')
+        self.assertEqual(payload['foo'], 42)
+        self.assertEqual(payload['shops'], [1, 3])
+        self.assertEqual(payload['lloyd'], 'green ninja')
 
-        for field in self.manager.config['dynamo_db_config']['required_fields']:
-            self.assertIn(field, arg.keys())
+
+    def test_construct_payload_for_task(self):
+        TESTS = [
+            (dict(payload={'foo': 42}), {'foo': 42}),  # Dictionary
+            (dict(payload='{"foo": 42}'), {'foo': 42}),  # JSON
+            (dict(payload={'foo': 42}, shops=[1, 3]), {'foo': 42, 'shops': [1, 3]}),  # Combine custom attrs
+            (dict(bar="foo"), {'bar': "foo"}),  # Missing initial payload
+            (dict(bar={"foo": 3}), {'bar': {"foo": 3}}),  # Missing initial payload
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.manager.construct_payload_for_task(**test), json.dumps(expected))

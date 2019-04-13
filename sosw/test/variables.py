@@ -33,7 +33,7 @@ TEST_TASK_CLIENT_CONFIG = {
     'sosw_closed_tasks_table':           'autotest_sosw_closed_tasks',
     'sosw_retry_tasks_table':            'autotest_sosw_retry_tasks',
     'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
-    'ecology_client_config':             TEST_ECOLOGY_CLIENT_CONFIG,
+    'ecology_config':                    TEST_ECOLOGY_CLIENT_CONFIG,
     'labourers':                         {
         'some_function': {
             'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
@@ -44,20 +44,23 @@ TEST_TASK_CLIENT_CONFIG = {
 }
 
 TEST_ORCHESTRATOR_CONFIG = {
-    'init_clients':          [],
-    'task_client_config':    TEST_TASK_CLIENT_CONFIG,
-    'ecology_client_config': TEST_ECOLOGY_CLIENT_CONFIG,
+    'init_clients':   [],
+    'task_config':    TEST_TASK_CLIENT_CONFIG,
+    'ecology_config': TEST_ECOLOGY_CLIENT_CONFIG,
 }
 
 TEST_SCAVENGER_CONFIG = {
     'init_clients':     [],
     'dynamo_db_config': TASKS_TABLE_CONFIG,
+    'ecology_config':   TEST_ECOLOGY_CLIENT_CONFIG,
+    'task_config':      TEST_TASK_CLIENT_CONFIG,
 }
 
 TEST_SCHEDULER_CONFIG = {
-    'init_clients':       [],
-    'task_client_config': TEST_TASK_CLIENT_CONFIG,
-    'job_schema':         {
+    'init_clients':   [],
+    'ecology_config': TEST_ECOLOGY_CLIENT_CONFIG,
+    'task_config':    TEST_TASK_CLIENT_CONFIG,
+    'job_schema':     {
         'chunkable_attrs': [
             ('section', {}),
             ('store', {}),

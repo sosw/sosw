@@ -7,6 +7,7 @@ __license__ = "MIT"
 __status__ = "Development"
 
 import boto3
+import datetime
 import json
 import logging
 import math
@@ -15,6 +16,7 @@ import re
 import time
 
 from importlib import import_module
+from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 from collections import Iterable
@@ -22,7 +24,7 @@ from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
 from sosw.app import Processor
-from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict
+from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -52,11 +54,13 @@ class Scheduler(Processor):
 
     DEFAULT_CONFIG = {
         'init_clients':    ['Task', 's3', 'Sns'],
-        'labourers':       {
-            # 'some_function': {
-            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
-            #     'max_simultaneous_invocations': 10,
-            # }
+        'task_config':     {
+            'labourers': {
+                # 'some_function': {
+                #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+                #     'max_simultaneous_invocations': 10,
+                # }
+            },
         },
         's3_prefix':       'sosw/scheduler',
         'queue_file':      'tasks_queue.txt',
@@ -86,7 +90,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -117,8 +121,11 @@ class Scheduler(Processor):
 
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
 
+        # In case there is not chunking required, we just schedule `task` directly from the `job`.
         if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
             data = [{'labourer_id': labourer.id, **job}]
+
+        # Else there is much more logic how to chunk the job to tasks.
         else:
             data = self.construct_job_data(job, skeleton={'labourer_id': labourer.id})
 
@@ -134,7 +141,6 @@ class Scheduler(Processor):
     #
     #     for task in data:
     #         self.task_client.create_task(labourer=labourer, payload=task)
-
 
     def validate_list_of_vals(self, data: Union[List, Set, Tuple, Dict]) -> List:
         """
@@ -165,20 +171,127 @@ class Scheduler(Processor):
                              f"You provided {type(data)}: {data}")
 
 
-    def construct_job_data(self, job: dict, skeleton: Dict = None, attr: str = None) -> List:
+    def last_x_days(self, pattern: str) -> List[str]:
+        """
+        Constructs the list of date strings for chunking.
+        """
+
+        assert re.match('last_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `last_x_days()`"
+
+        num = int(pattern.split('_')[1])
+        today = datetime.date.today()
+
+        return [str(today - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
+
+
+    def x_days_back(self, pattern: str) -> List[str]:
+        """
+        Finds the exact date X days back from now.
+        Returns it as a `str` in a `list` following the interface requirements of `chunk_dates`.
+
+        e.g. `1_days_back` - yesterday, `7_days_back` - same day as today last week
+        """
+
+        assert re.match('[0-9]+_days_back', pattern) is not None, "Invalid pattern {pattern} for `x_days_back()`"
+
+        num = int(pattern.split('_')[0])
+        today = datetime.date.today()
+
+        return [str(today - datetime.timedelta(days=num))]
+
+
+    def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
+        """
+        There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
+        """
+
+        data = []
+        skeleton = deepcopy(skeleton) or {}
+        job = deepcopy(job)
+
+        period = job.pop('period', None)
+        isolate = job.pop('isolate_days', None)
+
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back'] #, 'yesterday']
+
+        if period:
+
+            date_list = []
+            for pattern in PERIOD_KEYS:
+                if re.match(pattern, period):
+                    # Call the appropriate method with given value from job.
+                    logger.debug(f"Found period '{period}' for job {job}")
+                    method_name = pattern.replace('[0-9]+', 'x', 1)
+                    date_list = getattr(self, method_name)(period)
+                    break
+            else:
+                raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
+                                 f"'last_X_days', 'X_days_back'")
+
+            if isolate:
+                assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
+
+                for d in date_list:
+                    data.append({**job, **skeleton, 'date_list': [d]})
+            else:
+                if len(date_list) > 1:
+                    logger.debug("Running chunking for multiple days, but without date isolation. "
+                                 "Your workers might feel bad.")
+                data.append({**job, **skeleton, 'date_list': date_list})
+
+        else:
+            logger.debug(f"No `period` chunking requested in job {job}")
+            data.append({**job, **skeleton})
+
+        return data
+
+
+    def construct_job_data(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
+        """
+        Chunks the job to tasks using several layers. Each layer is represented with a `chunker` method.
+        All chunkers should accept `job` and optional `skeleton` for tasks and return a list of tasks.
+        If there is nothing to chunk for some chunker, return same `job` (with injected `skeleton`) wrapped in a list.
+
+        Default chunkers:
+
+        - Date list chunking
+        - Recursive chunking for `chunkable_attrs`
+
+        """
+
+        CHUNKERS = [self.chunk_dates, self.chunk_job]
+
+        data = [job]
+        skeleton = deepcopy(skeleton) or {}
+
+        for chunker in CHUNKERS:
+            chunked = []  # Container for results of current chunker method.
+            for task in data:
+                logging.debug(f"Chunking {task} with {chunker}")
+                chunked.extend(chunker(job=task))
+
+            data = deepcopy(chunked)
+
+        # Inject the skeleton to the resulting tasks
+        for task in data:
+            task.update(skeleton)
+
+        return data
+
+
+    def chunk_job(self, job: dict, skeleton: Dict = None, attr: str = None) -> List[Dict]:
         """
         Recursively parses a job, validates everything and chunks to simple tasks what should be chunked.
         The Scenario of chunking and isolation is worth another story, so you should put a link here once it is ready.
         """
 
+        data = []
         skel = deepcopy(skeleton) or {}
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
 
         # We have to return here the full job to let it work correctly with recursive calls.
         if not attr:
             return [job]
-
-        data = []
 
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
 
@@ -211,7 +324,7 @@ class Scheduler(Processor):
                                                      f"your job. Job was: {job}")
 
                                 logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
-                                data.extend(self.construct_job_data(job=subdata, skeleton=task, attr=next_attr))
+                                data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
 
                             # If None-s we just add a task. `Name` (which is actually a value in this scenario)
                             # was already added when creating task skeleton.
@@ -237,8 +350,12 @@ class Scheduler(Processor):
 
             for a in single_or_plural(attr):
                 if a in job:
-                    vals = self.validate_list_of_vals(job[a])
-                    task[plural(attr)] = vals
+                    try:
+                        vals = self.validate_list_of_vals(job[a])
+                        task[plural(attr)] = vals
+                    except InvalidJob:
+                        # If a custom payload is not following the chunking convention - just translate it as is.
+                        task.update(job)
                     break
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
@@ -326,18 +443,9 @@ class Scheduler(Processor):
         job = load(jh['job']) if 'job' in jh else jh
 
         assert 'lambda_name' in job, f"Job is missing required parameter 'lambda_name': {job}"
-        job['lambda_name'] = job['lambda_name']
+        job['lambda_name'] = trim_arn_to_name(job['lambda_name'])
 
         return job
-
-
-    def get_name_from_arn(self, arn):
-        """ Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN). """
-
-        pattern = "(arn:aws:lambda:[0-9a-zA-Z-]{6,12}:[0-9]{12}:function:)?" \
-                  "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
-
-        return re.search(pattern, arn).group('name')
 
 
     def process_file(self):
@@ -355,7 +463,9 @@ class Scheduler(Processor):
 
                 for task in data:
                     logger.info(task)
-                    self.task_client.create_task(labourer=NotImplemented, **json.loads(task))
+                    t = json.loads(task)
+                    labourer = self.task_client.get_labourer(t['labourer_id'])
+                    self.task_client.create_task(labourer=labourer, **t)
                     time.sleep(self._sleeptime_for_dynamo)
 
             self.upload_and_unlock_queue_file()

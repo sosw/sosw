@@ -14,11 +14,11 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.managers.ecology import EcologyManager
-from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
+from sosw.test.variables import TEST_ECOLOGY_CLIENT_CONFIG
 
 class ecology_manager_UnitTestCase(unittest.TestCase):
 
-    TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG['ecology_client_config']
+    TEST_CONFIG = TEST_ECOLOGY_CLIENT_CONFIG
 
     def setUp(self):
         """

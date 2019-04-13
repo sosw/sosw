@@ -61,7 +61,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def clean_task_tables(self):
-        clean_dynamo_table(self.table_name, (self.HASH_KEY[0], self.RANGE_KEY[0]))
+        clean_dynamo_table(self.table_name, (self.HASH_KEY[0],))
         clean_dynamo_table(self.completed_tasks_table, ('task_id',))
         clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
 
@@ -216,7 +216,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.manager.archive_task('123')
 
         # Check the task isn't in the tasks db, but is in the completed_tasks table
-        tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): 'lambda1'})
+        tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
         self.assertEqual(len(tasks), 0)
 
         completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
@@ -242,7 +242,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.manager.move_task_to_retry_table(task, delay)
 
-        result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123', _('labourer_id'): labourer_id})
+        result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
         self.assertEqual(len(result_tasks), 0)
 
         result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id}, table_name=self.retry_tasks_table)

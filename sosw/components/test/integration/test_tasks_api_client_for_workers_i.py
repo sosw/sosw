@@ -23,8 +23,7 @@ TEST_ITEM = {
 }
 
 TEST_ITEM_DICT = {
-    'task_id':     {'S': TASK_ID},
-    'labourer_id': {'S': LABOURER_ID}
+    'task_id':     {'S': TASK_ID}
 }
 
 
