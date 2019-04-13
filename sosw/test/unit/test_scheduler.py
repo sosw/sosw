@@ -239,6 +239,28 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(r, [JOB])
 
 
+    def test_construct_job_data__real_payload__for_debuging_logs(self):
+        JOB = {
+            'lambda_name':         'some_lambda',
+            'period': 'last_2_days', 'isolate_days': True,
+            'sections':            {
+                '111': {'all_campaigns': True},
+                '222': {'all_campaigns': True},
+                '333': {
+                    'isolate_stores': True,
+                    'all_campaigns': False,
+                    'stores':         {'333-111': None, '333-222': None, '333-333': {'keep_me': 7}},
+                }
+            }, 'isolate_sections': 'True'
+        }
+
+        r = self.scheduler.construct_job_data(JOB)
+
+        print(r)
+        self.assertEqual(len(r), 10)
+        self.assertEqual(1, 42)
+
+
     ### Tests of chunk_dates ###
     def test_chunk_dates__preserve_skeleton(self):
         TESTS = [

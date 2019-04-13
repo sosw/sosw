@@ -286,12 +286,15 @@ class Scheduler(Processor):
         """
 
         data = []
-        skel = deepcopy(skeleton) or {}
+        skeleton = deepcopy(skeleton) or {}
+        job = deepcopy(job)
+
+        # The current attribute we are looking for in this iteration or the first one of preconfigured chunkables.
         attr = attr or self.chunkable_attrs[0] if self.chunkable_attrs else None
 
         # We have to return here the full job to let it work correctly with recursive calls.
         if not attr:
-            return [job]
+            return [{**job, **skeleton}]
 
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
 
@@ -301,10 +304,17 @@ class Scheduler(Processor):
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
 
-            # Here and manu places further we support both single and plural versions of attribute names.
+            # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
-                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}.")
+                if not current_vals:
+                    continue
+
+                # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
+                # not related to current `attr`
+                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{attr}s"]}
+                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
+                             f"leaving job_skeleton: {job_skeleton}")
 
                 # For dictionaries we have to either go deeper recursively, or just flatten keys if values are None-s.
                 if all(isinstance(v, dict) for v in current_vals):
@@ -312,19 +322,22 @@ class Scheduler(Processor):
                         for name, subdata in val.items():
                             logger.debug(f"SubIterating `{name}` with {subdata}")
 
-                            task = deepcopy(skel)
+                            task = deepcopy(skeleton)
+                            task.update(job_skeleton)
                             task[plural(attr)] = [name]
 
                             if isinstance(subdata, dict):
                                 if not next_attr:
-                                    raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
-                                                     f"In order to chunk this, you should support this level in: "
-                                                     f"`config.job_schema.chunkable_attrs`. "
-                                                     f"If you want to pass custom payload - put it as `payload` in "
-                                                     f"your job. Job was: {job}")
-
-                                logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
-                                data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
+                                    # If there is no lower level configured to chunk, just keep this subdata in payload
+                                    task.update(subdata)
+                                    # raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
+                                    #                  f"In order to chunk this, you should support this level in: "
+                                    #                  f"`config.job_schema.chunkable_attrs`. "
+                                    #                  f"If you want to pass custom payload - put it as `payload` in "
+                                    #                  f"your job. Job was: {job}")
+                                else:
+                                    logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                    data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
 
                             # If None-s we just add a task. `Name` (which is actually a value in this scenario)
                             # was already added when creating task skeleton.
@@ -340,25 +353,31 @@ class Scheduler(Processor):
                     vals = self.validate_list_of_vals(current_vals)
 
                     for val in vals:
-                        task = deepcopy(skel)
+                        task = deepcopy(skeleton)
+                        task.update(job_skeleton)
                         task[plural(attr)] = [val]
                         data.append(task)
 
         else:
-            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skel}")
-            task = deepcopy(skel)
+            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
+            task = skeleton
 
             for a in single_or_plural(attr):
                 if a in job:
-                    try:
-                        vals = self.validate_list_of_vals(job[a])
-                        task[plural(attr)] = vals
-                    except InvalidJob:
-                        # If a custom payload is not following the chunking convention - just translate it as is.
-                        task.update(job)
-                    break
+                    attr_value = job.pop(a, None)
+                    if attr_value:
+                        try:
+                            vals = self.validate_list_of_vals(job[attr_value])
+                            task[plural(attr)] = vals
+                        except InvalidJob:
+                            # If a custom payload is not following the chunking convention - just translate it as is.
+                            pass
+                        break
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
+            # Populate the remaining parts of the job back to task.
+            task.update(job)
+
             logger.debug(f"Appending task to data: {task}")
             data.append(task)
 
