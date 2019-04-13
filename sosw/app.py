@@ -48,9 +48,9 @@ class Processor:
         if self.test and not custom_config:
             raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
 
-        self.config = self.DEFAULT_CONFIG.copy()
-        self.config.update(self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
-        self.config.update(custom_config or {})
+        self.config = self.DEFAULT_CONFIG
+        self.config = recursive_update(self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
+        self.config = recursive_update(self.config, custom_config or {})
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)

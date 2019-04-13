@@ -23,13 +23,18 @@ __all__ = ['validate_account_to_dashed',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
-           'first_or_none'
+           'first_or_none',
+           'recursive_update',
+           'trim_arn_to_name',
            ]
 
 import re
+import collections
 import uuid
 import datetime
-from typing import Iterable, Callable
+
+from copy import deepcopy
+from typing import Iterable, Callable, Dict, Mapping
 
 
 def validate_account_to_dashed(account):
@@ -632,3 +637,54 @@ def first_or_none(items: Iterable, condition: Callable = None):
             return item
 
     return None
+
+
+def recursive_update(d: Dict, u: Mapping) -> Dict:
+    """
+    Recursively updates the dictionary `d` with another one `u`.
+    Values of `u` overwrite in case of type conflict.
+
+    List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
+    """
+
+    new = deepcopy(d)
+
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
+            new[k] = recursive_update(d.get(k, {}), v)
+
+        elif isinstance(v, (set, list, tuple)):
+            if isinstance(d.get(k), (set, list, tuple)):
+                # Merge lists of uniques. I really want this helper to eat anything and return what it should. :)
+                nv = list(set(d[k])) + list(v)
+                try:
+                    # The types of values in list could be unhashable, so it is not that easy filter uniques.
+                    new[k] = list(set(nv))
+                except TypeError:
+                    # In this case we just merge lists as is.
+                    new[k] = nv
+            else:
+                new[k] = v
+        else:
+            new[k] = v
+
+    return new
+
+
+def trim_arn_to_name(arn: str) -> str:
+    """
+    Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).
+
+    More information about ARN Format:
+    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    """
+
+    # Special handling for super global services (e.g. S3 buckets)
+    if arn.count(':') < 6 and '/' not in arn:
+        return arn.split(':')[-1]
+
+    # Seems a little messy, but passes more/less any test of different ARNs we tried.
+    pattern = "(arn:aws:[0-9a-zA-Z-]{2,20}:[0-9a-zA-Z-]{0,12}:[0-9]{12}:[0-9a-zA-Z-]{2,20}[:/])?" \
+              "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
+
+    return re.search(pattern, arn).group('name')
