@@ -7,6 +7,7 @@ __license__ = "MIT"
 __status__ = "Development"
 
 import boto3
+import datetime
 import json
 import logging
 import math
@@ -170,6 +171,34 @@ class Scheduler(Processor):
                              f"You provided {type(data)}: {data}")
 
 
+    def last_x_days(self, pattern: str) -> List[str]:
+        """
+        Constructs the list of date strings for chunking.
+        """
+
+        assert re.match('last_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `last_x_days()`"
+
+        num = int(pattern.split('_')[1])
+        today = datetime.date.today()
+
+        return [str(today - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
+
+
+    def x_days_back(self, pattern: str) -> List[str]:
+        """
+        Finds the exact date X days back from now.
+        Returns it as a `str` in a `list` following the interface requirements of `chunk_dates`.
+
+        e.g. `1_days_back` - yesterday, `7_days_back` - same day as today last week
+        """
+
+        assert re.match('[0-9]+_days_back', pattern) is not None, "Invalid pattern {pattern} for `x_days_back()`"
+
+        num = int(pattern.split('_')[0])
+        today = datetime.date.today()
+
+        return [str(today - datetime.timedelta(days=num))]
+
 
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
         """
@@ -181,18 +210,38 @@ class Scheduler(Processor):
         job = deepcopy(job)
 
         period = job.pop('period', None)
+        isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back'] #, 'yesterday']
 
-        # if period:
-        #     for key in PERIOD_KEYS:
-        #         for k in job:
-        #             period = re.match(key, k)
-        #             if period:
-        #                 logger.info(f"Found key: {period}")
-        #                 break
+        if period:
 
-        data.append({**job, **skeleton})
+            date_list = []
+            for pattern in PERIOD_KEYS:
+                if re.match(pattern, period):
+                    # Call the appropriate method with given value from job.
+                    logger.debug(f"Found period '{period}' for job {job}")
+                    method_name = pattern.replace('[0-9]+', 'x', 1)
+                    date_list = getattr(self, method_name)(period)
+                    break
+            else:
+                raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
+                                 f"'last_X_days', 'X_days_back'")
+
+            if isolate:
+                assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
+
+                for d in date_list:
+                    data.append({**job, **skeleton, 'date_list': [d]})
+            else:
+                if len(date_list) > 1:
+                    logger.debug("Running chunking for multiple days, but without date isolation. "
+                                 "Your workers might feel bad.")
+                data.append({**job, **skeleton, 'date_list': date_list})
+
+        else:
+            logger.debug(f"No `period` chunking requested in job {job}")
+            data.append({**job, **skeleton})
 
         return data
 
