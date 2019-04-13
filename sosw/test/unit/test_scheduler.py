@@ -242,13 +242,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_construct_job_data__real_payload__for_debuging_logs(self):
         JOB = {
             'lambda_name':         'some_lambda',
-            'period': 'last_2_days', 'isolate_days': True,
+            'period':              'last_2_days', 'isolate_days': True,
             'sections':            {
                 '111': {'all_campaigns': True},
                 '222': {'all_campaigns': True},
                 '333': {
                     'isolate_stores': True,
-                    'all_campaigns': False,
+                    'all_campaigns':  False,
                     'stores':         {'333-111': None, '333-222': None, '333-333': {'keep_me': 7}},
                 }
             }, 'isolate_sections': 'True'
@@ -256,9 +256,11 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         r = self.scheduler.construct_job_data(JOB)
 
-        print(r)
+        for t in r:
+            print(t)
+
         self.assertEqual(len(r), 10)
-        self.assertEqual(1, 42)
+        # self.assertEqual(1, 42)
 
 
     ### Tests of chunk_dates ###
@@ -382,10 +384,10 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(r[0], pl)
 
 
-    def test_chunk_job__raises_unchunkable_subtask(self):
+    def test_chunk_job__not_raises_unchunkable_subtask__but_preserves_in_payload(self):
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_conversions']['stores']['store_training']['isolate_products'] = True
-        pl['sections']['section_conversions']['stores']['store_training']['products']['product_books'] = {
+        pl['sections']['section_conversions']['stores']['store_training']['products']['product_book'] = {
             'product_versions':
                 {
                     'product_version_audio': None,
@@ -393,7 +395,20 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 }
         }
 
-        self.assertRaises(InvalidJob, self.scheduler.chunk_job, job=pl)
+
+        def find_product(t):
+            try:
+                return set(t['product_versions'].keys()) == {'product_version_audio', 'product_version_paper'}
+            except:
+                return False
+
+
+        # print(pl)
+        r = self.scheduler.chunk_job(job=pl)
+        # for t in r:
+        #     print(t)
+
+        self.assertTrue(any(find_product(task) for task in r))
 
 
     def test_chunk_job__raises__unsupported_vals__string(self):

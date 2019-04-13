@@ -158,12 +158,16 @@ class Scheduler(Processor):
             return data
 
         elif isinstance(data, dict):
-            if not all(v is None for v in data.values()):
+            if all(v is None for v in data.values()):
+                return list(data.keys())
+
+            elif len(data.keys()) == 1:
+                return [data]
+
+            else:
                 raise InvalidJob(f"Job have values with embedded data, but chunking is not requested. "
                                  f"You should either append 'isolate_ATTRIBUTE' flag or make values appropriate. "
                                  f"Should be a flat list or a dict with None - values. Your job was: {data}")
-
-            return list(data.keys())
 
         else:
             raise InvalidJob(f"A Job without chunking enabled should have value either as a simple iterable "
@@ -212,7 +216,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back'] #, 'yesterday']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back']  # , 'yesterday']
 
         if period:
 
@@ -327,9 +331,11 @@ class Scheduler(Processor):
                             task[plural(attr)] = [name]
 
                             if isinstance(subdata, dict):
+                                # print(f'DICT {subdata}, NEXTATTR {next_attr}')
                                 if not next_attr:
                                     # If there is no lower level configured to chunk, just keep this subdata in payload
                                     task.update(subdata)
+                                    data.append(task)
                                     # raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
                                     #                  f"In order to chunk this, you should support this level in: "
                                     #                  f"`config.job_schema.chunkable_attrs`. "
@@ -367,11 +373,13 @@ class Scheduler(Processor):
                     attr_value = job.pop(a, None)
                     if attr_value:
                         try:
-                            vals = self.validate_list_of_vals(job[attr_value])
+                            vals = self.validate_list_of_vals(attr_value)
                             task[plural(attr)] = vals
                         except InvalidJob:
+                            logger.warning(f"Caught InvalidJob exception.")
                             # If a custom payload is not following the chunking convention - just translate it as is.
-                            pass
+                            # And return the pop-ed value back to the job.
+                            job[a] = attr_value
                         break
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
@@ -424,27 +432,28 @@ class Scheduler(Processor):
         isolate_attrs = [f"isolate_{a}" for a in attrs]
 
         if any(data[x] for x in isolate_attrs if x in data):
-            logger.debug(f"Got requirement to isolate {attr} in the current scope: {data}")
+            logger.debug(f"needs_chunking(): Got requirement to isolate {attr} in the current scope: {data}")
             return True
 
         next_attr = self.get_next_chunkable_attr(attr)
 
-        logger.debug(f"Found next attr {next_attr}, for {attr} from {data}")
+        logger.debug(f"needs_chunking(): Found next attr {next_attr}, for {attr} from {data}")
         # We are not yet lowest level going recursive
         if next_attr:
             for a in attrs:
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, a)
-                logger.debug(f"For {a} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
+                logger.debug(
+                    f"needs_chunking(): For {a} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
 
                 for val in current_vals:
 
                     for name, subdata in val.items():
-                        logger.debug(f"Analysing {next_attr} in {subdata}")
+                        logger.debug(f"needs_chunking(): Analysing {next_attr} in {subdata}")
                         if not subdata:
                             continue
-                        logger.debug(f"Going recursive for {next_attr} in {subdata}")
+                        logger.debug(f"needs_chunking(): Going recursive for {next_attr} in {subdata}")
                         if self.needs_chunking(next_attr, subdata):
-                            logger.debug(f"Returning True for {next_attr} from {subdata}")
+                            logger.debug(f"needs_chunking(): Returning True for {next_attr} from {subdata}")
                             return True
 
         return False
