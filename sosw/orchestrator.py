@@ -28,7 +28,7 @@ class Orchestrator(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients':                     ['Task', 'Ecology'],
+        'init_clients':                     ['Task'],
         'invocation_number_coefficient':    {
             0: 0,
             1: 0,
@@ -83,14 +83,14 @@ class Orchestrator(Processor):
         :return: Number of invocations
         """
 
-        labourer_status = self.ecology_client.get_labourer_status(labourer=labourer)
+        labourer_status = self.task_client.ecology_client.get_labourer_status(labourer=labourer)
 
         coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items() if labourer_status == k)
 
         max_invocations = self.get_labourer_setting(labourer, 'max_simultaneous_invocations') \
                           or self.config['default_simultaneous_invocations']
 
-        return math.floor(max_invocations * coefficient)
+        return int(math.floor(max_invocations * coefficient))
 
 
     def get_labourers(self) -> List[Labourer]:

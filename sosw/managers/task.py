@@ -151,8 +151,8 @@ class TaskManager(Processor):
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
-            ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration_(x)),
-            ('max_duration', lambda x: self.ecology_client.get_labourer_max_duration_(x)),
+            ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
+            ('max_duration', lambda x: self.ecology_client.get_labourer_max_duration(x)),
         )
 
         labourers = self.get_labourers()

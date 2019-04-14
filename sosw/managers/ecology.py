@@ -48,3 +48,13 @@ class EcologyManager(Processor):
 
     def get_running_tasks_for_labourer(self, labourer: Labourer):
         pass
+
+
+    def get_labourer_average_duration(self):
+        return 300
+
+
+    def get_labourer_max_duration(self):
+        return 300
+
+

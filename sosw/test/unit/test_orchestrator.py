@@ -27,7 +27,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         with patch('boto3.client'):
             self.orchestrator = Orchestrator(self.custom_config)
 
-        self.orchestrator.ecology_client = MagicMock()
+        self.orchestrator.task_client = MagicMock()
 
 
     def tearDown(self):
@@ -76,10 +76,10 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         with patch('boto3.client'):
             orchestrator = Orchestrator(self.custom_config)
 
-        orchestrator.ecology_client = MagicMock()
+        orchestrator.task_client = MagicMock()
 
         for eco, expected in TESTS.items():
-            orchestrator.ecology_client.get_labourer_status.return_value = eco
+            orchestrator.task_client.ecology_client.get_labourer_status.return_value = eco
 
             self.assertEqual(orchestrator.get_desired_invocation_number_for_labourer(Labourer(id=42)), expected)
 
@@ -96,6 +96,6 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         }
 
         for eco, expected in TESTS.items():
-            self.orchestrator.ecology_client.get_labourer_status.return_value = eco
+            self.orchestrator.task_client.ecology_client.get_labourer_status.return_value = eco
 
             self.assertEqual(self.orchestrator.get_desired_invocation_number_for_labourer(Labourer(id=1)), expected)
