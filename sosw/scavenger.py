@@ -38,7 +38,7 @@ class Scavenger(Processor):
             }
         },
         'sns_config': {
-            'recipient': 'arn:aws:sns:us-west-2:0000000000:sosw_info',
+            'recipient': 'arn:aws:sns:us-west-2:000000000000:sosw_info',
             'subject':   'SOSW Info'
         },
         'retry_tasks_limit': 20  # TODO: What's the optimal number?

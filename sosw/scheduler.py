@@ -57,7 +57,7 @@ class Scheduler(Processor):
         'task_config':     {
             'labourers': {
                 # 'some_function': {
-                #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+                #     'arn': 'arn:aws:lambda:us-west-2:000000000000:function:some_function',
                 #     'max_simultaneous_invocations': 10,
                 # }
             },

@@ -36,7 +36,7 @@ TEST_TASK_CLIENT_CONFIG = {
     'ecology_config':                    TEST_ECOLOGY_CLIENT_CONFIG,
     'labourers':                         {
         'some_function': {
-            'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+            'arn':                          'arn:aws:lambda:us-west-2:000000000000:function:some_function',
             'max_simultaneous_invocations': 10,
         },
         1:               {'arn': 'bar'},

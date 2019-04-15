@@ -30,7 +30,15 @@ ECO_STATUSES = (
 
 
 class EcologyManager(Processor):
-    DEFAULT_CONFIG = {}
+    DEFAULT_CONFIG = {
+    }
+
+    running_tasks = defaultdict(int)
+    task_client = None  # Will be Circular import! Careful!
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
     def __call__(self, event):
@@ -43,18 +51,37 @@ class EcologyManager(Processor):
 
 
     def get_labourer_status(self, labourer: Labourer) -> int:
+        """ FIXME """
         return random.choice(self.eco_statuses)
 
 
-    def get_running_tasks_for_labourer(self, labourer: Labourer):
-        pass
+    def get_running_tasks_for_labourer(self, labourer: Labourer) -> int:
+
+        # Circular import! Careful!
+        if not self.task_client:
+            logger.info("Initialising TaskManager from EcologyManager. "
+                        "This is circular import and it should point to already existing Class instance.")
+            self.register_clients(['Task'])
+
+        if labourer.id not in self.running_tasks.keys():
+            self.running_tasks[labourer.id] = self.task_client.get_running_tasks_for_labourer(labourer)
+
+        logger.debug(f"EcologyManager.get_running_tasks_for_labourer() returns: {self.running_tasks[labourer.id]}")
+        return self.running_tasks[labourer.id]
 
 
-    def get_labourer_average_duration(self, labourer: Labourer):
+    def add_running_tasks_for_labourer(self, labourer: Labourer, count: int = 1) -> int:
+        """
+        Adds to the current counter of running tasks the given `count`.
+        Invokes the getter first in case the original number was not yet calculated from DynamoDB.
+        """
+
+        self.running_tasks[labourer.id] = self.get_running_tasks_for_labourer(labourer) + count
+
+
+    def get_labourer_average_duration(self, labourer: Labourer) -> int:
         return 300
 
 
-    def get_labourer_max_duration(self, labourer: Labourer):
-        return 600
-
-
+    def get_labourer_max_duration(self, labourer: Labourer) -> int:
+        return 300

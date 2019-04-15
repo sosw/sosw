@@ -25,7 +25,7 @@ from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
 class task_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
 
-    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
 
 
     def setUp(self):

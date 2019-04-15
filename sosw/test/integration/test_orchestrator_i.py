@@ -1,0 +1,43 @@
+import boto3
+import os
+import random
+import unittest
+
+from unittest.mock import MagicMock, patch
+
+from sosw.orchestrator import Orchestrator
+from sosw.labourer import Labourer
+from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
+from sosw.test.helpers_test import line_count
+
+os.environ["STAGE"] = "test"
+os.environ["autotest"] = "True"
+
+
+class Scheduler_IntegrationTestCase(unittest.TestCase):
+    TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+
+    def setUp(self):
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
+        self.custom_config = self.TEST_CONFIG.copy()
+        self.orchestrator = Orchestrator(self.custom_config)
+
+        self.s3_client = boto3.client('s3')
+
+
+    def tearDown(self):
+        self.patcher.stop()
+
+        try:
+            del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
+        except:
+            pass
+
+
+    def test_call(self):
+        self.orchestrator({'event': 42})
+
+        self.orchestrator.ecology_client.get_running_tasks_for_labourer(self.LABOURER)
