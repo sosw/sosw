@@ -50,11 +50,11 @@ class EcologyManager(Processor):
         pass
 
 
-    def get_labourer_average_duration(self):
+    def get_labourer_average_duration(self, labourer: Labourer):
         return 300
 
 
-    def get_labourer_max_duration(self):
-        return 300
+    def get_labourer_max_duration(self, labourer: Labourer):
+        return 600
 
 

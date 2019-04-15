@@ -298,7 +298,7 @@ class TaskManager(Processor):
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,
                 InvocationType='Event',
-                Payload=task.get('payload')
+                Payload=json.dumps(task.get('payload'))
         )
         logger.debug(lambda_response)
 
