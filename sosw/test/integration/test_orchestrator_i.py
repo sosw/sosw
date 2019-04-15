@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from sosw.orchestrator import Orchestrator
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
+from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG, TEST_TASK_CLIENT_CONFIG
 from sosw.test.helpers_test import line_count
 
 os.environ["STAGE"] = "test"
@@ -40,4 +40,4 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
     def test_call(self):
         self.orchestrator({'event': 42})
 
-        self.orchestrator.ecology_client.get_running_tasks_for_labourer(self.LABOURER)
+        self.orchestrator.task_client.ecology_client.get_running_tasks_for_labourer(self.LABOURER)

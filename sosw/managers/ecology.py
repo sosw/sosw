@@ -57,11 +57,14 @@ class EcologyManager(Processor):
 
     def get_running_tasks_for_labourer(self, labourer: Labourer) -> int:
 
+        logger.info(f"Called get_running_tasks_for_labourer for {labourer}")
         # Circular import! Careful!
         if not self.task_client:
             logger.info("Initialising TaskManager from EcologyManager. "
                         "This is circular import and it should point to already existing Class instance.")
-            self.register_clients(['Task'])
+            from .task import TaskManager
+            self.task_client = TaskManager(custom_config={1:1})
+            # self.register_clients(['Task'])
 
         if labourer.id not in self.running_tasks.keys():
             self.running_tasks[labourer.id] = self.task_client.get_running_tasks_for_labourer(labourer)
