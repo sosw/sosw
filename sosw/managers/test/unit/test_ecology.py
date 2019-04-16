@@ -45,13 +45,67 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(set(self.manager.eco_statuses), set(range(5)))
 
 
-    def test_get_running_tasks_for_labourer(self):
-        raise NotImplemented
+    def test_count_running_tasks_for_labourer__raises_not_task_client(self):
+        self.assertRaises(RuntimeError, self.manager.count_running_tasks_for_labourer, self.LABOURER)
 
 
-    def test_register_task_manager(self):
-        raise NotImplemented
+    def test_count_running_tasks_for_labourer__use_local_cache(self):
+        tm = MagicMock()
+        self.manager.register_task_manager(tm)
+
+        # Setting something to local cache.
+        self.manager.running_tasks[self.LABOURER.id] = 5
+
+        self.assertEqual(self.manager.count_running_tasks_for_labourer(self.LABOURER), 5)
+        self.manager.task_client.get_count_of_running_tasks_for_labourer.assert_not_called()
+
+
+    def test_count_running_tasks_for_labourer__calls_task_manager(self):
+        tm = MagicMock()
+        tm.get_count_of_running_tasks_for_labourer.return_value = 42
+        self.manager.register_task_manager(tm)
+
+        self.assertEqual(self.manager.count_running_tasks_for_labourer(self.LABOURER), 42)
+        self.manager.task_client.get_count_of_running_tasks_for_labourer.assert_called_once()
+
+
+    def test_register_task_manager__resets_stats(self):
+        # Should be defaultdict(int)
+        self.assertEqual(self.manager.running_tasks['foo'], 0)
+
+        # Manually increase counter
+        self.manager.running_tasks['foo'] += 10
+        self.assertEqual(self.manager.running_tasks['foo'], 10)
+
+        # Call register_task_manager
+        self.manager.register_task_manager(MagicMock())
+        self.assertEqual(self.manager.running_tasks['foo'], 0, "Did not reset cache of running_tasks")
 
 
     def test_add_running_tasks_for_labourer(self):
-        raise NotImplemented
+        tm = MagicMock()
+        tm.get_count_of_running_tasks_for_labourer.return_value = 12
+        self.manager.register_task_manager(tm)
+
+        # Not yet cached
+        self.assertNotIn(self.LABOURER.id, self.manager.running_tasks.keys())
+
+        # Add default number
+        self.manager.add_running_tasks_for_labourer(labourer=self.LABOURER)
+
+        # Should have been called first time to cache info about this Labourer.
+        self.manager.task_client.get_count_of_running_tasks_for_labourer.assert_called_once()
+
+        # Make sure the cache is fetched and increased by the counter
+        self.assertEqual(self.manager.running_tasks[self.LABOURER.id],
+                         tm.get_count_of_running_tasks_for_labourer.return_value + 1)
+
+        # Call again to add 5 more tasks
+        self.manager.add_running_tasks_for_labourer(labourer=self.LABOURER, count=5)
+
+        # The counter of the task manager should not have been increased.
+        self.manager.task_client.get_count_of_running_tasks_for_labourer.assert_called_once()
+
+        # But the counter of tasks in cache should have.
+        self.assertEqual(self.manager.running_tasks[self.LABOURER.id],
+                         tm.get_count_of_running_tasks_for_labourer.return_value + 1 + 5)

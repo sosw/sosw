@@ -58,6 +58,9 @@ class EcologyManager(Processor):
         logger.info("Registering TaskManager for EcologyManager")
         self.task_client = task_manager
 
+        logger.info("Reset cache of running_tasks counter in EcoloyManager")
+        self.running_tasks = defaultdict(int)
+
 
     @property
     def eco_statuses(self):
@@ -69,7 +72,7 @@ class EcologyManager(Processor):
         return random.choice(self.eco_statuses)
 
 
-    def get_running_tasks_for_labourer(self, labourer: Labourer) -> int:
+    def count_running_tasks_for_labourer(self, labourer: Labourer) -> int:
 
         if not self.task_client:
             raise RuntimeError("EcologyManager doesn't have a TaskManager registered. "
@@ -77,9 +80,9 @@ class EcologyManager(Processor):
                                "to your TaskManager instance.")
 
         if labourer.id not in self.running_tasks.keys():
-            self.running_tasks[labourer.id] = self.task_client.get_running_tasks_for_labourer(labourer)
+            self.running_tasks[labourer.id] = self.task_client.get_count_of_running_tasks_for_labourer(labourer)
 
-        logger.debug(f"EcologyManager.get_running_tasks_for_labourer() returns: {self.running_tasks[labourer.id]}")
+        logger.debug(f"EcologyManager.count_running_tasks_for_labourer() returns: {self.running_tasks[labourer.id]}")
         return self.running_tasks[labourer.id]
 
 
@@ -89,7 +92,7 @@ class EcologyManager(Processor):
         Invokes the getter first in case the original number was not yet calculated from DynamoDB.
         """
 
-        self.running_tasks[labourer.id] = self.get_running_tasks_for_labourer(labourer) + count
+        self.running_tasks[labourer.id] = self.count_running_tasks_for_labourer(labourer) + count
 
 
     def get_labourer_average_duration(self, labourer: Labourer) -> int:
