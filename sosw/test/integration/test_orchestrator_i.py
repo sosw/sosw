@@ -10,6 +10,7 @@ from sosw.labourer import Labourer
 from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG, TEST_TASK_CLIENT_CONFIG
 from sosw.test.helpers_test import line_count
 
+
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
@@ -17,6 +18,7 @@ os.environ["autotest"] = "True"
 class Scheduler_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+
 
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
@@ -40,4 +42,5 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
     def test_call(self):
         self.orchestrator({'event': 42})
 
-        self.orchestrator.task_client.ecology_client.get_running_tasks_for_labourer(self.LABOURER)
+        some_labourer = self.orchestrator.task_client.register_labourers()[0]
+        self.orchestrator.task_client.ecology_client.count_running_tasks_for_labourer(some_labourer)

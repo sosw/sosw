@@ -545,7 +545,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                f"bad value: {task[_('labourer_id')]}"
+                                                          f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
@@ -570,6 +570,7 @@ class TaskManager(Processor):
                 self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
 
 
+    @benchmark
     def get_average_labourer_duration(self, labourer: Labourer) -> int:
         """
         Analyse latest tasks of Labourer and calculate average runtime duration.
@@ -581,6 +582,7 @@ class TaskManager(Processor):
         """
 
         _ = self.get_db_field_name
+        _cfg = self.config.get
 
         durations = []
 
@@ -588,27 +590,31 @@ class TaskManager(Processor):
                 keys={
                     _('labourer_id_task_status'): f"{labourer.id}_1",
                 },
-                table_name=self.config['sosw_closed_tasks_table'],
-                index_name=self.config['sosw_closed_tasks_labourer_status_index'],
-                max_items=self.config['max_closed_to_analyse_for_duration'],
+                table_name=_cfg('sosw_closed_tasks_table'),
+                index_name=_cfg('sosw_closed_tasks_labourer_status_index'),
+                max_items=_cfg('max_closed_to_analyse_for_duration'),
                 desc=True
         )
 
         # Fetch last X closed tasks
         tasks = self.dynamo_db_client.get_by_query(**q)
 
-        # Append their duration
-        for task in tasks:
-            durations.append(
-                task[_('completed_at')] - task[_('greenfield')] + self.config['greenfield_invocation_delta'])
-
-
         # Fetch failed tasks as well
         q['keys'][_('labourer_id_task_status')] = f"{labourer.id}_0"
-        tasks = self.dynamo_db_client.get_by_query(**q)
+        tasks.extend(self.dynamo_db_client.get_by_query(**q))
 
-        # We assume their duration to be maximum.
-        # TODO CONTINUE HERE
+        # Now take the really last 50 ordered by greenfield (last invocation)
+        tasks = sorted(tasks, key=lambda x: x.get(_('greenfield')))[:_cfg('max_closed_to_analyse_for_duration')]
+
+        # Get their duration
+        for task in tasks:
+            # We assume duration of failed tasks to be maximum.
+            if not task.get(_('completed_at')):
+                durations.extend([labourer.get_attr('max_duration') for _ in range(int(task[_('attempts')]))])
+            else:
+                # Duration of completed tasks we calculate based on the value of last `greenfield` and `completed_at`
+                durations.append(
+                        task[_('completed_at')] - task[_('greenfield')] + _cfg('greenfield_invocation_delta'))
 
         # Return the average
         try:

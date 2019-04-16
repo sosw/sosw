@@ -1,9 +1,10 @@
 import boto3
 import logging
+import os
 import random
 import time
 import unittest
-import os
+import uuid
 
 from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
@@ -66,30 +67,74 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
 
 
-    def setup_tasks(self, status='available', mass=False):
+    def setup_tasks(self, status='available', mutiple_labourers=False, count_tasks=3):
         """ Some fake adding some scheduled tasks for some workers. """
 
-        if status == 'available':
-            greenfield = round(time.time()) - random.randint(0, 10000)
-        elif status == 'invoked':
-            greenfield = round(time.time()) + self.manager.config['greenfield_invocation_delta']
-        elif status == 'expired':
-            greenfield = round(time.time()) + random.randint(1000, 10000)
-        elif status == 'running':
-            greenfield = round(time.time()) + self.manager.config['greenfield_invocation_delta'] - 900
-        else:
-            raise ValueError(f"Unsupported `status`: {status}. Should be one of: 'available', 'invoked'.")
+        _ = self.manager.get_db_field_name
+        _cfg = self.manager.config.get
 
-        workers = [self.LABOURER.id] if not mass else range(42, 45)
+        table = _cfg('dynamo_db_config')['table_name'] if status not in ['closed', 'failed'] \
+            else _cfg('sosw_closed_tasks_table')
+
+        MAP = {
+            'available': {
+                self.RANGE_KEY[0]: lambda x: str(worker_id),
+                _('greenfield'):   lambda x: round(1000 + random.randrange(0, 100000, 1000)),
+                _('attempts'):     lambda x: 0,
+            },
+            'invoked':   {
+                self.RANGE_KEY[0]: lambda x: str(worker_id),
+                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta'),
+                _('attempts'):     lambda x: 1,
+            },
+            'expired':   {
+                self.RANGE_KEY[0]: lambda x: str(worker_id),
+                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                                             - random.randint(1000, 10000),
+                _('attempts'):     lambda x: 1,
+            },
+            'running':   {
+                self.RANGE_KEY[0]: lambda x: str(worker_id),
+                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                                             - random.randint(1, 900),
+                _('attempts'):     lambda x: 1,
+            },
+
+            'closed':    {
+                _('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                                                        - random.randint(1000, 10000),
+                _('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_1",
+
+                _('completed_at'):            lambda x: x[_('greenfield')] - _cfg('greenfield_invocation_delta')
+                                                        + random.randint(10, 300),
+                _('closed_at'):               lambda x: x[_('completed_at')] + random.randint(1,
+                                                                                              60),
+                _('attempts'):                lambda x: 3,
+            },
+            'failed':    {
+                _('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                                                        - random.randint(1000, 10000),
+                _('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_0",
+                _('closed_at'):               lambda x: x[_('greenfield')] + 900 + random.randint(1, 60),
+                _('attempts'):                lambda x: 3,
+            },
+        }
+
+        # raise ValueError(f"Unsupported `status`: {status}. Should be one of: 'available', 'invoked'.")
+
+        workers = [self.LABOURER.id] if not mutiple_labourers else range(42, 45)
         for worker_id in workers:
-            for i in range(3):
+
+            for i in range(count_tasks):
                 row = {
-                    self.HASH_KEY[0]:  f"task_id_{worker_id}_{i}_{random.randint(0, 10000)}",  # Task ID
-                    self.RANGE_KEY[0]: str(worker_id),  # Worker ID
-                    'greenfield':      greenfield
+                    self.HASH_KEY[0]: f"task_id_{worker_id}_{i}_{str(uuid.uuid4())[:8]}",  # Task ID
                 }
-                print(f"Putting {row} to {self.table_name}")
-                self.dynamo_client.put(row, self.table_name)
+
+                for field, getter in MAP[status].items():
+                    row[field] = getter(row)
+
+                print(f"Putting {row} to {table}")
+                self.dynamo_client.put(row, table_name=table)
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
 
@@ -129,7 +174,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def register_labourers(self):
         self.manager.get_labourers = MagicMock(return_value=[self.LABOURER])
-        self.manager.register_labourers()
+        return self.manager.register_labourers()
 
 
     def test_mark_task_invoked(self):
@@ -205,7 +250,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     #     self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
     #     self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
 
-
     def test_archive_task(self):
         _ = self.manager.get_db_field_name
         # Create task with id=123
@@ -245,7 +289,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
         self.assertEqual(len(result_tasks), 0)
 
-        result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id}, table_name=self.retry_tasks_table)
+        result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id},
+                                                             table_name=self.retry_tasks_table)
         self.assertEqual(len(result_retry_tasks), 1)
         result = first_or_none(result_retry_tasks)
 
@@ -291,8 +336,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         # Add tasks to tasks_table
         regular_tasks = [
-            {_('labourer_id'): labourer.id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 8888},
-            {_('labourer_id'): labourer.id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {}, _('greenfield'): 9999},
+            {
+                _('labourer_id'): labourer.id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {},
+                _('greenfield'):  8888
+            },
+            {
+                _('labourer_id'): labourer.id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {},
+                _('greenfield'):  9999
+            },
         ]
         for task in regular_tasks:
             self.dynamo_client.put(task)
@@ -386,3 +437,25 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         queue_len = self.manager.get_length_of_queue_for_labourer(labourer)
 
         self.assertEqual(queue_len, num_of_tasks)
+
+
+    def test_get_average_labourer_duration__calculates_average__only_failing_tasks(self):
+        some_labourer = self.register_labourers()[0]
+
+        self.setup_tasks(status='failed', count_tasks=15)
+
+        self.assertEqual(900, self.manager.get_average_labourer_duration(some_labourer))
+
+
+    def test_get_average_labourer_duration__calculates_average(self):
+        some_labourer = self.register_labourers()[0]
+
+        self.setup_tasks(status='closed', count_tasks=15)
+        self.setup_tasks(status='failed', count_tasks=15)
+
+        self.assertLessEqual(self.manager.get_average_labourer_duration(some_labourer), 900)
+        self.assertGreaterEqual(self.manager.get_average_labourer_duration(some_labourer), 10)
+
+        # Benchmarking
+        # print(self.manager.get_stats())
+        # self.assertTrue(False)

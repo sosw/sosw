@@ -454,9 +454,18 @@ class task_manager_UnitTestCase(unittest.TestCase):
         some_labourer.max_duration = 900
 
         CLOSED = [
-            {'task_id': '123', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 1000, 'completed_at': NOW - 500},  # Duration 500
-            {'task_id': '124', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000, 'completed_at': NOW - 1000},  # Duration 1000
-            {'task_id': '125', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000, 'completed_at': NOW - 1000},  # Duration 1000
+            {
+                'task_id':      '123', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 1000,
+                'completed_at': NOW - 500
+            },  # Duration 500
+            {
+                'task_id':      '124', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000,
+                'completed_at': NOW - 1700
+            },  # Duration 300
+            {
+                'task_id':      '125', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000,
+                'completed_at': NOW - 1700
+            },  # Duration 300
         ]
 
         FAILED = [
@@ -468,5 +477,10 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.manager.dynamo_db_client.get_by_query.side_effect = [CLOSED, FAILED]
 
-        expected = 833 + (some_labourer.get_attr('max_duration') * sum(x['attempts'] for x in FAILED))
+        count_failed = sum(x['attempts'] for x in FAILED)
+
+        expected = round((500 + 300 + 300 +  # closed
+                          (some_labourer.get_attr('max_duration') * count_failed))  # failed
+                         / (len(CLOSED) + count_failed))  # total number of closed + failed
+
         self.assertEqual(expected, self.manager.get_average_labourer_duration(some_labourer))
