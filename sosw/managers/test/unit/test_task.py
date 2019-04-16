@@ -133,6 +133,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_invoke_task__calls__mark_task_invoked(self):
         self.manager.mark_task_invoked = MagicMock()
+        self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
         self.manager.mark_task_invoked.assert_called_once()
@@ -140,7 +141,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_invoke_task__calls__get_task_by_id(self):
         self.manager.mark_task_invoked = MagicMock()
-        self.manager.get_task_by_id = MagicMock()
+        self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
         self.manager.get_task_by_id.assert_called_once()
@@ -165,7 +166,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         call_args, call_kwargs = self.manager.lambda_client.invoke.call_args
 
         self.assertEqual(call_kwargs['FunctionName'], self.labourer.arn)
-        self.assertEqual(call_kwargs['Payload'], task['payload'])
+        self.assertEqual(call_kwargs['Payload'], json.dumps(task['payload']))
 
 
     def test_invoke_task__not_calls__lambda_client_if_raised_conditional_exception(self):
@@ -206,6 +207,12 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_attr('expired'), invoke_time - lab.duration - lab.cooldown)
         self.assertEqual(lab.get_attr('health'), 2)
         self.assertEqual(lab.get_attr('max_attempts'), 3)
+
+
+    def test_register_labourers__calls_register_task_manager(self):
+
+        self.manager.register_labourers()
+        self.manager.ecology_client.register_task_manager.assert_called_once_with(self.manager)
 
 
     def test_get_count_of_running_tasks_for_labourer(self):

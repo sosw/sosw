@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 from sosw.app import Processor
 from sosw.labourer import Labourer
 from sosw.components.benchmark import benchmark
+from sosw.managers.task import TaskManager
 
 
 logger = logging.getLogger()
@@ -34,7 +35,7 @@ class EcologyManager(Processor):
     }
 
     running_tasks = defaultdict(int)
-    task_client = None  # Will be Circular import! Careful!
+    task_client: TaskManager = None  # Will be Circular import! Careful!
 
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +44,19 @@ class EcologyManager(Processor):
 
     def __call__(self, event):
         raise NotImplemented
+
+
+    def register_task_manager(self, task_manager: TaskManager):
+        """
+        We will have to make some queries, and don't want to initialise another TaskManager locally.
+        Just receive the pointer to TaskManager from whoever needs.
+
+        This could be in __init__, but I don't want to update the initialization workflows for every function
+        initialising me. They usually use built-in in core Processor mechanism to register_clients().
+        """
+
+        logger.info("Registering TaskManager for EcologyManager")
+        self.task_client = task_manager
 
 
     @property
@@ -57,14 +71,10 @@ class EcologyManager(Processor):
 
     def get_running_tasks_for_labourer(self, labourer: Labourer) -> int:
 
-        logger.info(f"Called get_running_tasks_for_labourer for {labourer}")
-        # Circular import! Careful!
         if not self.task_client:
-            logger.info("Initialising TaskManager from EcologyManager. "
-                        "This is circular import and it should point to already existing Class instance.")
-            from .task import TaskManager
-            self.task_client = TaskManager(custom_config={1:1})
-            # self.register_clients(['Task'])
+            raise RuntimeError("EcologyManager doesn't have a TaskManager registered. "
+                               "You have to call register_task_manager() after initiazation and pass the pointer "
+                               "to your TaskManager instance.")
 
         if labourer.id not in self.running_tasks.keys():
             self.running_tasks[labourer.id] = self.task_client.get_running_tasks_for_labourer(labourer)
@@ -73,7 +83,7 @@ class EcologyManager(Processor):
         return self.running_tasks[labourer.id]
 
 
-    def add_running_tasks_for_labourer(self, labourer: Labourer, count: int = 1) -> int:
+    def add_running_tasks_for_labourer(self, labourer: Labourer, count: int = 1):
         """
         Adds to the current counter of running tasks the given `count`.
         Invokes the getter first in case the original number was not yet calculated from DynamoDB.

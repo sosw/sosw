@@ -13,12 +13,15 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
+from sosw.labourer import Labourer
 from sosw.managers.ecology import EcologyManager
 from sosw.test.variables import TEST_ECOLOGY_CLIENT_CONFIG
 
-class ecology_manager_UnitTestCase(unittest.TestCase):
 
+class ecology_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ECOLOGY_CLIENT_CONFIG
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+
 
     def setUp(self):
         """
@@ -40,3 +43,15 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
     def test_eco_statuses(self):
         self.assertEqual(set(self.manager.eco_statuses), set(range(5)))
+
+
+    def test_get_running_tasks_for_labourer(self):
+        raise NotImplemented
+
+
+    def test_register_task_manager(self):
+        raise NotImplemented
+
+
+    def test_add_running_tasks_for_labourer(self):
+        raise NotImplemented

@@ -142,7 +142,14 @@ class TaskManager(Processor):
 
 
     def register_labourers(self) -> List[Labourer]:
-        """ Sets timestamps, health status and other custom attributes on Labourer objects passed for registration. """
+        """
+        Sets timestamps, health status and other custom attributes on Labourer objects passed for registration.
+
+        We also send a pointer to the TaskManager (aka self) to Ecology Manager.
+        The latter will have to make some queries, and we don't want him to initialise another TaskManager for himself.
+        """
+
+        self.ecology_client.register_task_manager(self)
 
         # This must be something ordered, because these methods depend on one another.
         custom_attributes = (
@@ -363,7 +370,9 @@ class TaskManager(Processor):
         """ Fetches the full data of the Task. """
 
         tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
-        return tasks[0] if tasks else None
+        assert len(tasks) in [0, 1], "Fetched more than 1 task by primary key(). Something broke your DB " \
+                                     "schema."
+        return tasks[0] if tasks else {}
 
 
     def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:
