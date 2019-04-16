@@ -36,8 +36,8 @@ class TaskManager(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients':                      ['DynamoDb', 'lambda', 'Ecology'],
-        'dynamo_db_config':                  {
+        'init_clients':                            ['DynamoDb', 'lambda', 'Ecology'],
+        'dynamo_db_config':                        {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
             'row_mapper':       {
@@ -60,18 +60,20 @@ class TaskManager(Processor):
                 'task_id': 'task_id',  # This is just an example
             }
         },
-        'sosw_closed_tasks_table':           'sosw_closed_tasks',
-        'sosw_retry_tasks_table':            'sosw_retry_tasks',
-        'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
-        'greenfield_invocation_delta':       31557600,  # 1 year.
-        'greenfield_task_step':              1000,
-        'labourers':                         {
+        'sosw_closed_tasks_table':                 'sosw_closed_tasks',
+        'sosw_closed_tasks_labourer_status_index': 'labourer_task_status_with_time',
+        'sosw_retry_tasks_table':                  'sosw_retry_tasks',
+        'sosw_retry_tasks_greenfield_index':       'labourer_id_greenfield',
+        'greenfield_invocation_delta':             31557600,  # 1 year.
+        'greenfield_task_step':                    1000,
+        'labourers':                               {
             # 'some_function': {
             #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
             #     'max_simultaneous_invocations': 10,
             # }
         },
-        'max_attempts':                      3,
+        'max_attempts':                            3,
+        'max_closed_to_analyse_for_duration':      10,
     }
 
     __labourers = None
@@ -543,7 +545,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                                                          f"bad value: {task[_('labourer_id')]}"
+                f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
@@ -566,3 +568,50 @@ class TaskManager(Processor):
                             "Salut to AWS from March 2019.")
                 self.dynamo_db_client.put(task)
                 self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+
+
+    def get_average_labourer_duration(self, labourer: Labourer) -> int:
+        """
+        Analyse latest tasks of Labourer and calculate average runtime duration.
+
+        .. warning:: This method doesn't know the exact duration of failed attempts.
+                     Thus if the task is completely failed, we assume that all attempts failed at maximum duration.
+
+        :return:    Average duration in seconds.
+        """
+
+        _ = self.get_db_field_name
+
+        durations = []
+
+        q = dict(
+                keys={
+                    _('labourer_id_task_status'): f"{labourer.id}_1",
+                },
+                table_name=self.config['sosw_closed_tasks_table'],
+                index_name=self.config['sosw_closed_tasks_labourer_status_index'],
+                max_items=self.config['max_closed_to_analyse_for_duration'],
+                desc=True
+        )
+
+        # Fetch last X closed tasks
+        tasks = self.dynamo_db_client.get_by_query(**q)
+
+        # Append their duration
+        for task in tasks:
+            durations.append(
+                task[_('completed_at')] - task[_('greenfield')] + self.config['greenfield_invocation_delta'])
+
+
+        # Fetch failed tasks as well
+        q['keys'][_('labourer_id_task_status')] = f"{labourer.id}_0"
+        tasks = self.dynamo_db_client.get_by_query(**q)
+
+        # We assume their duration to be maximum.
+        # TODO CONTINUE HERE
+
+        # Return the average
+        try:
+            return round(sum(durations) / len(durations))
+        except ZeroDivisionError:
+            return 0

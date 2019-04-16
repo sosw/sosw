@@ -100,4 +100,4 @@ class EcologyManager(Processor):
 
 
     def get_labourer_max_duration(self, labourer: Labourer) -> int:
-        return 300
+        return 900

@@ -64,7 +64,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_mark_task_invoked__calls_dynamo(self):
-        self.manager.dynamo_db_client = MagicMock()
         self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
 
@@ -431,3 +430,43 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(self.manager.construct_payload_for_task(**test), json.dumps(expected))
+
+
+    def test_get_average_labourer_duration__calls_dynamo_twice(self):
+        """
+        This is am important test for other ones of this method.
+        If for some reason the DynamoMock is called not twice, then the side_effects don't imitate
+        real data and tests will be unpredictable.
+        """
+
+        some_labourer = self.manager.register_labourers()[0]
+
+        self.manager.get_average_labourer_duration(some_labourer)
+        self.assertEqual(self.manager.dynamo_db_client.get_by_query.call_count, 2)
+
+
+    def test_get_average_labourer_duration__calculates_average(self):
+
+        NOW = 10000
+        START = NOW + self.manager.config['greenfield_invocation_delta']
+
+        some_labourer = self.manager.register_labourers()[0]
+        some_labourer.max_duration = 900
+
+        CLOSED = [
+            {'task_id': '123', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 1000, 'completed_at': NOW - 500},  # Duration 500
+            {'task_id': '124', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000, 'completed_at': NOW - 1000},  # Duration 1000
+            {'task_id': '125', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000, 'completed_at': NOW - 1000},  # Duration 1000
+        ]
+
+        FAILED = [
+            {'task_id': '235', 'labourer_id': 'some_function', 'attempts': 3, 'greenfield': START - 3000},
+            {'task_id': '236', 'labourer_id': 'some_function', 'attempts': 4, 'greenfield': START - 3000},
+            {'task_id': '237', 'labourer_id': 'some_function', 'attempts': 3, 'greenfield': START - 4000},
+
+        ]
+
+        self.manager.dynamo_db_client.get_by_query.side_effect = [CLOSED, FAILED]
+
+        expected = 833 + (some_labourer.get_attr('max_duration') * sum(x['attempts'] for x in FAILED))
+        self.assertEqual(expected, self.manager.get_average_labourer_duration(some_labourer))
