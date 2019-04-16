@@ -17,6 +17,7 @@ __all__ = ['validate_account_to_dashed',
            'validate_date_from_something',
            'validate_datetime_from_something',
            'validate_string_matches_datetime_format',
+           'is_valid_date',
            'recursive_matches_soft',
            'recursive_matches_strict',
            'recursive_matches_extract',
@@ -374,6 +375,27 @@ def validate_string_matches_datetime_format(date_str, date_format, field_name='d
         datetime.datetime.strptime(date_str, date_format)
     except ValueError:
         raise ValueError(f"Incorrect format of {field_name} ({date_str}), should be {date_format}")
+
+
+def is_valid_date(date_str, date_formats):
+    """
+    Validate string to be at least one of the given datetime formats.
+
+    :param str date_str: a date or time or both, Example: '2018/09/16'
+    :param list date_formats: List of datetime format, that is acceptable for datetime.strptime. Example: '%Y/%m/%d'
+    :rtype: bool
+    :return: True if the date string is valid for any of the datetime formats, False otherwise.
+    """
+
+    for date_format in date_formats:
+        try:
+            validate_string_matches_datetime_format(date_str, date_format)
+            return True
+
+        except ValueError as err:
+            continue
+
+    return False
 
 
 def recursive_matches_soft(src, key, val, **kwargs):
