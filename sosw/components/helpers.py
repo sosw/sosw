@@ -384,7 +384,7 @@ def is_valid_date(date_str, date_formats):
     :param str date_str: a date or time or both, Example: '2018/09/16'
     :param list date_formats: List of datetime format, that is acceptable for datetime.strptime. Example: '%Y/%m/%d'
     :rtype: bool
-    :return: True if the date string is valid for all datetime formats, False otherwise.
+    :return: True if the date string is valid for any of the datetime formats, False otherwise.
     """
 
     for date_format in date_formats:
