@@ -42,7 +42,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
 
-        self.assistant = WorkerAssistant()
+        self.assistant = WorkerAssistant(custom_config={'test': 1})
 
 
     def tearDown(self):
@@ -53,7 +53,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         clean_dynamo_table(self.table_name, (self.HASH_KEY[0],))
 
 
-    def test_close_task(self):
+    def test_mark_task_as_completed(self):
         _ = self.assistant.get_db_field_name
         task_id = '123'
 
@@ -61,12 +61,13 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         self.dynamo_client.put(initial_task)
 
         between_times = (
-            datetime.datetime.now().timestamp(),
+            (datetime.datetime.now() - datetime.timedelta(minutes=1)).timestamp(),
             (datetime.datetime.now() + datetime.timedelta(minutes=1)).timestamp()
         )
 
-        self.assistant.close_task(task_id)
+        self.assistant.mark_task_as_completed(task_id)
 
         changed_task = self.dynamo_client.get_by_query({_('task_id'): task_id})[0]
 
-        self.assertTrue(between_times[0] <= changed_task['closed_at'] <= between_times[1])
+        self.assertTrue(between_times[0] <= changed_task['completed_at'] <= between_times[1],
+                        msg=f"NOT {between_times[0]} <= {changed_task['completed_at']} <= {between_times[1]}")
