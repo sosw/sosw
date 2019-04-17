@@ -170,6 +170,8 @@ class TaskManager(Processor):
                                                        or _cfg('max_simultaneous_invocations')),
         )
 
+        # Reset old Labourers and reconstruct them with fresh data.
+        self.__labourers = None
         labourers = self.get_labourers()
 
         result = []
@@ -334,10 +336,14 @@ class TaskManager(Processor):
                 logger.exception(err)
                 raise RuntimeError(err)
 
+        # Flatten the payload
+        call_payload = task.pop('payload', {})
+        call_payload.update(task)
+
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,
                 InvocationType='Event',
-                Payload=json.dumps(task.get('payload'))
+                Payload=json.dumps(call_payload)
         )
         logger.debug(lambda_response)
 

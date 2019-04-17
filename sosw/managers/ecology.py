@@ -69,7 +69,8 @@ class EcologyManager(Processor):
 
     def get_labourer_status(self, labourer: Labourer) -> int:
         """ FIXME """
-        return random.choice(self.eco_statuses)
+        return 4
+        # return random.choice(self.eco_statuses)
 
 
     def count_running_tasks_for_labourer(self, labourer: Labourer) -> int:
@@ -115,7 +116,7 @@ class EcologyManager(Processor):
             raise RuntimeError("EcologyManager doesn't have a TaskManager registered. "
                                "You have to call register_task_manager() after initiazation and pass the pointer "
                                "to your TaskManager instance.")
-        
+
         return self.task_client.get_average_labourer_duration(labourer)
 
 
@@ -127,3 +128,12 @@ class EcologyManager(Processor):
         """
 
         return 900
+
+
+    # The task_client of EcologyManager is just a pointer. We skip recursive stats to avoid infinite loop.
+    def get_stats(self, recursive=False):
+        return super().get_stats(recursive=False)
+
+
+    def reset_stats(self, recursive=False):
+        return super().reset_stats(recursive=False)
