@@ -47,9 +47,9 @@ class WorkerAssistant(Processor):
             func = mapper[action]['function']
             required_params = mapper[action]['required_params']
 
-            for rp in required_params:
-                if rp not in event:
-                    raise Exception(f"Missing required parameter `{rp}` in event for action `{action}`")
+            for req_param in required_params:
+                if req_param not in event:
+                    raise Exception(f"Missing required parameter `{req_param}` in event for action `{action}`")
 
             func_kwargs = {k: event[k] for k in event if k in required_params}
             return func(**func_kwargs)
