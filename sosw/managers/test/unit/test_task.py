@@ -132,6 +132,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_invoke_task__calls__mark_task_invoked(self):
         self.manager.mark_task_invoked = MagicMock()
+        self.manager.is_valid_task = MagicMock(return_value=True)
         self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
@@ -139,14 +140,17 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_invoke_task__calls__get_task_by_id(self):
+        self.manager.is_valid_task = MagicMock(return_value=True)
         self.manager.mark_task_invoked = MagicMock()
         self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
+        self.manager.is_valid_task.assert_called_once()
         self.manager.get_task_by_id.assert_called_once()
 
 
     def test_invoke_task__calls__lambda_client(self):
+        self.manager.is_valid_task = MagicMock(return_value=True)
         self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
 
@@ -174,6 +178,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         task = {
             self.HASH_KEY[0]:  f"task_id_{self.labourer.id}_256",  # Task ID
             self.RANGE_KEY[0]: self.labourer.id,  # Worker ID
+            'created_at':      1000,
             'payload':         {'foo': 23}
         }
 
@@ -190,6 +195,16 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.manager.lambda_client.invoke.assert_not_called()
         self.assertEqual(self.manager.stats['concurrent_task_invocations_skipped'], 1)
+
+
+    def test_invoke_task__with_explicit_task__not_calls_get_task_by_id(self):
+        self.manager.get_task_by_id = MagicMock()
+        self.manager.is_valid_task = MagicMock(return_value=True)
+        self.manager.mark_task_invoked = MagicMock()
+
+        self.manager.invoke_task(labourer=self.LABOURER, task={1:2})
+        self.manager.is_valid_task.assert_called_once()
+        self.manager.get_task_by_id.assert_not_called()
 
 
     def test_register_labourers(self):
@@ -484,3 +499,25 @@ class task_manager_UnitTestCase(unittest.TestCase):
                          / (len(CLOSED) + count_failed))  # total number of closed + failed
 
         self.assertEqual(expected, self.manager.get_average_labourer_duration(some_labourer))
+
+
+    def test_validate_task__good(self):
+        TESTS = [
+            ({'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000}, True),
+            ({'task_id': 235, 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000}, True),
+            ({'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000, 'bar': 42}, True),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.manager.is_valid_task(test), expected)
+
+
+    def test_validate_task__bad(self):
+        _ = self.manager.get_db_field_name
+        TASK = {'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000, 'bar': 42}
+
+        for field in [_('task_id'), _('labourer_id'), _('created_at')]:
+            test = deepcopy(TASK)
+            test.pop(field)
+
+            self.assertFalse(self.manager.is_valid_task(test))

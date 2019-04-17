@@ -73,6 +73,10 @@ class EcologyManager(Processor):
 
 
     def count_running_tasks_for_labourer(self, labourer: Labourer) -> int:
+        """
+        TODO Refactor this to cache the value in the Labourer object itself.
+        Should also update add_running_tasks_for_labourer() for that.
+        """
 
         if not self.task_client:
             raise RuntimeError("EcologyManager doesn't have a TaskManager registered. "
@@ -96,8 +100,30 @@ class EcologyManager(Processor):
 
 
     def get_labourer_average_duration(self, labourer: Labourer) -> int:
-        return 300
+        """
+        Calculates the average duration of `labourer` executions.
+
+        The operation consumes DynamoDB RCU . Normally this method is called for each labourer only once during
+        registration of Labourers. If you want to learn this value, you should ask Labourer object.
+
+        .. code-block::python
+
+           some_labourer.get_attr('average_duration')
+        """
+
+        if not self.task_client:
+            raise RuntimeError("EcologyManager doesn't have a TaskManager registered. "
+                               "You have to call register_task_manager() after initiazation and pass the pointer "
+                               "to your TaskManager instance.")
+        
+        return self.task_client.get_average_labourer_duration(labourer)
 
 
-    def get_labourer_max_duration(self, labourer: Labourer) -> int:
+    def get_max_labourer_duration(self, labourer: Labourer) -> int:
+        """
+        Maximum duration of `labourer` executions.
+        Should ask this from aws:lambda API, but at the moment use the hardcoded maximum.
+        # TODO implement me.
+        """
+
         return 900

@@ -138,21 +138,21 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
 
-    def test_get_next_for_worker(self):
+    def test_get_next_for_labourer(self):
         self.setup_tasks()
         # time.sleep(5)
 
-        result = self.manager.get_next_for_labourer(self.LABOURER)
+        result = self.manager.get_next_for_labourer(self.LABOURER, only_ids=True)
         # print(result)
 
         self.assertEqual(len(result), 1, "Returned more than one task")
         self.assertIn(f'task_id_{self.LABOURER.id}_', result[0])
 
 
-    def test_get_next_for_worker__multiple(self):
+    def test_get_next_for_labourer__multiple(self):
         self.setup_tasks()
 
-        result = self.manager.get_next_for_labourer(self.LABOURER, cnt=5000)
+        result = self.manager.get_next_for_labourer(self.LABOURER, cnt=5000, only_ids=True)
         # print(result)
 
         self.assertEqual(len(result), 3, "Should be just 3 tasks for this worker in setup")
@@ -160,16 +160,29 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                         "Returned some tasks of other Workers")
 
 
-    def test_get_next_for_worker__not_take_invoked(self):
+    def test_get_next_for_labourer__not_take_invoked(self):
         self.setup_tasks()
         self.setup_tasks(status='invoked')
 
-        result = self.manager.get_next_for_labourer(self.LABOURER, cnt=50)
+        result = self.manager.get_next_for_labourer(self.LABOURER, cnt=50, only_ids=True)
         # print(result)
 
         self.assertEqual(len(result), 3, "Should be just 3 tasks for this worker in setup. The other 3 are invoked.")
         self.assertTrue(all(f'task_id_{self.LABOURER.id}_' in task for task in result),
                         "Returned some tasks of other Workers")
+
+
+    def test_get_next_for_labourer__full_tasks(self):
+        self.setup_tasks()
+
+        result = self.manager.get_next_for_labourer(self.LABOURER, cnt=2)
+        # print(result)
+
+        self.assertEqual(len(result), 2, "Should be just 2 tasks as requested")
+
+        for task in result:
+            self.assertIn(f'task_id_{self.LABOURER.id}_', task['task_id']), "Returned some tasks of other Workers"
+            self.assertEqual(self.LABOURER.id, task['labourer_id']), "Returned some tasks of other Workers"
 
 
     def register_labourers(self):
@@ -440,6 +453,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_average_labourer_duration__calculates_average__only_failing_tasks(self):
+        self.manager.ecology_client.get_max_labourer_duration.return_value = 900
         some_labourer = self.register_labourers()[0]
 
         self.setup_tasks(status='failed', count_tasks=15)
@@ -448,6 +462,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_get_average_labourer_duration__calculates_average(self):
+        self.manager.ecology_client.get_max_labourer_duration.return_value = 900
         some_labourer = self.register_labourers()[0]
 
         self.setup_tasks(status='closed', count_tasks=15)

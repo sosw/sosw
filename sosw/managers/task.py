@@ -74,6 +74,7 @@ class TaskManager(Processor):
         },
         'max_attempts':                            3,
         'max_closed_to_analyse_for_duration':      10,
+        'max_simultaneous_invocations':            1,
     }
 
     __labourers = None
@@ -151,6 +152,9 @@ class TaskManager(Processor):
         The latter will have to make some queries, and we don't want him to initialise another TaskManager for himself.
         """
 
+        _ = self.get_db_field_name
+        _cfg = self.config.get
+
         self.ecology_client.register_task_manager(self)
 
         # This must be something ordered, because these methods depend on one another.
@@ -161,7 +165,9 @@ class TaskManager(Processor):
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
             ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
-            ('max_duration', lambda x: self.ecology_client.get_labourer_max_duration(x)),
+            ('max_duration', lambda x: self.ecology_client.get_max_labourer_duration(x)),
+            ('max_simultaneous_invocations', lambda x: _cfg('labourers')[x.id].get('max_simultaneous_invocations')
+                                                       or _cfg('max_simultaneous_invocations')),
         )
 
         labourers = self.get_labourers()
@@ -172,6 +178,9 @@ class TaskManager(Processor):
                 labourer.set_custom_attribute(k, method(labourer))
                 logger.debug(f"SET for {labourer}: {k} = {method(labourer)}")
             result.append(labourer)
+
+            for attr, val in _cfg('labourers')[labourer.id].items():
+                labourer.set_custom_attribute(attr, val)
 
         self.__labourers = result
 
@@ -284,13 +293,34 @@ class TaskManager(Processor):
         return json.dumps(result)
 
 
+    def is_valid_task(self, task: Dict) -> bool:
+        """
+        Simple validation for required fields.
+        """
+        _ = self.get_db_field_name
+        _cfg = self.config.get
+
+        return all(field in task.keys() for field in [_('task_id'), _('labourer_id'), _('created_at')])
+
+
     def invoke_task(self, labourer: Labourer, task_id: Optional[str] = None, task: Optional[Dict] = None):
-        """ Invoke the Lambda Function execution for `task` """
+        """
+        Invoke the Lambda Function execution for `task`.
+        Providing the ID is more expensive, but safer from "task injection" attacks method that prefetches Task
+        from the table before trying to invoke.
+
+        Skips already running tasks with no exception, thus concurrent Orchestrators (or whoever else)
+        should not duplicate invocations.
+        """
 
         if not any([task, task_id]) or all([task, task_id]):
             raise AttributeError(f"You must provide any of `task` or `task_id`.")
 
-        task = self.get_task_by_id(task_id=task_id)
+        if not task:
+            task = self.get_task_by_id(task_id=task_id)
+
+        if not self.is_valid_task(task):
+            raise ValueError(f"Task to invoke is invalid: {task}")
 
         try:
             self.mark_task_invoked(labourer, task)
@@ -377,12 +407,14 @@ class TaskManager(Processor):
         return tasks[0] if tasks else {}
 
 
-    def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1) -> List[str]:
+    def get_next_for_labourer(self, labourer: Labourer, cnt: int = 1, only_ids: bool = False) -> List[Union[str, Dict]]:
         """
         Fetch the next task(s) from the queue for the Labourer.
 
-        :param labourer:   Labourer to get next tasks for.
-        :param cnt:        Optional number of Tasks to fetch.
+        :param labourer:    Labourer to get next tasks for.
+        :param cnt:         Optional number of Tasks to fetch.
+        :param only_ids:    If explicitly set True, then returns only the IDs of tasks.
+                            This could save some transport if you are sending big batches of tasks between Lambdas.
         """
 
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
@@ -404,7 +436,7 @@ class TaskManager(Processor):
         logger.info(f"get_next_for_labourer() received: {result} from {self.config['dynamo_db_config']['table_name']} "
                     f"for labourer: {labourer.id} max greenfield: {max_greenfield}")
 
-        return [task[self.get_db_field_name('task_id')] for task in result]
+        return result if not only_ids else [task[self.get_db_field_name('task_id')] for task in result]
 
 
     def get_invoked_tasks_for_labourer(self, labourer: Labourer, closed: Optional[bool] = None) -> List[Dict]:
@@ -545,7 +577,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                                                          f"bad value: {task[_('labourer_id')]}"
+                f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
