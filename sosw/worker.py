@@ -1,7 +1,6 @@
 import logging
 
 from sosw.app import Processor
-from sosw.components.tasks_api_client_for_workers import close_task
 
 
 __author__ = "Nikolay Grishchenko"
@@ -22,6 +21,14 @@ class Worker(Processor):
     Worker class template.
     """
 
+    DEFAULT_CONFIG = {
+        'init_clients': ['lambda'],
+        'sosw_worker_assistant_lambda': 'sosw_worker_assistant'
+    }
+
+    # these clients will be initialized by Processor constructor
+    lambda_client = None
+
     def __call__(self, event):
         """
         Call the Worker Processor.
@@ -30,8 +37,24 @@ class Worker(Processor):
 
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
-            close_task(event)
+            self.mark_task_as_completed(event.get('task_id'))
         except:
             pass
 
         super().__call__(event)
+
+
+    def mark_task_as_completed(self, task_id: str):
+        """ Call worker assistant lambda and tell it to close task """
+        worker_assistant_lambda_name = self.config['sosw_worker_assistant_lambda']
+        payload = {
+            'action': 'mark_task_as_completed',
+            'task_id': task_id
+        }
+
+        lambda_response = self.lambda_client.invoke(
+                FunctionName=worker_assistant_lambda_name,
+                InvocationType='Event',
+                Payload=payload
+        )
+        logger.debug(f"mark_task_as_completed response: {lambda_response}")

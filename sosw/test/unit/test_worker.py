@@ -3,7 +3,7 @@ import os
 import unittest
 
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 from sosw.worker import Worker
 
@@ -30,9 +30,8 @@ class worker_UnitTestCase(unittest.TestCase):
             pass
 
 
-    @mock.patch("sosw.worker.close_task")
-    def test_close_task__called(self, mock_close_task):
+    def test_close_task__called(self):
         p = Worker(custom_config=self.TEST_CONFIG)
-        p({'key': 'payload'})
-
-        mock_close_task.assert_called_once_with({'key': 'payload'})
+        p.mark_task_as_completed = Mock(return_value=None)
+        p({'task_id': '123'})
+        p.mark_task_as_completed.assert_called_once_with('123')
