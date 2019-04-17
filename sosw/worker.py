@@ -1,3 +1,4 @@
+import json
 import logging
 
 from sosw.app import Processor
@@ -51,6 +52,7 @@ class Worker(Processor):
             'action': 'mark_task_as_completed',
             'task_id': task_id
         }
+        payload = json.dumps(payload)
 
         lambda_response = self.lambda_client.invoke(
                 FunctionName=worker_assistant_lambda_name,
