@@ -157,15 +157,15 @@ class TaskManager(Processor):
 
         self.ecology_client.register_task_manager(self)
 
-        # This must be something ordered, because these methods depend on one another.
+        # WARNING! This must be something ordered, because these methods depend on one another.
         custom_attributes = (
             ('start', lambda x: int(time.time())),
             ('invoked', lambda x: x.get_attr('start') + self.config['greenfield_invocation_delta']),
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
-            ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
             ('max_duration', lambda x: self.ecology_client.get_max_labourer_duration(x)),
+            ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
             ('max_simultaneous_invocations', lambda x: _cfg('labourers')[x.id].get('max_simultaneous_invocations')
                                                        or _cfg('max_simultaneous_invocations')),
         )
@@ -347,6 +347,8 @@ class TaskManager(Processor):
         )
         logger.debug(lambda_response)
 
+        self.stats['invoked_tasks'] += 1
+
 
     def mark_task_invoked(self, labourer: Labourer, task: Dict, check_running: Optional[bool] = True):
         """
@@ -403,6 +405,8 @@ class TaskManager(Processor):
         keys = {_('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(keys)
 
+        self.stats['archived_tasks'] += 1
+
 
     def get_task_by_id(self, task_id: str) -> Dict:
         """ Fetches the full data of the Task. """
@@ -445,14 +449,14 @@ class TaskManager(Processor):
         return result if not only_ids else [task[self.get_db_field_name('task_id')] for task in result]
 
 
-    def get_invoked_tasks_for_labourer(self, labourer: Labourer, closed: Optional[bool] = None) -> List[Dict]:
+    def get_invoked_tasks_for_labourer(self, labourer: Labourer, completed: Optional[bool] = None) -> List[Dict]:
         """
         Return a list of tasks of current Labourer invoked during the current run of the Orchestrator.
 
-        If closed is provided:
-        * True - filter closed ones
-        * False - filter NOT closed ones
-        * None (default) - do not care about `closed` status.
+        If completed is provided:
+        * True - filter completed ones
+        * False - filter NOT completed ones
+        * None (default) - do not care about `completed` status.
         """
 
         _ = self.get_db_field_name
@@ -466,12 +470,12 @@ class TaskManager(Processor):
             'index_name':  self.config['dynamo_db_config']['index_greenfield'],
         }
 
-        if closed is True:
-            query_args['filter_expression'] = f"attribute_exists {_('closed_at')}"
-        elif closed is False:
-            query_args['filter_expression'] = f"attribute_not_exists {_('closed_at')}"
+        if completed is True:
+            query_args['filter_expression'] = f"attribute_exists {_('completed_at')}"
+        elif completed is False:
+            query_args['filter_expression'] = f"attribute_not_exists {_('completed_at')}"
         else:
-            logger.debug(f"No filtering by closed status for {query_args}")
+            logger.debug(f"No filtering by completed status for {query_args}")
 
         return self.dynamo_db_client.get_by_query(**query_args)
 
@@ -512,17 +516,29 @@ class TaskManager(Processor):
         return self.get_running_tasks_for_labourer(labourer=labourer, count=True)
 
 
-    # Deprecated...
-    # def get_closed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
-    #     """
-    #     Return a list of tasks of the Labourer marked as closed.
-    #     Scavenger is supposed to archive them all so no special filtering is required here.
-    #
-    #     In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
-    #     (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
-    #     """
-    #
-    #     return self.get_invoked_tasks_for_labourer(labourer=labourer, closed=True)
+    def get_completed_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
+        """
+        Return a list of tasks of the Labourer marked as completed.
+        Scavenger is supposed to archive them all so no special filtering is required here.
+
+        In order to be able to use the already existing `index_greenfield`, we sort tasks only in invoked stages
+        (`greenfield > now()`). This number is supposed to be small, so filtering by an un-indexed field will be fast.
+        """
+
+        _ = self.get_db_field_name
+
+        query_args = {
+            'keys':        {
+                _('labourer_id'): labourer.id,
+                _('greenfield'):  str(time.time()),
+            },
+            'comparisons': {_('greenfield'): '>='},
+            'index_name':  self.config['dynamo_db_config']['index_greenfield'],
+            'filter_expression': f"attribute_exists {_('completed_at')}",
+        }
+
+        return self.dynamo_db_client.get_by_query(**query_args)
+
 
     def get_expired_tasks_for_labourer(self, labourer: Labourer) -> List[Dict]:
         """ Return a list of tasks of Labourer previously invoked, and expired without being closed. """
@@ -536,7 +552,7 @@ class TaskManager(Processor):
                     f"en_between_{_('greenfield')}": labourer.get_attr('expired'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression=f"attribute_not_exists {_('closed_at')}",
+                filter_expression=f"attribute_not_exists {_('completed_at')}",
         )
 
 
@@ -556,6 +572,8 @@ class TaskManager(Processor):
         # Delete task from tasks table
         delete_keys = {_('task_id'): task[_('task_id')]}
         self.dynamo_db_client.delete(delete_keys)
+
+        self.stats['scheduled_for_retry_later_tasks'] += 1
 
 
     def get_tasks_to_retry_for_labourer(self, labourer: Labourer, limit: int = None) -> List[Dict]:
@@ -607,6 +625,7 @@ class TaskManager(Processor):
                 self.dynamo_db_client.put(task)
                 self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
 
+            self.stats['due_for_retry_tasks'] += 1
 
     @benchmark
     def get_average_labourer_duration(self, labourer: Labourer) -> int:

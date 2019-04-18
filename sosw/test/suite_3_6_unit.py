@@ -4,7 +4,7 @@ import unittest
 from .unit.test_app import app_UnitTestCase
 from .unit.test_labourer import Labourer_UnitTestCase
 from .unit.test_orchestrator import Orchestrator_UnitTestCase
-# from .unit.test_scavenger import Scavenger_UnitTestCase
+from .unit.test_scavenger import Scavenger_UnitTestCase
 from .unit.test_scheduler import Scheduler_UnitTestCase
 
 # Components
@@ -25,7 +25,7 @@ def suite():
     test_suite.addTest(unittest.makeSuite(app_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Labourer_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Orchestrator_UnitTestCase))
-    # test_suite.addTest(unittest.makeSuite(Scavenger_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(Scavenger_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Scheduler_UnitTestCase))
 
     # Components
