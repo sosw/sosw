@@ -27,7 +27,7 @@ os.environ["autotest"] = "True"
 
 class Scheduler_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
-    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
     FNAME = '/tmp/aglaya.txt'
     TODAY = datetime.date(2019, 1, 31)
 

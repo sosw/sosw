@@ -40,6 +40,7 @@ class Worker(Processor):
         try:
             self.mark_task_as_completed(event.get('task_id'))
         except:
+            logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
 
         super().__call__(event)
@@ -47,7 +48,11 @@ class Worker(Processor):
 
     def mark_task_as_completed(self, task_id: str):
         """ Call worker assistant lambda and tell it to close task """
-        worker_assistant_lambda_name = self.config['sosw_worker_assistant_lambda']
+
+        if not self.lambda_client:
+            self.register_clients(['lambda'])
+
+        worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
         payload = {
             'action': 'mark_task_as_completed',
             'task_id': task_id
