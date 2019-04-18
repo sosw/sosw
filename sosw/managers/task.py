@@ -439,8 +439,8 @@ class TaskManager(Processor):
                     self.get_db_field_name('greenfield'): '<'
                 })
 
-        logger.info(f"get_next_for_labourer() received: {result} from {self.config['dynamo_db_config']['table_name']} "
-                    f"for labourer: {labourer.id} max greenfield: {max_greenfield}")
+        logger.debug(f"get_next_for_labourer() received: {result} from {self.config['dynamo_db_config']['table_name']} "
+                     f"for labourer: {labourer.id} max greenfield: {max_greenfield}")
 
         return result if not only_ids else [task[self.get_db_field_name('task_id')] for task in result]
 
@@ -494,7 +494,7 @@ class TaskManager(Processor):
                     f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression=f'attribute_not_exists {_("closed_at")}'
+                filter_expression=f'attribute_not_exists {_("completed_at")}'
         )
 
         if count:

@@ -63,20 +63,12 @@ class Orchestrator(Processor):
             return
 
         tasks_to_process = self.task_client.get_next_for_labourer(labourer=labourer, cnt=number_of_tasks)
-        logger.info(f"Decided to invoke the following tasks for {labourer.id}: {tasks_to_process}")
 
-        for task in tasks_to_process:
-            self.task_client.invoke_task(task=task, labourer=labourer)
+        if tasks_to_process:
+            logger.info(f"Decided to invoke the following tasks for {labourer.id}: {tasks_to_process}")
 
-
-    # def get_labourer_setting(self, labourer: Labourer, attribute: str):
-    #     """ Should probably try to use some default values, but for now we delegate this to whoever calls me. """
-    #
-    #     try:
-    #         return self.config['labourers'][labourer.id][attribute]
-    #     except KeyError:
-    #         logger.info(f"CONFIG WAS: {self.config} and did not find: {attribute} for {labourer.id}")
-    #         return None
+            for task in tasks_to_process:
+                self.task_client.invoke_task(task=task, labourer=labourer)
 
 
     def get_desired_invocation_number_for_labourer(self, labourer: Labourer) -> int:
@@ -96,8 +88,11 @@ class Orchestrator(Processor):
         max_invocations = labourer_max if labourer_max is not None else self.config['max_simultaneous_invocations']
 
         desired = int(math.floor(max_invocations * coefficient))
+        currently_running = self.task_client.ecology_client.count_running_tasks_for_labourer(labourer)
 
-        return max(desired - self.task_client.ecology_client.count_running_tasks_for_labourer(labourer), 0)
+        logger.info(f"Labourer: {labourer.id} has currently running {currently_running} tasks and desired {desired} "
+                    f"with respect to status {labourer_status}.")
+        return max(desired - currently_running, 0)
 
 
     def get_labourers(self) -> List[Labourer]:

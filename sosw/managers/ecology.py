@@ -58,7 +58,7 @@ class EcologyManager(Processor):
         logger.info("Registering TaskManager for EcologyManager")
         self.task_client = task_manager
 
-        logger.info("Reset cache of running_tasks counter in EcoloyManager")
+        logger.info("Reset cache of running_tasks counter in EcologyManager")
         self.running_tasks = defaultdict(int)
 
 
@@ -86,6 +86,7 @@ class EcologyManager(Processor):
 
         if labourer.id not in self.running_tasks.keys():
             self.running_tasks[labourer.id] = self.task_client.get_count_of_running_tasks_for_labourer(labourer)
+            logger.debug(f"EcologyManager.count_running_tasks_for_labourer() recalculated cache for Labourer {labourer}")
 
         logger.debug(f"EcologyManager.count_running_tasks_for_labourer() returns: {self.running_tasks[labourer.id]}")
         return self.running_tasks[labourer.id]
