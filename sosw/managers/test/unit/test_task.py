@@ -25,7 +25,7 @@ from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
 class task_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
 
-    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:0000000000:function:some_function')
+    LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
 
 
     def setUp(self):
@@ -64,7 +64,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_mark_task_invoked__calls_dynamo(self):
-        self.manager.dynamo_db_client = MagicMock()
         self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
 
@@ -133,20 +132,25 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_invoke_task__calls__mark_task_invoked(self):
         self.manager.mark_task_invoked = MagicMock()
+        self.manager.is_valid_task = MagicMock(return_value=True)
+        self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
         self.manager.mark_task_invoked.assert_called_once()
 
 
     def test_invoke_task__calls__get_task_by_id(self):
+        self.manager.is_valid_task = MagicMock(return_value=True)
         self.manager.mark_task_invoked = MagicMock()
-        self.manager.get_task_by_id = MagicMock()
+        self.manager.get_task_by_id = MagicMock(return_value={})
 
         self.manager.invoke_task(task_id='qwe', labourer=self.labourer)
+        self.manager.is_valid_task.assert_called_once()
         self.manager.get_task_by_id.assert_called_once()
 
 
     def test_invoke_task__calls__lambda_client(self):
+        self.manager.is_valid_task = MagicMock(return_value=True)
         self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
 
@@ -165,7 +169,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         call_args, call_kwargs = self.manager.lambda_client.invoke.call_args
 
         self.assertEqual(call_kwargs['FunctionName'], self.labourer.arn)
-        self.assertEqual(call_kwargs['Payload'], task['payload'])
+        # self.assertEqual(call_kwargs['Payload'], json.dumps(task['payload']))
 
 
     def test_invoke_task__not_calls__lambda_client_if_raised_conditional_exception(self):
@@ -174,6 +178,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
         task = {
             self.HASH_KEY[0]:  f"task_id_{self.labourer.id}_256",  # Task ID
             self.RANGE_KEY[0]: self.labourer.id,  # Worker ID
+            'created_at':      1000,
             'payload':         {'foo': 23}
         }
 
@@ -192,6 +197,16 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.manager.stats['concurrent_task_invocations_skipped'], 1)
 
 
+    def test_invoke_task__with_explicit_task__not_calls_get_task_by_id(self):
+        self.manager.get_task_by_id = MagicMock()
+        self.manager.is_valid_task = MagicMock(return_value=True)
+        self.manager.mark_task_invoked = MagicMock()
+
+        self.manager.invoke_task(labourer=self.LABOURER, task={1:2})
+        self.manager.is_valid_task.assert_called_once()
+        self.manager.get_task_by_id.assert_not_called()
+
+
     def test_register_labourers(self):
         with patch('time.time') as t:
             t.return_value = 123
@@ -206,6 +221,12 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(lab.get_attr('expired'), invoke_time - lab.duration - lab.cooldown)
         self.assertEqual(lab.get_attr('health'), 2)
         self.assertEqual(lab.get_attr('max_attempts'), 3)
+
+
+    def test_register_labourers__calls_register_task_manager(self):
+
+        self.manager.register_labourers()
+        self.manager.ecology_client.register_task_manager.assert_called_once_with(self.manager)
 
 
     def test_get_count_of_running_tasks_for_labourer(self):
@@ -424,3 +445,79 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(self.manager.construct_payload_for_task(**test), json.dumps(expected))
+
+
+    def test_get_average_labourer_duration__calls_dynamo_twice(self):
+        """
+        This is am important test for other ones of this method.
+        If for some reason the DynamoMock is called not twice, then the side_effects don't imitate
+        real data and tests will be unpredictable.
+        """
+
+        some_labourer = self.manager.register_labourers()[0]
+
+        self.manager.get_average_labourer_duration(some_labourer)
+        self.assertEqual(self.manager.dynamo_db_client.get_by_query.call_count, 2)
+
+
+    def test_get_average_labourer_duration__calculates_average(self):
+
+        NOW = 10000
+        START = NOW + self.manager.config['greenfield_invocation_delta']
+
+        some_labourer = self.manager.register_labourers()[0]
+        some_labourer.max_duration = 900
+
+        CLOSED = [
+            {
+                'task_id':      '123', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 1000,
+                'completed_at': NOW - 500
+            },  # Duration 500
+            {
+                'task_id':      '124', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000,
+                'completed_at': NOW - 1700
+            },  # Duration 300
+            {
+                'task_id':      '125', 'labourer_id': 'some_function', 'attempts': 1, 'greenfield': START - 2000,
+                'completed_at': NOW - 1700
+            },  # Duration 300
+        ]
+
+        FAILED = [
+            {'task_id': '235', 'labourer_id': 'some_function', 'attempts': 3, 'greenfield': START - 3000},
+            {'task_id': '236', 'labourer_id': 'some_function', 'attempts': 4, 'greenfield': START - 3000},
+            {'task_id': '237', 'labourer_id': 'some_function', 'attempts': 3, 'greenfield': START - 4000},
+
+        ]
+
+        self.manager.dynamo_db_client.get_by_query.side_effect = [CLOSED, FAILED]
+
+        count_failed = sum(x['attempts'] for x in FAILED)
+
+        expected = round((500 + 300 + 300 +  # closed
+                          (some_labourer.get_attr('max_duration') * count_failed))  # failed
+                         / (len(CLOSED) + count_failed))  # total number of closed + failed
+
+        self.assertEqual(expected, self.manager.get_average_labourer_duration(some_labourer))
+
+
+    def test_validate_task__good(self):
+        TESTS = [
+            ({'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000}, True),
+            ({'task_id': 235, 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000}, True),
+            ({'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000, 'bar': 42}, True),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(self.manager.is_valid_task(test), expected)
+
+
+    def test_validate_task__bad(self):
+        _ = self.manager.get_db_field_name
+        TASK = {'task_id': '235', 'labourer_id': 'foo', 'created_at': 5000, 'greenfield': 1000, 'bar': 42}
+
+        for field in [_('task_id'), _('labourer_id'), _('created_at')]:
+            test = deepcopy(TASK)
+            test.pop(field)
+
+            self.assertFalse(self.manager.is_valid_task(test))

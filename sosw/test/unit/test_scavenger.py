@@ -52,15 +52,17 @@ class Scavenger_UnitTestCase(unittest.TestCase):
     def test_call(self):
         # Mock
         self.scavenger.task_client.register_labourers = Mock(return_value=LABOURERS)
-        self.scavenger.handle_expired_tasks_for_labourer = Mock()
+        self.scavenger.handle_expired_tasks = Mock()
+        self.scavenger.archive_tasks = Mock()
         self.scavenger.retry_tasks = Mock()
 
         # Call
         self.scavenger()
 
         # Check call
-        self.assertEqual(self.scavenger.handle_expired_tasks_for_labourer.call_count, 3)
-        self.scavenger.retry_tasks.assert_called_once()
+        self.assertEqual(self.scavenger.handle_expired_tasks.call_count, 3)
+        self.assertEqual(self.scavenger.archive_tasks.call_count, 3)
+        self.assertEqual(self.scavenger.retry_tasks.call_count, 3)
 
 
     def test_handle_expired_tasks_for_labourer(self):
@@ -75,7 +77,7 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.scavenger.process_expired_task = Mock()
 
         # Call
-        self.scavenger.handle_expired_tasks_for_labourer(labourer)
+        self.scavenger.handle_expired_tasks(labourer)
 
         # Check call
         self.scavenger.task_client.get_expired_tasks_for_labourer.assert_called_once_with(labourer)
