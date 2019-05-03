@@ -12,7 +12,7 @@ Example
 
 Please find the following elementary example of Worker Lambda.
 
-.. code-block::python
+.. code-block:: python
 
     import logging
     from sosw import Worker
