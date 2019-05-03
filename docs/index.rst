@@ -15,8 +15,10 @@ Serverless Orchestrator of Serverless Workers
    scavenger
    worker_assistant
 
+   worker
+
 The Worker functions themselves are expected to call the WorkerAssistant when completed the task
-from each invocation. If you inherit the ``sosw.Worker`` class in your function the ``__call__`` method
+from each invocation. If you inherit the :ref:`Worker` class in your function the ``__call__`` method
 does that automatically. And there are several other common features that Worker class provides
 (statistic aggregator, components initialisation, configuration automatic assembling and more...)
 
