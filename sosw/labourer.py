@@ -18,7 +18,8 @@ logger.setLevel(logging.INFO)
 
 class Labourer:
     ATTRIBUTES = ('id', 'arn')
-    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health', 'max_attempts', 'average_duration', 'max_duration')
+    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health', 'max_attempts', 'average_duration', 'max_duration',
+                         'max_simultaneous_invocations', 'arn')
     id = None
     arn = None
 

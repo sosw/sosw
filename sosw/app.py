@@ -193,34 +193,54 @@ class Processor:
         return self.aws_region
 
 
-    def get_stats(self):
+    def get_stats(self, recursive: bool = True):
         """
         Return statistics of operations performed by current instance of the Class.
 
-        Statistics of custom clients existing in the Processor is also aggregated.
+        Statistics of custom clients existing in the Processor is also aggregated by default.
         Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_client).
         Clients must also have their own get_stats() methods implemented.
 
+        Be careful about circular get_stats() calls from child classes.
+        If required overwrite get_stats() with recursive = False.
+
+        .. code-block::python
+
+           def get_stats(self, recursive=False):
+               return super().get_stats(recursive=False)
+
+        :param recursive:   Merge stats from self.***_client.
         :rtype:     dict
         :return:    Statistics counter of current Processor instance.
         """
 
-        for some_client in [x for x in dir(self) if x.endswith('_client')]:
-            try:
-                self.stats.update(getattr(self, some_client).get_stats())
-                logger.info(f"Updated Processor stats with stats of {some_client}")
-            except:
-                logger.warning(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
+        if recursive:
+            for some_client in [x for x in dir(self) if x.endswith('_client')]:
+                try:
+                    self.stats.update(getattr(self, some_client).get_stats())
+                    logger.info(f"Updated Processor stats with stats of {some_client}")
+                except:
+                    logger.warning(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
         return self.stats
 
 
-    def reset_stats(self):
+    def reset_stats(self, recursive: bool = True):
         """
         Cleans statistics other than specified for the lifetime of processor.
         All the parameters with prefix *'total_'* are also preserved.
 
         The function makes sense if your Processor lives outside the scope of `lambda_handler`.
+
+        Be careful about circular get_stats() calls from child classes.
+        If required overwrite reset_stats() with recursive = False.
+
+        .. code-block::python
+
+           def reset_stats(self, recursive=False):
+               return super().reset_stats(recursive=False)
+
+        :param recursive:   Reset stats from self.***_client.
         """
 
         # Temporary save values that are supposed to survive reset_stats().
@@ -239,11 +259,12 @@ class Processor:
         self.stats = defaultdict(int)
         self.stats.update(preserved)
 
-        for some_client in [x for x in dir(self) if x.endswith('_client')]:
-            try:
-                getattr(self, some_client).reset_stats()
-            except:
-                pass
+        if recursive:
+            for some_client in [x for x in dir(self) if x.endswith('_client')]:
+                try:
+                    getattr(self, some_client).reset_stats()
+                except:
+                    pass
 
 
     def die(self, message="Unknown Failure"):
