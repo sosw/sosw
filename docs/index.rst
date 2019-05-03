@@ -28,7 +28,7 @@ Another deployment requirement is creating several `DynamoDB` tables:
 
 You can find the Cloudformation template for the databases in `the example`_
 
-.. _the example:`https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml`
+.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 
 .. toctree::
    :titlesonly:
