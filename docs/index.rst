@@ -7,9 +7,19 @@ Serverless Orchestrator of Serverless Workers
 
 `sosw` requires you to implement/deploy several Lambda functions (Essentials) using the following core classes:
 
+.. toctree::
+   :titlesonly:
+   :caption: Contents:
+
+   orchestrator
+   scheduler
+   scavenger
+   worker_assistant
+
 - :ref:`scheduler`
+- :ref:`Scheduler`
 - :ref:`orchestrator.Orchestrator`
-- Scavenger
+- :ref:`Scavenger`
 - WorkerAssistant
 
 The Worker functions themselves are expected to call the WorkerAssistant when completed the task
