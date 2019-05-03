@@ -3,10 +3,28 @@ sosw
 
 Serverless Orchestrator of Serverless Workers
 
-This project includes packages for AWS Lambda functions.
-The three main components are Worker, Orchestrator and Scheduler.
+`sosw` is the set of tools for orchestrating **asynchronous** invocations of AWS Lambda Workers.
 
-Documentation is on the way full speed, for now you can read informative docstrings...
+`sosw` requires you to implement/deploy several Lambda functions (Essentials) using the following core classes:
+
+- :ref:`Scheduler`
+- Orchestrator
+- Scavenger
+- WorkerAssistant
+
+The Worker functions themselves are expected to call the WorkerAssistant when completed the task
+from each invocation. If you inherit the `sosw.Worker` class in your function the `__call__` method
+does that automatically. And there are several other common features that Worker class provides
+(statistic aggregator, components initialisation, configuration automatic assembling and more...)
+
+Another deployment requirement is creating several `DynamoDB` tables:
+
+- sosw_tasks
+- sosw_retry_tasks
+- sosw_closed_tasks
+
+You can find the Cloudformation template for the databases in the * :ref:`docs/yaml/sosw-shared_dynamodb.yaml`
+
 
 .. toctree::
    :titlesonly:
