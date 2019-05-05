@@ -1,8 +1,9 @@
-.. _bi_doc_convention:
+.. _Documentation Convention:
 
-==============
-Doc Convention
-==============
+=======================
+Documentaion Convention
+=======================
+
 
 This document states the convention that we follow for writing Documentation and especially docstrings for
 classes and functions in Better Impression. This convention is based on
