@@ -220,7 +220,7 @@ class Processor:
                     self.stats.update(getattr(self, some_client).get_stats())
                     logger.info(f"Updated Processor stats with stats of {some_client}")
                 except:
-                    logger.warning(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
+                    logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
         return self.stats
 
