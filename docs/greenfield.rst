@@ -17,3 +17,9 @@ Possible states:
   * Running
 
 The following diagram represents different states.
+
+.. figure:: images/greenfield-timeline.png
+   :alt: Greenfield Timeline
+   :align: center
+
+   Greenfield Timeline
