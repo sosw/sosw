@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 import time
 import unittest
 import os
@@ -282,7 +283,7 @@ class helpers_UnitTestCase(unittest.TestCase):
                          "Failed from epoch time")
 
         t = time.time()
-        self.assertEqual(validate_datetime_from_something(t * 1000), datetime.datetime.fromtimestamp(t),
+        self.assertEqual(validate_datetime_from_something(t * 1000), datetime.datetime.fromtimestamp(t, tz=timezone.utc),
                          "Failed with epoch in milliseconds")
 
         self.assertEqual(validate_datetime_from_something(1000.0), datetime.datetime.fromtimestamp(1000),
