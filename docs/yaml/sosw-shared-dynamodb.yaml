@@ -315,7 +315,7 @@ Resources:
   AutotestSoswConfigDynamoTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: "autotest_sosw_config"
+      TableName: "autotest_config"
       AttributeDefinitions:
         -
           AttributeName: 'env'

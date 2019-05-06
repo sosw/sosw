@@ -501,8 +501,14 @@ class Scheduler(Processor):
 
     @property
     def _sleeptime_for_dynamo(self):
-        # TODO Should use incremental sleeps based on Throttling. Probably interact with EcologyManager.
-        return 0.2
+        """
+        Pull DynamoDB write capcity dynamically to throttle at appropriate levels
+
+        Calculates based on the assumption that a single write action consumes a full WCU
+        Therefore multiple capacity units are calculated as a fraction of the
+        """
+        logging.debug(dir(self.task_client.dynamo_db_client))
+        return 1/self.task_client.dynamo_db_client.get_capacity()['write']
 
 
     @staticmethod
