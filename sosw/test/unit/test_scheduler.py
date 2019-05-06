@@ -143,7 +143,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.scheduler._queue_bucket, self.scheduler.config['queue_bucket'])
 
 
-    def testlocal_queue_file(self):
+    def test_local_queue_file(self):
         self.assertEqual(self.scheduler.local_queue_file, f"/tmp/{self.scheduler.config['queue_file']}")
 
 
