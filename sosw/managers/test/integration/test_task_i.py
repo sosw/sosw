@@ -42,6 +42,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         """
         self.config = self.TEST_CONFIG.copy()
 
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
         self.table_name = self.config['dynamo_db_config']['table_name']
@@ -58,6 +61,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        self.patcher.stop()
         self.clean_task_tables()
 
 

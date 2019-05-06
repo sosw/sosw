@@ -60,7 +60,7 @@ class DynamoDbClient:
 
         # initialize table store
         self._table_capacity = {}
-        self.identify_dynamo_capacity()
+        self.identify_dynamo_capacity(table_name=self.config['table_name'])
 
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):

@@ -21,15 +21,15 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'invocation_id': 'S',
             'en_time':       'N',
 
-            'env':           'S',
-            'config_name':   'S',
+            'hash_col':      'S',
+            'range_col':     'N',
             'other_col':     'S',
             'new_col':       'S',
             'some_col':      'S',
             'some_counter':  'N'
         },
         'required_fields': ['lambda_name'],
-        'table_name':      'autotest_config_component'
+        'table_name':      'autotest_dynamo_db'
     }
 
 
@@ -39,15 +39,15 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.HASH_COL = 'env'
+        self.HASH_COL = 'hash_col'
         self.HASH_KEY = (self.HASH_COL, 'S')
 
-        self.RANGE_COL = 'config_name'
-        self.RANGE_COL_TYPE = 'S'
-        self.RANGE_KEY = (self.RANGE_COL, self.RANGE_COL_TYPE)
+        self.RANGE_COL = 'range_col'
+        self.RANGE_COL_TYPE = 'N'
+        self.RANGE_KEY = (self.RANGE_COL, self.RANGE_COL)
 
         self.KEYS = (self.HASH_COL, self.RANGE_COL)
-        self.table_name = 'autotest_config_component'
+        self.table_name = 'autotest_dynamo_db'
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
 
@@ -308,7 +308,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         result = self.dynamo_client.get_by_query(keys=keys)
         # print(result)
         self.assertTrue(all(x[self.RANGE_COL] in range(3, 7) for x in result)), "Failed if unspecified comparison. " \
-                                                                             "Should be automatic for :st_between_..."
+                                                                                "Should be automatic for :st_between_..."
 
 
     def test_get_by_query__filter_expression(self):
@@ -320,7 +320,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         # Put sample data
         [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x}, self.table_name) for x in range(3)]
-        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1}, self.table_name) for x in range(3, 6)]
+        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1}, self.table_name) for x in
+         range(3, 6)]
         self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 6, 'mark': 0}, self.table_name)
         self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 7, 'mark': 'a'}, self.table_name)
 
