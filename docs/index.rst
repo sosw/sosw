@@ -10,6 +10,7 @@ sosw
 .. toctree::
    :titlesonly:
 
+   installation
    orchestrator
    scheduler
    scavenger
