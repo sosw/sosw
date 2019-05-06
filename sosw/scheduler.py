@@ -593,7 +593,7 @@ class Scheduler(Processor):
 
         global lambda_context
 
-        return lambda_context.get_remaining_time_in_millis() < self.config['shutdown_period'] * 1000
+        return lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
 
     def get_and_lock_queue_file(self) -> str:
         """
