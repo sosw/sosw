@@ -372,8 +372,11 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.dynamo_client.put(row3, self.table_name)
 
         keys = {'env': 'cat', 'config_name': 'testz'}
-        result = self.dynamo_client.get_by_query(keys=keys, table_name=self.table_name,
-                                                 comparisons={'config_name': 'begins_with'})
+        result = self.dynamo_client.get_by_query(
+            keys=keys,
+            table_name=self.table_name,
+            comparisons={'config_name': 'begins_with'}
+        )
 
         self.assertEqual(len(result), 2)
 
