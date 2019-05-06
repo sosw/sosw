@@ -11,6 +11,10 @@ os.environ["autotest"] = "True"
 
 class siblings_TestCase(unittest.TestCase):
 
+    CUSTOM_CONFIG = {
+        "test": True
+    }
+
     @mock.patch("boto3.client")
     def test_get_approximate_concurrent_executions(self, mock_boto_client):
         mock_get_metric_statistics_responses = [
@@ -78,7 +82,7 @@ class siblings_TestCase(unittest.TestCase):
             # Reimport the component
             from ..siblings import SiblingsManager
 
-            self.assertEqual(SiblingsManager().get_approximate_concurrent_executions(),
+            self.assertEqual(SiblingsManager(custom_config=self.CUSTOM_CONFIG).get_approximate_concurrent_executions(),
                              experiment['function_expected_result'])
 
 
@@ -133,11 +137,11 @@ class siblings_TestCase(unittest.TestCase):
         # Reimport the component
         from ..siblings import SiblingsManager
 
-        self.assertFalse(SiblingsManager().any_events_rules_enabled(type('lambda_context', (object,), {
+        self.assertFalse(SiblingsManager(custom_config=self.CUSTOM_CONFIG).any_events_rules_enabled(type('lambda_context', (object,), {
             'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func1'
         })))
 
-        self.assertTrue(SiblingsManager().any_events_rules_enabled(type('lambda_context', (object,), {
+        self.assertTrue(SiblingsManager(custom_config=self.CUSTOM_CONFIG).any_events_rules_enabled(type('lambda_context', (object,), {
             'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func2'
         })))
 
