@@ -1,8 +1,8 @@
 .. _Documentation Convention:
 
-=======================
-Documentaion Convention
-=======================
+========================
+Documentation Convention
+========================
 
 
 This document states the convention that we follow for writing Documentation and especially docstrings for

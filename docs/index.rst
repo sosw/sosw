@@ -36,6 +36,8 @@ Another deployment requirement is to create several `DynamoDB` tables:
    :titlesonly:
    :caption: Contents:
 
+   contribution
+
    convention
    components
    managers
