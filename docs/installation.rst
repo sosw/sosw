@@ -27,4 +27,6 @@ There are three tables required to run SOSW
 - retry_tasks
 - tasks
 
-These can be setup with the provided example CloudFormation template :doc:`/yaml/sosw-shared-dynamo.yaml` easily and includes both a testing set of tables along with a production set.
+These can be setup with the provided example :download:`CloudFormation template </yaml/sosw-shared-dynamodb.yaml>` easily and includes both a testing set of tables along with a production set.
+
+To build the CloudFormation stack execute `aws cloudformation create-stack --stack-name sosw-development-dynamodb-tables --template-body=file:///path/to/downloaded/yaml/sosw-shared-dynamo.yaml`
