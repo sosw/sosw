@@ -8,6 +8,7 @@ import re
 import subprocess
 import time
 import unittest
+import types
 
 from copy import deepcopy
 from pathlib import Path
@@ -19,6 +20,8 @@ from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
+
+import sosw.scheduler as module
 
 
 os.environ["STAGE"] = "test"
@@ -72,8 +75,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
 
+        module.lambda_context = types.SimpleNamespace()
+        module.lambda_context.aws_request_id = 'some_function'
+        module.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        module.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 1000])
+
         with patch('boto3.client'):
-            self.scheduler = Scheduler(self.custom_config)
+            self.scheduler = module.Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()

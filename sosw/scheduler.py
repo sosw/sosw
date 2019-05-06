@@ -32,6 +32,7 @@ from sosw.managers.task import TaskManager
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+lambda_context = None
 
 def single_or_plural(attr):
     """ Simple function. Gives versions with 's' at the end and without it. """
@@ -53,7 +54,7 @@ class Scheduler(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients':    ['Task', 's3', 'Sns'],
+        'init_clients':    ['Task', 's3', 'Sns', 'Siblings'],
         'task_config':     {
             'labourers': {
                 # 'some_function': {
@@ -90,17 +91,18 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
-        # FIXME this is a temporary solution. Should take remaining time from Context object.
-        self.st_time = time.time()
+        """
+        Process an event.
+
+        :param dict event: event data
+        """
 
         job = self.extract_job_from_payload(event)
-
         self.parse_job_to_file(job)
-
         self.process_file()
 
 
@@ -477,12 +479,18 @@ class Scheduler(Processor):
 
 
     def process_file(self):
+        """
+        Process a file for creating tasks, then uploading it to S3.
+        In case of execution time reached its limit, spawning a new sibling to continue the processing.
+
+        """
 
         file_name = self.get_and_lock_queue_file()
 
         if not file_name:
             logger.info(f"No file in queue.")
             return
+
         else:
             while self.sufficient_execution_time_left:
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
@@ -496,7 +504,20 @@ class Scheduler(Processor):
                     self.task_client.create_task(labourer=labourer, **t)
                     time.sleep(self._sleeptime_for_dynamo)
 
+            else:
+                # Spawning another sibling to continue the processing
+                try:
+                    global lambda_context
+
+                    payload = dict(file_name=file_name)
+                    self.siblings_client.spawn_sibling(lambda_context, payload=payload)
+                    self.stats['siblings_spawned'] += 1
+
+                except Exception as err:
+                    logger.exception(f"Could not spawn sibling with context: {lambda_context} and payload: {payload}")
+
             self.upload_and_unlock_queue_file()
+            self.clean_tmp(file_name=file_name)
 
 
     @property
@@ -543,6 +564,13 @@ class Scheduler(Processor):
         return result
 
 
+    def clean_tmp(self, file_name=None):
+        file_to_remove = file_name or self._local_queue_file
+
+        if os.path.isfile(file_to_remove):
+            os.remove(file_to_remove)
+
+
     @property
     def _rows_to_process(self):
         return self.config['rows_to_process']
@@ -550,8 +578,13 @@ class Scheduler(Processor):
 
     @property
     def sufficient_execution_time_left(self) -> bool:
-        # FIXME this is a temporary solution. Should take remaining time from Context object.
-        return (time.time() - self.st_time) < (300 - self.config['shutdown_period'])
+        """
+        Return if there is a sufficient execution time for processing ('shutdown period' is in seconds).
+        """
+
+        global lambda_context
+
+        return lambda_context.get_remaining_time_in_millis() < self.config['shutdown_period'] * 1000
 
 
     def get_and_lock_queue_file(self) -> str:
@@ -562,10 +595,16 @@ class Scheduler(Processor):
         :return: Local path to the file.
         """
 
-        if not os.path.isfile(self._local_queue_file):
+        global lambda_context
+
+        filename_parts = self._local_queue_file.rsplit('.', 1)
+        assert len(filename_parts) == 2, "Got bad file name"
+        file_name = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
+
+        if not os.path.isfile(file_name):
             try:
                 self.s3_client.download_file(Bucket=self._queue_bucket, Key=self._remote_queue_file,
-                                             Filename=self._local_queue_file)
+                                             Filename=file_name)
             except self.s3_client.exceptions.ClientError:
                 self.stats['non_existing_remote_queue'] += 1
                 logger.exception(f"Not found remote file to download")
@@ -577,14 +616,14 @@ class Scheduler(Processor):
 
                 self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_file)
 
-                logger.debug(f"Downloaded a copy of {self._local_queue_file} for processing "
+                logger.debug(f"Downloaded a copy of {file_name} for processing "
                              f"and moved the remote one to {self._remote_queue_locked_file}.")
 
         # If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.
         else:
-            self.s3_client.upload_file(Filename=self._local_queue_file, Bucket=self._queue_bucket,
+            self.s3_client.upload_file(Filename=file_name, Bucket=self._queue_bucket,
                                        Key=self._remote_queue_locked_file)
-        return self._local_queue_file
+        return file_name
 
 
     def upload_and_unlock_queue_file(self):
@@ -613,9 +652,9 @@ class Scheduler(Processor):
         return self.config['queue_bucket']
 
 
+    """ Full path of local file with queue of tasks not yet in DynamoDB. """
     @property
     def _local_queue_file(self):
-        """ Full path of local file with queue of tasks not yet in DynamoDB. """
         # TODO should add some labourer id here and some job ID or something.
         return f"/tmp/{self.config['queue_file'].strip('/')}"
 
