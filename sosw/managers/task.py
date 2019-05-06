@@ -342,6 +342,11 @@ class TaskManager(Processor):
         call_payload = task.pop('payload', {})
         call_payload.update(task)
 
+        # Support for asyncio does not exist for botocore right now. See ticket below:
+        # https://github.com/boto/botocore/issues/458
+        # There is another library that makes an async version of botocore, but doesn't
+        # support lambda currently. See below:
+        # https://github.com/aio-libs/aiobotocore
         lambda_response = self.lambda_client.invoke(
                 FunctionName=labourer.arn,
                 InvocationType='Event',
