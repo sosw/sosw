@@ -16,7 +16,7 @@ Steps
 Setup AWS Account
 -----------------
 
-As an AWS Lambda Serverless implementation deployment should be done in an AWS account. To setup a new account, follow the `Link AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>`
+As an AWS Lambda Serverless implementation deployment should be done in an AWS account. To setup a new account, follow the `AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>`_
 
 Provision AWS DynamoDB Tables
 ------------------------------
