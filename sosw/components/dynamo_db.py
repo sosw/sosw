@@ -65,7 +65,6 @@ class DynamoDbClient:
             self.row_mapper = self.config.get('row_mapper')
 
 
-    @benchmark
     def dynamo_to_dict(self, dynamo_row, strict=True):
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
@@ -128,7 +127,6 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
     def dict_to_dynamo(self, row_dict, add_prefix=None, strict=True):
         """
         Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.
@@ -175,7 +173,7 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
+    # @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
@@ -331,7 +329,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    @benchmark
+    # @benchmark
     def get_by_scan(self, attrs=None, table_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
@@ -357,7 +355,7 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
+    # @benchmark
     def get_by_scan_generator(self, attrs=None, table_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
@@ -502,10 +500,11 @@ class DynamoDbClient:
         return query
 
 
-    @benchmark
+    # @benchmark
     def put(self, row, table_name=None):
         """
         Adds a row to the database
+
         :param dict row:            The row to add to the table. key is column name, value is value.
         :param string table_name:   Name of the dynamo table to add the row to
         """
@@ -522,7 +521,7 @@ class DynamoDbClient:
         self.stats['dynamo_put_queries'] += 1
 
 
-    @benchmark
+    # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None):

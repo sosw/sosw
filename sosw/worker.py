@@ -2,7 +2,7 @@ import json
 import logging
 
 from sosw.app import Processor
-
+from typing import Dict
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
@@ -19,7 +19,13 @@ logger.setLevel(logging.INFO)
 
 class Worker(Processor):
     """
-    Worker class template.
+    We recommend that you inherit your core Processor from this class in Lambdas that are orchestrated by `sosw`.
+
+    The ``__call__`` method is supposed to accept the ``event`` of the Lambda invocation.
+    This is a dictionary with the payload received in the lambda_handler during invocation.
+
+    Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
+    ``task_id`` in the ``event``.
     """
 
     DEFAULT_CONFIG = {
@@ -30,9 +36,8 @@ class Worker(Processor):
     # these clients will be initialized by Processor constructor
     lambda_client = None
 
-    def __call__(self, event):
+    def __call__(self, event: Dict):
         """
-        Call the Worker Processor.
         You can either call super() at the end of your child function or completely overwrite this function.
         """
 

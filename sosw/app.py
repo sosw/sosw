@@ -25,7 +25,8 @@ logger.setLevel(logging.INFO)
 
 
 class Processor:
-    """
+    """.. _processor:
+
     Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
     You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
     `Worker` class in case you are running functions under `sosw` orchestration.

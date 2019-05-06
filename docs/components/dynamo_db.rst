@@ -1,3 +1,5 @@
+.. _DynamoDB_Client:
+
 DynamoDB Client
 ---------------
 
