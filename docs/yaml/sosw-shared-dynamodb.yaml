@@ -283,6 +283,91 @@ Resources:
           Key: 'Environment'
           Value: 'dev'
 
+  # Configuration Tables
+  SoswConfigDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "sosw_config"
+      AttributeDefinitions:
+        -
+          AttributeName: 'env'
+          AttributeType: 'S'
+        -
+          AttributeName: 'config_name'
+          AttributeType: 'S'
+      KeySchema:
+        -
+          AttributeName: 'env'
+          KeyType: "HASH"
+        -
+          AttributeName: 'config_name'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'production'
+
+ # This table is the genaral storage of configs for testing and dev environments. Be careful not to drop it.
+  AutotestSoswConfigDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "autotest_sosw_config"
+      AttributeDefinitions:
+        -
+          AttributeName: 'env'
+          AttributeType: 'S'
+        -
+          AttributeName: 'config_name'
+          AttributeType: 'S'
+      KeySchema:
+        -
+          AttributeName: 'env'
+          KeyType: "HASH"
+        -
+          AttributeName: 'config_name'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'dev'
+
+  # This table is used for testing behaviour of config components. Can be played with during tests.
+  AutotestConfigComponentDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "autotest_config_component"
+      AttributeDefinitions:
+        -
+          AttributeName: 'env'
+          AttributeType: 'S'
+        -
+          AttributeName: 'config_name'
+          AttributeType: 'S'
+      KeySchema:
+        -
+          AttributeName: 'env'
+          KeyType: "HASH"
+        -
+          AttributeName: 'config_name'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'dev'
+
+
 Outputs:
 
   SoswTasksDynamoTableName:
@@ -290,6 +375,12 @@ Outputs:
     Value: !Ref SoswTasksDynamoTable
     Export:
       Name: "ddb-sosw-tasks"
+
+  SoswConfigDynamoTableName:
+    Description: "Sosw Config Table"
+    Value: !Ref SoswConfigDynamoTable
+    Export:
+      Name: "ddb-sosw-config"
 
   SoswClosedTasksDynamoTableName:
       Description: "Sosw Tasks archived table"
