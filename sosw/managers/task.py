@@ -26,21 +26,22 @@ logger.setLevel(logging.INFO)
 
 class TaskManager(Processor):
     """
-    TaskManager is the core class used by most SOSW Lambdas. It handles all the operations with tasks thus
-    the configuration of this Manager is essential during your SOSW implementation.
+    TaskManager is the core class used by most SOSW Lambdas.
+    It handles all the operations with tasks thus the configuration of this Manager is essential during your SOSW implementation.
 
     The default version of TaskManager works with DynamoDB tables to store and analyze the state of Tasks.
     This could be upgraded in future versions to work with other persistent storage or DBs.
 
     The very important concept to understand about Task workflow is `greenfield`. :ref:`Read more <greenfield>`.
+
     """
 
     DEFAULT_CONFIG = {
-        'init_clients':                            ['DynamoDb', 'lambda', 'Ecology'],
-        'dynamo_db_config':                        {
+        'init_clients': ['DynamoDb', 'lambda', 'Ecology'],
+        'dynamo_db_config': {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
-            'row_mapper':       {
+            'row_mapper': {
                 'task_id':             'S',
                 'labourer_id':         'S',
                 'created_at':          'N',
@@ -362,7 +363,9 @@ class TaskManager(Processor):
         :param labourer:        Labourer for the task
         :param task:            Task dictionary
         :param check_running:   If True (default) updates with conditional expression.
+
         :raises RuntimeError
+
         """
 
         _ = self.get_db_field_name
@@ -425,6 +428,7 @@ class TaskManager(Processor):
         :param cnt:         Optional number of Tasks to fetch.
         :param only_ids:    If explicitly set True, then returns only the IDs of tasks.
                             This could save some transport if you are sending big batches of tasks between Lambdas.
+
         """
 
         # Maximum value to identify the task as available for invocation (either new, or ready for retry).
