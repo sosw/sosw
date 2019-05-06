@@ -25,7 +25,8 @@ logger.setLevel(logging.INFO)
 
 
 class TaskManager(Processor):
-    """
+    """.. _task:
+
     TaskManager is the core class used by most SOSW Lambdas.
     It handles all the operations with tasks thus the configuration of this Manager is essential during your SOSW implementation.
 
