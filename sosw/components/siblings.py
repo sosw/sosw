@@ -83,7 +83,7 @@ class SiblingsManager(Processor):
             if any(t['Arn'] == lambda_context.invoked_function_arn for t in targets):
                 logger.info(f"Function {lambda_context.invoked_function_arn} has at least one enabled rule: {rule}")
                 return True
-        
+
         return self.config['auto_spawning']
 
 
