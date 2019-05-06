@@ -43,8 +43,6 @@ class DynamoDbClient:
         }
 
     """
-
-
     def __init__(self, config):
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
@@ -60,10 +58,36 @@ class DynamoDbClient:
         else:
             logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
 
+        # initialize table store
+        self._table_capacity = {}
+        self.identify_dynamo_capacity(self)
+
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
             self.row_mapper = self.config.get('row_mapper')
 
+    def identify_dynamo_capacity(self, table_name=None):
+        """Identify and store the table capacity for a given table on the object
+
+        Arguments:
+            table_name {str} -- short name of the dynamo db table to analyze
+        """
+        # Use the config value if not provided
+        if table_name is None:
+            table_name = self.config['table_name']
+
+        logging.debug(f"DynamoDB table name identified as {table_name}")
+        # Fetch the actual configuration of the dynamodb table directly for
+        table_description = self.dynamo_client.describe_table(
+            TableName=table_name
+        )
+        # Hash to the capacity
+        table_capacity = table_description["Table"]["ProvisionedThroughput"]
+
+        self._table_capacity[table_name]: {
+            'read': int(table_capacity["ReadCapacityUnits"]),
+            'write': int(table_capacity["WriteCapacityUnits"]),
+        }
 
     def dynamo_to_dict(self, dynamo_row, strict=True):
         """
@@ -664,6 +688,29 @@ class DynamoDbClient:
         :return:    -   dict    - key: int statistics.
         """
         return self.stats
+
+    def get_capacity(self, table_name=None):
+        """Fetches capacity for data tables
+
+        Keyword Arguments:
+            table_name {str} -- DynamoDB (default: {None})
+
+        Returns:
+            dict -- read/write capacity for the table requested
+        """
+
+        if table_name is None:
+            logging.debug(self.config)
+            table_name = self.config['table_name']
+
+        logging.debug(f"DynamoDB table name identified as {table_name}")
+
+        if table_name in self._table_capacity.keys():
+            return self._table_capacity[table_name]
+        else:
+            self.identify_dynamo_capacity(table_name=table_name)
+            return self._table_capacity[table_name]
+
 
 
     def reset_stats(self):
