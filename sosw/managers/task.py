@@ -381,7 +381,7 @@ class TaskManager(Processor):
         )
 
 
-    # Depricated
+    # Deprecated
     # def close_task(self, task_id: str, labourer_id: str):
     #     _ = self.get_db_field_name
     #
