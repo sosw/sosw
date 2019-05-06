@@ -74,6 +74,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
+        self.custom_config['siblings_config'] = {
+            'auto_spawning': True
+        }
 
         module.lambda_context = types.SimpleNamespace()
         module.lambda_context.aws_request_id = 'some_function'
@@ -593,10 +596,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_get_and_lock_queue_file__s3_calls(self):
 
-        r = self.scheduler.get_and_lock_queue_file()
-
-        self.assertEqual(r, self.scheduler._local_queue_file)
-
+        self.scheduler.get_and_lock_queue_file()
         self.scheduler.s3_client.download_file.assert_called_once()
         self.scheduler.s3_client.copy_object.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
@@ -610,7 +610,10 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             r = self.scheduler.get_and_lock_queue_file()
 
-        self.assertEqual(r, self.scheduler._local_queue_file)
+        filename_parts = self.scheduler._local_queue_file.rsplit('.', 1)
+        file_name = f"{filename_parts[0]}_{module.lambda_context.aws_request_id}.{filename_parts[1]}"
+
+        self.assertEqual(r, file_name)
 
         self.scheduler.s3_client.download_file.assert_not_called()
         self.scheduler.s3_client.copy_object.assert_not_called()

@@ -5,7 +5,7 @@ import logging
 import os
 
 from math import ceil
-
+from sosw import Processor
 
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
@@ -18,7 +18,7 @@ __all__ = ['SiblingsManager']
 logger = logging.getLogger()
 
 
-class SiblingsManager:
+class SiblingsManager(Processor):
     """
     This set of helpers can be used for Lambdas that want to invoke some siblings of self. Very useful for Lambdas
     processing queues and running out of time. Some good usecase you can find in the code of `es_ingest_us`
@@ -45,11 +45,17 @@ class SiblingsManager:
             Resource: "arn:aws:lambda:us-west-2:737060422660:function:YOUR_FUNCTION_NAME"
     """
 
+    DEFAULT_CONFIG = {
+        'init_clients': ['lambda', 'events', 'cloudwatch'],
+        'auto_spawning': False
+    }
 
-    def __init__(self):
-        self.lambda_client = boto3.client('lambda')
-        self.events_client = boto3.client('events')
-        self.cloudwatch_client = boto3.client('cloudwatch')
+    def __init__(self, custom_config=None, **kwargs):
+        """
+        Initialize the Processor.
+        """
+
+        super().__init__(custom_config=custom_config)
 
 
     def any_events_rules_enabled(self, lambda_context):
@@ -77,8 +83,8 @@ class SiblingsManager:
             if any(t['Arn'] == lambda_context.invoked_function_arn for t in targets):
                 logger.info(f"Function {lambda_context.invoked_function_arn} has at least one enabled rule: {rule}")
                 return True
-
-        return False
+        
+        return self.config['auto_spawning']
 
 
     def spawn_sibling(self, lambda_context, payload=None, force=False):

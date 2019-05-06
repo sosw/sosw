@@ -102,7 +102,16 @@ class Scheduler(Processor):
         """
 
         job = self.extract_job_from_payload(event)
-        self.parse_job_to_file(job)
+
+        # If called as sibling
+        if 'file_name' in job:
+            self.set_queue_file(job['file_name'])
+
+        # else construct new data file
+        else:
+            self.set_queue_file()
+            self.parse_job_to_file(job)
+
         self.process_file()
 
 
@@ -517,7 +526,7 @@ class Scheduler(Processor):
                     logger.exception(f"Could not spawn sibling with context: {lambda_context} and payload: {payload}")
 
             self.upload_and_unlock_queue_file()
-            self.clean_tmp(file_name=file_name)
+            self.clean_tmp()
 
 
     @property
@@ -586,7 +595,6 @@ class Scheduler(Processor):
 
         return lambda_context.get_remaining_time_in_millis() < self.config['shutdown_period'] * 1000
 
-
     def get_and_lock_queue_file(self) -> str:
         """
         Either take a new (recently created) file in local /tmp/, or download the version of queue file from S3.
@@ -595,16 +603,10 @@ class Scheduler(Processor):
         :return: Local path to the file.
         """
 
-        global lambda_context
-
-        filename_parts = self._local_queue_file.rsplit('.', 1)
-        assert len(filename_parts) == 2, "Got bad file name"
-        file_name = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
-
-        if not os.path.isfile(file_name):
+        if not os.path.isfile(self._local_queue_file):
             try:
                 self.s3_client.download_file(Bucket=self._queue_bucket, Key=self._remote_queue_file,
-                                             Filename=file_name)
+                                             Filename=self._local_queue_file)
             except self.s3_client.exceptions.ClientError:
                 self.stats['non_existing_remote_queue'] += 1
                 logger.exception(f"Not found remote file to download")
@@ -616,14 +618,15 @@ class Scheduler(Processor):
 
                 self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_file)
 
-                logger.debug(f"Downloaded a copy of {file_name} for processing "
+                logger.debug(f"Downloaded a copy of {self._local_queue_file} for processing "
                              f"and moved the remote one to {self._remote_queue_locked_file}.")
 
         # If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.
         else:
-            self.s3_client.upload_file(Filename=file_name, Bucket=self._queue_bucket,
+            self.s3_client.upload_file(Filename=self._local_queue_file, Bucket=self._queue_bucket,
                                        Key=self._remote_queue_locked_file)
-        return file_name
+
+        return self._local_queue_file
 
 
     def upload_and_unlock_queue_file(self):
@@ -650,6 +653,17 @@ class Scheduler(Processor):
     def _queue_bucket(self):
         """ Name of S3 bucket for file with queue of tasks not yet in DynamoDB. """
         return self.config['queue_bucket']
+
+
+    def set_queue_file(self, name=None):
+        if not name:
+            filename_parts = self._local_queue_file.rsplit('.', 1)
+            assert len(filename_parts) == 2, "Got bad file name"
+            global lambda_context
+            self.config['queue_file'] = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
+
+        else:
+            self.config['queue_file'] = name
 
 
     """ Full path of local file with queue of tasks not yet in DynamoDB. """
