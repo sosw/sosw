@@ -43,8 +43,6 @@ class DynamoDbClient:
         }
 
     """
-
-
     def __init__(self, config):
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
@@ -60,12 +58,37 @@ class DynamoDbClient:
         else:
             logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
 
+        # initialize table store
+        self._table_capacity = {}
+        self.identify_dynamo_capacity(self)
+
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
             self.row_mapper = self.config.get('row_mapper')
 
+    def identify_dynamo_capacity(self, table_name=None):
+        """Identify and store the table capacity for a given table on the object
 
-    @benchmark
+        Arguments:
+            table_name {str} -- short name of the dynamo db table to analyze
+        """
+        # Use the config value if not provided
+        if table_name is None:
+            table_name = self.config['table_name']
+
+        logging.debug(f"DynamoDB table name identified as {table_name}")
+        # Fetch the actual configuration of the dynamodb table directly for
+        table_description = self.dynamo_client.describe_table(
+            TableName=table_name
+        )
+        # Hash to the capacity
+        table_capacity = table_description["Table"]["ProvisionedThroughput"]
+
+        self._table_capacity[table_name]: {
+            'read': int(table_capacity["ReadCapacityUnits"]),
+            'write': int(table_capacity["WriteCapacityUnits"]),
+        }
+
     def dynamo_to_dict(self, dynamo_row, strict=True):
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
@@ -128,7 +151,6 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
     def dict_to_dynamo(self, row_dict, add_prefix=None, strict=True):
         """
         Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.
@@ -175,7 +197,7 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
+    # @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
@@ -331,7 +353,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    @benchmark
+    # @benchmark
     def get_by_scan(self, attrs=None, table_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
@@ -357,7 +379,7 @@ class DynamoDbClient:
         return result
 
 
-    @benchmark
+    # @benchmark
     def get_by_scan_generator(self, attrs=None, table_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
@@ -502,10 +524,11 @@ class DynamoDbClient:
         return query
 
 
-    @benchmark
+    # @benchmark
     def put(self, row, table_name=None):
         """
         Adds a row to the database
+
         :param dict row:            The row to add to the table. key is column name, value is value.
         :param string table_name:   Name of the dynamo table to add the row to
         """
@@ -522,7 +545,7 @@ class DynamoDbClient:
         self.stats['dynamo_put_queries'] += 1
 
 
-    @benchmark
+    # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None):
@@ -665,6 +688,29 @@ class DynamoDbClient:
         :return:    -   dict    - key: int statistics.
         """
         return self.stats
+
+    def get_capacity(self, table_name=None):
+        """Fetches capacity for data tables
+
+        Keyword Arguments:
+            table_name {str} -- DynamoDB (default: {None})
+
+        Returns:
+            dict -- read/write capacity for the table requested
+        """
+
+        if table_name is None:
+            logging.debug(self.config)
+            table_name = self.config['table_name']
+
+        logging.debug(f"DynamoDB table name identified as {table_name}")
+
+        if table_name in self._table_capacity.keys():
+            return self._table_capacity[table_name]
+        else:
+            self.identify_dynamo_capacity(table_name=table_name)
+            return self._table_capacity[table_name]
+
 
 
     def reset_stats(self):
