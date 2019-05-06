@@ -110,7 +110,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
 
     def put_local_file(self, file_name=None, json=False):
-        with open(file_name or self.scheduler._local_queue_file, 'w') as f:
+        with open(file_name or self.scheduler.local_queue_file, 'w') as f:
             for x in range(10):
                 if json:
                     f.write('{"key": "val", "number": "42", "boolean": true, "labourer_id": "some_function"}\n')
@@ -143,8 +143,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.scheduler._queue_bucket, self.scheduler.config['queue_bucket'])
 
 
-    def test__local_queue_file(self):
-        self.assertEqual(self.scheduler._local_queue_file, f"/tmp/{self.scheduler.config['queue_file']}")
+    def testlocal_queue_file(self):
+        self.assertEqual(self.scheduler.local_queue_file, f"/tmp/{self.scheduler.config['queue_file']}")
 
 
     def test__remote_queue_file(self):
@@ -610,11 +610,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             r = self.scheduler.get_and_lock_queue_file()
 
-        filename_parts = self.scheduler._local_queue_file.rsplit('.', 1)
-        file_name = f"{filename_parts[0]}_{module.lambda_context.aws_request_id}.{filename_parts[1]}"
-
-        self.assertEqual(r, file_name)
-
+        self.assertEqual(r, self.scheduler._local_queue_file)
         self.scheduler.s3_client.download_file.assert_not_called()
         self.scheduler.s3_client.copy_object.assert_not_called()
         self.scheduler.s3_client.delete_object.assert_not_called()
@@ -631,9 +627,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(line_count(self.scheduler._local_queue_file), 1)
+        self.assertEqual(line_count(self.scheduler.local_queue_file), 1)
 
-        with open(self.scheduler._local_queue_file, 'r') as f:
+        with open(self.scheduler.local_queue_file, 'r') as f:
             row = json.loads(f.read())
             print(row)
 
@@ -654,9 +650,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(line_count(self.scheduler._local_queue_file), 2)
+        self.assertEqual(line_count(self.scheduler.local_queue_file), 2)
 
-        with open(self.scheduler._local_queue_file, 'r') as f:
+        with open(self.scheduler.local_queue_file, 'r') as f:
             for row in f.readlines():
                 # print(row)
                 parsed_row = json.loads(row)
