@@ -521,3 +521,36 @@ class task_manager_UnitTestCase(unittest.TestCase):
             test.pop(field)
 
             self.assertFalse(self.manager.is_valid_task(test))
+
+
+    def test_health_metrics_received(self):
+        TEST_CFG = {
+            'some_function': {
+                'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+                'max_simultaneous_invocations': 10,
+                'health_metrics':               {
+                    'SomeDBCPU': {
+                        'Name':                        'CPUUtilization',
+                        'Namespace':                   'AWS/RDS',
+                        'Period':                      60,
+                        'Statistics':                  ['Average'],
+                        'Dimensions':                  [
+                            {
+                                'Name':  'DBInstanceIdentifier',
+                                'Value': 'YOUR-DB'
+                            },
+                        ],
+
+                        # These is the mapping of how the Labourer should "feel" about this metric.
+                        # See EcologyManager.ECO_STATUSES.
+                        # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
+                        'feelings':                    {
+                            3: 50,
+                            4: 25,
+                        },
+                        'feeling_comparison_operator': '<='
+                    },
+                },
+            }
+        }
+
