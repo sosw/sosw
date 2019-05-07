@@ -8,7 +8,7 @@ import csv
 
 from collections import defaultdict
 from unittest.mock import MagicMock
-from ..sns import *
+from sosw.components.sns import *
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
