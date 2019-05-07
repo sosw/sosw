@@ -11,6 +11,7 @@ import random
 import time
 
 from collections import defaultdict
+from collections import OrderedDict
 from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
@@ -39,6 +40,7 @@ class EcologyManager(Processor):
     running_tasks = defaultdict(int)
     health_metrics: List = None
     task_client: TaskManager = None  # Will be Circular import! Careful!
+    cloudwatch_client: boto3.client = None
 
 
     def __init__(self, *args, **kwargs):
@@ -112,7 +114,7 @@ class EcologyManager(Processor):
         return health
 
 
-    def get_health(self, value: Union[int, float], metric: Dict) -> bool:
+    def get_health(self, value: Union[int, float], metric: Dict) -> int:
         """
         Checks the value against the health_metric configuration.
         """
@@ -120,9 +122,21 @@ class EcologyManager(Processor):
         op = getattr(operator, metric.get('feeling_comparison_operator'))
 
         # Find the first configured feeling from the map that does not comply.
-        for health, target in metric['feelings']:
+        # Order and validate the feelings
+        feelings = OrderedDict([(key, metric['feelings'][key])
+                                for key in sorted(metric['feelings'].keys(), reverse=True)])
+
+        last_target = 0
+        for health, target in feelings.items():
+            if op(target, last_target):
+                raise ValueError(f"Order of values if feelings is invalid and doesn't match expected eco statuses: "
+                                 f"{feelings.items()}. Failed: {last_target} not "
+                                 f"{metric.get('feeling_comparison_operator')} {target}")
+
             if op(value, target):
                 return health
+
+            last_target = target
 
         return 0
 
@@ -140,7 +154,8 @@ class EcologyManager(Processor):
 
         if labourer.id not in self.running_tasks.keys():
             self.running_tasks[labourer.id] = self.task_client.get_count_of_running_tasks_for_labourer(labourer)
-            logger.debug(f"EcologyManager.count_running_tasks_for_labourer() recalculated cache for Labourer {labourer}")
+            logger.debug(f"EcologyManager.count_running_tasks_for_labourer() recalculated cache for Labourer "
+                         f"{labourer}")
 
         logger.debug(f"EcologyManager.count_running_tasks_for_labourer() returns: {self.running_tasks[labourer.id]}")
         return self.running_tasks[labourer.id]
