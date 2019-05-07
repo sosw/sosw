@@ -79,9 +79,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         }
 
         module.lambda_context = types.SimpleNamespace()
-        module.lambda_context.aws_request_id = 'some_function'
+        module.lambda_context.aws_request_id = 'AWS_REQ_ID'
         module.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        module.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 1000])
+        module.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
 
         with patch('boto3.client'):
             self.scheduler = module.Scheduler(self.custom_config)
@@ -90,6 +90,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.sns_client = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.task_client.get_labourer.return_value = self.LABOURER
+        self.scheduler.siblings_client = MagicMock()
 
         self.scheduler.st_time = time.time()
 
@@ -209,6 +210,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.get_and_lock_queue_file = MagicMock(return_value=self.FNAME)
         self.scheduler.upload_and_unlock_queue_file = MagicMock()
         self.scheduler.task_client = MagicMock()
+        self.scheduler.clean_tmp = MagicMock()
 
         with patch('sosw.scheduler.Scheduler._sleeptime_for_dynamo', new_callable=PropertyMock) as mock_sleeptime:
             mock_sleeptime.return_value = 0.0001
@@ -219,6 +221,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(mock_sleeptime.call_count, 10)
 
             self.scheduler.upload_and_unlock_queue_file.assert_called_once()
+            self.scheduler.clean_tmp.assert_called_once()
+            # number of calls depends on the 'remaining_time_in_millis()' mock
+            self.assertEqual(self.scheduler.siblings_client.spawn_sibling.call_count, 1)
 
 
     ### Tests of construct_job_data ###
@@ -680,3 +685,4 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
+
