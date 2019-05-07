@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 sphinx = "*"
+pytest = "*"
 
 [packages]
 boto3 = "*"

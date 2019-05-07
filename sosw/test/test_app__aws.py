@@ -2,6 +2,8 @@ import boto3
 import os
 import unittest
 
+from unittest.mock import patch
+
 from ..app import Processor
 from ..components.sns import SnsManager
 from ..components.siblings import SiblingsManager
@@ -16,11 +18,14 @@ class app_TestCase(unittest.TestCase):
 
 
     def setUp(self):
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
         self.processor = Processor(custom_config=self.TEST_CONFIG)
 
 
     def tearDown(self):
-        pass
+        self.patcher.stop()
 
 
     def test_app_init(self):
