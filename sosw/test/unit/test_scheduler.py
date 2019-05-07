@@ -373,6 +373,21 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(today.weekday(), datetime.datetime.strptime(last_week, '%Y-%m-%d').weekday())
 
 
+    def test_yesterday(self):
+
+        TESTS = [
+            ('yesterday', ['2019-04-10']),
+        ]
+
+        today = datetime.date(2019, 4, 11)
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.yesterday(test), expected)
+
+
     ### Tests of chunk_job ###
     def test_chunk_job__not_chunkable_config(self):
         self.scheduler.chunkable_attrs = []

@@ -204,6 +204,17 @@ class Scheduler(Processor):
         return [str(today - datetime.timedelta(days=num))]
 
 
+    def yesterday(self, pattern: str) -> List[str]:
+        """
+        Constructs list of date strings for chunking as of yesterday.
+        """
+        assert re.match('yesterday', pattern) is not None, "Invalid pattern {pattern} for `yesterday()`"
+
+        today = datetime.date.today()
+
+        return [str(today - datetime.timedelta(days=1))]
+
+
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
         """
         There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
@@ -216,7 +227,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back']  # , 'yesterday']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday']
 
         if period:
 
@@ -230,7 +241,7 @@ class Scheduler(Processor):
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back'")
+                                 f"'last_X_days', 'X_days_back', 'yesterday'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
