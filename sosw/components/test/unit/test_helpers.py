@@ -283,7 +283,8 @@ class helpers_UnitTestCase(unittest.TestCase):
                          "Failed from epoch time")
 
         t = time.time()
-        self.assertEqual(validate_datetime_from_something(t * 1000), datetime.datetime.fromtimestamp(t, tz=timezone.utc),
+        self.assertEqual(validate_datetime_from_something(t * 1000),
+                         datetime.datetime.fromtimestamp(t, tz=timezone.utc),
                          "Failed with epoch in milliseconds")
 
         self.assertEqual(validate_datetime_from_something(1000.0), datetime.datetime.fromtimestamp(1000),
@@ -565,6 +566,21 @@ class helpers_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(trim_arn_to_name(test), expected)
+
+
+    def test_make_hash(self):
+
+        TESTS = [
+            (((1, 'a'), ('a', 1)), False),  # List
+            (({1, 'a'}, {'a', 1}), True),  # Set
+            (("olleh", "hello"), False),
+            (("hello", "hello"), True),
+            (({1: 'a', 2: 'b'}, {2: 'b', 1: 'a'}), True),  # Unordered Dictionary
+            (({1: 'a', 2: {'2a': {'set', 42}}}, {1: 'a', 2: {'2a': {42, 'set'}}}), True),  # Nested Dictionary
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(make_hash(test[0]) == make_hash(test[1]), expected)
 
 
 if __name__ == '__main__':
