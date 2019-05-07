@@ -16,6 +16,7 @@ from typing import Dict, List, Optional, Union
 from sosw.app import Processor
 from sosw.labourer import Labourer
 from sosw.components.benchmark import benchmark
+from sosw.components.helpers import make_hash
 from sosw.managers.task import TaskManager
 
 
