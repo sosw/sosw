@@ -21,37 +21,6 @@ from sosw.test.variables import TEST_ECOLOGY_CLIENT_CONFIG
 class ecology_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ECOLOGY_CLIENT_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
-    BOTO_RESPONSE = {
-        'ResponseMetadata': {
-            'RequestId': 'be3ddba3-70e4-11e9-9f5d-31d0e015bfe2',
-            'HTTPStatusCode': 200,
-            'HTTPHeaders': {
-                'date': 'Tue, 07 May 2019 16:25:35 GMT',
-                'content-type': 'application/json',
-                'content-length': '816',
-                'connection': 'keep-alive',
-                'x-amzn-requestid': 'be3ddba3-70e4-11e9-9f5d-31d0e015bfe2',
-                },
-            'RetryAttempts': 0,
-            },
-        'FunctionName': 'adw_label_manager',
-        'FunctionArn': 'arn:aws:lambda:us-west-2:737060422660:function:adw_label_manager',
-        'Runtime': 'python3.6',
-        'Role': 'arn:aws:iam::737060422660:role/lambda_adw_label_manager',
-        'Handler': 'app.lambda_handler',
-        'CodeSize': 13964834,
-        'Description': 'ABS. CloudFormation managed. adw_label_manager description.',
-        'Timeout': 300,
-        'MemorySize': 1536,
-        'LastModified': '2019-04-30T08:39:44.125+0000',
-        'CodeSha256': '1MjZMvGz1itPA0C4S5t+yUSoWaCKHOHPyXWG9SGQFSk=',
-        'Version': '$LATEST',
-        'VpcConfig': {'SubnetIds': ['subnet-3e584749', 'subnet-21d9a344'],
-                      'SecurityGroupIds': ['sg-51659436'],
-                      'VpcId': 'vpc-4a741c2f'},
-        'TracingConfig': {'Mode': 'PassThrough'},
-        'RevisionId': 'e64c32c3-339a-4443-a7a4-ab2a81d6d5c7',
-        }
 
 
     def setUp(self):
@@ -144,6 +113,6 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
     def test_get_max_labourer_duration(self):
         self.manager.task_client = MagicMock()
-        self.manager.task_client.lambda_client.get_function_configuration.return_value = self.BOTO_RESPONSE
+        self.manager.task_client.lambda_client.get_function_configuration.return_value = {'Timeout': 300}
 
         self.assertEqual(self.manager.get_max_labourer_duration(self.LABOURER), 300)
