@@ -31,9 +31,7 @@ ECO_STATUSES = (
 
 
 class EcologyManager(Processor):
-    DEFAULT_CONFIG = {
-        'init_clients': ['lambda']
-    }
+    DEFAULT_CONFIG = {}
 
     running_tasks = defaultdict(int)
     task_client: TaskManager = None  # Will be Circular import! Careful!
@@ -127,7 +125,7 @@ class EcologyManager(Processor):
         Maximum duration of `labourer` executions.
         """
 
-        resp = self.lambda_client.get_function_configuration(FunctionName=labourer.arn)
+        resp = self.task_client.lambda_client.get_function_configuration(FunctionName=labourer.arn)
         return resp['Timeout']
 
 
