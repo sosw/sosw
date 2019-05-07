@@ -101,6 +101,7 @@ when displayed as code in rendered HTML. Our convention is 120 characters max wi
 **End of the compiled example.**
 
 
+.. _components-config:
 
 Configuration
 -------------

@@ -20,7 +20,7 @@ Initialization
 
 * Play with it.
 
-* Read the :ref:`Documentaion convention`
+* Read the :ref:`Documentation convention`
 
 
 .. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml

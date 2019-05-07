@@ -8,6 +8,7 @@ import re
 import subprocess
 import time
 import unittest
+import types
 
 from copy import deepcopy
 from pathlib import Path
@@ -19,6 +20,8 @@ from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
+
+import sosw.scheduler as module
 
 
 os.environ["STAGE"] = "test"
@@ -71,14 +74,23 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
+        self.custom_config['siblings_config'] = {
+            'auto_spawning': True
+        }
+
+        module.lambda_context = types.SimpleNamespace()
+        module.lambda_context.aws_request_id = 'AWS_REQ_ID'
+        module.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        module.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
 
         with patch('boto3.client'):
-            self.scheduler = Scheduler(self.custom_config)
+            self.scheduler = module.Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.task_client.get_labourer.return_value = self.LABOURER
+        self.scheduler.siblings_client = MagicMock()
 
         self.scheduler.st_time = time.time()
 
@@ -91,7 +103,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         except:
             pass
 
-        for fname in [self.scheduler._local_queue_file, self.FNAME]:
+        for fname in [self.scheduler.local_queue_file, self.FNAME]:
             try:
                 os.remove(fname)
             except:
@@ -99,7 +111,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
 
     def put_local_file(self, file_name=None, json=False):
-        with open(file_name or self.scheduler._local_queue_file, 'w') as f:
+        with open(file_name or self.scheduler.local_queue_file, 'w') as f:
             for x in range(10):
                 if json:
                     f.write('{"key": "val", "number": "42", "boolean": true, "labourer_id": "some_function"}\n')
@@ -132,20 +144,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.scheduler._queue_bucket, self.scheduler.config['queue_bucket'])
 
 
-    def test__local_queue_file(self):
-        self.assertEqual(self.scheduler._local_queue_file, f"/tmp/{self.scheduler.config['queue_file']}")
-
-
     def test__remote_queue_file(self):
-        self.assertEqual(self.scheduler._remote_queue_file,
-                         f"{self.scheduler.config['s3_prefix'].strip('/')}/"
-                         f"{self.scheduler.config['queue_file'].strip('/')}")
+        self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_file)
+        self.assertIn(module.lambda_context.aws_request_id, self.scheduler.remote_queue_file)
 
 
     def test__remote_queue_locked_file(self):
-        self.assertEqual(self.scheduler._remote_queue_locked_file,
-                         f"{self.scheduler.config['s3_prefix'].strip('/')}/locked_"
-                         f"{self.scheduler.config['queue_file'].strip('/')}")
+        self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_locked_file)
+        self.assertIn('locked_', self.scheduler.remote_queue_locked_file)
+        self.assertIn(module.lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
 
 
     ### Tests of file operations ###
@@ -198,6 +205,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.get_and_lock_queue_file = MagicMock(return_value=self.FNAME)
         self.scheduler.upload_and_unlock_queue_file = MagicMock()
         self.scheduler.task_client = MagicMock()
+        self.scheduler.clean_tmp = MagicMock()
 
         with patch('sosw.scheduler.Scheduler._sleeptime_for_dynamo', new_callable=PropertyMock) as mock_sleeptime:
             mock_sleeptime.return_value = 0.0001
@@ -208,6 +216,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(mock_sleeptime.call_count, 10)
 
             self.scheduler.upload_and_unlock_queue_file.assert_called_once()
+            self.scheduler.clean_tmp.assert_called_once()
+            # number of calls depends on the 'remaining_time_in_millis()' mock
+            self.assertEqual(self.scheduler.siblings_client.spawn_sibling.call_count, 1)
 
 
     ### Tests of construct_job_data ###
@@ -585,10 +596,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_get_and_lock_queue_file__s3_calls(self):
 
-        r = self.scheduler.get_and_lock_queue_file()
-
-        self.assertEqual(r, self.scheduler._local_queue_file)
-
+        self.scheduler.get_and_lock_queue_file()
         self.scheduler.s3_client.download_file.assert_called_once()
         self.scheduler.s3_client.copy_object.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
@@ -602,8 +610,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             r = self.scheduler.get_and_lock_queue_file()
 
-        self.assertEqual(r, self.scheduler._local_queue_file)
-
+        self.assertEqual(r, self.scheduler.local_queue_file)
         self.scheduler.s3_client.download_file.assert_not_called()
         self.scheduler.s3_client.copy_object.assert_not_called()
         self.scheduler.s3_client.delete_object.assert_not_called()
@@ -620,9 +627,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(line_count(self.scheduler._local_queue_file), 1)
+        self.assertEqual(line_count(self.scheduler.local_queue_file), 1)
 
-        with open(self.scheduler._local_queue_file, 'r') as f:
+        with open(self.scheduler.local_queue_file, 'r') as f:
             row = json.loads(f.read())
             print(row)
 
@@ -643,9 +650,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.parse_job_to_file(SAMPLE_SIMPLE_JOB)
 
-        self.assertEqual(line_count(self.scheduler._local_queue_file), 2)
+        self.assertEqual(line_count(self.scheduler.local_queue_file), 2)
 
-        with open(self.scheduler._local_queue_file, 'r') as f:
+        with open(self.scheduler.local_queue_file, 'r') as f:
             for row in f.readlines():
                 # print(row)
                 parsed_row = json.loads(row)
@@ -673,3 +680,4 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
+
