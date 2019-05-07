@@ -125,7 +125,6 @@ class EcologyManager(Processor):
     def get_max_labourer_duration(self, labourer: Labourer) -> int:
         """
         Maximum duration of `labourer` executions.
-        Should ask this from aws:lambda API, but at the moment use the hardcoded maximum.
         """
 
         resp = self.lambda_client.get_function_configuration(FunctionName=labourer.arn)
