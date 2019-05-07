@@ -237,6 +237,22 @@ class Scheduler(Processor):
         return [str(datetime.date.today())]
 
 
+    def last_week(self, pattern: str = 'last_week') -> List[str]:
+        """
+        Returns list of dates (YYYY-MM-DD) as strings for last week (Sunday - Saturday)
+        :param pattern:
+        :return:
+        """
+        assert re.match('last_week', pattern) is not None, "Invalid pattern {pattern} for `last_week()`"
+
+        today = datetime.date.today()
+        end_date = today - datetime.timedelta(days=today.weekday() + 8)
+
+        return [str(end_date + datetime.timedelta(days=x)) for x in range(7)]
+
+
+
+
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
         """
         There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
@@ -249,7 +265,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week']
 
         if period:
 
@@ -263,7 +279,7 @@ class Scheduler(Processor):
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days'")
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
