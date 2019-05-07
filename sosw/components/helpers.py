@@ -27,6 +27,7 @@ __all__ = ['validate_account_to_dashed',
            'first_or_none',
            'recursive_update',
            'trim_arn_to_name',
+           'make_hash',
            ]
 
 import re
@@ -711,3 +712,24 @@ def trim_arn_to_name(arn: str) -> str:
               "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
 
     return re.search(pattern, arn).group('name')
+
+
+def make_hash(o):
+    """
+    Makes a hash from a dictionary, list, tuple or set to any level, that contains
+    only other hashable types (including any lists, tuples, sets, and
+    dictionaries).
+    https://stackoverflow.com/users/660554/jomido
+    """
+
+    if isinstance(o, (set, tuple, list)):
+        return tuple([make_hash(e) for e in o])
+
+    elif not isinstance(o, dict):
+        return hash(o)
+
+    new_o = deepcopy(o)
+    for k, v in new_o.items():
+        new_o[k] = make_hash(v)
+
+    return hash(tuple(frozenset(sorted(new_o.items()))))
