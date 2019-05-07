@@ -70,35 +70,35 @@ class TaskManager(Processor):
         'greenfield_invocation_delta':             31557600,  # 1 year.
         'greenfield_task_step':                    1000,
         'labourers':                               {
-            'some_function': {
-                'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
-                'max_simultaneous_invocations': 10,
-                'health_metrics':               {
-                    'SomeDBCPU': {
-                        'details':                     {
-                            'Name':       'CPUUtilization',
-                            'Namespace':  'AWS/RDS',
-                            'Period':     60,
-                            'Statistics': ['Average'],
-                            'Dimensions': [
-                                {
-                                    'Name':  'DBInstanceIdentifier',
-                                    'Value': 'YOUR-DB'
-                                },
-                            ],
-                        },
-
-                        # These is the mapping of how the Labourer should "feel" about this metric.
-                        # See EcologyManager.ECO_STATUSES.
-                        # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
-                        'feelings':                    {
-                            3: 50,
-                            4: 25,
-                        },
-                        'feeling_comparison_operator': '<='
-                    },
-                },
-            },
+            # 'some_function': {
+            #     'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+            #     'max_simultaneous_invocations': 10,
+            #     'health_metrics':               {
+            #         'SomeDBCPU': {
+            #             'details':                     {
+            #                 'Name':       'CPUUtilization',
+            #                 'Namespace':  'AWS/RDS',
+            #                 'Period':     60,
+            #                 'Statistics': ['Average'],
+            #                 'Dimensions': [
+            #                     {
+            #                         'Name':  'DBInstanceIdentifier',
+            #                         'Value': 'YOUR-DB'
+            #                     },
+            #                 ],
+            #             },
+            #
+            #             # These is the mapping of how the Labourer should "feel" about this metric.
+            #             # See EcologyManager.ECO_STATUSES.
+            #             # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
+            #             'feelings':                    {
+            #                 3: 50,
+            #                 4: 25,
+            #             },
+            #             'feeling_comparison_operator': '<='
+            #         },
+            #     },
+            # },
         },
         'max_attempts':                            3,
         'max_closed_to_analyse_for_duration':      10,
