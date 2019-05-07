@@ -87,7 +87,9 @@ class Scheduler(Processor):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        self._local_queue_file = self.get_local_queue_file()
+
+        self.set_queue_file()
+
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
@@ -109,7 +111,6 @@ class Scheduler(Processor):
 
         # else construct new data file
         else:
-            self.set_queue_file()
             self.parse_job_to_file(job)
 
         self.process_file()
@@ -611,7 +612,7 @@ class Scheduler(Processor):
 
         if not os.path.isfile(self.local_queue_file):
             try:
-                self.s3_client.download_file(Bucket=self._queue_bucket, Key=self._remote_queue_file,
+                self.s3_client.download_file(Bucket=self._queue_bucket, Key=self.remote_queue_file,
                                              Filename=self.local_queue_file)
             except self.s3_client.exceptions.ClientError:
                 self.stats['non_existing_remote_queue'] += 1
@@ -619,18 +620,18 @@ class Scheduler(Processor):
 
             else:
                 self.s3_client.copy_object(Bucket=self._queue_bucket,
-                                           CopySource=f"{self._queue_bucket}/{self._remote_queue_file}",
-                                           Key=self._remote_queue_locked_file)
+                                           CopySource=f"{self._queue_bucket}/{self.remote_queue_file}",
+                                           Key=self.remote_queue_locked_file)
 
-                self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_file)
+                self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self.remote_queue_file)
 
                 logger.debug(f"Downloaded a copy of {self.local_queue_file} for processing "
-                             f"and moved the remote one to {self._remote_queue_locked_file}.")
+                             f"and moved the remote one to {self.remote_queue_locked_file}.")
 
         # If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.
         else:
             self.s3_client.upload_file(Filename=self.local_queue_file, Bucket=self._queue_bucket,
-                                       Key=self._remote_queue_locked_file)
+                                       Key=self.remote_queue_locked_file)
 
         return self.local_queue_file
 
@@ -638,21 +639,18 @@ class Scheduler(Processor):
     def upload_and_unlock_queue_file(self):
         """
         Upload the local queue file to S3 and remove the `locked_` by prefix copy if it exists.
-
-        # TODO Should first validate that the `locked` belongs to you. Your should probably abandon everything if not.
-        # TODO Otherwise your `_remote_queue_file` will likely get overwritten by someone.
         """
 
         # If there is data left unprocessed in the file, upload it for future processing by siblings or someone else.
         if os.path.isfile(self.local_queue_file):
             self.s3_client.upload_file(Filename=self.local_queue_file, Bucket=self._queue_bucket,
-                                       Key=self._remote_queue_file)
+                                       Key=self.remote_queue_file)
 
         # Delete the locked file from S3 (aka unlock)
         try:
-            self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self._remote_queue_locked_file)
+            self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self.remote_queue_locked_file)
         except self.s3_client.exceptions.ClientError:
-            logger.debug(f"No remote locked file to remove: {self._remote_queue_locked_file}. This is probably new.")
+            logger.debug(f"No remote locked file to remove: {self.remote_queue_locked_file}. This is probably new.")
 
 
     @property
@@ -661,45 +659,36 @@ class Scheduler(Processor):
         return self.config['queue_bucket']
 
 
-    def set_queue_file(self, name=None):
-        if not name:
+    def set_queue_file(self, name: str = None):
+        """
+        Initialize a unique file_name to store the queue of tasks to write.
+        """
+
+        global lambda_context
+
+        if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            global lambda_context
-            self.local_queue_file = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
-
+            self._queue_file_name = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
-            self.local_queue_file = name
+            self._queue_file_name = name
 
-
-    """ Full path of local file with queue of tasks not yet in DynamoDB. """
-    def get_local_queue_file(self):
-        # TODO should add some labourer id here and some job ID or something.
-
-        return f"/tmp/{self.config['queue_file'].strip('/')}"
 
     @property
     def local_queue_file(self):
-        return self._local_queue_file
-
-    @local_queue_file.setter
-    def local_queue_file(self, value):
-        self._local_queue_file = value
+        return f"/tmp/{self._queue_file_name}"
 
 
     @property
-    def _remote_queue_file(self):
+    def remote_queue_file(self):
         """ Full S3 Key of file with queue of tasks not yet in DynamoDB. """
-        return f"{self.config['s3_prefix'].strip('/')}/{self.config['queue_file'].strip('/')}"
+        return f"{self.config['s3_prefix'].strip('/')}/{self._queue_file_name}"
 
 
     @property
-    def _remote_queue_locked_file(self):
+    def remote_queue_locked_file(self):
         """
         Full S3 Key of file with queue of tasks not yet in DynamoDB in the `locked` state.
         Concurrent processes should not touch it.
-
-        # TODO Make sure this has some invocation ID of current run or smth.
-        # TODO Otherwise some parallel process may just write a new _remote_queue_file and kill this one.
         """
-        return f"{self.config['s3_prefix'].strip('/')}/locked_{self.config['queue_file'].strip('/')}"
+        return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"

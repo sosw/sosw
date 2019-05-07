@@ -103,7 +103,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         except:
             pass
 
-        for fname in [self.scheduler._local_queue_file, self.FNAME]:
+        for fname in [self.scheduler.local_queue_file, self.FNAME]:
             try:
                 os.remove(fname)
             except:
@@ -144,20 +144,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.scheduler._queue_bucket, self.scheduler.config['queue_bucket'])
 
 
-    def test_local_queue_file(self):
-        self.assertEqual(self.scheduler.local_queue_file, f"/tmp/{self.scheduler.config['queue_file']}")
-
-
     def test__remote_queue_file(self):
-        self.assertEqual(self.scheduler._remote_queue_file,
-                         f"{self.scheduler.config['s3_prefix'].strip('/')}/"
-                         f"{self.scheduler.config['queue_file'].strip('/')}")
+        self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_file)
+        self.assertIn(module.lambda_context.aws_request_id, self.scheduler.remote_queue_file)
 
 
     def test__remote_queue_locked_file(self):
-        self.assertEqual(self.scheduler._remote_queue_locked_file,
-                         f"{self.scheduler.config['s3_prefix'].strip('/')}/locked_"
-                         f"{self.scheduler.config['queue_file'].strip('/')}")
+        self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_locked_file)
+        self.assertIn('locked_', self.scheduler.remote_queue_locked_file)
+        self.assertIn(module.lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
 
 
     ### Tests of file operations ###
@@ -615,7 +610,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             r = self.scheduler.get_and_lock_queue_file()
 
-        self.assertEqual(r, self.scheduler._local_queue_file)
+        self.assertEqual(r, self.scheduler.local_queue_file)
         self.scheduler.s3_client.download_file.assert_not_called()
         self.scheduler.s3_client.copy_object.assert_not_called()
         self.scheduler.s3_client.delete_object.assert_not_called()

@@ -7,6 +7,7 @@ import os
 from math import ceil
 from sosw import Processor
 
+
 __author__ = "Nikolay Grishchenko"
 __email__ = "dev@bimpression.com"
 __version__ = "1.00"
@@ -46,17 +47,13 @@ class SiblingsManager(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients': ['lambda', 'events', 'cloudwatch'],
+        'init_clients':  ['lambda', 'events', 'cloudwatch'],
         'auto_spawning': False
     }
 
-    def __init__(self, custom_config=None, **kwargs):
-        """
-        Initialize the Processor.
-        """
-
-        super().__init__(custom_config=custom_config)
-
+    events_client: boto3.client = None
+    lambda_client: boto3.client = None
+    cloudwatch_client: boto3.client = None
 
     def any_events_rules_enabled(self, lambda_context):
         """

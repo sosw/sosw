@@ -47,7 +47,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         self.s3_client.upload_file(Filename=local or self.scheduler.local_queue_file,
                                    Bucket='autotest-bucket',
-                                   Key=key or self.scheduler._remote_queue_file)
+                                   Key=key or self.scheduler.remote_queue_file)
 
         if only_remote:
             try:
@@ -92,15 +92,15 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.put_file(only_remote=True)
 
         # Check old artifacts
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         r = self.scheduler.get_and_lock_queue_file()
 
         self.assertEqual(r, self.scheduler.local_queue_file)
 
-        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         number_of_lines = line_count(self.scheduler.local_queue_file)
         # print(f"Number of lines: {number_of_lines}")
@@ -110,31 +110,31 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
     def test_upload_and_unlock_queue_file(self):
 
         # Check old artifacts
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         self.make_local_file('Demida')
 
         self.scheduler.upload_and_unlock_queue_file()
 
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
 
 
     def test_upload_and_unlock_queue_file__handles_existing_locked(self):
 
-        self.put_file(key=self.scheduler._remote_queue_locked_file)
+        self.put_file(key=self.scheduler.remote_queue_locked_file)
 
         # Check old artifacts
-        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         self.make_local_file('Nora')
 
         self.scheduler.upload_and_unlock_queue_file()
 
-        self.assertFalse(self.exists_in_s3(self.scheduler._remote_queue_locked_file))
-        self.assertTrue(self.exists_in_s3(self.scheduler._remote_queue_file))
+        self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
+        self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
 
 
 
