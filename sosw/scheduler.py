@@ -209,8 +209,15 @@ class Scheduler(Processor):
         Simple wrapper for x_days_back() to return yesterday's date.
         """
         assert re.match('yesterday', pattern) is not None, "Invalid pattern {pattern} for `yesterday()`"
-
         return self.x_days_back('1_days_back')
+
+
+    def today(self, pattern: str = 'today') -> List[str]:
+        """
+        Returns list with one datetime string (YYYY-MM-DD) equal to today's date.
+        """
+        assert re.match('today', pattern) is not None, "Invalid pattern {pattern} for `today()`"
+        return [str(datetime.date.today())]
 
 
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
@@ -225,7 +232,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today']
 
         if period:
 
@@ -239,7 +246,7 @@ class Scheduler(Processor):
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back', 'yesterday'")
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
