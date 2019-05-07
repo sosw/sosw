@@ -32,6 +32,7 @@ ECO_STATUSES = (
 
 class EcologyManager(Processor):
     DEFAULT_CONFIG = {
+        'init_clients': ['lambda']
     }
 
     running_tasks = defaultdict(int)
@@ -125,10 +126,10 @@ class EcologyManager(Processor):
         """
         Maximum duration of `labourer` executions.
         Should ask this from aws:lambda API, but at the moment use the hardcoded maximum.
-        # TODO implement me.
         """
 
-        return 900
+        resp = self.lambda_client.get_function_configuration(FunctionName=labourer.arn)
+        return resp['Timeout']
 
 
     # The task_client of EcologyManager is just a pointer. We skip recursive stats to avoid infinite loop.
