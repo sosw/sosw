@@ -264,6 +264,29 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
 
     ### Tests of chunk_dates ###
+    def test_chunk_dates(self):
+        TESTS = [
+            ({'period': 'yesterday'}, 'yesterday'),
+            ({'period': 'last_3_days'}, 'last_x_days'),
+            ({'period': '10_days_back'}, 'x_days_back'),
+        ]
+
+        for test, func_name in TESTS:
+            FUNCTIONS = ['yesterday', 'last_x_days', 'x_days_back']
+            for f in FUNCTIONS:
+                setattr(self.scheduler, f, MagicMock())
+
+            self.scheduler.chunk_dates(test)
+
+            func = getattr(self.scheduler, func_name)
+            func.assert_called_once()
+
+            for bad_f_name in [x for x in FUNCTIONS if not x == func_name]:
+                bad_f = getattr(self.scheduler, bad_f_name)
+                bad_f.assert_not_called()
+
+
+
     def test_chunk_dates__preserve_skeleton(self):
         TESTS = [
             {'period': 'last_1_days', 'a': 'foo'},

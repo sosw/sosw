@@ -204,15 +204,13 @@ class Scheduler(Processor):
         return [str(today - datetime.timedelta(days=num))]
 
 
-    def yesterday(self, pattern: str) -> List[str]:
+    def yesterday(self, pattern: str = 'yesterday') -> List[str]:
         """
-        Constructs list of date strings for chunking as of yesterday.
+        Simple wrapper for x_days_back() to return yesterday's date.
         """
         assert re.match('yesterday', pattern) is not None, "Invalid pattern {pattern} for `yesterday()`"
 
-        today = datetime.date.today()
-
-        return [str(today - datetime.timedelta(days=1))]
+        return self.x_days_back('1_days_back')
 
 
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
