@@ -148,3 +148,7 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
         self.assertRaises(ValueError, self.manager.get_health, 60, METRIC), \
         "Did not raise while the feelings are invalid. Order of values should respect order of health statuses."
+
+
+    def test_get_labourer_status(self):
+        raise NotImplementedError
