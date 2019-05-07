@@ -188,6 +188,23 @@ class Scheduler(Processor):
         return [str(today - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
 
 
+    def previous_x_days(self, pattern: str) -> List[str]:
+        """
+        Returns a list of string dates from today - x - x
+
+        For example, consider today's date as 2019-04-30.
+        If I call for previous_x_days(pattern='previous_2_days'), I will receive a list of string dates equal to:
+        ['2019-04-26', '2019-04-27']
+        """
+        assert re.match('previous_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `previous_x_days()`"
+
+        num = int(pattern.split('_')[1])
+        today = datetime.date.today()
+        end_date = today - datetime.timedelta(days=num)
+
+        return [str(end_date - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
+
+
     def x_days_back(self, pattern: str) -> List[str]:
         """
         Finds the exact date X days back from now.
@@ -232,7 +249,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days']
 
         if period:
 
@@ -246,7 +263,7 @@ class Scheduler(Processor):
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today'")
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."

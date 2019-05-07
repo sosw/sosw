@@ -270,10 +270,11 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             ({'period': 'yesterday'}, 'yesterday'),
             ({'period': 'last_3_days'}, 'last_x_days'),
             ({'period': '10_days_back'}, 'x_days_back'),
+            ({'period': 'previous_2_days'}, 'previous_x_days'),
         ]
 
         for test, func_name in TESTS:
-            FUNCTIONS = ['today', 'yesterday', 'last_x_days', 'x_days_back']
+            FUNCTIONS = ['today', 'yesterday', 'last_x_days', 'x_days_back', 'previous_x_days']
             for f in FUNCTIONS:
                 setattr(self.scheduler, f, MagicMock())
 
@@ -422,6 +423,20 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             for test, expected in TESTS:
                 self.assertEqual(self.scheduler.today(test), expected)
+
+    def test_previous_x_days(self):
+        today = datetime.date(2019, 4, 30)
+
+        TESTS = [
+            ('previous_2_days', ['2019-04-26', '2019-04-27']),
+            ('previous_3_days', ['2019-04-24', '2019-04-25', '2019-04-26'])
+        ]
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.previous_x_days(test), expected)
 
 
     ### Tests of chunk_job ###
