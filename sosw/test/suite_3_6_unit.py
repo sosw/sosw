@@ -1,5 +1,3 @@
-import unittest
-
 # Core applications
 from .unit.test_app import app_UnitTestCase
 from .unit.test_labourer import Labourer_UnitTestCase
@@ -11,8 +9,8 @@ from .unit.test_scheduler import Scheduler_UnitTestCase
 from ..components.test.unit.test_config import Config_UnitTestCase
 from ..components.test.unit.test_dynamo_db import dynamodb_client_UnitTestCase
 from ..components.test.unit.test_helpers import helpers_UnitTestCase
-from ..components.test.test_siblings import siblings_TestCase
-from ..components.test.test_sns import sns_TestCase
+from sosw.components.test.unit.test_siblings import siblings_TestCase
+from sosw.components.test.unit.test_sns import sns_TestCase
 
 # Managers
 from ..managers.test.unit.test_task import *
