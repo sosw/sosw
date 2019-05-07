@@ -17,6 +17,7 @@ from sosw.app import Processor
 from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
+# from sosw.managers.ecology import EcologyManager
 from sosw.labourer import Labourer
 
 
@@ -74,21 +75,23 @@ class TaskManager(Processor):
                 'max_simultaneous_invocations': 10,
                 'health_metrics':               {
                     'SomeDBCPU': {
-                        'Name':               'CPUUtilization',
-                        'Namespace':          'AWS/RDS',
-                        'Period':             60,
-                        'Statistics':         ['Average'],
-                        'Dimensions':         [
-                            {
-                                'Name':  'DBInstanceIdentifier',
-                                'Value': 'YOUR-DB'
-                            },
-                        ],
+                        'details':                     {
+                            'Name':       'CPUUtilization',
+                            'Namespace':  'AWS/RDS',
+                            'Period':     60,
+                            'Statistics': ['Average'],
+                            'Dimensions': [
+                                {
+                                    'Name':  'DBInstanceIdentifier',
+                                    'Value': 'YOUR-DB'
+                                },
+                            ],
+                        },
 
                         # These is the mapping of how the Labourer should "feel" about this metric.
                         # See EcologyManager.ECO_STATUSES.
                         # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
-                        'feelings':           {
+                        'feelings':                    {
                             3: 50,
                             4: 25,
                         },
@@ -105,9 +108,10 @@ class TaskManager(Processor):
     __labourers = None
 
     # these clients will be initialized by Processor constructor
+    # ecology_client: EcologyManager = None
     ecology_client = None
     dynamo_db_client: DynamoDbClient = None
-    lambda_client = None
+    lambda_client: boto3.client = None
 
 
     def get_oldest_greenfield_for_labourer(self, labourer: Labourer, reverse: bool = False) -> int:

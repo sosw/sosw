@@ -5,12 +5,13 @@ __version__ = "1.0"
 import boto3
 import json
 import logging
+import operator
 import os
 import random
 import time
 
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
@@ -35,6 +36,7 @@ class EcologyManager(Processor):
     }
 
     running_tasks = defaultdict(int)
+    health_metrics: List = None
     task_client: TaskManager = None  # Will be Circular import! Careful!
 
 
@@ -43,7 +45,7 @@ class EcologyManager(Processor):
 
 
     def __call__(self, event):
-        raise NotImplemented
+        raise NotImplementedError
 
 
     def register_task_manager(self, task_manager: TaskManager):
@@ -67,10 +69,61 @@ class EcologyManager(Processor):
         return [x[0] for x in ECO_STATUSES]
 
 
+    def fetch_metric_stats(self, **kwargs):
+
+        result = self.cloudwatch_client.get_metric_statistics(**kwargs)
+
+        return result
+
+
     def get_labourer_status(self, labourer: Labourer) -> int:
-        """ FIXME """
-        return 4
-        # return random.choice(self.eco_statuses)
+        """
+        Get the worst (lowest) health status according to preconfigured health metrics of the Labourer.
+
+        .. _ECO_STATUSES:
+
+        Current ECO_STATUSES:
+
+        - (0, 'Bad')
+        - (1, 'Poor')
+        - (2, 'Moderate')
+        - (3, 'Good')
+        - (4, 'High')
+        """
+
+        health = max(map(lambda x: x[0], ECO_STATUSES))
+
+        for health_metric in getattr(labourer, 'health_metrics', []):
+
+            metric_hash = make_hash(health_metric['details'])
+            if metric_hash not in self.health_metrics:
+                self.health_metrics[metric_hash] = self.fetch_metric_stats(**health_metric['details'])
+                logger.info(f"Updated the cache of Ecology metric {metric_hash} - {health_metric} "
+                            f"with {self.health_metrics[metric_hash]}")
+
+            value = self.health_metrics[metric_hash]
+            logger.debug(f"Ecology metric {metric_hash} has {value}")
+
+            health = min(health, self.get_health(value, metric=health_metric))
+
+        logger.info(f"Ecology health of Labourer {labourer} is {health}")
+
+        return health
+
+
+    def get_health(self, value: Union[int, float], metric: Dict) -> bool:
+        """
+        Checks the value against the health_metric configuration.
+        """
+
+        op = getattr(operator, metric.get('feeling_comparison_operator'))
+
+        # Find the first configured feeling from the map that does not comply.
+        for health, target in metric['feelings']:
+            if op(value, target):
+                return health
+
+        return 0
 
 
     def count_running_tasks_for_labourer(self, labourer: Labourer) -> int:
