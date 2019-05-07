@@ -33,6 +33,7 @@ import re
 import collections
 import uuid
 import datetime
+from datetime import timezone
 
 from copy import deepcopy
 from typing import Iterable, Callable, Dict, Mapping
@@ -324,7 +325,7 @@ def validate_datetime_from_something(d):
         (datetime.date, lambda x: datetime.datetime.combine(x, datetime.datetime.min.time())),
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
-        else datetime.datetime.fromtimestamp(x / 1000)),
+        else datetime.datetime.fromtimestamp(x / 1000, tz=timezone.utc)),
         (str, lambda x: datetime.datetime.strptime(d, '%Y-%m-%d')
         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))
     ]

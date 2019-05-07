@@ -3,6 +3,7 @@ import datetime
 import logging
 import unittest
 import os
+from unittest.mock import patch
 
 from sosw.worker_assistant import WorkerAssistant
 
@@ -35,6 +36,9 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         """
         self.config = self.TEST_CONFIG.copy()
 
+        self.patcher = patch("sosw.app.get_config")
+        self.get_config_patch = self.patcher.start()
+
         self.table_name = self.config['dynamo_db_config']['table_name']
         self.HASH_KEY = ('task_id', 'S')
 
@@ -46,6 +50,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
 
     def tearDown(self):
+        self.patcher.stop()
         self.clean_task_tables()
 
 
