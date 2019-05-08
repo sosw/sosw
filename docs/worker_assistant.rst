@@ -1,3 +1,5 @@
+.. _Worker Assistant:
+
 Worker Assitant
 ---------------
 

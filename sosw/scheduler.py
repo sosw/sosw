@@ -142,7 +142,7 @@ class Scheduler(Processor):
     #     for task in data:
     #         self.task_client.create_task(labourer=labourer, payload=task)
 
-    def validate_list_of_vals(self, data: Union[List, Set, Tuple, Dict]) -> List:
+    def validate_list_of_vals(self, data: Union[list, set, tuple, Dict]) -> list:
         """
         Supported resulting values: str, int, float.
 
