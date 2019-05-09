@@ -719,17 +719,28 @@ def make_hash(o):
     Makes a hash from a dictionary, list, tuple or set to any level, that contains
     only other hashable types (including any lists, tuples, sets, and
     dictionaries).
+
+    Original idea from this user:
     https://stackoverflow.com/users/660554/jomido
+
+    Plus some upgrades to work with sets and dicts having different types of keys appropriately.
+    See source unittests of this function for some more details.
     """
 
-    if isinstance(o, (set, tuple, list)):
+    if isinstance(o, (tuple, list)):
         return tuple([make_hash(e) for e in o])
+
+    # Set should be sorted (by hashes of elements) before returns
+    elif isinstance(o, set):
+        return tuple(sorted([make_hash(e) for e in o]))
 
     elif not isinstance(o, dict):
         return hash(o)
 
-    new_o = deepcopy(o)
-    for k, v in new_o.items():
-        new_o[k] = make_hash(v)
+    # We are left with a dictionary
+    new_o = dict()
+    for k, v in o.items():
+        # hash both keys and values to make sure types and order doesn't affect.
+        new_o[make_hash(k)] = make_hash(v)
 
     return hash(tuple(frozenset(sorted(new_o.items()))))

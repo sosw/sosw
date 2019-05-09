@@ -38,7 +38,7 @@ class EcologyManager(Processor):
     }
 
     running_tasks = defaultdict(int)
-    health_metrics: List = None
+    health_metrics: Dict = None
     task_client: TaskManager = None  # Will be Circular import! Careful!
     cloudwatch_client: boto3.client = None
 
@@ -65,6 +65,9 @@ class EcologyManager(Processor):
 
         logger.info("Reset cache of running_tasks counter in EcologyManager")
         self.running_tasks = defaultdict(int)
+
+        logger.info("Reset cache of health_metrics in EcologyManager")
+        self.health_metrics = dict()
 
 
     @property
@@ -96,7 +99,7 @@ class EcologyManager(Processor):
 
         health = max(map(lambda x: x[0], ECO_STATUSES))
 
-        for health_metric in getattr(labourer, 'health_metrics', []):
+        for health_metric in getattr(labourer, 'health_metrics', dict()).values():
 
             metric_hash = make_hash(health_metric['details'])
             if metric_hash not in self.health_metrics:

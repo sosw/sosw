@@ -73,8 +73,11 @@ class TaskManager(Processor):
             # 'some_function': {
             #     'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
             #     'max_simultaneous_invocations': 10,
+            #     # Health metrics for this Labourer should be stored in a dictionary.
             #     'health_metrics':               {
+            #     # Name of the metric is just for human readability (probaly some future GUI interfaces),
             #         'SomeDBCPU': {
+            #             # The value must have ``'details'`` as a dict with kwargs for CloudWatch client.
             #             'details':                     {
             #                 'Name':       'CPUUtilization',
             #                 'Namespace':  'AWS/RDS',

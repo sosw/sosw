@@ -4,9 +4,10 @@ import time
 import unittest
 import os
 
-from collections import defaultdict
+from copy import deepcopy
 from unittest.mock import MagicMock, patch
 
+from sosw.components.helpers import make_hash
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -21,6 +22,11 @@ from sosw.test.variables import TEST_ECOLOGY_CLIENT_CONFIG
 class ecology_manager_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ECOLOGY_CLIENT_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+    SAMPLE_HEALTH_METRICS = {
+        'test1': {'details': {'Name': 'CPUUtilization', 'Namespace': 'AWS/RDS'}},
+        'test2': {'details': {'Name': 'CPUUtilization2', 'Namespace': 'AWS/RDS'}},
+        'test3': {'details': {'Name': 'CPUUtilization3', 'Namespace': 'AWS/RDS'}},
+    }
 
 
     def setUp(self):
@@ -151,4 +157,51 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_get_labourer_status(self):
-        raise NotImplementedError
+        self.manager.get_health = MagicMock(side_effect=[3, 2, 4])
+        self.manager.register_task_manager(MagicMock())
+        self.manager.fetch_metric_stats = MagicMock()
+        self.health_metrics = dict()
+
+        labourer = deepcopy(self.LABOURER)
+        setattr(labourer, 'health_metrics', self.SAMPLE_HEALTH_METRICS)
+
+        # Calling the actual tested method.
+        result = self.manager.get_labourer_status(labourer)
+
+        # The result should be the lowest of values get_health would have returned out of three calls.
+        self.assertEqual(result, 2, f"Did not get the lowest health result. Received: {result}")
+
+        # Chech the the get_health had been called three times (for each metric).
+        self.manager.get_health.assert_called()
+        self.assertEqual(self.manager.get_health.call_count, 3)
+
+        self.manager.fetch_metric_stats.assert_called()
+        self.assertEqual(self.manager.fetch_metric_stats.call_count, 3)
+
+
+    def test_get_labourer_status__uses_cache(self):
+
+        self.manager.get_health = MagicMock(return_value=0)
+        self.manager.register_task_manager(MagicMock())
+        self.manager.fetch_metric_stats = MagicMock()
+
+        labourer = deepcopy(self.LABOURER)
+        setattr(labourer, 'health_metrics', self.SAMPLE_HEALTH_METRICS)
+
+        self.manager.health_metrics = {make_hash(labourer.health_metrics['test1']['details']): 42}
+
+        # Calling the actual tested method.
+        result = self.manager.get_labourer_status(labourer)
+
+        # Assert calculator (get_health) was called 3 times.
+        self.assertEqual(self.manager.get_health.call_count, 3)
+        self.assertEqual(self.manager.fetch_metric_stats.call_count, 2,
+                         f"Fetcher was supposed to be called only for 2 metrics. One is in cache.")
+
+
+    def test_fetch_metric_stats__calls_boto(self):
+
+        self.manager.cloudwatch_client = MagicMock()
+        self.manager.fetch_metric_stats(a=1, b={3: 42})
+
+        self.manager.cloudwatch_client.get_metric_statistics.assert_called_once_with(a=1, b={3: 42})
