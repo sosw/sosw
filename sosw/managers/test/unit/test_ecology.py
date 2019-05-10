@@ -109,3 +109,10 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
         # But the counter of tasks in cache should have.
         self.assertEqual(self.manager.running_tasks[self.LABOURER.id],
                          tm.get_count_of_running_tasks_for_labourer.return_value + 1 + 5)
+
+
+    def test_get_max_labourer_duration(self):
+        self.manager.task_client = MagicMock()
+        self.manager.task_client.lambda_client.get_function_configuration.return_value = {'Timeout': 300}
+
+        self.assertEqual(self.manager.get_max_labourer_duration(self.LABOURER), 300)
