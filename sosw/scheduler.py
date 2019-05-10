@@ -200,6 +200,23 @@ class Scheduler(Processor):
         return [str(today - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
 
 
+    def previous_x_days(self, pattern: str) -> List[str]:
+        """
+        Returns a list of string dates from today - x - x
+
+        For example, consider today's date as 2019-04-30.
+        If I call for previous_x_days(pattern='previous_2_days'), I will receive a list of string dates equal to:
+        ['2019-04-26', '2019-04-27']
+        """
+        assert re.match('previous_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `previous_x_days()`"
+
+        num = int(pattern.split('_')[1])
+        today = datetime.date.today()
+        end_date = today - datetime.timedelta(days=num)
+
+        return [str(end_date - datetime.timedelta(days=x)) for x in range(num, 0, -1)]
+
+
     def x_days_back(self, pattern: str) -> List[str]:
         """
         Finds the exact date X days back from now.
@@ -216,6 +233,38 @@ class Scheduler(Processor):
         return [str(today - datetime.timedelta(days=num))]
 
 
+    def yesterday(self, pattern: str = 'yesterday') -> List[str]:
+        """
+        Simple wrapper for x_days_back() to return yesterday's date.
+        """
+        assert re.match('yesterday', pattern) is not None, "Invalid pattern {pattern} for `yesterday()`"
+        return self.x_days_back('1_days_back')
+
+
+    def today(self, pattern: str = 'today') -> List[str]:
+        """
+        Returns list with one datetime string (YYYY-MM-DD) equal to today's date.
+        """
+        assert re.match('today', pattern) is not None, "Invalid pattern {pattern} for `today()`"
+        return [str(datetime.date.today())]
+
+
+    def last_week(self, pattern: str = 'last_week') -> List[str]:
+        """
+        Returns list of dates (YYYY-MM-DD) as strings for last week (Sunday - Saturday)
+        :param pattern:
+        :return:
+        """
+        assert re.match('last_week', pattern) is not None, "Invalid pattern {pattern} for `last_week()`"
+
+        today = datetime.date.today()
+        end_date = today - datetime.timedelta(days=today.weekday() + 8)
+
+        return [str(end_date + datetime.timedelta(days=x)) for x in range(7)]
+
+
+
+
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
         """
         There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
@@ -228,7 +277,7 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back']  # , 'yesterday']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week']
 
         if period:
 
@@ -242,7 +291,7 @@ class Scheduler(Processor):
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back'")
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."

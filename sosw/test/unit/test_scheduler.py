@@ -275,6 +275,32 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
 
     ### Tests of chunk_dates ###
+    def test_chunk_dates(self):
+        TESTS = [
+            ({'period': 'today'}, 'today'),
+            ({'period': 'yesterday'}, 'yesterday'),
+            ({'period': 'last_3_days'}, 'last_x_days'),
+            ({'period': '10_days_back'}, 'x_days_back'),
+            ({'period': 'previous_2_days'}, 'previous_x_days'),
+            ({'period': 'last_week'}, 'last_week')
+        ]
+
+        for test, func_name in TESTS:
+            FUNCTIONS = ['today', 'yesterday', 'last_x_days', 'x_days_back', 'previous_x_days', 'last_week']
+            for f in FUNCTIONS:
+                setattr(self.scheduler, f, MagicMock())
+
+            self.scheduler.chunk_dates(test)
+
+            func = getattr(self.scheduler, func_name)
+            func.assert_called_once()
+
+            for bad_f_name in [x for x in FUNCTIONS if not x == func_name]:
+                bad_f = getattr(self.scheduler, bad_f_name)
+                bad_f.assert_not_called()
+
+
+
     def test_chunk_dates__preserve_skeleton(self):
         TESTS = [
             {'period': 'last_1_days', 'a': 'foo'},
@@ -382,6 +408,66 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             last_week = self.scheduler.x_days_back('7_days_back')[0]
         self.assertEqual(today.weekday(), datetime.datetime.strptime(last_week, '%Y-%m-%d').weekday())
+
+
+    def test_yesterday(self):
+
+        TESTS = [
+            ('yesterday', ['2019-04-10']),
+        ]
+
+        today = datetime.date(2019, 4, 11)
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.yesterday(test), expected)
+
+    def test_today(self):
+        TESTS = [
+            ('today', ['2019-04-10']),
+        ]
+        today = datetime.date(2019, 4, 10)
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.today(test), expected)
+
+    def test_previous_x_days(self):
+        today = datetime.date(2019, 4, 30)
+
+        TESTS = [
+            ('previous_2_days', ['2019-04-26', '2019-04-27']),
+            ('previous_3_days', ['2019-04-24', '2019-04-25', '2019-04-26'])
+        ]
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.previous_x_days(test), expected)
+
+    def test_last_week(self):
+        today = datetime.date(2019, 4, 30)
+
+        TESTS = [
+            ('last_week', ['2019-04-21',
+                           '2019-04-22',
+                           '2019-04-23',
+                           '2019-04-24',
+                           '2019-04-25',
+                           '2019-04-26',
+                           '2019-04-27'])
+        ]
+
+        with patch('sosw.scheduler.datetime.date') as mdt:
+            mdt.today.return_value = today
+
+            for test, expected in TESTS:
+                self.assertEqual(self.scheduler.last_week(test), expected)
 
 
     ### Tests of chunk_job ###
