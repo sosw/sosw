@@ -300,10 +300,11 @@ class DynamoDbClient:
         paginator = self.dynamo_client.get_paginator('query')
         response_iterator = paginator.paginate(**query_args)
         result = []
-        for page in response_iterator:
-            if return_count:
-                return page['Count']
 
+        if return_count:
+            return sum([page['Count'] for page in response_iterator])
+
+        for page in response_iterator:
             result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:
