@@ -27,6 +27,10 @@ TEST_ECOLOGY_CLIENT_CONFIG = {
     'test': True
 }
 
+TEST_SIBLINGS_CLIENT_CONFIG = {
+    'test': True
+}
+
 TEST_TASK_CLIENT_CONFIG = {
     'init_clients':                      [],
     'dynamo_db_config':                  TASKS_TABLE_CONFIG,
@@ -59,6 +63,7 @@ TEST_SCAVENGER_CONFIG = {
 TEST_SCHEDULER_CONFIG = {
     'init_clients':   [],
     'ecology_config': TEST_ECOLOGY_CLIENT_CONFIG,
+    'siblings_config': TEST_SIBLINGS_CLIENT_CONFIG,
     'task_config':    TEST_TASK_CLIENT_CONFIG,
     'job_schema':     {
         'chunkable_attrs': [
