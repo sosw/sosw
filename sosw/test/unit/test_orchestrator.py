@@ -28,7 +28,6 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         with patch('boto3.client'):
             self.orchestrator = Orchestrator(self.custom_config)
 
-        # self.orchestrator.task_client = MagicMock()
 
 
     def tearDown(self):

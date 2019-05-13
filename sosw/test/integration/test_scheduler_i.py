@@ -17,7 +17,6 @@ os.environ["autotest"] = "True"
 class Scheduler_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
 
-
     @classmethod
     def setUpClass(cls):
         cls.TEST_CONFIG['init_clients'] = ['S3', ]
@@ -68,7 +67,8 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = self.TEST_CONFIG.copy()
-        self.scheduler = Scheduler(self.custom_config)
+        with patch('sosw.scheduler.lambda_context') as mock_lambda_context:
+            self.scheduler = Scheduler(self.custom_config)
 
         self.s3_client = boto3.client('s3')
 
@@ -135,6 +135,3 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
-
-
-
