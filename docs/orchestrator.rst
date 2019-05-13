@@ -49,6 +49,31 @@ The following diagram represents the basic Task Workflow initiated by the Orches
            'some_function': {
                'arn':                          f"arn:aws:lambda:us-west-2:737060422660:function:some_function",
                'max_simultaneous_invocations': 10,
+               'health_metrics':               {
+                   'SomeDBCPU': {
+                       'details':                     {
+                           'Name':       'CPUUtilization',
+                           'Namespace':  'AWS/RDS',
+                           'Period':     60,
+                           'Statistics': ['Average'],
+                           'Dimensions': [
+                               {
+                                   'Name':  'DBInstanceIdentifier',
+                                   'Value': 'YOUR-DB'
+                               },
+                           ],
+                       },
+
+                       # These is the mapping of how the Labourer should "feel" about this metric.
+                       # See EcologyManager.ECO_STATUSES.
+                       # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
+                       'feelings':                    {
+                           3: 50,
+                           4: 25,
+                       },
+                       'feeling_comparison_operator': '<='
+                   },
+               },
            },
        },
    }

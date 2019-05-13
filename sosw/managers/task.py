@@ -17,6 +17,7 @@ from sosw.app import Processor
 from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
+# from sosw.managers.ecology import EcologyManager
 from sosw.labourer import Labourer
 
 
@@ -38,11 +39,11 @@ class TaskManager(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients': ['DynamoDb', 'lambda', 'Ecology'],
-        'dynamo_db_config': {
+        'init_clients':                            ['DynamoDb', 'lambda', 'Ecology'],
+        'dynamo_db_config':                        {
             'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
-            'row_mapper': {
+            'row_mapper':       {
                 'task_id':             'S',
                 'labourer_id':         'S',
                 'created_at':          'N',
@@ -70,9 +71,37 @@ class TaskManager(Processor):
         'greenfield_task_step':                    1000,
         'labourers':                               {
             # 'some_function': {
-            #     'arn': 'arn:aws:lambda:us-west-2:0000000000:function:some_function',
+            #     'arn':                          'arn:aws:lambda:us-west-2:0000000000:function:some_function',
             #     'max_simultaneous_invocations': 10,
-            # }
+            #     # Health metrics for this Labourer should be stored in a dictionary.
+            #     'health_metrics':               {
+            #     # Name of the metric is just for human readability (probaly some future GUI interfaces),
+            #         'SomeDBCPU': {
+            #             # The value must have ``'details'`` as a dict with kwargs for CloudWatch client.
+            #             'details':                     {
+            #                 'Name':       'CPUUtilization',
+            #                 'Namespace':  'AWS/RDS',
+            #                 'Period':     60,
+            #                 'Statistics': ['Average'],
+            #                 'Dimensions': [
+            #                     {
+            #                         'Name':  'DBInstanceIdentifier',
+            #                         'Value': 'YOUR-DB'
+            #                     },
+            #                 ],
+            #             },
+            #
+            #             # These is the mapping of how the Labourer should "feel" about this metric.
+            #             # See EcologyManager.ECO_STATUSES.
+            #             # This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.
+            #             'feelings':                    {
+            #                 3: 50,
+            #                 4: 25,
+            #             },
+            #             'feeling_comparison_operator': '<='
+            #         },
+            #     },
+            # },
         },
         'max_attempts':                            3,
         'max_closed_to_analyse_for_duration':      10,
@@ -82,9 +111,10 @@ class TaskManager(Processor):
     __labourers = None
 
     # these clients will be initialized by Processor constructor
+    # ecology_client: EcologyManager = None
     ecology_client = None
     dynamo_db_client: DynamoDbClient = None
-    lambda_client = None
+    lambda_client: boto3.client = None
 
 
     def get_oldest_greenfield_for_labourer(self, labourer: Labourer, reverse: bool = False) -> int:
@@ -165,6 +195,7 @@ class TaskManager(Processor):
             ('invoked', lambda x: x.get_attr('start') + self.config['greenfield_invocation_delta']),
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
+            ('health_metrics', lambda x: _cfg('labourers')[x.id].get('health_metrics')),
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
             ('max_duration', lambda x: self.ecology_client.get_max_labourer_duration(x)),
             ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
@@ -538,12 +569,12 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         query_args = {
-            'keys':        {
+            'keys':              {
                 _('labourer_id'): labourer.id,
                 _('greenfield'):  str(time.time()),
             },
-            'comparisons': {_('greenfield'): '>='},
-            'index_name':  self.config['dynamo_db_config']['index_greenfield'],
+            'comparisons':       {_('greenfield'): '>='},
+            'index_name':        self.config['dynamo_db_config']['index_greenfield'],
             'filter_expression': f"attribute_exists {_('completed_at')}",
         }
 
@@ -611,7 +642,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                f"bad value: {task[_('labourer_id')]}"
+                                                          f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 
@@ -636,6 +667,7 @@ class TaskManager(Processor):
                 self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
 
             self.stats['due_for_retry_tasks'] += 1
+
 
     @benchmark
     def get_average_labourer_duration(self, labourer: Labourer) -> int:

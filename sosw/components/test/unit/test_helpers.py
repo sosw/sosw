@@ -576,11 +576,11 @@ class helpers_UnitTestCase(unittest.TestCase):
             (("olleh", "hello"), False),
             (("hello", "hello"), True),
             (({1: 'a', 2: 'b'}, {2: 'b', 1: 'a'}), True),  # Unordered Dictionary
-            (({1: 'a', 2: {'2a': {'set', 42}}}, {1: 'a', 2: {'2a': {42, 'set'}}}), True),  # Nested Dictionary
+            (({1: 'a', 'bar': {'2a': {'set', 42}}}, {'bar': {'2a': {42, 'set'}}, 1: 'a'}), True),  # Nested Dictionary
         ]
 
         for test, expected in TESTS:
-            self.assertEqual(make_hash(test[0]) == make_hash(test[1]), expected)
+            self.assertEqual(make_hash(test[0]) == make_hash(test[1]), expected, f"Failed specific test: {test}")
 
 
 if __name__ == '__main__':
