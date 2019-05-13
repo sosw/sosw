@@ -41,12 +41,12 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.table_name = 'autotest_dynamo_db'
 
         self.patcher = patch("boto3.client")
-        self.dynamo_mock = MagicMock()
         self.paginator_mock = MagicMock()
+        self.dynamo_mock = MagicMock()
+        self.dynamo_mock.get_paginator.return_value = self.paginator_mock
 
         self.boto3_client_patch = self.patcher.start()
         self.boto3_client_patch.return_value = self.dynamo_mock
-        self.dynamo_mock.get_paginator.return_value = self.paginator_mock
 
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
@@ -157,10 +157,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_get_by_query__between(self):
         keys = {'hash_col': 'cat', 'st_between_range_col': '3', 'en_between_range_col': '6'}
 
-        # paginator = MagicMock()
-        # self.dynamo_mock.get_paginator.return_value = p
-
-
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
         self.dynamo_client.get_by_query(keys=keys)
@@ -172,6 +168,22 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertEqual(len(kwargs['ExpressionAttributeValues']), 3)
         self.assertIn('range_col between :st_between_range_col and :en_between_range_col',
                       kwargs['KeyConditionExpression'])
+
+
+    def test_get_by_query__return_count(self):
+
+        # Make sure dynamo paginator is mocked.
+        self.paginator_mock.paginate.return_value = [{'Count': 24, 'LastEvaluatedKey': 'bzz'}, {'Count': 12}]
+        self.dynamo_client.dynamo_client.get_paginator.return_value = self.paginator_mock
+
+        # Call the manager
+        result = self.dynamo_client.get_by_query(keys={'a': 'b'}, return_count=True)
+
+        # Validate result
+        self.assertEqual(result, 36, f"Result from 2 pages should be 24 + 12, but we received: {result}")
+
+        # Make sure the paginator was called
+        self.dynamo_client.dynamo_client.get_paginator.assert_called()
 
 
     def test__parse_filter_expression(self):
