@@ -10,6 +10,7 @@ import time
 import uuid
 
 from copy import deepcopy
+from json.decoder import JSONDecodeError
 from pkg_resources import parse_version
 from typing import Dict, List, Optional, Union
 
@@ -195,7 +196,7 @@ class TaskManager(Processor):
             ('invoked', lambda x: x.get_attr('start') + self.config['greenfield_invocation_delta']),
             ('expired', lambda x: x.get_attr('invoked') - (x.duration + x.cooldown)),
             ('health', lambda x: self.ecology_client.get_labourer_status(x)),
-            ('health_metrics', lambda x: _cfg('labourers')[x.id].get('health_metrics')),
+            ('health_metrics', lambda x: _cfg('labourers')[x.id].get('health_metrics')) or {},
             ('max_attempts', lambda x: self.config.get(f'max_attempts_{x.id}') or self.config['max_attempts']),
             ('max_duration', lambda x: self.ecology_client.get_max_labourer_duration(x)),
             ('average_duration', lambda x: self.ecology_client.get_labourer_average_duration(x)),
@@ -371,6 +372,13 @@ class TaskManager(Processor):
 
         # Flatten the payload
         call_payload = task.pop('payload', {})
+        if isinstance(call_payload, str):
+            try:
+                call_payload = json.loads(call_payload)
+            except JSONDecodeError as err:
+                logger.exception(f"Failed to decode payload: {call_payload}. Probably invalid task.")
+                # TODO should panic, but not die here. Just skip the task.
+
         call_payload.update(task)
 
         # Support for asyncio does not exist for botocore right now. See ticket below:
@@ -642,7 +650,7 @@ class TaskManager(Processor):
 
         for task in tasks:
             assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                                                          f"bad value: {task[_('labourer_id')]}"
+                f"bad value: {task[_('labourer_id')]}"
 
         lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
 

@@ -1,4 +1,5 @@
 import boto3
+import datetime
 import logging
 import time
 import unittest
@@ -209,6 +210,35 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
     def test_fetch_metric_stats__calls_boto(self):
 
         self.manager.cloudwatch_client = MagicMock()
-        self.manager.fetch_metric_stats(a=1, b={3: 42})
+        self.manager.fetch_metric_stats(metric={'a': 1, 'b': {3: 42}})
 
-        self.manager.cloudwatch_client.get_metric_statistics.assert_called_once_with(a=1, b={3: 42})
+        self.manager.cloudwatch_client.get_metric_statistics.assert_called_once()
+
+
+    def test_fetch_metric_stats__calculates_time(self):
+
+        MOCK_DATE = datetime.datetime(2019, 1, 1, 0, 42, 0)
+        self.manager.cloudwatch_client = MagicMock()
+
+        with patch('datetime.datetime') as t:
+            t.now.return_value = MOCK_DATE
+            self.manager.fetch_metric_stats(metric={'a': 1, 'b': {3: 42}})
+
+        args, kwargs = self.manager.cloudwatch_client.get_metric_statistics.call_args
+        # print(kwargs)
+
+        self.assertEqual(kwargs['EndTime'], MOCK_DATE)
+        self.assertEqual(kwargs['StartTime'],
+                         MOCK_DATE - datetime.timedelta(
+                                 seconds=self.manager.config['default_metric_values']['MetricAggregationTimeSlice']))
+
+
+    def test_fetch_metric_stats__use_defaults(self):
+        self.manager.cloudwatch_client = MagicMock()
+
+        self.manager.fetch_metric_stats(metric={'a': 1})
+
+        _, kwargs = self.manager.cloudwatch_client.get_metric_statistics.call_args
+
+        # Checking some default from hardcoded DEFAULT_CONFIG
+        self.assertEqual(kwargs['Period'], self.manager.config['default_metric_values']['Period'])

@@ -59,7 +59,8 @@ class Labourer:
         """ Set timestamp attributes with some validation. Normally TaskManager is supposed to call me. """
 
         if name not in self.CUSTOM_ATTRIBUTES:
-            raise ValueError(f"Supported values are: {', '.join(self.CUSTOM_ATTRIBUTES)}")
+            raise ValueError(f"Failed to set custom attribute {name} with value {value} for Labourer {self.id}. "
+                             f"Supported attributes are: {', '.join(self.CUSTOM_ATTRIBUTES)}.")
         logger.debug(f"Labourer {self.id} set custom attribute {name} with {value}")
         setattr(self, name, value)
 
