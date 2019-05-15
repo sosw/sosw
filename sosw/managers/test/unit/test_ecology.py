@@ -66,7 +66,8 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
         self.config = self.TEST_CONFIG.copy()
 
-        self.manager = EcologyManager(custom_config=self.config)
+        with patch('boto3.client'):
+            self.manager = EcologyManager(custom_config=self.config)
 
 
     def tearDown(self):
