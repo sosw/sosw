@@ -18,8 +18,8 @@ logger.setLevel(logging.INFO)
 
 class Labourer:
     ATTRIBUTES = ('id', 'arn')
-    CUSTOM_ATTRIBUTES = ('start', 'invoked', 'expired', 'health', 'max_attempts', 'average_duration', 'max_duration',
-                         'max_simultaneous_invocations', 'arn')
+    CUSTOM_ATTRIBUTES = ('arn', 'start', 'invoked', 'expired', 'health', 'health_metrics', 'average_duration',
+                         'max_duration', 'max_attempts', 'max_simultaneous_invocations')
     id = None
     arn = None
 
@@ -59,7 +59,8 @@ class Labourer:
         """ Set timestamp attributes with some validation. Normally TaskManager is supposed to call me. """
 
         if name not in self.CUSTOM_ATTRIBUTES:
-            raise ValueError(f"Supported values are: {', '.join(self.CUSTOM_ATTRIBUTES)}")
+            raise ValueError(f"Failed to set custom attribute {name} with value {value} for Labourer {self.id}. "
+                             f"Supported attributes are: {', '.join(self.CUSTOM_ATTRIBUTES)}.")
         logger.debug(f"Labourer {self.id} set custom attribute {name} with {value}")
         setattr(self, name, value)
 

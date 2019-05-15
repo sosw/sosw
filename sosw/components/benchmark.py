@@ -15,11 +15,12 @@ def benchmark(fn):
     """
 
 
-    def _timing(self, *a, **kw):
+    def _timing_and_call_counter(self, *a, **kw):
         st = time.perf_counter()
         r = fn(self, *a, **kw)
         self.stats[f"time_{fn.__name__}"] += time.perf_counter() - st
+        self.stats[f"calls_{fn.__name__}"] += 1
         return r
 
 
-    return _timing
+    return _timing_and_call_counter

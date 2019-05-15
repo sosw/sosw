@@ -26,8 +26,9 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         self.custom_config = self.TEST_CONFIG.copy()
         self.orchestrator = Orchestrator(self.custom_config)
-
-        self.s3_client = boto3.client('s3')
+        self.orchestrator.task_client.ecology_client = MagicMock()
+        self.orchestrator.task_client.ecology_client.get_labourer_status.return_value = 4
+        self.orchestrator.task_client.ecology_client.count_running_tasks_for_labourer.return_value = 0
 
 
     def tearDown(self):
@@ -43,4 +44,4 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.orchestrator({'event': 42})
 
         some_labourer = self.orchestrator.task_client.register_labourers()[0]
-        self.orchestrator.task_client.ecology_client.count_running_tasks_for_labourer(some_labourer)
+        # self.orchestrator.task_client.ecology_client.count_running_tasks_for_labourer(some_labourer)

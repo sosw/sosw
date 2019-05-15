@@ -1,8 +1,9 @@
-.. _bi_doc_convention:
+.. _Documentation Convention:
 
-==============
-Doc Convention
-==============
+========================
+Documentation Convention
+========================
+
 
 This document states the convention that we follow for writing Documentation and especially docstrings for
 classes and functions in Better Impression. This convention is based on
@@ -100,6 +101,7 @@ when displayed as code in rendered HTML. Our convention is 120 characters max wi
 **End of the compiled example.**
 
 
+.. _components-config:
 
 Configuration
 -------------

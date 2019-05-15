@@ -43,7 +43,10 @@ class app_UnitTestCase(unittest.TestCase):
     @mock.patch("boto3.client")
     def test_app_init__with_some_clients(self, mock_boto_client):
         custom_config = {
-            'init_clients': ['Sns', 'Siblings']
+            'init_clients': ['Sns', 'Siblings'],
+            'siblings_config': {
+                "test": True
+            }
         }
 
         processor = Processor(custom_config=custom_config)
@@ -55,7 +58,10 @@ class app_UnitTestCase(unittest.TestCase):
     @mock.patch("boto3.client")
     def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
         custom_config = {
-            'init_clients': ['dynamodb', 'Siblings']
+            'init_clients': ['dynamodb', 'Siblings'],
+            'siblings_config': {
+                "test": True
+            }
         }
 
         processor = Processor(custom_config=custom_config)

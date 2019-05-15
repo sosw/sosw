@@ -27,12 +27,14 @@ __all__ = ['validate_account_to_dashed',
            'first_or_none',
            'recursive_update',
            'trim_arn_to_name',
+           'make_hash',
            ]
 
 import re
 import collections
 import uuid
 import datetime
+from datetime import timezone
 
 from copy import deepcopy
 from typing import Iterable, Callable, Dict, Mapping
@@ -324,7 +326,7 @@ def validate_datetime_from_something(d):
         (datetime.date, lambda x: datetime.datetime.combine(x, datetime.datetime.min.time())),
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
-        else datetime.datetime.fromtimestamp(x / 1000)),
+        else datetime.datetime.fromtimestamp(x / 1000, tz=timezone.utc)),
         (str, lambda x: datetime.datetime.strptime(d, '%Y-%m-%d')
         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))
     ]
@@ -710,3 +712,35 @@ def trim_arn_to_name(arn: str) -> str:
               "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
 
     return re.search(pattern, arn).group('name')
+
+
+def make_hash(o):
+    """
+    Makes a hash from a dictionary, list, tuple or set to any level, that contains
+    only other hashable types (including any lists, tuples, sets, and
+    dictionaries).
+
+    Original idea from this user:
+    https://stackoverflow.com/users/660554/jomido
+
+    Plus some upgrades to work with sets and dicts having different types of keys appropriately.
+    See source unittests of this function for some more details.
+    """
+
+    if isinstance(o, (tuple, list)):
+        return tuple([make_hash(e) for e in o])
+
+    # Set should be sorted (by hashes of elements) before returns
+    elif isinstance(o, set):
+        return tuple(sorted([make_hash(e) for e in o]))
+
+    elif not isinstance(o, dict):
+        return hash(o)
+
+    # We are left with a dictionary
+    new_o = dict()
+    for k, v in o.items():
+        # hash both keys and values to make sure types and order doesn't affect.
+        new_o[make_hash(k)] = make_hash(v)
+
+    return hash(tuple(frozenset(sorted(new_o.items()))))

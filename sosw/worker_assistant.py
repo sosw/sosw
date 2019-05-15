@@ -6,6 +6,18 @@ from sosw.components.helpers import get_one_from_dict
 
 
 class WorkerAssistant(Processor):
+    """
+    Worker Assistant is the interface Worker Lambdas should call to mark their tasks completed.
+
+    The future versions will also accept the remaining workload to process to call Siblings in case the worker is
+    about to time out and wants to finish healthy.
+
+    This Essential is supposed to be called synchronously by the Worker Lambdas.
+    Should pass the ``action`` and ``task_id`` attributes in the payload of the call.
+
+    See example of the usage in :ref:`Worker`.
+    """
+
     DEFAULT_CONFIG = {
         'init_clients':     ['DynamoDb'],
         'dynamo_db_config': {
