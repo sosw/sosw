@@ -6,9 +6,11 @@ import unittest
 import os
 
 from copy import deepcopy
+from dateutil.tz import tzlocal
 from unittest.mock import MagicMock, patch
 
 from sosw.components.helpers import make_hash
+
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -27,6 +29,29 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
         'test1': {'details': {'Name': 'CPUUtilization', 'Namespace': 'AWS/RDS'}},
         'test2': {'details': {'Name': 'CPUUtilization2', 'Namespace': 'AWS/RDS'}},
         'test3': {'details': {'Name': 'CPUUtilization3', 'Namespace': 'AWS/RDS'}},
+    }
+
+    SAMPLE_GET_METRICS_STATISTICS_RESPONSE = {
+        'Label':            'CPUUtilization',
+        'Datapoints':       [{
+                                 'Timestamp': datetime.datetime(2019, 5, 13, 14, 3, tzinfo=tzlocal()),
+                                 'Average':   31.3333333345751,
+                                 'Unit':      'Percent'
+                             },
+                             {
+                                 'Timestamp': datetime.datetime(2019, 5, 13, 14, 0, tzinfo=tzlocal()),
+                                 'Average':   100.0,
+                                 'Unit':      'Percent'
+                             },
+                             {
+                                 'Timestamp': datetime.datetime(2019, 5, 13, 14, 4, tzinfo=tzlocal()),
+                                 'Average':   29.4999999987582,
+                                 'Unit':      'Percent'
+                             },
+        ],
+        'ResponseMetadata': {
+            'HTTPStatusCode': 200,
+        }
     }
 
 
@@ -188,7 +213,6 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_get_labourer_status__uses_cache(self):
-
         self.manager.get_health = MagicMock(return_value=0)
         self.manager.register_task_manager(MagicMock())
         self.manager.fetch_metric_stats = MagicMock()
@@ -208,17 +232,17 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_fetch_metric_stats__calls_boto(self):
-
         self.manager.cloudwatch_client = MagicMock()
+        self.manager.cloudwatch_client.get_metric_statistics.return_value = self.SAMPLE_GET_METRICS_STATISTICS_RESPONSE
         self.manager.fetch_metric_stats(metric={'a': 1, 'b': {3: 42}})
 
         self.manager.cloudwatch_client.get_metric_statistics.assert_called_once()
 
 
     def test_fetch_metric_stats__calculates_time(self):
-
         MOCK_DATE = datetime.datetime(2019, 1, 1, 0, 42, 0)
         self.manager.cloudwatch_client = MagicMock()
+        self.manager.cloudwatch_client.get_metric_statistics.return_value = self.SAMPLE_GET_METRICS_STATISTICS_RESPONSE
 
         with patch('datetime.datetime') as t:
             t.now.return_value = MOCK_DATE
@@ -235,6 +259,7 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
     def test_fetch_metric_stats__use_defaults(self):
         self.manager.cloudwatch_client = MagicMock()
+        self.manager.cloudwatch_client.get_metric_statistics.return_value = self.SAMPLE_GET_METRICS_STATISTICS_RESPONSE
 
         self.manager.fetch_metric_stats(metric={'a': 1})
 
