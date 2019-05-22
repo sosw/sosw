@@ -725,20 +725,52 @@ class DynamoDbClient:
         self.stats = defaultdict(int)
 
 
-def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range_col')):
+def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range_col'), filter_expression=None):
     """
     Cleans the DynamoDB Table. Only for autotest tables.
 
     :param str table_name: name of the table
     :param tuple keys: the keys of the table
-    :return:
+    :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
+        e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+
+    .. warning:: There are some reserved words that woud not work with
+                 Filter Expression in case they are attribute names. Fix this one day.
+
     """
 
     assert table_name.startswith('autotest_')
 
     client = boto3.client('dynamodb')
-    for row in client.scan(TableName=table_name)['Items']:
-        client.delete_item(
-                TableName=table_name,
-                Key={key: row[key] for key in keys}
-        )
+    paginator = client.get_paginator('scan')
+    stats = defaultdict(int)
+
+    query_args = {
+        'TableName': table_name,
+        'Select':    'ALL_ATTRIBUTES',
+    }
+
+    if filter_expression:
+        # We use DynamoDbClient class only for static method to construct Filter Expression. No need for config.
+        dynamo_client = DynamoDbClient(config={'row_mapper': {'name': 'S', }})
+
+        query_args['FilterExpression'] = {}
+        expr, values = dynamo_client._parse_filter_expression(filter_expression)
+        query_args['FilterExpression'] = expr
+        query_args['ExpressionAttributeValues'] = values
+
+    response_iterator = paginator.paginate(**query_args)
+
+    for page in response_iterator:
+        stats['dynamo_scan_queries'] += 1
+
+        for row in page['Items']:
+            client.delete_item(
+                    TableName=table_name,
+                    Key={key: row[key] for key in keys}
+            )
+
+            stats['deleted'] += 1
+        logger.debug(f"clean_dynamo_table() of '{table_name}': {stats}")
+
+    logger.info(f"clean_dynamo_table() of '{table_name}': {stats}")
