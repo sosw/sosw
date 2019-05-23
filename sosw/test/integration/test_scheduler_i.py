@@ -67,8 +67,8 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = self.TEST_CONFIG.copy()
-        with patch('sosw.scheduler.lambda_context') as mock_lambda_context:
-            self.scheduler = Scheduler(self.custom_config)
+        self.lambda_context = MagicMock()
+        self.scheduler = Scheduler(self.custom_config, context=self.lambda_context)
 
         self.s3_client = boto3.client('s3')
 
