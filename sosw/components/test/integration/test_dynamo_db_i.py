@@ -81,6 +81,15 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(len(items) > 0)
 
 
+    def test_put__create(self):
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        with self.assertRaises(Exception):
+            self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
+
+
     def test_update__updates(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
         row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}

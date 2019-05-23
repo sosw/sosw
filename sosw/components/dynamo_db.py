@@ -39,6 +39,7 @@ class DynamoDbClient:
             },
             'required_fields': ['col_name_1']
             'table_name': 'some_table_name',  # If a table is not specified, this table will be used.
+            'hash_key': 'the_hash_key',
             'dont_json_loads_results': True  # Use this if you don't want to convert json strings into json
         }
 
@@ -509,13 +510,16 @@ class DynamoDbClient:
         return result
 
 
-    def build_put_query(self, row, table_name=None):
+    def build_put_query(self, row, table_name=None, overwrite_existing=True):
         table_name = self._get_validate_table_name(table_name)
         dynamo_formatted_row = self.dict_to_dynamo(row, strict=False)
         query = {
             'TableName': table_name,
             'Item':      dynamo_formatted_row
         }
+        if not overwrite_existing:
+            hash_key = self.config['hash_key']
+            query['ConditionExpression'] = f"attribute_not_exists({hash_key})"
         return query
 
 
@@ -530,17 +534,18 @@ class DynamoDbClient:
 
 
     # @benchmark
-    def put(self, row, table_name=None):
+    def put(self, row, table_name=None, overwrite_existing=True):
         """
         Adds a row to the database
 
-        :param dict row:            The row to add to the table. key is column name, value is value.
-        :param string table_name:   Name of the dynamo table to add the row to
+        :param dict row:                The row to add to the table. key is column name, value is value.
+        :param string table_name:       Name of the dynamo table to add the row to.
+        :param bool overwrite_existing: Overwrite the existing row if True, otherwise will raise an exception if exists.
         """
 
         table_name = self._get_validate_table_name(table_name)
 
-        put_query = self.build_put_query(row, table_name)
+        put_query = self.build_put_query(row, table_name, overwrite_existing)
         logger.debug(f"Put to DB: {put_query}")
 
         dynamo_response = self.dynamo_client.put_item(**put_query)
@@ -548,6 +553,10 @@ class DynamoDbClient:
         logger.debug(f"Response from dynamo {dynamo_response}")
 
         self.stats['dynamo_put_queries'] += 1
+
+
+    def create(self, row, table_name=None):
+        self.put(row, table_name, overwrite_existing=False)
 
 
     # @benchmark
