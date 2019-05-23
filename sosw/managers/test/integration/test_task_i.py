@@ -47,6 +47,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.HASH_KEY = ('task_id', 'S')
         self.RANGE_KEY = ('labourer_id', 'S')
+        self.NOW_TIME = 100000
+
         self.table_name = self.config['dynamo_db_config']['table_name']
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
         self.retry_tasks_table = self.config['sosw_retry_tasks_table']
@@ -195,7 +197,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     def test_mark_task_invoked(self):
-        greenfield = round(time.time() - random.randint(100, 1000))
+        greenfield = 1000
         delta = self.manager.config['greenfield_invocation_delta']
         self.register_labourers()
 
@@ -208,13 +210,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # print(f"Saved initial version with greenfield some date not long ago: {row}")
 
         # Do the actual tested job
-        self.manager.mark_task_invoked(self.LABOURER, row)
-        time.sleep(1)
+        with patch('time.time') as mock_time:
+            mock_time.return_value = self.NOW_TIME
+            self.manager.mark_task_invoked(self.LABOURER, row)
+
         result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, strict=False)
         # print(f"The new updated value of task is: {result}")
 
         # Rounded -2 we check that the greenfield was updated
-        self.assertAlmostEqual(round(int(time.time()) + delta, -2), round(result[0]['greenfield'], -2))
+        self.assertAlmostEqual(self.NOW_TIME + delta, result[0]['greenfield'])
 
 
     def test_get_invoked_tasks_for_labourer(self):
@@ -301,23 +305,26 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(task)
 
-        self.manager.move_task_to_retry_table(task, delay)
+        # Call
+        with patch('time.time') as mock_time:
+            mock_time.return_value = self.NOW_TIME
+            self.manager.move_task_to_retry_table(task, delay)
 
-        result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
-        self.assertEqual(len(result_tasks), 0)
+            result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+            self.assertEqual(len(result_tasks), 0)
 
-        result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id},
-                                                             table_name=self.retry_tasks_table)
-        self.assertEqual(len(result_retry_tasks), 1)
-        result = first_or_none(result_retry_tasks)
+            result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id},
+                                                                 table_name=self.retry_tasks_table)
+            self.assertEqual(len(result_retry_tasks), 1)
+            result = first_or_none(result_retry_tasks)
 
-        for k in task:
-            self.assertEqual(task[k], result[k])
-        for k in result:
-            if k != _('desired_launch_time'):
-                self.assertEqual(result[k], task[k])
+            for k in task:
+                self.assertEqual(task[k], result[k])
+            for k in result:
+                if k != _('desired_launch_time'):
+                    self.assertEqual(result[k], task[k])
 
-        self.assertTrue(time.time() + delay - 60 < result[_('desired_launch_time')] < time.time() + delay + 60)
+            self.assertTrue(time.time() + delay - 60 < result[_('desired_launch_time')] < time.time() + delay + 60)
 
 
     def test_get_tasks_to_retry_for_labourer(self):
