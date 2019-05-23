@@ -32,9 +32,10 @@ class Processor:
     """
 
     DEFAULT_CONFIG = {}
-    # TODO USE context.invoked_function_arn.
+
     aws_account = None
-    aws_region = None
+    aws_region = os.getenv('AWS_REGION', None)
+    lambda_context = None
 
 
     def __init__(self, custom_config=None, **kwargs):
@@ -47,6 +48,10 @@ class Processor:
 
         if self.test and not custom_config:
             raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
+
+        self.lambda_context = kwargs.pop('context', None)
+        if self.lambda_context:
+            self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
         self.config = self.DEFAULT_CONFIG
         self.config = recursive_update(self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
@@ -158,38 +163,33 @@ class Processor:
     @property
     def _account(self):
         """
-        Get current AWS Account to construct different ARNs. The autodetection process is pretty heavy (~0.3 seconds),
-        so it is not called by default. This method should be used only if you really need it.
+        Get current AWS Account to construct different ARNs.
 
-        It is highly recommended to provide the value of aws_account in your configs.
+        We dont' have this parameter in Environmental variables, only can parse from Context.
+        Context is not global and is supposed to be passed by your `lambda_handler` during initialization.
+
+        As a fallback we have an autodetection mechanism, but it is pretty heavy (~0.3 seconds).
+        So it is not called by default. This method should be used only if you really need it.
+
+        It is highly recommended to pass the `context` during initialization.
 
         Some things to note:
          - We store this value in class variable for fast access
          - If not yet set on the first call we initialise it.
-         - We first try from your config and only if not provided - use the autodetection.
-
-        TODO This method is overcomplicated. Change to to parsing the ARN from context object. But config can overwrite.
-        TODO https://github.com/bimpression/sosw/issues/40
+         - We first try from context and only if not provided - use the autodetection.
         """
+
         if not self.aws_account:
-            try:
-                self.aws_account = self.config['aws_account']
-            except KeyError:
-                self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
+            self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
 
         return self.aws_account
 
 
     @property
     def _region(self):
-        # TODO Implement this to get it effectively from context object.
-        # TODO https://github.com/bimpression/sosw/issues/40
-        if not self.aws_region:
-            try:
-                self.aws_region = self.config['aws_region']
-            except KeyError:
-                self.aws_region = 'us-west-2'
-
+        """
+        Property fetched from AWS Lambda Environmental variables.
+        """
         return self.aws_region
 
 

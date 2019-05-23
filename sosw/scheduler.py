@@ -25,6 +25,7 @@ from typing import List, Set, Tuple, Union, Optional, Dict
 
 from sosw.app import Processor
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name
+from sosw.components.siblings import SiblingsManager
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -32,7 +33,6 @@ from sosw.managers.task import TaskManager
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-lambda_context = None
 
 def single_or_plural(attr):
     """ Simple function. Gives versions with 's' at the end and without it. """
@@ -79,6 +79,7 @@ class Scheduler(Processor):
 
     # these clients will be initialized by Processor constructor
     task_client: TaskManager = None
+    siblings_client: SiblingsManager = None
     s3_client = None
     sns_client = None
     base_query = ...
@@ -93,7 +94,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -208,7 +209,7 @@ class Scheduler(Processor):
         If I call for previous_x_days(pattern='previous_2_days'), I will receive a list of string dates equal to:
         ['2019-04-26', '2019-04-27']
         """
-        assert re.match('previous_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `previous_x_days()`"
+        assert re.match('previous_[0-9]+_days', pattern) is not None, "Invalid pattern {pattern} for `previous_x_days`"
 
         num = int(pattern.split('_')[1])
         today = datetime.date.today()
@@ -263,8 +264,6 @@ class Scheduler(Processor):
         return [str(end_date + datetime.timedelta(days=x)) for x in range(7)]
 
 
-
-
     def chunk_dates(self, job: Dict, skeleton: Dict = None) -> List[Dict]:
         """
         There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.
@@ -277,7 +276,8 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week']
+        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days',
+                       'last_week']
 
         if period:
 
@@ -503,8 +503,8 @@ class Scheduler(Processor):
         if next_attr:
             for a in attrs:
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, a)
-                logger.debug(
-                    f"needs_chunking(): For {a} got current_vals: {current_vals} from {data}. Analysing {next_attr}")
+                logger.debug(f"needs_chunking(): For {a} got current_vals: {current_vals} from {data}. "
+                             f"Analysing {next_attr}")
 
                 for val in current_vals:
 
@@ -566,14 +566,12 @@ class Scheduler(Processor):
             else:
                 # Spawning another sibling to continue the processing
                 try:
-                    global lambda_context
-
                     payload = dict(file_name=file_name)
-                    self.siblings_client.spawn_sibling(lambda_context, payload=payload)
+                    self.siblings_client.spawn_sibling(self.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {lambda_context} and payload: {payload}")
+                    logger.exception(f"Could not spawn sibling with context: {self.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -588,7 +586,7 @@ class Scheduler(Processor):
         Therefore multiple capacity units are calculated as a fraction of the
         """
         logging.debug(dir(self.task_client.dynamo_db_client))
-        return 1/self.task_client.dynamo_db_client.get_capacity()['write']
+        return 1 / self.task_client.dynamo_db_client.get_capacity()['write']
 
 
     @staticmethod
@@ -647,9 +645,8 @@ class Scheduler(Processor):
         Return if there is a sufficient execution time for processing ('shutdown period' is in seconds).
         """
 
-        global lambda_context
+        return self.lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
 
-        return lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
 
     def get_and_lock_queue_file(self) -> str:
         """
@@ -713,12 +710,10 @@ class Scheduler(Processor):
         Initialize a unique file_name to store the queue of tasks to write.
         """
 
-        global lambda_context
-
         if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            self._queue_file_name = f"{filename_parts[0]}_{lambda_context.aws_request_id}.{filename_parts[1]}"
+            self._queue_file_name = f"{filename_parts[0]}_{self.lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
             self._queue_file_name = name
 

@@ -1,6 +1,7 @@
 import boto3
 import os
 import random
+import types
 import unittest
 
 from unittest.mock import MagicMock, patch
@@ -67,8 +68,12 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = self.TEST_CONFIG.copy()
-        with patch('sosw.scheduler.lambda_context') as mock_lambda_context:
-            self.scheduler = Scheduler(self.custom_config)
+        self.lambda_context = types.SimpleNamespace()
+        self.lambda_context.aws_request_id = 'AWS_REQ_ID'
+        self.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        self.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+
+        self.scheduler = Scheduler(self.custom_config, context=self.lambda_context)
 
         self.s3_client = boto3.client('s3')
 
