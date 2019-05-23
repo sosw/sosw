@@ -568,6 +568,27 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(trim_arn_to_name(test), expected)
 
 
+    def test_trim_arn_to_account(self):
+
+        TESTS = [
+            ('111000000000', '111000000000'),
+            ('000000000123', '000000000123'),
+            ('arn:aws:lambda:us-west-2:123000000000:function:bar', '123000000000'),
+            ('arn:aws:lambda:us-west-2:000000000123:function:bar:', '000000000123'),
+            ('arn:aws:lambda:us-west-2:123000000000:function:bar:$LATEST', '123000000000'),
+            ('arn:aws:lambda:us-west-2:123000000000:function:bar:12', '123000000000'),
+            ('arn:aws:lambda:us-west-2:123000000000:function:bar:12', '123000000000'),
+            ('arn:aws:iam::123000000000:role/aws-code-deploy-role', '123000000000'),
+            ('arn:aws:rds:us-west-2:123000000000:cluster:aws-cluster-01', '123000000000'),
+            ('arn:aws:rds:us-west-2:000123000000:db:aws-01-00', '000123000000'),
+            ('arn:aws:events:us-west-2:123456000000:rule/aws-sr-01', '123456000000'),
+            ('arn:aws:dynamodb:us-west-2:123456000321:table/sosw_tasks', '123456000321'),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(trim_arn_to_account(test), expected)
+
+
     def test_make_hash(self):
 
         TESTS = [
