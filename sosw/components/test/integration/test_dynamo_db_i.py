@@ -29,7 +29,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'some_counter':  'N'
         },
         'required_fields': ['lambda_name'],
-        'table_name':      'autotest_dynamo_db'
+        'table_name':      'autotest_dynamo_db',
+        'hash_key': 'hash_col'
     }
 
 
@@ -79,6 +80,15 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         items = result['Items']
 
         self.assertTrue(len(items) > 0)
+
+
+    def test_put__create(self):
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        with self.assertRaises(self.dynamo_client.dynamo_client.exceptions.ConditionalCheckFailedException):
+            self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
 
 
     def test_update__updates(self):
@@ -365,7 +375,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
                 'config_value': 'S'
             },
             'required_fields': ['env', 'config_name', 'config_value'],
-            'table_name':      'autotest_config_component'
+            'table_name':      'autotest_config_component',
+            'hash_key': self.HASH_COL
         }
 
         self.dynamo_client = DynamoDbClient(config=config)
