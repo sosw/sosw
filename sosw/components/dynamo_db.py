@@ -564,7 +564,8 @@ class DynamoDbClient:
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None):
         """
-        Updates an item in DynamoDB.
+        Updates an item in DynamoDB. Will create a new item if doesn't exist.
+        If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
@@ -627,6 +628,17 @@ class DynamoDbClient:
         response = self.dynamo_client.update_item(**update_item_query)
         logger.debug(f"Update result: {response}")
         self.stats['dynamo_update_queries'] += 1
+
+
+    def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
+              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+        """
+        Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
+        """
+
+        hash_key = self.config['hash_key']
+        condition_expression = f'attribute_exists {hash_key}'
+        self.update(keys, attributes_to_update, attributes_to_increment, table_name, condition_expression)
 
 
     def delete(self, keys: Dict, table_name: Optional[str] = None):
@@ -724,7 +736,6 @@ class DynamoDbClient:
         else:
             self.identify_dynamo_capacity(table_name=table_name)
             return self._table_capacity[table_name]
-
 
 
     def reset_stats(self):
