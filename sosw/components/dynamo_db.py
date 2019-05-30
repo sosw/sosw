@@ -564,7 +564,8 @@ class DynamoDbClient:
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None):
         """
-        Updates an item in DynamoDB.
+        Updates an item in DynamoDB. Will create a new item if doesn't exist.
+        If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
@@ -631,6 +632,9 @@ class DynamoDbClient:
 
     def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
               attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+        """
+        Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
+        """
 
         hash_key = self.config['hash_key']
         condition_expression = f'attribute_exists {hash_key}'

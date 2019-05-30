@@ -241,12 +241,13 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         keys = {self.HASH_COL: 'slime', self.RANGE_COL: '41'}
         row = {self.HASH_COL: 'slime', self.RANGE_COL: '41', 'some_col': 'no'}
 
-        # Should fail because conditional expression does not match
+        # Should fail because row doesn't exist
         self.assertRaises(self.dynamo_client.dynamo_client.exceptions.ConditionalCheckFailedException,
                           self.dynamo_client.patch, keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
 
-        # Should pass
+        # Create the row
         self.dynamo_client.put(row, self.table_name)
+        # Should pass because the row exists now
         self.dynamo_client.patch(keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
 
         client = boto3.client('dynamodb')
