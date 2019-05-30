@@ -629,6 +629,14 @@ class DynamoDbClient:
         self.stats['dynamo_update_queries'] += 1
 
 
+    def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
+              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+
+        hash_key = self.config['hash_key']
+        condition_expression = f'attribute_exists {hash_key}'
+        self.update(keys, attributes_to_update, attributes_to_increment, table_name, condition_expression)
+
+
     def delete(self, keys: Dict, table_name: Optional[str] = None):
         """
 
@@ -724,7 +732,6 @@ class DynamoDbClient:
         else:
             self.identify_dynamo_capacity(table_name=table_name)
             return self._table_capacity[table_name]
-
 
 
     def reset_stats(self):

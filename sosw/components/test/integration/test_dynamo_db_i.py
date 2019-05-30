@@ -237,6 +237,31 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(updated_row['some_counter'], 3)
 
 
+    def test_patch(self):
+        keys = {self.HASH_COL: 'slime', self.RANGE_COL: '41'}
+        row = {self.HASH_COL: 'slime', self.RANGE_COL: '41', 'some_col': 'no'}
+
+        # Should fail because conditional expression does not match
+        self.assertRaises(self.dynamo_client.dynamo_client.exceptions.ConditionalCheckFailedException,
+                          self.dynamo_client.patch, keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
+
+        # Should pass
+        self.dynamo_client.put(row, self.table_name)
+        self.dynamo_client.patch(keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
+
+        client = boto3.client('dynamodb')
+        updated_row = client.get_item(
+                Key={
+                    self.HASH_COL:  {'S': row[self.HASH_COL]},
+                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+                },
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+        self.assertEqual(updated_row['some_col'], 'yes')
+
+
     def test_get_by_query__primary_index(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
         row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test'}
