@@ -312,11 +312,12 @@ processor = None
 lambda_context = None
 
 
-def get_lambda_handler(processor_class):
+def get_lambda_handler(processor_class, custom_config=None):
     """
     Return a reference to the entry point of the lambda function.
 
     :param processor_class:  Callable processor class.
+    :param custom_config:    Custom configuration to pass the processor constructor.
     :return: Function reference for the lambda handler.
     """
 
@@ -340,7 +341,7 @@ def get_lambda_handler(processor_class):
 
         global processor
         if processor is None:
-            processor = processor_class(test=test)
+            processor = processor_class(custom_config=custom_config, test=test)
 
         result = processor(event)
         logger.info(result)

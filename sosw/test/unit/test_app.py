@@ -102,12 +102,13 @@ class app_UnitTestCase(unittest.TestCase):
 
 
     def test_lambda_handler(self):
-        processor = Processor(custom_config=self.TEST_CONFIG)
-        lambda_handler = get_lambda_handler(processor)
 
+        class Child(Processor):
+            def __call__(self, event):
+                return event.get('k')
+
+        lambda_handler = get_lambda_handler(Child, self.TEST_CONFIG)
         self.assertIsNotNone(lambda_handler)
-        self.assertEqual(processor.stats.get('processor_calls'), 0)
 
-        lambda_handler()
-
-        self.assertEqual(processor.stats.get('processor_calls'), 1)
+        result = lambda_handler(event={'k': 'success'}, context={})
+        self.assertEqual(result, 'success')
