@@ -344,7 +344,10 @@ def get_lambda_handler(processor_class, custom_config=None):
             processor = processor_class(custom_config=custom_config, test=test)
 
         result = processor(event)
+
+        logger.info(processor.get_stats())
         logger.info(result)
+
         return result
 
     return lambda_handler
