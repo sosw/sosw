@@ -1,4 +1,4 @@
-__all__ = ['Processor']
+__all__ = ['Processor', 'get_lambda_handler']
 
 
 import boto3
@@ -316,7 +316,7 @@ def get_lambda_handler(processor_class):
     """
     Return a reference to the entry point of the lambda function.
 
-    :param processor_class:  Callable processor instance.
+    :param processor_class:  Callable processor class.
     :return: Function reference for the lambda handler.
     """
 
