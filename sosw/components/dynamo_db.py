@@ -39,6 +39,7 @@ class DynamoDbClient:
             },
             'required_fields': ['col_name_1']
             'table_name': 'some_table_name',  # If a table is not specified, this table will be used.
+            'hash_key': 'the_hash_key',
             'dont_json_loads_results': True  # Use this if you don't want to convert json strings into json
         }
 
@@ -509,13 +510,16 @@ class DynamoDbClient:
         return result
 
 
-    def build_put_query(self, row, table_name=None):
+    def build_put_query(self, row, table_name=None, overwrite_existing=True):
         table_name = self._get_validate_table_name(table_name)
         dynamo_formatted_row = self.dict_to_dynamo(row, strict=False)
         query = {
             'TableName': table_name,
             'Item':      dynamo_formatted_row
         }
+        if not overwrite_existing:
+            hash_key = self.config['hash_key']
+            query['ConditionExpression'] = f"attribute_not_exists({hash_key})"
         return query
 
 
@@ -530,17 +534,18 @@ class DynamoDbClient:
 
 
     # @benchmark
-    def put(self, row, table_name=None):
+    def put(self, row, table_name=None, overwrite_existing=True):
         """
         Adds a row to the database
 
-        :param dict row:            The row to add to the table. key is column name, value is value.
-        :param string table_name:   Name of the dynamo table to add the row to
+        :param dict row:                The row to add to the table. key is column name, value is value.
+        :param string table_name:       Name of the dynamo table to add the row to.
+        :param bool overwrite_existing: Overwrite the existing row if True, otherwise will raise an exception if exists.
         """
 
         table_name = self._get_validate_table_name(table_name)
 
-        put_query = self.build_put_query(row, table_name)
+        put_query = self.build_put_query(row, table_name, overwrite_existing)
         logger.debug(f"Put to DB: {put_query}")
 
         dynamo_response = self.dynamo_client.put_item(**put_query)
@@ -550,12 +555,17 @@ class DynamoDbClient:
         self.stats['dynamo_put_queries'] += 1
 
 
+    def create(self, row, table_name=None):
+        self.put(row, table_name, overwrite_existing=False)
+
+
     # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None):
         """
-        Updates an item in DynamoDB.
+        Updates an item in DynamoDB. Will create a new item if doesn't exist.
+        If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
@@ -618,6 +628,17 @@ class DynamoDbClient:
         response = self.dynamo_client.update_item(**update_item_query)
         logger.debug(f"Update result: {response}")
         self.stats['dynamo_update_queries'] += 1
+
+
+    def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
+              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+        """
+        Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
+        """
+
+        hash_key = self.config['hash_key']
+        condition_expression = f'attribute_exists {hash_key}'
+        self.update(keys, attributes_to_update, attributes_to_increment, table_name, condition_expression)
 
 
     def delete(self, keys: Dict, table_name: Optional[str] = None):
@@ -717,7 +738,6 @@ class DynamoDbClient:
             return self._table_capacity[table_name]
 
 
-
     def reset_stats(self):
         """
         Cleans statistics.
@@ -725,20 +745,52 @@ class DynamoDbClient:
         self.stats = defaultdict(int)
 
 
-def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range_col')):
+def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range_col'), filter_expression=None):
     """
     Cleans the DynamoDB Table. Only for autotest tables.
 
     :param str table_name: name of the table
     :param tuple keys: the keys of the table
-    :return:
+    :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
+        e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+
+    .. warning:: There are some reserved words that woud not work with
+                 Filter Expression in case they are attribute names. Fix this one day.
+
     """
 
     assert table_name.startswith('autotest_')
 
     client = boto3.client('dynamodb')
-    for row in client.scan(TableName=table_name)['Items']:
-        client.delete_item(
-                TableName=table_name,
-                Key={key: row[key] for key in keys}
-        )
+    paginator = client.get_paginator('scan')
+    stats = defaultdict(int)
+
+    query_args = {
+        'TableName': table_name,
+        'Select':    'ALL_ATTRIBUTES',
+    }
+
+    if filter_expression:
+        # We use DynamoDbClient class only for static method to construct Filter Expression. No need for config.
+        dynamo_client = DynamoDbClient(config={'row_mapper': {'name': 'S', }})
+
+        query_args['FilterExpression'] = {}
+        expr, values = dynamo_client._parse_filter_expression(filter_expression)
+        query_args['FilterExpression'] = expr
+        query_args['ExpressionAttributeValues'] = values
+
+    response_iterator = paginator.paginate(**query_args)
+
+    for page in response_iterator:
+        stats['dynamo_scan_queries'] += 1
+
+        for row in page['Items']:
+            client.delete_item(
+                    TableName=table_name,
+                    Key={key: row[key] for key in keys}
+            )
+
+            stats['deleted'] += 1
+        logger.debug(f"clean_dynamo_table() of '{table_name}': {stats}")
+
+    logger.info(f"clean_dynamo_table() of '{table_name}': {stats}")

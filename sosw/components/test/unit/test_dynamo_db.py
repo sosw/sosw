@@ -212,5 +212,14 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             self.assertRaises((AssertionError, ValueError), self.dynamo_client._parse_filter_expression, data)
 
 
+    def test_create__calls_put(self):
+        row = {'hash_col': 'cat', 'range_key': 'test', 'another_col': 'wow'}
+        self.dynamo_client.put = MagicMock(return_value=None)
+
+        self.dynamo_client.create(row)
+
+        self.dynamo_client.put.assert_called_once_with(row, None, overwrite_existing=False)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,4 @@
-__all__ = ['Processor']
+__all__ = ['Processor', 'get_lambda_handler']
 
 
 import boto3
@@ -32,9 +32,10 @@ class Processor:
     """
 
     DEFAULT_CONFIG = {}
-    # TODO USE context.invoked_function_arn.
+
     aws_account = None
-    aws_region = None
+    aws_region = os.getenv('AWS_REGION', None)
+    lambda_context = None
 
 
     def __init__(self, custom_config=None, **kwargs):
@@ -47,6 +48,10 @@ class Processor:
 
         if self.test and not custom_config:
             raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
+
+        self.lambda_context = kwargs.pop('context', None)
+        if self.lambda_context:
+            self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
         self.config = self.DEFAULT_CONFIG
         self.config = recursive_update(self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
@@ -158,38 +163,33 @@ class Processor:
     @property
     def _account(self):
         """
-        Get current AWS Account to construct different ARNs. The autodetection process is pretty heavy (~0.3 seconds),
-        so it is not called by default. This method should be used only if you really need it.
+        Get current AWS Account to construct different ARNs.
 
-        It is highly recommended to provide the value of aws_account in your configs.
+        We dont' have this parameter in Environmental variables, only can parse from Context.
+        Context is not global and is supposed to be passed by your `lambda_handler` during initialization.
+
+        As a fallback we have an autodetection mechanism, but it is pretty heavy (~0.3 seconds).
+        So it is not called by default. This method should be used only if you really need it.
+
+        It is highly recommended to pass the `context` during initialization.
 
         Some things to note:
          - We store this value in class variable for fast access
          - If not yet set on the first call we initialise it.
-         - We first try from your config and only if not provided - use the autodetection.
-
-        TODO This method is overcomplicated. Change to to parsing the ARN from context object. But config can overwrite.
-        TODO https://github.com/bimpression/sosw/issues/40
+         - We first try from context and only if not provided - use the autodetection.
         """
+
         if not self.aws_account:
-            try:
-                self.aws_account = self.config['aws_account']
-            except KeyError:
-                self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
+            self.aws_account = boto3.client('sts').get_caller_identity().get('Account')
 
         return self.aws_account
 
 
     @property
     def _region(self):
-        # TODO Implement this to get it effectively from context object.
-        # TODO https://github.com/bimpression/sosw/issues/40
-        if not self.aws_region:
-            try:
-                self.aws_region = self.config['aws_region']
-            except KeyError:
-                self.aws_region = 'us-west-2'
-
+        """
+        Property fetched from AWS Lambda Environmental variables.
+        """
         return self.aws_region
 
 
@@ -303,3 +303,51 @@ class Processor:
             self.conn.close()
         except:
             pass
+
+
+# Global lambda processor placeholder
+processor = None
+
+# Global lambda context placeholder
+lambda_context = None
+
+
+def get_lambda_handler(processor_class, custom_config=None):
+    """
+    Return a reference to the entry point of the lambda function.
+
+    :param processor_class:  Callable processor class.
+    :param custom_config:    Custom configuration to pass the processor constructor.
+    :return: Function reference for the lambda handler.
+    """
+
+    def lambda_handler(event, context):
+        """
+        Entry point for the lambda function.
+
+        :param dict event:      Lambda function event.
+        :param object context:  Lambda function context.
+        :return: Result of the lambda function call.
+        """
+
+        logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
+                    f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
+                    f"event: {event}, context: {context}")
+
+        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+
+        global lambda_context
+        lambda_context = context
+
+        global processor
+        if processor is None:
+            processor = processor_class(custom_config=custom_config, test=test)
+
+        result = processor(event)
+
+        logger.info(processor.get_stats())
+        logger.info(result)
+
+        return result
+
+    return lambda_handler

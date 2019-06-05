@@ -27,6 +27,7 @@ __all__ = ['validate_account_to_dashed',
            'first_or_none',
            'recursive_update',
            'trim_arn_to_name',
+           'trim_arn_to_account',
            'make_hash',
            ]
 
@@ -712,6 +713,21 @@ def trim_arn_to_name(arn: str) -> str:
               "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
 
     return re.search(pattern, arn).group('name')
+
+
+def trim_arn_to_account(arn: str) -> str:
+    """
+    Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).
+
+    More information about ARN Format:
+    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    """
+
+    # Seems a little messy, but passes more/less any test of different ARNs we tried.
+    pattern = "(arn:aws:[0-9a-zA-Z-]{2,20}:[0-9a-zA-Z-]{0,12}:)?(?P<acc>[0-9]{12})(:[0-9a-zA-Z-]{2,20}[:/])?" \
+              "(?P<name>[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?"
+
+    return re.search(pattern, arn).group('acc')
 
 
 def make_hash(o):
