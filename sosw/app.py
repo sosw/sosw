@@ -303,3 +303,47 @@ class Processor:
             self.conn.close()
         except:
             pass
+
+
+# Global lambda processor placeholder
+processor = None
+
+# Global lambda context placeholder
+lambda_context = None
+
+
+def get_lambda_handler(processor_class):
+    """
+    Return a reference to the entry point of the lambda function.
+
+    :param processor_class:  Callable processor instance.
+    :return: Function reference for the lambda handler.
+    """
+
+    def lambda_handler(event, context):
+        """
+        Entry point for the lambda function.
+
+        :param dict event:      Lambda function event.
+        :param object context:  Lambda function context.
+        :return: Result of the lambda function call.
+        """
+
+        logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
+                    f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
+                    f"event: {event}, context: {context}")
+
+        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+
+        global lambda_context
+        lambda_context = context
+
+        global processor
+        if processor is None:
+            processor = processor_class(test=test)
+
+        result = processor(event)
+        logger.info(result)
+        return result
+
+    return lambda_handler

@@ -53,13 +53,5 @@ Please find the following elementary example of Worker Lambda.
             self.dynamo_db_client.put(row)
 
 
-    def lambda_handler(event, context):
-
-        # Construct a fresh processor.
-        processor = Processor()
-
-        # Call it with ``event``
-        processor(event)
-
-        # Log some statistics
-        logger.info(processor.get_stats())
+        # Declaring the entry point of the lambda.
+        lambda_handler = get_lambda_handler(Processor)
