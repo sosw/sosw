@@ -38,10 +38,10 @@ class SnsManager():
         """
 
         self.stats = defaultdict(int)
-
-        if 'config' in kwargs:
-            self.recipient = kwargs['config'].get('recipient')
-            self.subject = kwargs['config'].get('subject')
+        config = kwargs.get('config', kwargs.get('custom_config', {}))
+        if config:
+            self.recipient = config.get('recipient')
+            self.subject = config.get('subject')
         else:
             self.recipient = kwargs.get('recipient')
             self.subject = kwargs.get('subject')
