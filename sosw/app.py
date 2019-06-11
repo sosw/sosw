@@ -1,4 +1,4 @@
-__all__ = ['Processor', 'get_lambda_handler']
+__all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 
 
 import boto3
@@ -306,17 +306,41 @@ class Processor:
 
 
 # Global lambda processor placeholder
-processor = None
+_processor = None
 
 # Global lambda context placeholder
-lambda_context = None
+_lambda_context = None
 
 
-def get_lambda_handler(processor_class, custom_config=None):
+class LambdaGlobals:
+
+    @property
+    def lambda_context(self):
+        global _lambda_context
+        return _lambda_context
+
+    @lambda_context.setter
+    def lambda_context(self, val):
+        global _lambda_context
+        _lambda_context = val
+
+    @property
+    def processor(self):
+        global _processor
+        return _processor
+
+    @processor.setter
+    def processor(self, val):
+        global _processor
+        _processor = val
+
+
+def get_lambda_handler(processor_class, global_vars, custom_config=None):
     """
     Return a reference to the entry point of the lambda function.
 
     :param processor_class:  Callable processor class.
+    :param global_vars:      Lambda's global variables (processor, context).
     :param custom_config:    Custom configuration to pass the processor constructor.
     :return: Function reference for the lambda handler.
     """
@@ -336,16 +360,15 @@ def get_lambda_handler(processor_class, custom_config=None):
 
         test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        global lambda_context
-        lambda_context = context
+        global_vars.lambda_context = context
 
-        global processor
-        if processor is None:
-            processor = processor_class(custom_config=custom_config, test=test)
+        if global_vars.processor is None:
+            global_vars.processor = processor_class(custom_config=custom_config, test=test)
 
-        result = processor(event)
+        result = global_vars.processor(event)
 
-        logger.info(processor.get_stats())
+        logger.info(global_vars.processor.get_stats())
+        logger.info(global_vars.processor.reset_stats())
         logger.info(result)
 
         return result
