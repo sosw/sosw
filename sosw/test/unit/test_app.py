@@ -40,36 +40,36 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, Processor)
 
 
-    # @mock.patch("boto3.client")
-    # def test_app_init__with_some_clients(self, mock_boto_client):
-    #     custom_config = {
-    #         'init_clients': ['Sns', 'Siblings'],
-    #         'siblings_config': {
-    #             "test": True
-    #         }
-    #     }
-    #
-    #     processor = Processor(custom_config=custom_config)
-    #     self.assertIsInstance(getattr(processor, 'sns_client'), SnsManager,
-    #                           "SnsManager was not initialized. Probably boto3 sns instead of it.")
-    #     self.assertIsNotNone(getattr(processor, 'siblings_client'))
+    @mock.patch("boto3.client")
+    def test_app_init__with_some_clients(self, mock_boto_client):
+        custom_config = {
+            'init_clients': ['Sns', 'Siblings'],
+            'siblings_config': {
+                "test": True
+            }
+        }
+
+        processor = Processor(custom_config=custom_config)
+        self.assertIsInstance(getattr(processor, 'sns_client'), SnsManager,
+                              "SnsManager was not initialized. Probably boto3 sns instead of it.")
+        self.assertIsNotNone(getattr(processor, 'siblings_client'))
 
 
-    # @mock.patch("boto3.client")
-    # def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
-    #     custom_config = {
-    #         'init_clients': ['dynamodb', 'Siblings'],
-    #         'siblings_config': {
-    #             "test": True
-    #         }
-    #     }
-    #
-    #     processor = Processor(custom_config=custom_config)
-    #     self.assertIsInstance(getattr(processor, 'siblings_client'), SiblingsManager)
-    #
-    #     # Clients of boto3 will not be exactly of same type (something dynamic in boto3), so we can't compare classes.
-    #     # Let us assume that checking the class_name is enough for this test.
-    #     self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
+    @mock.patch("boto3.client")
+    def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
+        custom_config = {
+            'init_clients': ['dynamodb', 'Siblings'],
+            'siblings_config': {
+                "test": True
+            }
+        }
+
+        processor = Processor(custom_config=custom_config)
+        self.assertIsInstance(getattr(processor, 'siblings_client'), SiblingsManager)
+
+        # Clients of boto3 will not be exactly of same type (something dynamic in boto3), so we can't compare classes.
+        # Let us assume that checking the class_name is enough for this test.
+        self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
 
 
     @mock.patch("boto3.client")
