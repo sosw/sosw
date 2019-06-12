@@ -139,18 +139,18 @@ class DynamoDbClient:
         Returns **active** indexes of the table: their hash key, range key, and projection type.
 
         .. code-block:: python
-            {
-                'index_1_name': {
-                    'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
-                    'hash_key': 'the_hash_key_column_name',
-                    'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
-                    'provisioned_throughput': {
-                        'write_capacity': 5,
-                        'read_capacity': 10
-                    }
-                },
-                'index_2_name': ...
-            }
+           {
+               'index_1_name': {
+                   'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
+                   'hash_key': 'the_hash_key_column_name',
+                   'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
+                   'provisioned_throughput': {
+                       'write_capacity': 5,
+                       'read_capacity': 10
+                   }
+               },
+               'index_2_name': ...
+           }
 
         """
 
