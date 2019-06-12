@@ -1,6 +1,5 @@
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 
-
 import boto3
 import logging
 import os
@@ -13,12 +12,11 @@ from sosw.components.config import get_config
 from sosw.components.helpers import *
 
 
-__author__ = "Nikolay Grishchenko"
+__author__ = "Nikolay Grishchenko, Gil Halperin"
 __email__ = "dev@bimpression.com"
-__version__ = "0.3.1"
+__version__ = "0.7.11"
 __license__ = "MIT"
 __status__ = "Production"
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -54,7 +52,8 @@ class Processor:
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
         self.config = self.DEFAULT_CONFIG
-        self.config = recursive_update(self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
+        self.config = recursive_update(self.config,
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
         self.config = recursive_update(self.config, custom_config or {})
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
@@ -319,15 +318,18 @@ class LambdaGlobals:
         global _lambda_context
         return _lambda_context
 
+
     @lambda_context.setter
     def lambda_context(self, val):
         global _lambda_context
         _lambda_context = val
 
+
     @property
     def processor(self):
         global _processor
         return _processor
+
 
     @processor.setter
     def processor(self, val):
@@ -335,7 +337,7 @@ class LambdaGlobals:
         _processor = val
 
 
-def get_lambda_handler(processor_class, global_vars, custom_config=None):
+def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
     Return a reference to the entry point of the lambda function.
 
@@ -344,6 +346,12 @@ def get_lambda_handler(processor_class, global_vars, custom_config=None):
     :param custom_config:    Custom configuration to pass the processor constructor.
     :return: Function reference for the lambda handler.
     """
+
+    if global_vars is None:
+        logging.error(f"Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
+                      f"initialised in your Lambda function at the root level. Some functionality will break soon.")
+        global_vars = LambdaGlobals()
+
 
     def lambda_handler(event, context):
         """
@@ -374,5 +382,6 @@ def get_lambda_handler(processor_class, global_vars, custom_config=None):
         global_vars.processor.reset_stats(recursive=True)
 
         return result
+
 
     return lambda_handler
