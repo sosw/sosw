@@ -136,9 +136,7 @@ class DynamoDbClient:
 
     def get_table_indexes(self, table_name: Optional[str] = None) -> Dict:
         """
-        Returns table's **active** indexes: their hash key, range key, and projection type.
-
-        :return: Example:
+        Returns **active** indexes of the table: their hash key, range key, and projection type.
 
         .. code-block:: python
             {
