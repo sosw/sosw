@@ -60,7 +60,7 @@ class DynamoDbClient:
             logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
 
         # storage for table description(s)
-        self._table_descriptions: Optional[Dict[str, Dict]] = None
+        self._table_descriptions: Optional[Dict[str, Dict]] = {}
 
         # initialize table store
         self._table_capacity = {}
@@ -145,7 +145,7 @@ class DynamoDbClient:
                 'index_1_name': {
                     'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
                     'hash_key': 'the_hash_key_column_name',
-                    'range_key': 'the_range_key_column_name'  # Can be None if the index has no range key
+                    'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
                     'provisioned_throughput': {
                         'write_capacity': 5,
                         'read_capacity': 10
@@ -159,8 +159,8 @@ class DynamoDbClient:
         indexes = {}
 
         table_description = self._describe_table(table_name)
-        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes')
-        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes')
+        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes', [])
+        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes', [])
 
         for index in local_secondary_indexes + global_secondary_indexes:
 

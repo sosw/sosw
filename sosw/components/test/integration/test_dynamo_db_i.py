@@ -563,5 +563,28 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(items[0], {self.HASH_COL: 'cat2', self.RANGE_COL: 234})
 
 
+    def test_get_table_keys(self):
+        result1 = self.dynamo_client.get_table_keys()
+        self.assertEqual(result1, ('hash_col', 'range_col'))
+
+        result2 = self.dynamo_client.get_table_keys(table_name=self.table_name)
+        self.assertEqual(result2, ('hash_col', 'range_col'))
+
+    def test_get_table_indexes(self):
+        indexes = self.dynamo_client.get_table_indexes()
+        expected = {
+            'autotest_index': {
+                'projection_type': 'ALL',
+                'hash_key':        'hash_col',
+                'range_key':       'other_col',
+                'provisioned_throughput': {
+                    'write_capacity': 1,
+                    'read_capacity':  1
+                }
+            }
+        }
+        self.assertDictEqual(expected, indexes)
+
+
 if __name__ == '__main__':
     unittest.main()
