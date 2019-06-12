@@ -59,6 +59,9 @@ class DynamoDbClient:
         else:
             logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
 
+        # storage for table description(s)
+        self._table_descriptions: Optional[Dict[str, Dict]] = {}
+
         # initialize table store
         self._table_capacity = {}
         self.identify_dynamo_capacity(table_name=self.config['table_name'])
@@ -82,9 +85,7 @@ class DynamoDbClient:
         logging.debug(f"DynamoDB table name identified as {table_name}")
 
         # Fetch the actual configuration of the dynamodb table directly for
-        table_description = self.dynamo_client.describe_table(
-            TableName=table_name
-        )
+        table_description = self._describe_table(table_name)
         # Hash to the capacity
         table_capacity = table_description["Table"]["ProvisionedThroughput"]
 
@@ -92,6 +93,111 @@ class DynamoDbClient:
             'read': int(table_capacity["ReadCapacityUnits"]),
             'write': int(table_capacity["WriteCapacityUnits"]),
         }
+
+
+    def _describe_table(self, table_name: Optional[str] = None) -> Dict:
+        """
+        Returns description of the table from AWS. Response like:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table
+
+        :return: Description of the table
+        """
+
+        table_name = self._get_validate_table_name(table_name)
+
+        if self._table_descriptions and table_name in self._table_descriptions:
+            return self._table_descriptions[table_name]
+        else:
+            table_description = self.dynamo_client.describe_table(TableName=table_name)
+            self._table_descriptions[table_name] = table_description
+            return table_description
+
+
+    def get_table_keys(self, table_name: Optional[str] = None) -> Tuple[str, Optional[str]]:
+        """
+        Returns table's hash key name and range key name
+
+        :param table_name:
+        :return: hash key and range key names
+        """
+
+        table_description = self._describe_table(table_name)
+        key_schema: List[Dict[str, str]] = table_description['Table']['KeySchema']
+        hash_key = range_key = None
+
+        for key in key_schema:
+            if key['KeyType'] == 'HASH':
+                hash_key = key['AttributeName']
+            elif key['KeyType'] == 'RANGE':
+                range_key = key['AttributeName']
+
+        return hash_key, range_key
+
+
+    def get_table_indexes(self, table_name: Optional[str] = None) -> Dict:
+        """
+        Returns table's **active** indexes: their hash key, range key, and projection type.
+
+        :return: Example:
+
+        .. code-block:: python
+            {
+                'index_1_name': {
+                    'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
+                    'hash_key': 'the_hash_key_column_name',
+                    'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
+                    'provisioned_throughput': {
+                        'write_capacity': 5,
+                        'read_capacity': 10
+                    }
+                },
+                'index_2_name': ...
+            }
+
+        """
+
+        indexes = {}
+
+        table_description = self._describe_table(table_name)
+        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes', [])
+        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes', [])
+
+        for index in local_secondary_indexes + global_secondary_indexes:
+
+            if index.get('IndexStatus') is not None and index.get('IndexStatus') != 'ACTIVE':
+                # Only global sec. indexes has IndexStatus, and if it's not ready for use, we don't return it
+                continue
+
+            name = index['IndexName']
+            projection_type = index['Projection']['ProjectionType']  # 'ALL'|'KEYS_ONLY'|'INCLUDE'
+
+            key_schema = index['KeySchema']
+            hash_key = range_key = None
+
+            for key in key_schema:
+                if key['KeyType'] == 'HASH':
+                    hash_key = key['AttributeName']
+                elif key['KeyType'] == 'RANGE':
+                    range_key = key['AttributeName']
+
+            # Get write & read capacity.
+            # global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
+            write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
+                             table_description['ProvisionedThroughput']['WriteCapacityUnits']
+            read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
+                            table_description['ProvisionedThroughput']['ReadCapacityUnits']
+
+            indexes[name] = {
+                'projection_type': projection_type,
+                'hash_key': hash_key,
+                'range_key': range_key,
+                'provisioned_throughput': {
+                    'write_capacity': write_capacity,
+                    'read_capacity': read_capacity
+                }
+            }
+
+        return indexes
 
 
     def dynamo_to_dict(self, dynamo_row, strict=True):
