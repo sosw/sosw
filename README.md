@@ -3,10 +3,11 @@
 
 **sosw** is a set of tools for orchestrating asynchronous invocations of AWS Lambda Workers.
 
-Detailed documentation can be found on Read The Docs: [sosw.readthedocs.io](https://sosw.readthedocs.io/en/latest/)
+## Documentation
+[Read The Docs: sosw.readthedocs.io](https://sosw.readthedocs.io/en/latest/)
 
 ## Dependencies
-- Python 3.6
+- Python 3.6, 3.7
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Development
