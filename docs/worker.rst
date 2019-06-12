@@ -17,6 +17,7 @@ Please find the following elementary example of Worker Lambda.
 
     import logging
     from sosw import Worker
+    from sosw.app import LambdaGlobals, get_lambda_handler
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -54,4 +55,5 @@ Please find the following elementary example of Worker Lambda.
 
 
         # Setting the entry point of the lambda.
-        lambda_handler = get_lambda_handler(Processor)
+        global_vars = LambdaGlobals()
+        lambda_handler = get_lambda_handler(Processor, global_vars)
