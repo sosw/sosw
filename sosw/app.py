@@ -114,23 +114,24 @@ class Processor:
             for suffix in client_suffixes:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
-                    some_client_config = self.config.get(f"{module_name}_config")
-                    logger.debug(f"Found config for {module_name}: {some_client_config}")
+                except AttributeError as e:
+                    logger.info(f"Didn't find {service} with suffix {suffix} in module {module_name}")
+                    continue
 
-                    # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
-                    if some_client_config:
-                        if suffix == 'Manager':
-                            setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
-                        elif suffix == 'Client':
-                            setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+                some_client_config = self.config.get(f"{module_name}_config")
+                logger.debug(f"Found config for {module_name}: {some_client_config}")
 
-                    else:
-                        setattr(self, f"{module_name}_client", some_class())
-                    logger.info(f"Successfully registered {module_name}_client")
-                    break
-                except AttributeError:
-                    logger.info(f"Failed suffix {suffix}")
-                    pass
+                # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
+                if some_client_config:
+                    if suffix == 'Manager':
+                        setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
+                    elif suffix == 'Client':
+                        setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+
+                else:
+                    setattr(self, f"{module_name}_client", some_class())
+                logger.info(f"Successfully registered {module_name}_client")
+                break
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
                                    f"Tried suffixes for class: {client_suffixes}")
