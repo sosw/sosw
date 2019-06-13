@@ -279,6 +279,12 @@ class Processor:
         result.update(self.get_stats())
         logger.info(result)
 
+        try:
+            sns = boto3.client('sns')
+            # TODO continue here
+        except:
+            logger.exception("Failed to send SNS message to Alarms.")
+
         raise RuntimeError(message)
 
 
