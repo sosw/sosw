@@ -100,7 +100,7 @@ class Processor:
                     some_module = import_module(path(module_name))
                     logger.debug(f"Imported {service} from {path(module_name)}")
                     break
-                except:
+                except Exception:
                     pass
 
             else:
@@ -108,7 +108,7 @@ class Processor:
                 try:
                     setattr(self, f"{module_name}_client", boto3.client(module_name))
                     continue
-                except:
+                except Exception:
                     raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
 
             for suffix in client_suffixes:
@@ -218,7 +218,7 @@ class Processor:
                 try:
                     self.stats.update(getattr(self, some_client).get_stats())
                     logger.info(f"Updated Processor stats with stats of {some_client}")
-                except:
+                except Exception:
                     logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
         return self.stats
@@ -262,7 +262,7 @@ class Processor:
             for some_client in [x for x in dir(self) if x.endswith('_client')]:
                 try:
                     getattr(self, some_client).reset_stats()
-                except:
+                except Exception:
                     pass
 
 
@@ -270,7 +270,10 @@ class Processor:
         """
         Logs current Processor stats and `message`. Then raises RuntimeError with `message`.
 
-        :param str message:
+        If there is access to publish SNS messages, the method will also try to publish to the topic configured as
+        `dead_sns_topic` or `'SoswWorkerErrors'`.
+
+        :param str message: Description of failure.
         """
 
         logger.exception(message)
@@ -280,12 +283,16 @@ class Processor:
         logger.info(result)
 
         try:
+            sns_recipient = self.config.get('dead_sns_topic', 'SoswWorkerErrors')
+            sns_topic_arn = f'arn:aws:sns:{self._region}:{self._account}:{sns_recipient}'
+            sns_subject = f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'Some Function')} died"
+
             sns = boto3.client('sns')
-            # TODO continue here
-        except:
+            sns.publish(TopicArn=sns_topic_arn, Subject=sns_subject, Message=message)
+        except Exception:
             logger.exception("Failed to send SNS message to Alarms.")
 
-        raise RuntimeError(message)
+        raise SystemExit(1)
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -301,12 +308,12 @@ class Processor:
 
         try:
             self.sql.sqldb.session.remove()
-        except:
+        except Exception:
             pass
 
         try:
             self.conn.close()
-        except:
+        except Exception:
             pass
 
 

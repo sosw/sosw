@@ -40,7 +40,7 @@ def logging_wrapper(level: int = None):
                     s_parts.append(f"{k}={v},")
 
                 logging.log(level, " ".join(s_parts).strip(','))
-            except:
+            except Exception:
                 logging.log(level, f"Running {method.__name__} with args={args}, kwargs={kwargs}")
 
             result = method(*args, **kwargs)
