@@ -35,10 +35,11 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertTrue(True)
 
 
-    @mock.patch("boto3.client")
-    def test_app_init__fails_without_custom_config(self, mock_boto_client):
-        self.assertRaises(RuntimeError, Processor)
-
+    # Behaviour is deprecated.
+    # @mock.patch("boto3.client")
+    # def test_app_init__fails_without_custom_config(self, mock_boto_client):
+    #     self.assertRaises(RuntimeError, Processor)
+    #
 
     @mock.patch("boto3.client")
     def test_app_init__with_some_clients(self, mock_boto_client):
