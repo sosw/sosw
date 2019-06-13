@@ -19,7 +19,6 @@ __license__ = "MIT"
 __status__ = "Production"
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Processor:
@@ -358,6 +357,9 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         :param object context:  Lambda function context.
         :return: Result of the lambda function call.
         """
+
+        if event.get('logging_level'):
+            logger.setLevel(event.get('logging_level'))
 
         logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
                     f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
