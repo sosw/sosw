@@ -44,9 +44,6 @@ class Processor:
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        if self.test and not custom_config:
-            raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
-
         self.lambda_context = kwargs.pop('context', None)
         if self.lambda_context:
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
