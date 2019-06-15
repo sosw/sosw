@@ -44,16 +44,13 @@ class Processor:
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        if self.test and not custom_config:
-            raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
-
         self.lambda_context = kwargs.pop('context', None)
         if self.lambda_context:
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
-        self.config = self.DEFAULT_CONFIG
+        self.config = self.DEFAULT_CONFIG or {}
         self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
         self.config = recursive_update(self.config, custom_config or {})
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
