@@ -545,7 +545,8 @@ class DynamoDbClient:
         return response_iterator
 
 
-    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2):
+    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
+                                  strict=True):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -563,6 +564,8 @@ class DynamoDbClient:
                                 multiplied by 2 after each retry, so `retries` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
+        :param bool strict:     If True, will only get the attributes specified in the row mapper.
+                                If false, will get all attributes. Default is True.
         :return: List of items from the table
         :rtype: list
         """
@@ -611,7 +614,7 @@ class DynamoDbClient:
 
         result = []
         for item in items:
-            result.append(self.dynamo_to_dict(item))
+            result.append(self.dynamo_to_dict(item, strict=strict))
 
         return result
 
