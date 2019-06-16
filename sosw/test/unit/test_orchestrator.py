@@ -35,7 +35,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
 
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
+        except Exception:
             pass
 
 
