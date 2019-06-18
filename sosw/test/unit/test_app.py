@@ -25,17 +25,10 @@ class app_UnitTestCase(unittest.TestCase):
 
 
     def setUp(self):
-        self.get_config_patch = mock.patch("sosw.app.get_config")
-        self.get_config_mock = self.get_config_patch.start()
-
-        self.set_level_patch = patch.object(logger, 'setLevel')
-        self.set_level_mock = self.set_level_patch.start()
+        pass
 
 
     def tearDown(self):
-        self.get_config_patch.stop()
-        self.set_level_patch.stop()
-
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
         except:
@@ -95,13 +88,14 @@ class app_UnitTestCase(unittest.TestCase):
         mock_boto_client.assert_called_with('not_exists')
 
 
-    def test_app_calls_get_config(self):
+    @mock.patch("sosw.app.get_config")
+    def test_app_calls_get_config(self, mock_ssm):
 
-        self.get_config_mock.return_value = {'mock': 'called'}
+        mock_ssm.return_value = {'mock': 'called'}
         os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
 
         Processor(custom_config=self.TEST_CONFIG)
-        self.get_config_mock.assert_called_once_with('test_func_config')
+        mock_ssm.assert_called_once_with('test_func_config')
 
 
     # @unittest.skip("https://github.com/bimpression/sosw/issues/40")
@@ -132,9 +126,11 @@ class app_UnitTestCase(unittest.TestCase):
             self.assertEqual(global_vars.processor.stats['total_calls_register_clients'], 1)
 
 
-    def test_lambda_handler__logger_level(self):
+    @mock.patch("boto3.client")
+    @patch.object(logger, 'setLevel')
+    def test_lambda_handler__logger_level(self, logger_set_level, client_mock):
         global_vars = LambdaGlobals()
         lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
         event = {'k': 'm', 'logging_level': 20}
         lambda_handler(event=event, context={'context': 'test'})
-        self.set_level_mock.assert_called_once_with(20)
+        logger_set_level.assert_called_once_with(20)
