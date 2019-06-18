@@ -1,10 +1,8 @@
-import boto3
 import logging
-import time
 import unittest
 import os
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -219,6 +217,30 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.dynamo_client.create(row)
 
         self.dynamo_client.put.assert_called_once_with(row, None, overwrite_existing=False)
+
+
+    def test_batch_get_items_one_table__strict(self):
+        # Strict - returns only fields that are in the row mapper
+        db_items = [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}, 'unknown_col': {'S': 'not_strict'}}]
+        db_result = {'Responses': {'autotest_dynamo_db': db_items}}
+
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], strict=True)
+
+        self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10}])
+
+
+    def test_batch_get_items_one_table__not_strict(self):
+        # Not strict - returns all fields
+        db_items = [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}, 'unknown_col': {'S': 'not_strict'}}]
+        db_result = {'Responses': {'autotest_dynamo_db': db_items}}
+
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], strict=False)
+
+        self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10, 'unknown_col': 'not_strict'}])
 
 
 if __name__ == '__main__':
