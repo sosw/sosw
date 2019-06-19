@@ -47,7 +47,7 @@ class Orchestrator(Processor):
 
         labourers = self.task_client.register_labourers()
 
-        for labourer in labourers:
+        for labourer in labourers.values():
             self.invoke_for_labourer(labourer)
 
 

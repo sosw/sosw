@@ -206,21 +206,24 @@ class TaskManager(Processor):
 
         # Reset old Labourers and reconstruct them with fresh data.
         self.__labourers = None
-        labourers = self.get_labourers()
+        labourers = [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]
+        # self.get_labourers()
 
-        result = []
+        result = {}
         for labourer in labourers:
             for k, method in [x for x in custom_attributes]:
                 labourer.set_custom_attribute(k, method(labourer))
                 logger.debug(f"SET for {labourer}: {k} = {method(labourer)}")
-            result.append(labourer)
 
-            for attr, val in _cfg('labourers')[labourer.id].items():
-                labourer.set_custom_attribute(attr, val)
+            for k, val in _cfg('labourers')[labourer.id].items():
+                labourer.set_custom_attribute(k, val)
+                logger.debug(f"SET for {labourer}: {k} = {val}")
+
+            result[labourer.id] = labourer
 
         self.__labourers = result
 
-        return result
+        return list(self.__labourers.values())
 
 
     def get_labourers(self) -> List[Labourer]:
@@ -230,9 +233,9 @@ class TaskManager(Processor):
         """
 
         if not self.__labourers:
-            self.__labourers = [Labourer(id=name, **settings) for name, settings in self.config['labourers'].items()]
+            self.register_labourers()
 
-        return self.__labourers
+        return list(self.__labourers.values())
 
 
     def get_labourer(self, labourer_id: str) -> Labourer:

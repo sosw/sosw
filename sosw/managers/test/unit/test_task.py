@@ -64,8 +64,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_mark_task_invoked__calls_dynamo(self):
-        self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
+        self.manager.get_labourers = MagicMock(return_value=[self.labourer])
 
         greenfield = round(time.time() - random.randint(0, 1000))
         delta = self.manager.config['greenfield_invocation_delta']
@@ -76,6 +76,7 @@ class task_manager_UnitTestCase(unittest.TestCase):
             'greenfield':      greenfield
         }
 
+        logging.warning(f"Hellow")
         # Do the actual tested job
         self.manager.mark_task_invoked(self.labourer, task)
 
@@ -243,8 +244,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
     def test_get_labourers(self):
         self.config['labourers'] = {
-            'some_lambda':  {'foo': 'bar', 'arn': '123'},
-            'some_lambda2': {'foo': 'baz'},
+            'some_lambda':  {'max_attempts': 2, 'arn': '123'},
+            'some_lambda2': {'max_attempts': 3},
         }
 
         with patch('boto3.client'):
@@ -252,9 +253,9 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         result = self.task_client.get_labourers()
         self.assertEqual(len(result), 2)
-        self.assertEqual(result[0].foo, 'bar')
+        self.assertEqual(result[0].max_attempts, 2)
         self.assertEqual(result[0].arn, '123')
-        self.assertEqual(result[1].foo, 'baz')
+        self.assertEqual(result[1].max_attempts, 3)
 
 
     def test_archive_task(self):

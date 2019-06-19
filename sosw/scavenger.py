@@ -38,7 +38,7 @@ class Scavenger(Processor):
 
         labourers = self.task_client.register_labourers()
 
-        for labourer in labourers:
+        for labourer in labourers.values():
             self.archive_tasks(labourer)
             self.handle_expired_tasks(labourer)
             self.retry_tasks(labourer)
