@@ -605,6 +605,20 @@ class TaskManager(Processor):
         )
 
 
+    def _jsonify_payload_of_task(self, task: Dict) -> Dict:
+        """
+        Simple helper to make sure the `payload` of the `task` is a string. If it's a dict - JSONify it.
+        :param dict task:
+        """
+
+        payload = task.get('payload')
+        if isinstance(payload, dict):
+            logger.debug(f"JSON-ify payload of the task: {task}")
+            task['payload'] = json.dumps(payload)
+
+        return task
+
+
     def move_task_to_retry_table(self, task: Dict, wanted_delay: int):
         """
         Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
@@ -616,6 +630,8 @@ class TaskManager(Processor):
         # Add task to retry table
         retry_row = task.copy()
         retry_row[_('desired_launch_time')] = int(time.time()) + wanted_delay
+        retry_row = self._jsonify_payload_of_task(retry_row)
+
         self.dynamo_db_client.put(retry_row, table_name=self.config.get('sosw_retry_tasks_table'))
 
         # Delete task from tasks table
@@ -658,6 +674,8 @@ class TaskManager(Processor):
             del task['desired_launch_time']
             lowest_greenfield = lowest_greenfield - 1
             task[_('greenfield')] = lowest_greenfield
+            task = self._jsonify_payload_of_task(task)
+
             delete_keys = {_('labourer_id'): labourer.id, _('task_id'): task[_('task_id')]}
 
             # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table

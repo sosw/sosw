@@ -79,9 +79,6 @@ class Scavenger(Processor):
 
         logger.debug(f"Called Scavenger.move_task_to_retry_table with labourer={labourer}, task={task}")
         wanted_delay = self.calculate_delay_for_task_retry(labourer, task)
-        raise RuntimeError("Need to test the optimal way to re-construct payload from already scheduled task. "
-                           "Currently it saves the `payload` as dictionary not a JSON. "
-                           "All functions fail if they are retried.")
         self.task_client.move_task_to_retry_table(task, wanted_delay)
 
 
