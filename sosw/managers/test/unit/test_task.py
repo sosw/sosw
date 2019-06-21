@@ -447,6 +447,10 @@ class task_manager_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.manager.construct_payload_for_task(**test), json.dumps(expected))
 
 
+    def test_construct_payload_for_task2(self):
+        assert False, "Need to test the optimal way to re-construct payload from already scheduled task."
+
+
     def test_get_average_labourer_duration__calls_dynamo_twice(self):
         """
         This is am important test for other ones of this method.
