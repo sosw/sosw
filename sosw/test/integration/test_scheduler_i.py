@@ -52,7 +52,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         if only_remote:
             try:
                 os.remove(local or self.scheduler.local_queue_file)
-            except:
+            except Exception:
                 pass
 
 
@@ -84,12 +84,12 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         try:
             os.remove(self.scheduler.local_queue_file)
-        except:
+        except Exception:
             pass
 
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
+        except Exception:
             pass
 
 

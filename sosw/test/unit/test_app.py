@@ -3,7 +3,7 @@ import os
 import unittest
 
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
 from sosw.components.sns import SnsManager
@@ -31,7 +31,7 @@ class app_UnitTestCase(unittest.TestCase):
     def tearDown(self):
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
+        except Exception:
             pass
 
 
@@ -134,3 +134,46 @@ class app_UnitTestCase(unittest.TestCase):
         event = {'k': 'm', 'logging_level': 20}
         lambda_handler(event=event, context={'context': 'test'})
         logger_set_level.assert_called_once_with(20)
+
+
+    @mock.patch("boto3.client")
+    def test_die(self, mock_boto):
+
+        p = Processor(custom_config=self.TEST_CONFIG)
+
+        with self.assertRaises(SystemExit):
+            p.die()
+
+
+    @mock.patch("boto3.client")
+    def test_die__uncatchable_death(self, mock_boto):
+
+        class Child(Processor):
+            def catch_me(self):
+                try:
+                    self.die()
+                except Exception:
+                    pass
+
+        p = Child(custom_config=self.TEST_CONFIG)
+
+        with self.assertRaises(SystemExit):
+            p.catch_me()
+
+
+    @mock.patch("boto3.client")
+    def test_die__calls_sns(self, mock_boto):
+
+        mock_boto_client = MagicMock()
+        mock_boto.return_value = mock_boto_client
+
+        p = Processor(custom_config=self.TEST_CONFIG)
+
+        with self.assertRaises(SystemExit):
+            p.die()
+
+        mock_boto_client.publish.assert_called_once()
+        args, kwargs = mock_boto_client.publish.call_args
+        self.assertIn('SoswWorkerErrors', kwargs['TopicArn'])
+        self.assertEqual(kwargs['Subject'], 'Some Function died')
+        self.assertEqual(kwargs['Message'], 'Unknown Failure')
