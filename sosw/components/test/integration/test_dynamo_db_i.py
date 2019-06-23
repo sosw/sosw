@@ -3,7 +3,6 @@ import logging
 import time
 import unittest
 import os
-from collections import defaultdict
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -12,6 +11,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.helpers import chunks
 
 
 class dynamodb_client_IntegrationTestCase(unittest.TestCase):
@@ -584,6 +584,29 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             }
         }
         self.assertDictEqual(expected, indexes)
+
+
+    def test_batch_get_items_one_table(self):
+        # If you want to stress test batch_get_items_one_table, use bigger numbers
+        num_of_items = 5
+        query_from = 2
+        query_till = 4
+        expected_items = query_till - query_from
+
+        # Write items
+        operations = []
+        query_keys = []
+        for i in range(num_of_items):
+            item = {self.HASH_COL: f'cat{i%2}', self.RANGE_COL: i}
+            operations.append({'Put': self.dynamo_client.build_put_query(item)})
+            query_keys.append(item)
+        for operations_chunk in chunks(operations, 10):
+            self.dynamo_client.dynamo_client.transact_write_items(TransactItems=operations_chunk)
+            time.sleep(1)  # cause the table has 10 write/sec capacity
+
+        # Batch get items
+        results = self.dynamo_client.batch_get_items_one_table(keys_list=query_keys[query_from:query_till])
+        self.assertEqual(expected_items, len(results))
 
 
 if __name__ == '__main__':

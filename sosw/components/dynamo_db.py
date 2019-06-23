@@ -310,7 +310,7 @@ class DynamoDbClient:
                 else:
                     raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                      f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
-        logger.debug(result)
+        logger.debug(f"dict_to_dynamo result: {result}")
         return result
 
 
@@ -602,45 +602,51 @@ class DynamoDbClient:
         # Convert given keys to dynamo syntax
         query_keys = [self.dict_to_dynamo(item) for item in keys_list]
 
-        batch_get_item_query = {
-            'RequestItems': {
-                table_name: {
-                    'Keys': query_keys
+        # Check if we skipped something - if we did, try again.
+        def get_unprocessed_keys(db_result):
+            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
+                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+
+        all_items = []
+
+        for query_keys_chunk in chunks(query_keys, 100):
+
+            batch_get_item_query = {
+                'RequestItems': {
+                    table_name: {
+                        'Keys': query_keys_chunk
+                    }
                 }
             }
-        }
 
-        logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+            logger.debug(f"latest_result: {latest_result}")
+            unprocessed_keys = get_unprocessed_keys(latest_result)
+            all_items += latest_result['Responses'][table_name]
+            logger.debug(f"batch_get_items_one_table response: {latest_result}")
 
-        db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-        logger.debug(f"batch_get_items_one_table response: {db_result}")
+            if unprocessed_keys:
+                # Retry several times
+                retry_num = 0
+                wait_time = retry_wait_base_time
+                while unprocessed_keys and retry_num < max_retries:
+                    logger.warning(f"batch_get_item action did NOT finish successfully.")
+                    time.sleep(wait_time)
+                    batch_get_item_query['RequestItems'][table_name]['Keys'] = unprocessed_keys
+                    latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+                    logger.debug(f"latest_result: {latest_result}")
+                    all_items += latest_result['Responses'][table_name]
+                    retry_num += 1
+                    wait_time *= 2
+                    unprocessed_keys = get_unprocessed_keys(latest_result)
 
-
-        # Check if we skipped something - if we did, try again.
-        def is_action_incomplete(db_result):
-            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
-
-
-        if is_action_incomplete(db_result):
-            # Retry several times
-            retry_num = 0
-            wait_time = retry_wait_base_time
-            while is_action_incomplete(db_result) and retry_num < max_retries:
-                logger.warning(f"batch_get_item action did NOT finish successfully.")
-                time.sleep(wait_time)
-                db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-                retry_num += 1
-                wait_time *= 2
-
-        # After the retries still we have a bad result... then raise Exception
-        if is_action_incomplete(db_result):
-            raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
-
-        items = db_result['Responses'][table_name]
+            # After the retries still we have a bad result... then raise Exception
+            if get_unprocessed_keys(latest_result):
+                raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
 
         result = []
-        for item in items:
+        for item in all_items:
             result.append(self.dynamo_to_dict(item, fetch_all_fields=fetch_all_fields))
 
         return result
