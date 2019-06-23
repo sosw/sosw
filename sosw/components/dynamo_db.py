@@ -220,9 +220,10 @@ class DynamoDbClient:
         if strict is not None:
             logging.warning(f"dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         result = {}
-        if fetch_all_fields is False or (fetch_all_fields is None and strict in (True, None)):
+        if not fetch_all_fields:
             for key, key_type in self.row_mapper.items():
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
@@ -356,8 +357,7 @@ class DynamoDbClient:
         if strict is not None:
             logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
-        if not isinstance(fetch_all_fields, bool):
-            fetch_all_fields = False if strict is None else not strict
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -476,8 +476,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    # @benchmark
-    def get_by_scan(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -486,17 +485,23 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
-            If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+            If True, will get all attributes. Default is False.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
+        response_iterator = self._build_scan_iterator(attrs, table_name)
 
         result = []
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_scan_queries'] += 1
 
         return result
@@ -519,13 +524,13 @@ class DynamoDbClient:
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        response_iterator = self._build_scan_iterator(attrs, table_name)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
             yield [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None, strict=True):
+    def _build_scan_iterator(self, attrs=None, table_name=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
