@@ -313,11 +313,10 @@ class DynamoDbClient:
         return result
 
 
-    # @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
-                     desc: bool = False) -> Union[List[Dict], int]:
+                     filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
+                     desc: bool = False, fetch_all_fields: bool = None) -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -343,15 +342,22 @@ class DynamoDbClient:
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
             e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
-        :param bool strict:     If True, will only get the attributes specified in the row mapper.
-                                If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
         :param bool return_count: If True, will return the number of items in the result instead of the items themselves
         :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
                              To reverse the order set the argument `desc = True`.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
         """
+
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        if not isinstance(fetch_all_fields, bool):
+            fetch_all_fields = False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -417,7 +423,7 @@ class DynamoDbClient:
             return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:
                 break

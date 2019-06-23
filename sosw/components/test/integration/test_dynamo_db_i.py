@@ -365,7 +365,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         # Filter expression neggs the first three rows because they don't have `mark = 1`.
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: 4}
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='mark = 1')
+                                                 fetch_all_fields=True, filter_expression='mark = 1')
         # print(result)
 
         self.assertEqual(len(result), 2)
@@ -374,7 +374,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         # In the same test we check also some comparator _functions_.
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='attribute_exists mark')
+                                                 fetch_all_fields=True, filter_expression='attribute_exists mark')
         # print(result)
         self.assertEqual(len(result), 2)
         self.assertEqual([x[self.RANGE_COL] for x in result], list(range(3, 5)))
@@ -383,7 +383,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(result[1], {self.HASH_COL: 'cat', self.RANGE_COL: 4, 'mark': 1})
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='attribute_not_exists mark')
+                                                 fetch_all_fields=True, filter_expression='attribute_not_exists mark')
         # print(result)
         self.assertEqual(len(result), 3)
         self.assertEqual([x[self.RANGE_COL] for x in result], list(range(3)))
