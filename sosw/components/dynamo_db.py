@@ -567,7 +567,7 @@ class DynamoDbClient:
 
 
     def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
-                                  strict=True):
+                                  strict=None, fetch_all_fields=None):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -585,11 +585,17 @@ class DynamoDbClient:
                                 multiplied by 2 after each retry, so `retries` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
-        :param bool strict:     If True, will only get the attributes specified in the row mapper.
-                                If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
         :return: List of items from the table
         :rtype: list
         """
+
+        if strict is not None:
+            logging.warning(f"batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -635,7 +641,7 @@ class DynamoDbClient:
 
         result = []
         for item in items:
-            result.append(self.dynamo_to_dict(item, fetch_all_fields=not strict))
+            result.append(self.dynamo_to_dict(item, fetch_all_fields=fetch_all_fields))
 
         return result
 

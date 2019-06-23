@@ -226,7 +226,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
         self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
 
-        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], strict=True)
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], fetch_all_fields=False)
 
         self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10}])
 
@@ -238,7 +238,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
         self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
 
-        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], strict=False)
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], fetch_all_fields=True)
 
         self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10, 'unknown_col': 'not_strict'}])
 
