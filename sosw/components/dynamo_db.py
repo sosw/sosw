@@ -200,7 +200,7 @@ class DynamoDbClient:
         return indexes
 
 
-    def dynamo_to_dict(self, dynamo_row, strict=True):
+    def dynamo_to_dict(self, dynamo_row: Dict, strict: bool = None, fetch_all_fields: Optional[bool] = None) -> Dict:
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
         We currently support only String or Numeric values. Latest ones are converted to int or float.
@@ -209,15 +209,20 @@ class DynamoDbClient:
         e.g.:               {'key1': {'N': '3'}, 'key2': {'S': 'value2'}}
         will convert to:    {'key1': 3, 'key2': 'value2'}
 
-        :param dict dynamo_row:     DynamoDB row item
-        :param boolean  strict:     If True only row_mapper fields will be extracted from dynamo_row, else, all
-                                    fields will be extracted from dynamo_row.
+        :param dict dynamo_row:       DynamoDB row item
+        :param bool strict:           DEPRECATED.
+        :param bool fetch_all_fields: If False only row_mapper fields will be extracted from dynamo_row, else, all
+                                      fields will be extracted from dynamo_row.
+        :return: The row in a key-value format
         :rtype: dict
-        :return:                    Human readable row from dynamo
         """
 
+        if strict is not None:
+            logging.warning(f"dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+
         result = {}
-        if strict:
+        if fetch_all_fields is False or (fetch_all_fields is None and strict in (True, None)):
             for key, key_type in self.row_mapper.items():
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
@@ -412,7 +417,7 @@ class DynamoDbClient:
             return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:
                 break
@@ -485,7 +490,7 @@ class DynamoDbClient:
 
         result = []
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
             self.stats['dynamo_scan_queries'] += 1
 
         return result
@@ -511,7 +516,7 @@ class DynamoDbClient:
         response_iterator = self._build_scan_iterator(attrs, table_name, strict)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
-            yield [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            yield [self.dynamo_to_dict(x, fetch_all_fields=not strict) for x in page['Items']]
 
 
     def _build_scan_iterator(self, attrs=None, table_name=None, strict=True):
@@ -614,7 +619,7 @@ class DynamoDbClient:
 
         result = []
         for item in items:
-            result.append(self.dynamo_to_dict(item, strict=strict))
+            result.append(self.dynamo_to_dict(item, fetch_all_fields=not strict))
 
         return result
 

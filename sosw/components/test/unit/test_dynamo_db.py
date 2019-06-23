@@ -92,7 +92,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
             'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}
         }
-        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
             'extra_key_s': 'wowie'
@@ -110,13 +110,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
             'duck_quack': {'S': '{"quack": "duck"}'}
         }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
         }
         self.assertDictEqual(res, expected)
 
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
         }
@@ -133,13 +133,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
             'duck_quack': {'S': '{"quack": "duck"}'}
         }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}, 'duck_quack': {"quack": "duck"}
         }
         self.assertDictEqual(res, expected)
 
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}
         }
