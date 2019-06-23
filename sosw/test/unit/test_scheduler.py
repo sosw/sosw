@@ -100,13 +100,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
+        except Exception:
             pass
 
         for fname in [self.scheduler.local_queue_file, self.FNAME]:
             try:
                 os.remove(fname)
-            except:
+            except Exception:
                 pass
 
 
@@ -318,7 +318,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 pattern = '[a-z]+_([0-9]+)_days'
                 try:
                     expected_number = int(re.match(pattern, test['period'])[1])
-                except:
+                except Exception:
                     expected_number = 1
             else:
                 expected_number = 1
@@ -496,7 +496,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         def find_product(t):
             try:
                 return set(t['product_versions'].keys()) == {'product_version_audio', 'product_version_paper'}
-            except:
+            except Exception:
                 return False
 
 

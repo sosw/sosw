@@ -292,7 +292,7 @@ class TaskManager(Processor):
 
         try:
             new_task['payload'] = self.construct_payload_for_task(**kw)
-        except:
+        except Exception:
             raise ValueError(f"Unexpected `payload` or custom attrs for task '{kwargs}'. Should be dict() or JSON.")
 
         # Saving to DynamoDB.
@@ -314,7 +314,7 @@ class TaskManager(Processor):
         if isinstance(payload, str):
             try:
                 result = json.loads(payload)
-            except:
+            except Exception:
                 result = dict(payload=payload)
         elif not isinstance(payload, dict):
             result = dict(payload=payload)

@@ -44,7 +44,7 @@ class Worker(Processor):
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
             self.mark_task_as_completed(event.get('task_id'))
-        except:
+        except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
 
