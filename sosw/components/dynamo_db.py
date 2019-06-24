@@ -282,9 +282,11 @@ class DynamoDbClient:
         if add_prefix is None:
             add_prefix = ''
 
-        result = {f"{add_prefix}{key}": {key_type: str(row_dict.get(key))} for (key, key_type) in
-                  self.row_mapper.items()
-                  if row_dict.get(key) is not None}
+        result = {}
+        for key, key_type in self.row_mapper.items():
+            if row_dict.get(key) is not None:
+                val = row_dict[key] if isinstance(row_dict[key], bool) else str(row_dict[key])
+                result[f"{add_prefix}{key}"] = {key_type: val}
         result_keys = result.keys()
         if add_prefix:
             result_keys = [x[len(add_prefix):] for x in result.keys()]
@@ -292,7 +294,9 @@ class DynamoDbClient:
             if not strict:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
-                if isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                if isinstance(val, bool):
+                    result[key_with_prefix] = {'BOOL': row_dict.get(key)}
+                elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
                     result[key_with_prefix] = {'N': str(row_dict.get(key))}
                 else:
                     result[key_with_prefix] = {'S': str(row_dict.get(key))}
@@ -639,7 +643,6 @@ class DynamoDbClient:
         return query
 
 
-    # @benchmark
     def put(self, row, table_name=None, overwrite_existing=True):
         """
         Adds a row to the database

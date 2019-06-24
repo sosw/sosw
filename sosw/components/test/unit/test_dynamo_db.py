@@ -27,7 +27,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'other_col':     'S',
             'new_col':       'S',
             'some_col':      'S',
-            'some_counter':  'N'
+            'some_counter':  'N',
+            'some_bool':     'BOOL',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db'
@@ -56,17 +57,20 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_dict_to_dynamo_strict(self):
-        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
+        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row)
-        expected = {'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'}}
+        expected = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'some_bool':   {'BOOL': True}
+        }
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
     def test_dict_to_dynamo_not_strict(self):
-        dict_row = {'name': 'cat', 'age': 3}
+        dict_row = {'name': 'cat', 'age': 3, 'other_bool': False}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
-        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}}
+        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}, 'other_bool': {'BOOL': False}}
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
