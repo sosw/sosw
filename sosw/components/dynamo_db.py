@@ -13,7 +13,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
 from .benchmark import benchmark
-from .helpers import chunks
+from .helpers import chunks, to_bool
 
 
 logger = logging.getLogger()
@@ -223,7 +223,7 @@ class DynamoDbClient:
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
                     if key_type == 'BOOL':
-                        result[key] = val
+                        result[key] = to_bool(val)
                     elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
@@ -244,7 +244,7 @@ class DynamoDbClient:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
                 for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
                     if key_type == 'BOOL':
-                        result[key] = val
+                        result[key] = to_bool(val)
                     elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':

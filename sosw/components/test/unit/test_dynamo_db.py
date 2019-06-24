@@ -29,6 +29,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'some_col':      'S',
             'some_counter':  'N',
             'some_bool':     'BOOL',
+            'some_bool2':    'BOOL',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db'
@@ -86,22 +87,24 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_dynamo_to_dict(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False}
+            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False}, 'some_bool2': {'BOOL': 'False'}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
-        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False}
+        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
+                    'some_bool2': False}
         self.assertDictEqual(dict_row, expected)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True}
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True},
+            'other_bool2': {'BOOL': 'True'}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
         expected = {
             'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-            'extra_key_s': 'wowie', 'other_bool': True
+            'extra_key_s': 'wowie', 'other_bool': True, 'other_bool2': True
         }
         self.assertDictEqual(dict_row, expected)
 
