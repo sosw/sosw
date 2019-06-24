@@ -222,7 +222,9 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
-                    if key_type == 'N':
+                    if key_type == 'BOOL':
+                        result[key] = val
+                    elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
@@ -241,7 +243,9 @@ class DynamoDbClient:
         else:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
                 for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
-                    if key_type == 'N':
+                    if key_type == 'BOOL':
+                        result[key] = val
+                    elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.

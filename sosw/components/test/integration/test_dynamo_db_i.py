@@ -271,7 +271,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__primary_index(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test', 'some_bool': True}
         self.dynamo_client.put(row, self.table_name)
 
         result = self.dynamo_client.get_by_query(keys=keys)
