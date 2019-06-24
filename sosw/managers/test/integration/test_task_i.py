@@ -214,7 +214,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             mock_time.return_value = self.NOW_TIME
             self.manager.mark_task_invoked(self.LABOURER, row)
 
-        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, strict=False)
+        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, fetch_all_fields=True)
         # print(f"The new updated value of task is: {result}")
 
         # Rounded -2 we check that the greenfield was updated
