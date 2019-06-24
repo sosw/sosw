@@ -13,7 +13,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
 from .benchmark import benchmark
-from .helpers import chunks
+from .helpers import chunks, to_bool
 
 
 logger = logging.getLogger()
@@ -228,7 +228,9 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
-                    if key_type == 'N':
+                    if key_type == 'BOOL':
+                        result[key] = val
+                    elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
@@ -247,7 +249,9 @@ class DynamoDbClient:
         else:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
                 for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
-                    if key_type == 'N':
+                    if key_type == 'BOOL':
+                        result[key] = val
+                    elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
@@ -288,9 +292,11 @@ class DynamoDbClient:
         if add_prefix is None:
             add_prefix = ''
 
-        result = {f"{add_prefix}{key}": {key_type: str(row_dict.get(key))} for (key, key_type) in
-                  self.row_mapper.items()
-                  if row_dict.get(key) is not None}
+        result = {}
+        for key, key_type in self.row_mapper.items():
+            if row_dict.get(key) is not None:
+                val = to_bool(row_dict[key]) if key_type == 'BOOL' else str(row_dict[key])
+                result[f"{add_prefix}{key}"] = {key_type: val}
         result_keys = result.keys()
         if add_prefix:
             result_keys = [x[len(add_prefix):] for x in result.keys()]
@@ -298,7 +304,9 @@ class DynamoDbClient:
             if not strict:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
-                if isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                if isinstance(val, bool):
+                    result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
+                elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
                     result[key_with_prefix] = {'N': str(row_dict.get(key))}
                 else:
                     result[key_with_prefix] = {'S': str(row_dict.get(key))}
@@ -675,7 +683,6 @@ class DynamoDbClient:
         return query
 
 
-    # @benchmark
     def put(self, row, table_name=None, overwrite_existing=True):
         """
         Adds a row to the database

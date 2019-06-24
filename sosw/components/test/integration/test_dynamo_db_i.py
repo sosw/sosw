@@ -26,7 +26,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'other_col':     'S',
             'new_col':       'S',
             'some_col':      'S',
-            'some_counter':  'N'
+            'some_counter':  'N',
+            'some_bool':     'BOOL',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db',
@@ -57,7 +58,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_put(self):
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True}
 
         client = boto3.client('dynamodb')
 
@@ -79,7 +80,12 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         items = result['Items']
 
-        self.assertTrue(len(items) > 0)
+        self.assertEqual(1, len(items))
+
+        expected = [{'hash_col':  {'S': 'cat'},
+                     'range_col': {'N': '123'},
+                     'some_bool': {'BOOL': True}}]
+        self.assertEqual(expected, items)
 
 
     def test_put__create(self):
@@ -265,7 +271,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__primary_index(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test', 'some_bool': True}
         self.dynamo_client.put(row, self.table_name)
 
         result = self.dynamo_client.get_by_query(keys=keys)
