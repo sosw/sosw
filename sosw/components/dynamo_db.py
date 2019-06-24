@@ -223,7 +223,7 @@ class DynamoDbClient:
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
                     if key_type == 'BOOL':
-                        result[key] = to_bool(val)
+                        result[key] = val
                     elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
@@ -244,7 +244,7 @@ class DynamoDbClient:
             for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
                 for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
                     if key_type == 'BOOL':
-                        result[key] = to_bool(val)
+                        result[key] = val
                     elif key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
@@ -289,7 +289,7 @@ class DynamoDbClient:
         result = {}
         for key, key_type in self.row_mapper.items():
             if row_dict.get(key) is not None:
-                val = row_dict[key] if isinstance(row_dict[key], bool) else str(row_dict[key])
+                val = to_bool(row_dict[key]) if key_type == 'BOOL' else str(row_dict[key])
                 result[f"{add_prefix}{key}"] = {key_type: val}
         result_keys = result.keys()
         if add_prefix:
@@ -299,7 +299,7 @@ class DynamoDbClient:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
                 if isinstance(val, bool):
-                    result[key_with_prefix] = {'BOOL': row_dict.get(key)}
+                    result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
                 elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
                     result[key_with_prefix] = {'N': str(row_dict.get(key))}
                 else:

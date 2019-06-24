@@ -58,18 +58,19 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_dict_to_dynamo_strict(self):
-        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True}
+        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True,
+                    'some_bool2': 'True'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row)
         expected = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'some_bool':   {'BOOL': True}
+            'some_bool': {'BOOL': True}, 'some_bool2': {'BOOL': True}
         }
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
     def test_dict_to_dynamo_not_strict(self):
-        dict_row = {'name': 'cat', 'age': 3, 'other_bool': False}
+        dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
         expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}, 'other_bool': {'BOOL': False}}
         for key in expected.keys():
@@ -87,24 +88,22 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_dynamo_to_dict(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False}, 'some_bool2': {'BOOL': 'False'}
+            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
-        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
-                    'some_bool2': False}
+        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False}
         self.assertDictEqual(dict_row, expected)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True},
-            'other_bool2': {'BOOL': 'True'}
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
         expected = {
             'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-            'extra_key_s': 'wowie', 'other_bool': True, 'other_bool2': True
+            'extra_key_s': 'wowie', 'other_bool': True
         }
         self.assertDictEqual(dict_row, expected)
 
