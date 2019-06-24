@@ -1,10 +1,8 @@
-import boto3
 import logging
-import time
 import unittest
 import os
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -27,7 +25,9 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'other_col':     'S',
             'new_col':       'S',
             'some_col':      'S',
-            'some_counter':  'N'
+            'some_counter':  'N',
+            'some_bool':     'BOOL',
+            'some_bool2':    'BOOL',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db'
@@ -56,17 +56,21 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_dict_to_dynamo_strict(self):
-        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
+        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True,
+                    'some_bool2': 'True'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row)
-        expected = {'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'}}
+        expected = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'some_bool': {'BOOL': True}, 'some_bool2': {'BOOL': True}
+        }
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
     def test_dict_to_dynamo_not_strict(self):
-        dict_row = {'name': 'cat', 'age': 3}
+        dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
-        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}}
+        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}, 'other_bool': {'BOOL': False}}
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
@@ -82,22 +86,22 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_dynamo_to_dict(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key':   {'N': '42'}
+            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
-        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456}
+        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False}
         self.assertDictEqual(dict_row, expected)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True}
         }
-        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-            'extra_key_s': 'wowie'
+            'extra_key_s': 'wowie', 'other_bool': True
         }
         self.assertDictEqual(dict_row, expected)
 
@@ -112,13 +116,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
             'duck_quack': {'S': '{"quack": "duck"}'}
         }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
         }
         self.assertDictEqual(res, expected)
 
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
         }
@@ -135,13 +139,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
             'duck_quack': {'S': '{"quack": "duck"}'}
         }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}, 'duck_quack': {"quack": "duck"}
         }
         self.assertDictEqual(res, expected)
 
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=True)
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False)
         expected = {
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}
         }
@@ -219,6 +223,30 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.dynamo_client.create(row)
 
         self.dynamo_client.put.assert_called_once_with(row, None, overwrite_existing=False)
+
+
+    def test_batch_get_items_one_table__strict(self):
+        # Strict - returns only fields that are in the row mapper
+        db_items = [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}, 'unknown_col': {'S': 'not_strict'}}]
+        db_result = {'Responses': {'autotest_dynamo_db': db_items}}
+
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], fetch_all_fields=False)
+
+        self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10}])
+
+
+    def test_batch_get_items_one_table__not_strict(self):
+        # Not strict - returns all fields
+        db_items = [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}, 'unknown_col': {'S': 'not_strict'}}]
+        db_result = {'Responses': {'autotest_dynamo_db': db_items}}
+
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], fetch_all_fields=True)
+
+        self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10, 'unknown_col': 'not_strict'}])
 
 
 if __name__ == '__main__':

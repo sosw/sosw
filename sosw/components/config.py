@@ -61,7 +61,7 @@ class SSMConfig:
                     Names=[name],
                     WithDecryption=True
             )
-        except:
+        except Exception:
             response = ssm_client.get_parameters(
                     Names=[name],
                     WithDecryption=False
@@ -233,7 +233,7 @@ class DynamoConfig:
 
         try:
             return json.loads(config_value)
-        except:
+        except Exception:
             return config_value if config_value is not None else {}
 
 
@@ -269,7 +269,7 @@ class DynamoConfig:
         for row in items:
             try:
                 row['config_value'] = json.loads(row['config_value'])
-            except:
+            except Exception:
                 pass
             config_name = row['config_name'].replace(prefix, '')
             res[config_name] = row['config_value']
