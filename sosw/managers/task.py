@@ -486,7 +486,7 @@ class TaskManager(Processor):
                 },
                 table_name=self.config['dynamo_db_config']['table_name'],
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                strict=True,
+                fetch_all_fields=False,
                 max_items=cnt,
                 comparisons={
                     self.get_db_field_name('greenfield'): '<'

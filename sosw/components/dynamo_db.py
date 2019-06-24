@@ -200,7 +200,7 @@ class DynamoDbClient:
         return indexes
 
 
-    def dynamo_to_dict(self, dynamo_row, strict=True):
+    def dynamo_to_dict(self, dynamo_row: Dict, strict: bool = None, fetch_all_fields: Optional[bool] = None) -> Dict:
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
         We currently support only String or Numeric values. Latest ones are converted to int or float.
@@ -209,15 +209,21 @@ class DynamoDbClient:
         e.g.:               {'key1': {'N': '3'}, 'key2': {'S': 'value2'}}
         will convert to:    {'key1': 3, 'key2': 'value2'}
 
-        :param dict dynamo_row:     DynamoDB row item
-        :param boolean  strict:     If True only row_mapper fields will be extracted from dynamo_row, else, all
-                                    fields will be extracted from dynamo_row.
+        :param dict dynamo_row:       DynamoDB row item
+        :param bool strict:           DEPRECATED.
+        :param bool fetch_all_fields: If False only row_mapper fields will be extracted from dynamo_row, else, all
+                                      fields will be extracted from dynamo_row.
+        :return: The row in a key-value format
         :rtype: dict
-        :return:                    Human readable row from dynamo
         """
 
+        if strict is not None:
+            logging.warning(f"dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
         result = {}
-        if strict:
+        if not fetch_all_fields:
             for key, key_type in self.row_mapper.items():
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
@@ -312,15 +318,14 @@ class DynamoDbClient:
                 else:
                     raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                      f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
-        logger.debug(result)
+        logger.debug(f"dict_to_dynamo result: {result}")
         return result
 
 
-    # @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
-                     desc: bool = False) -> Union[List[Dict], int]:
+                     filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
+                     desc: bool = False, fetch_all_fields: bool = None) -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -346,15 +351,21 @@ class DynamoDbClient:
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
             e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
-        :param bool strict:     If True, will only get the attributes specified in the row mapper.
-                                If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
         :param bool return_count: If True, will return the number of items in the result instead of the items themselves
         :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
                              To reverse the order set the argument `desc = True`.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
         """
+
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -420,7 +431,7 @@ class DynamoDbClient:
             return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:
                 break
@@ -473,8 +484,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    # @benchmark
-    def get_by_scan(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -483,24 +493,29 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
-            If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+            If True, will get all attributes. Default is False.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
+        response_iterator = self._build_scan_iterator(attrs, table_name)
 
         result = []
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_scan_queries'] += 1
 
         return result
 
 
-    # @benchmark
-    def get_by_scan_generator(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan_generator(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -510,19 +525,25 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
+        response_iterator = self._build_scan_iterator(attrs, table_name)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
-            yield [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            yield [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None, strict=True):
+    def _build_scan_iterator(self, attrs=None, table_name=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -553,7 +574,8 @@ class DynamoDbClient:
         return response_iterator
 
 
-    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2):
+    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
+                                  strict=None, fetch_all_fields=None):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -571,55 +593,69 @@ class DynamoDbClient:
                                 multiplied by 2 after each retry, so `retries` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
         :return: List of items from the table
         :rtype: list
         """
+
+        if strict is not None:
+            logging.warning(f"batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
         # Convert given keys to dynamo syntax
         query_keys = [self.dict_to_dynamo(item) for item in keys_list]
 
-        batch_get_item_query = {
-            'RequestItems': {
-                table_name: {
-                    'Keys': query_keys
+        # Check if we skipped something - if we did, try again.
+        def get_unprocessed_keys(db_result):
+            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
+                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+
+        all_items = []
+
+        for query_keys_chunk in chunks(query_keys, 100):
+
+            batch_get_item_query = {
+                'RequestItems': {
+                    table_name: {
+                        'Keys': query_keys_chunk
+                    }
                 }
             }
-        }
 
-        logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+            logger.debug(f"latest_result: {latest_result}")
+            unprocessed_keys = get_unprocessed_keys(latest_result)
+            all_items += latest_result['Responses'][table_name]
+            logger.debug(f"batch_get_items_one_table response: {latest_result}")
 
-        db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-        logger.debug(f"batch_get_items_one_table response: {db_result}")
+            if unprocessed_keys:
+                # Retry several times
+                retry_num = 0
+                wait_time = retry_wait_base_time
+                while unprocessed_keys and retry_num < max_retries:
+                    logger.warning(f"batch_get_item action did NOT finish successfully.")
+                    time.sleep(wait_time)
+                    batch_get_item_query['RequestItems'][table_name]['Keys'] = unprocessed_keys
+                    latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+                    logger.debug(f"latest_result: {latest_result}")
+                    all_items += latest_result['Responses'][table_name]
+                    retry_num += 1
+                    wait_time *= 2
+                    unprocessed_keys = get_unprocessed_keys(latest_result)
 
-
-        # Check if we skipped something - if we did, try again.
-        def is_action_incomplete(db_result):
-            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
-
-
-        if is_action_incomplete(db_result):
-            # Retry several times
-            retry_num = 0
-            wait_time = retry_wait_base_time
-            while is_action_incomplete(db_result) and retry_num < max_retries:
-                logger.warning(f"batch_get_item action did NOT finish successfully.")
-                time.sleep(wait_time)
-                db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-                retry_num += 1
-                wait_time *= 2
-
-        # After the retries still we have a bad result... then raise Exception
-        if is_action_incomplete(db_result):
-            raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
-
-        items = db_result['Responses'][table_name]
+            # After the retries still we have a bad result... then raise Exception
+            if get_unprocessed_keys(latest_result):
+                raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
 
         result = []
-        for item in items:
-            result.append(self.dynamo_to_dict(item))
+        for item in all_items:
+            result.append(self.dynamo_to_dict(item, fetch_all_fields=fetch_all_fields))
 
         return result
 
