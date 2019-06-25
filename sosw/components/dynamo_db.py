@@ -428,7 +428,8 @@ class DynamoDbClient:
         result = []
 
         if return_count:
-            return sum([page['Count'] for page in response_iterator])
+            count = sum([page['Count'] for page in response_iterator])
+            return count if max_items is None else min(count, max_items)
 
         for page in response_iterator:
             result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
