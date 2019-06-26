@@ -456,14 +456,6 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name)
         self.assertEqual(len(result), INITIAL_TASKS)
 
-        st = time.perf_counter()
-        count_result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=n,
-                                                       return_count=True)
-        bm = time.perf_counter() - st
-        logging.info(f"Benchmark [count] (n={n}): {bm}")
-
-        self.assertEqual(count_result, n)
-
 
     def test_get_by_query__return_count(self):
         rows = [
