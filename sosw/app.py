@@ -58,6 +58,16 @@ class Processor:
         self.register_clients(self.config.get('init_clients', []))
 
 
+    def set_lambda_context(self, context):
+        """
+        Reset the self.lambda_context with the fresh object.
+        Your functions inheriting from `Processor`, may use `self.lambda_context`
+        or use the same object from `global_vars`.
+        """
+
+        self.lambda_context = context
+
+
     @benchmark
     def register_clients(self, clients):
         """
@@ -385,6 +395,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         if global_vars.processor is None:
             global_vars.processor = processor_class(custom_config=custom_config, test=test)
+
+        global_vars.processor.set_lambda_context(global_vars.lambda_context)
 
         result = global_vars.processor(event)
 
