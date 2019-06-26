@@ -417,6 +417,8 @@ class DynamoDbClient:
 
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
+            if return_count:
+                raise Exception(f"DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together")
 
         if desc:
             query_args['ScanIndexForward'] = False
@@ -428,8 +430,7 @@ class DynamoDbClient:
         result = []
 
         if return_count:
-            count = sum([page['Count'] for page in response_iterator])
-            return count if max_items is None else min(count, max_items)
+            return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
             result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
