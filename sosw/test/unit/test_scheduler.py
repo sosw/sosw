@@ -16,7 +16,7 @@ import pprint
 from unittest import mock
 from unittest.mock import MagicMock, PropertyMock, patch
 
-from sosw.scheduler import Scheduler, InvalidJob
+from sosw.scheduler import Scheduler, InvalidJob, global_vars
 from sosw.labourer import Labourer
 from sosw.components.helpers import chunks
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
@@ -79,13 +79,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'auto_spawning': True
         }
 
-        self.lambda_context = types.SimpleNamespace()
-        self.lambda_context.aws_request_id = 'AWS_REQ_ID'
-        self.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        self.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context = types.SimpleNamespace()
+        lambda_context.aws_request_id = 'AWS_REQ_ID'
+        lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        global_vars.lambda_context = lambda_context
+        self.custom_lambda_context = lambda_context  # This is to access from tests.
 
         with patch('boto3.client'):
-            self.scheduler = module.Scheduler(self.custom_config, context=self.lambda_context)
+            self.scheduler = module.Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
@@ -130,7 +132,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         config['job_schema']['chunkable_attrs'] = [('bad_name_ending_with_s', {})]
 
         with patch('boto3.client'):
-            self.assertRaises(AssertionError, Scheduler, custom_config=config, context=self.lambda_context)
+            self.assertRaises(AssertionError, Scheduler, custom_config=config)
 
 
     def test_get_next_chunkable_attr(self):
@@ -147,13 +149,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test__remote_queue_file(self):
         self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_file)
-        self.assertIn(self.lambda_context.aws_request_id, self.scheduler.remote_queue_file)
+        self.assertIn(self.custom_lambda_context.aws_request_id, self.scheduler.remote_queue_file)
 
 
     def test__remote_queue_locked_file(self):
         self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_locked_file)
         self.assertIn('locked_', self.scheduler.remote_queue_locked_file)
-        self.assertIn(self.lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
+        self.assertIn(self.custom_lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
 
 
     ### Tests of file operations ###
