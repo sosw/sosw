@@ -24,7 +24,7 @@ from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
 from sosw.app import Processor
-from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name
+from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
@@ -419,10 +419,13 @@ class Scheduler(Processor):
                 else:
                     vals = self.validate_list_of_vals(current_vals)
 
-                    for val in vals:
+                    # If batch_size is provided for this attr - we use it, by default chunk every.
+                    batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
+
+                    for val in chunks(vals, batch_size):
                         task = deepcopy(skeleton)
                         task.update(job_skeleton)
-                        task[plural(attr)] = [val]
+                        task[plural(attr)] = val
                         data.append(task)
 
         else:
@@ -490,7 +493,7 @@ class Scheduler(Processor):
         """
 
         attrs = single_or_plural(attr)
-        isolate_attrs = [f"isolate_{a}" for a in attrs]
+        isolate_attrs = [f"isolate_{a}" for a in attrs] + [f"max_{a}_per_batch" for a in attrs]
 
         if any(data[x] for x in isolate_attrs if x in data):
             logger.debug(f"needs_chunking(): Got requirement to isolate {attr} in the current scope: {data}")
