@@ -28,7 +28,10 @@ class Worker_UnitTestCase(unittest.TestCase):
 
 
     def test_close_task__called(self):
-        p = Worker()
+        with patch('boto3.client'):
+            p = Worker()
+
         p.mark_task_as_completed = MagicMock(return_value=None)
+
         p({'task_id': '123'})
         p.mark_task_as_completed.assert_called_once_with('123')
