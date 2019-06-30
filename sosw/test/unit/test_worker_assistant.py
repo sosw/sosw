@@ -10,24 +10,11 @@ os.environ["autotest"] = "True"
 from sosw.worker_assistant import WorkerAssistant
 
 
-class WorkerAssistantUnitTestCase(unittest.TestCase):
-    TEST_CONFIG = {'test': True}
-
+class WorkerAssistant_UnitTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.patcher = patch("sosw.app.get_config")
-        self.get_config_patch = self.patcher.start()
-
-        self.worker_assistant = WorkerAssistant(custom_config={'test': 1})
-
-
-    def tearDown(self):
-        self.patcher.stop()
-
-        try:
-            del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
-            pass
+        with patch('boto3.client'):
+            self.worker_assistant = WorkerAssistant()
 
 
     def test_call__unknown_action__raises(self):

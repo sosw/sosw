@@ -3,7 +3,6 @@ import logging
 import time
 import unittest
 import os
-from collections import defaultdict
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -12,6 +11,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.helpers import chunks
 
 
 class dynamodb_client_IntegrationTestCase(unittest.TestCase):
@@ -26,7 +26,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'other_col':     'S',
             'new_col':       'S',
             'some_col':      'S',
-            'some_counter':  'N'
+            'some_counter':  'N',
+            'some_bool':     'BOOL',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db',
@@ -57,7 +58,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_put(self):
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True}
 
         client = boto3.client('dynamodb')
 
@@ -79,7 +80,12 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         items = result['Items']
 
-        self.assertTrue(len(items) > 0)
+        self.assertEqual(1, len(items))
+
+        expected = [{'hash_col':  {'S': 'cat'},
+                     'range_col': {'N': '123'},
+                     'some_bool': {'BOOL': True}}]
+        self.assertEqual(expected, items)
 
 
     def test_put__create(self):
@@ -265,7 +271,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__primary_index(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'some_col': 'test', 'some_bool': True}
         self.dynamo_client.put(row, self.table_name)
 
         result = self.dynamo_client.get_by_query(keys=keys)
@@ -365,7 +371,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         # Filter expression neggs the first three rows because they don't have `mark = 1`.
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: 4}
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='mark = 1')
+                                                 fetch_all_fields=True, filter_expression='mark = 1')
         # print(result)
 
         self.assertEqual(len(result), 2)
@@ -374,7 +380,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         # In the same test we check also some comparator _functions_.
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='attribute_exists mark')
+                                                 fetch_all_fields=True, filter_expression='attribute_exists mark')
         # print(result)
         self.assertEqual(len(result), 2)
         self.assertEqual([x[self.RANGE_COL] for x in result], list(range(3, 5)))
@@ -383,7 +389,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
         self.assertEqual(result[1], {self.HASH_COL: 'cat', self.RANGE_COL: 4, 'mark': 1})
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
-                                                 strict=False, filter_expression='attribute_not_exists mark')
+                                                 fetch_all_fields=True, filter_expression='attribute_not_exists mark')
         # print(result)
         self.assertEqual(len(result), 3)
         self.assertEqual([x[self.RANGE_COL] for x in result], list(range(3)))
@@ -437,29 +443,18 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             if INITIAL_TASKS > 10:
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
+        n = 3
         st = time.perf_counter()
-        result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=3)
+        result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=n)
         bm = time.perf_counter() - st
-        print(f"Benchmark: {bm}")
+        logging.info(f"Benchmark (n={n}): {bm}")
 
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), n)
         self.assertLess(bm, 0.1)
 
         # Check unspecified limit.
         result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name)
         self.assertEqual(len(result), INITIAL_TASKS)
-
-        # Benchmarking
-        if INITIAL_TASKS >= 500:
-            st = time.perf_counter()
-            result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=499)
-            bm = time.perf_counter() - st
-            print(f"Benchmark: {bm}")
-            self.assertLess(bm, 0.1)
-
-            self.assertEqual(len(result), 499)
-            # Uncomment this see benchmark
-            # self.assertEqual(1, 2)
 
 
     def test_get_by_query__return_count(self):
@@ -584,6 +579,29 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             }
         }
         self.assertDictEqual(expected, indexes)
+
+
+    def test_batch_get_items_one_table(self):
+        # If you want to stress test batch_get_items_one_table, use bigger numbers
+        num_of_items = 5
+        query_from = 2
+        query_till = 4
+        expected_items = query_till - query_from
+
+        # Write items
+        operations = []
+        query_keys = []
+        for i in range(num_of_items):
+            item = {self.HASH_COL: f'cat{i%2}', self.RANGE_COL: i}
+            operations.append({'Put': self.dynamo_client.build_put_query(item)})
+            query_keys.append(item)
+        for operations_chunk in chunks(operations, 10):
+            self.dynamo_client.dynamo_client.transact_write_items(TransactItems=operations_chunk)
+            time.sleep(1)  # cause the table has 10 write/sec capacity
+
+        # Batch get items
+        results = self.dynamo_client.batch_get_items_one_table(keys_list=query_keys[query_from:query_till])
+        self.assertEqual(expected_items, len(results))
 
 
 if __name__ == '__main__':

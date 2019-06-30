@@ -29,6 +29,7 @@ __all__ = ['validate_account_to_dashed',
            'trim_arn_to_name',
            'trim_arn_to_account',
            'make_hash',
+           'to_bool'
            ]
 
 import re
@@ -760,3 +761,14 @@ def make_hash(o):
         new_o[make_hash(k)] = make_hash(v)
 
     return hash(tuple(frozenset(sorted(new_o.items()))))
+
+
+def to_bool(val):
+    if isinstance(val, (bool, int, float)):
+        return bool(val)
+    elif isinstance(val, str):
+        if val.lower() in ['true', '1']:
+            return True
+        elif val.lower() in ['false', '0']:
+            return False
+    raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")

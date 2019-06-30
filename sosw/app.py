@@ -19,7 +19,6 @@ __license__ = "MIT"
 __status__ = "Production"
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Processor:
@@ -44,16 +43,13 @@ class Processor:
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        if self.test and not custom_config:
-            raise RuntimeError("You must specify a custom config from your testcase to run processor in test mode.")
-
         self.lambda_context = kwargs.pop('context', None)
         if self.lambda_context:
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
-        self.config = self.DEFAULT_CONFIG
+        self.config = self.DEFAULT_CONFIG or {}
         self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config"))
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
         self.config = recursive_update(self.config, custom_config or {})
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
@@ -100,7 +96,7 @@ class Processor:
                     some_module = import_module(path(module_name))
                     logger.debug(f"Imported {service} from {path(module_name)}")
                     break
-                except:
+                except Exception:
                     pass
 
             else:
@@ -108,29 +104,30 @@ class Processor:
                 try:
                     setattr(self, f"{module_name}_client", boto3.client(module_name))
                     continue
-                except:
+                except Exception:
                     raise RuntimeError(f"Failed to import for service {module_name}. Component naming problem.")
 
             for suffix in client_suffixes:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
-                    some_client_config = self.config.get(f"{module_name}_config")
-                    logger.debug(f"Found config for {module_name}: {some_client_config}")
+                except AttributeError as e:
+                    logger.info(f"Didn't find {service} with suffix {suffix} in module {module_name}")
+                    continue
 
-                    # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
-                    if some_client_config:
-                        if suffix == 'Manager':
-                            setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
-                        elif suffix == 'Client':
-                            setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+                some_client_config = self.config.get(f"{module_name}_config")
+                logger.debug(f"Found config for {module_name}: {some_client_config}")
 
-                    else:
-                        setattr(self, f"{module_name}_client", some_class())
-                    logger.info(f"Successfully registered {module_name}_client")
-                    break
-                except AttributeError:
-                    logger.info(f"Failed suffix {suffix}")
-                    pass
+                # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
+                if some_client_config:
+                    if suffix == 'Manager':
+                        setattr(self, f"{module_name}_client", some_class(custom_config=some_client_config))
+                    elif suffix == 'Client':
+                        setattr(self, f"{module_name}_client", some_class(config=some_client_config))
+
+                else:
+                    setattr(self, f"{module_name}_client", some_class())
+                logger.info(f"Successfully registered {module_name}_client")
+                break
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
                                    f"Tried suffixes for class: {client_suffixes}")
@@ -218,7 +215,7 @@ class Processor:
                 try:
                     self.stats.update(getattr(self, some_client).get_stats())
                     logger.info(f"Updated Processor stats with stats of {some_client}")
-                except:
+                except Exception:
                     logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
         return self.stats
@@ -262,7 +259,7 @@ class Processor:
             for some_client in [x for x in dir(self) if x.endswith('_client')]:
                 try:
                     getattr(self, some_client).reset_stats()
-                except:
+                except Exception:
                     pass
 
 
@@ -270,7 +267,10 @@ class Processor:
         """
         Logs current Processor stats and `message`. Then raises RuntimeError with `message`.
 
-        :param str message:
+        If there is access to publish SNS messages, the method will also try to publish to the topic configured as
+        `dead_sns_topic` or `'SoswWorkerErrors'`.
+
+        :param str message: Description of failure.
         """
 
         logger.exception(message)
@@ -279,7 +279,17 @@ class Processor:
         result.update(self.get_stats())
         logger.info(result)
 
-        raise RuntimeError(message)
+        try:
+            sns_recipient = self.config.get('dead_sns_topic', 'SoswWorkerErrors')
+            sns_topic_arn = f'arn:aws:sns:{self._region}:{self._account}:{sns_recipient}'
+            sns_subject = f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'Some Function')} died"
+
+            sns = boto3.client('sns')
+            sns.publish(TopicArn=sns_topic_arn, Subject=sns_subject, Message=message)
+        except Exception:
+            logger.exception("Failed to send SNS message to Alarms.")
+
+        raise SystemExit(1)
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -295,12 +305,12 @@ class Processor:
 
         try:
             self.sql.sqldb.session.remove()
-        except:
+        except Exception:
             pass
 
         try:
             self.conn.close()
-        except:
+        except Exception:
             pass
 
 
@@ -361,6 +371,9 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         :param object context:  Lambda function context.
         :return: Result of the lambda function call.
         """
+
+        if event.get('logging_level'):
+            logger.setLevel(event.get('logging_level'))
 
         logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
                     f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
