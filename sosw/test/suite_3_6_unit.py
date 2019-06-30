@@ -4,6 +4,8 @@ from .unit.test_labourer import Labourer_UnitTestCase
 from .unit.test_orchestrator import Orchestrator_UnitTestCase
 from .unit.test_scavenger import Scavenger_UnitTestCase
 from .unit.test_scheduler import Scheduler_UnitTestCase
+from .unit.test_worker import Worker_UnitTestCase
+from .unit.test_worker_assistant import WorkerAssistant_UnitTestCase
 
 # Components
 from ..components.test.unit.test_config import Config_UnitTestCase
@@ -25,6 +27,8 @@ def suite():
     test_suite.addTest(unittest.makeSuite(Orchestrator_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Scavenger_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Scheduler_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(Worker_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(WorkerAssistant_UnitTestCase))
 
     # Components
     test_suite.addTest(unittest.makeSuite(Config_UnitTestCase))

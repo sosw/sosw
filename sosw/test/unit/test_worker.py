@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from unittest.mock import patch, Mock
+from unittest.mock import patch, MagicMock
 
 from sosw.worker import Worker
 
@@ -10,8 +10,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
-class worker_UnitTestCase(unittest.TestCase):
-    TEST_CONFIG = {'test': True}
+class Worker_UnitTestCase(unittest.TestCase):
 
 
     def setUp(self):
@@ -29,7 +28,10 @@ class worker_UnitTestCase(unittest.TestCase):
 
 
     def test_close_task__called(self):
-        p = Worker(custom_config=self.TEST_CONFIG)
-        p.mark_task_as_completed = Mock(return_value=None)
+        with patch('boto3.client'):
+            p = Worker()
+
+        p.mark_task_as_completed = MagicMock(return_value=None)
+
         p({'task_id': '123'})
         p.mark_task_as_completed.assert_called_once_with('123')
