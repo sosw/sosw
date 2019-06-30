@@ -6,27 +6,20 @@ __version__ = "0.1"
 __license__ = "MIT"
 __status__ = "Development"
 
-import boto3
 import datetime
 import json
 import logging
-import math
 import os
 import re
 import time
 
-from importlib import import_module
-from collections import Counter
-from collections import defaultdict
-from collections import OrderedDict
 from collections import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
-from sosw.app import Processor
+from sosw.app import Processor, LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
-from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
 
@@ -115,6 +108,8 @@ class Scheduler(Processor):
             self.parse_job_to_file(job)
 
         self.process_file()
+
+        super().__call__(event)
 
 
     def parse_job_to_file(self, job: Dict):
@@ -570,11 +565,11 @@ class Scheduler(Processor):
                 # Spawning another sibling to continue the processing
                 try:
                     payload = dict(file_name=file_name)
-                    self.siblings_client.spawn_sibling(self.lambda_context, payload=payload)
+                    self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {self.lambda_context}, payload: {payload}")
+                    logger.exception(f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -648,7 +643,7 @@ class Scheduler(Processor):
         Return if there is a sufficient execution time for processing ('shutdown period' is in seconds).
         """
 
-        return self.lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
+        return global_vars.lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
 
 
     def get_and_lock_queue_file(self) -> str:
@@ -716,7 +711,7 @@ class Scheduler(Processor):
         if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            self._queue_file_name = f"{filename_parts[0]}_{self.lambda_context.aws_request_id}.{filename_parts[1]}"
+            self._queue_file_name = f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
             self._queue_file_name = name
 
@@ -739,3 +734,5 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
+global_vars = LambdaGlobals()

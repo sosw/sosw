@@ -45,6 +45,7 @@ class Processor:
 
         self.lambda_context = kwargs.pop('context', None)
         if self.lambda_context:
+            logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
         self.config = self.DEFAULT_CONFIG or {}
@@ -398,3 +399,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
 
     return lambda_handler
+
+# Global placeholder for global_vars. This one is not really used and should exist in the root application
+# of your Lambda. See Worker examples in documentation for more info.
+global_vars = LambdaGlobals()
