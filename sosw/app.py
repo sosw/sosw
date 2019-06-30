@@ -323,6 +323,22 @@ _lambda_context = None
 
 
 class LambdaGlobals:
+    """
+    Global placeholder for global_vars that we want to preserve in the lifetime of the Lambda Container.
+    e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.
+
+    This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.
+    See Worker examples in documentation for more info.
+    """
+
+    def __init__(self):
+        """
+        Reset the lambda context for every reinitialization.
+        The Processor may stay alive in the scope of Lambda container, but the context is unique per invocation.
+        The Lambda Globals should also be reset by `get_lambda_handler` method.
+        """
+        global  _lambda_context
+        _lambda_context = None
 
     @property
     def lambda_context(self):
@@ -400,6 +416,5 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
     return lambda_handler
 
-# Global placeholder for global_vars. This one is not really used and should exist in the root application
-# of your Lambda. See Worker examples in documentation for more info.
+# Global placeholder for global_vars.
 global_vars = LambdaGlobals()
