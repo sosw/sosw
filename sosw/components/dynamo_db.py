@@ -417,6 +417,8 @@ class DynamoDbClient:
 
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
+            if return_count:
+                raise Exception(f"DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together")
 
         if desc:
             query_args['ScanIndexForward'] = False

@@ -443,29 +443,18 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             if INITIAL_TASKS > 10:
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
+        n = 3
         st = time.perf_counter()
-        result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=3)
+        result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=n)
         bm = time.perf_counter() - st
-        print(f"Benchmark: {bm}")
+        logging.info(f"Benchmark (n={n}): {bm}")
 
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), n)
         self.assertLess(bm, 0.1)
 
         # Check unspecified limit.
         result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name)
         self.assertEqual(len(result), INITIAL_TASKS)
-
-        # Benchmarking
-        if INITIAL_TASKS >= 500:
-            st = time.perf_counter()
-            result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name, max_items=499)
-            bm = time.perf_counter() - st
-            print(f"Benchmark: {bm}")
-            self.assertLess(bm, 0.1)
-
-            self.assertEqual(len(result), 499)
-            # Uncomment this see benchmark
-            # self.assertEqual(1, 2)
 
 
     def test_get_by_query__return_count(self):

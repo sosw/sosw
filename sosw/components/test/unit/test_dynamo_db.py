@@ -249,5 +249,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10, 'unknown_col': 'not_strict'}])
 
 
+    def test_get_by_query__max_items_and_count__raises(self):
+        with self.assertRaises(Exception) as e:
+            self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=3,
+                                                           return_count=True)
+        expected_msg = "DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together"
+        self.assertEqual(e.exception.args[0], expected_msg)
+
+
 if __name__ == '__main__':
     unittest.main()
