@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 from sosw.scheduler import Scheduler, InvalidJob
 from sosw.labourer import Labourer
+from sosw.components.helpers import chunks
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
 
@@ -48,7 +49,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                     'store_flowers': None,
                     'store_limos':   None,
                     'store_music':   {
-                        'products': ['product_march', 'product_chorus', 740],
+                        'products': ['product_march', 'product_chorus', 740, 'product,4', 'product 5'],
                     },
                 }
             },
@@ -298,7 +299,6 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             for bad_f_name in [x for x in FUNCTIONS if not x == func_name]:
                 bad_f = getattr(self.scheduler, bad_f_name)
                 bad_f.assert_not_called()
-
 
 
     def test_chunk_dates__preserve_skeleton(self):
@@ -554,7 +554,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         NUMBER_TASKS_EXPECTED = [
             ('sections', 'section_funerals', 1),
-            ('sections', 'section_weddings', 5),
+            ('sections', 'section_weddings', 7),
             ('sections', 'section_conversions', 4),
             ('stores', 'store_training', 2),
             ('stores', 'store_baptizing', 1),
@@ -577,6 +577,32 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         # print(response)
 
         self.assertEqual([pl], response)
+
+
+    def test_chunk_job__max_items_per_batch(self):
+        """
+        Tests that `max_products_per_batch` will actually make chunks of products of specific size.
+        :return:
+        """
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_weddings']['stores']['store_music']['max_products_per_batch'] = 2
+
+        response = self.scheduler.chunk_job(job=pl)
+
+        NUMBER_TASKS_EXPECTED = [
+            ('sections', 'section_weddings', 5),
+        ]
+
+        # for row in response:
+        #     pprint.pprint(row)
+        #     print('\n')
+
+        self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
+        batches = [x['products'] for x in response if x.get('stores') == ['store_music']]
+        print(batches)
+
+        self.assertEqual(batches,
+                         list(chunks(pl['sections']['section_weddings']['stores']['store_music']['products'], 2)))
 
 
     ### Tests of other methods ###
@@ -645,6 +671,18 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
         self.assertTrue(self.scheduler.needs_chunking(
                 'products', pl['sections']['section_conversions']['stores']['store_training']))
+        self.assertTrue(self.scheduler.needs_chunking('sections', pl))
+
+
+    def test_needs_chunking__max_items_per_batch(self):
+
+        pl = deepcopy(self.PAYLOAD)
+
+        # Verify that no chunking is required by default
+        self.assertFalse(self.scheduler.needs_chunking('sections', pl))
+
+        # Inject max_items_per_batch and recheck.
+        pl['sections']['section_conversions']['stores']['store_training']['max_products_per_batch'] = 3
         self.assertTrue(self.scheduler.needs_chunking('sections', pl))
 
 
