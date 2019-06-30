@@ -12,7 +12,7 @@ from typing import Dict
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
-
+from sosw.managers.task import TaskManager
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -29,7 +29,7 @@ class Scavenger(Processor):
     }
 
     # these clients will be initialized by Processor constructor
-    task_client = None
+    task_client: TaskManager = None
     sns_client = None
 
 

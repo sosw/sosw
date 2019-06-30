@@ -604,5 +604,27 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(make_hash(test[0]) == make_hash(test[1]), expected, f"Failed specific test: {test}")
 
 
+    def test_to_bool(self):
+        self.assertEqual(True, to_bool(1))
+        self.assertEqual(True, to_bool(1.0))
+        self.assertEqual(True, to_bool('1'))
+        self.assertEqual(True, to_bool('True'))
+        self.assertEqual(True, to_bool('true'))
+        self.assertEqual(False, to_bool(0))
+        self.assertEqual(False, to_bool(0.0))
+        self.assertEqual(False, to_bool('0'))
+        self.assertEqual(False, to_bool('false'))
+        self.assertEqual(False, to_bool('False'))
+
+        self.assertEqual(True, to_bool(5))
+        self.assertEqual(True, to_bool(0.001))
+
+        with self.assertRaises(Exception):
+            to_bool('unexpected')
+
+        with self.assertRaises(Exception):
+            to_bool(object())
+
+
 if __name__ == '__main__':
     unittest.main()

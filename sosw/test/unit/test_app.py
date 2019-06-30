@@ -5,7 +5,7 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from sosw.app import Processor, LambdaGlobals, get_lambda_handler
+from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
 
@@ -16,6 +16,12 @@ os.environ["autotest"] = "True"
 
 class app_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = {'test': True}
+
+
+    class Child(Processor):
+        def __call__(self, event):
+            super().__call__(event)
+            return event.get('k')
 
 
     def setUp(self):
@@ -104,25 +110,30 @@ class app_UnitTestCase(unittest.TestCase):
 
     def test_lambda_handler(self):
 
-        class Child(Processor):
-            def __call__(self, event):
-                super().__call__(event)
-                return event.get('k')
-
         global_vars = LambdaGlobals()
         self.assertIsNone(global_vars.processor)
         self.assertIsNone(global_vars.lambda_context)
 
-        lambda_handler = get_lambda_handler(Child, global_vars, self.TEST_CONFIG)
+        lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
         self.assertIsNotNone(lambda_handler)
 
         for i in range(3):
             result = lambda_handler(event={'k': 'success'}, context={'context': 'test'})
-            self.assertEqual(type(global_vars.processor), Child)
+            self.assertEqual(type(global_vars.processor), self.Child)
             self.assertEqual(global_vars.lambda_context, {'context': 'test'})
             self.assertEqual(result, 'success')
             self.assertEqual(global_vars.processor.stats['total_processor_calls'], i + 1)
             self.assertEqual(global_vars.processor.stats['total_calls_register_clients'], 1)
+
+
+    @mock.patch("boto3.client")
+    @patch.object(logger, 'setLevel')
+    def test_lambda_handler__logger_level(self, logger_set_level, client_mock):
+        global_vars = LambdaGlobals()
+        lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
+        event = {'k': 'm', 'logging_level': 20}
+        lambda_handler(event=event, context={'context': 'test'})
+        logger_set_level.assert_called_once_with(20)
 
 
     @mock.patch("boto3.client")
