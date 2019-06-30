@@ -7,6 +7,14 @@ sosw
 **`sosw`** is a set of tools for orchestrating **asynchronous** invocations of AWS Lambda Functions.
 Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
 
+Essential Workflow Schema
+-------------------------
+
+.. figure:: images/simple-sosw.png
+   :alt: Simple sosw workflows
+   :align: center
+
+
 Workers
 -------
 The **Worker** functions themselves are **your** functions that require Orchestration. ``sosw`` package
@@ -94,19 +102,19 @@ Other
 
    installation
 
-   contribution
-   pycon
-   convention
-
-   components
-   managers
-
    worker
    worker_assistant
    orchestrator
    scheduler
    scavenger
    processor
+
+   components
+   managers
+
+   contribution
+   pycon
+   convention
 
 Indices and tables
 ==================
