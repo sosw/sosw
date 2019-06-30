@@ -37,6 +37,7 @@ class app_TestCase(unittest.TestCase):
         self.assertTrue(True)
 
 
+    @unittest.skip("Deprecated this behavior")
     def test_app_init__fails_without_custom_config(self):
         self.assertRaises(RuntimeError, Processor)
 
