@@ -141,6 +141,8 @@ class Scheduler(Processor):
             for row in data:
                 f.write(f"{json.dumps(row)}\n")
 
+        logger.info(f"Finished step: parse_job_to_file()")
+
 
     # def create_tasks(self, labourer: Labourer, data: List):
     #     """
@@ -549,13 +551,17 @@ class Scheduler(Processor):
             return
 
         else:
+            logger.info(f"Processing a file: {file_name}")
             while self.sufficient_execution_time_left:
+                logger.info(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
+                            f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
+                    logger.info(f"No rows in file: {file_name}")
                     break
 
                 for task in data:
-                    logger.info(task)
+                    logger.info(f"Pushing task to DynamoDB: {task}")
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
                     self.task_client.create_task(labourer=labourer, **t)
@@ -563,13 +569,15 @@ class Scheduler(Processor):
 
             else:
                 # Spawning another sibling to continue the processing
+                logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
                 try:
                     payload = dict(file_name=file_name)
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                    logger.exception(
+                        f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -711,7 +719,8 @@ class Scheduler(Processor):
         if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            self._queue_file_name = f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
+            self._queue_file_name = f"{filename_parts[0]}_" \
+                f"{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
             self._queue_file_name = name
 
@@ -734,5 +743,6 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
 
 global_vars = LambdaGlobals()

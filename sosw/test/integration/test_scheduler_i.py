@@ -71,8 +71,9 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         lambda_context = types.SimpleNamespace()
         lambda_context.aws_request_id = 'AWS_REQ_ID'
         lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context.get_remaining_time_in_millis = MagicMock(return_value=300000)  # 5 minutes
         global_vars.lambda_context = lambda_context
+        self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         self.scheduler = Scheduler(self.custom_config)
 
