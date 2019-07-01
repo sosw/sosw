@@ -16,8 +16,9 @@ import pprint
 from unittest import mock
 from unittest.mock import MagicMock, PropertyMock, patch
 
-from sosw.scheduler import Scheduler, InvalidJob
+from sosw.scheduler import Scheduler, InvalidJob, global_vars
 from sosw.labourer import Labourer
+from sosw.components.helpers import chunks
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
 
@@ -48,7 +49,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                     'store_flowers': None,
                     'store_limos':   None,
                     'store_music':   {
-                        'products': ['product_march', 'product_chorus', 740],
+                        'products': ['product_march', 'product_chorus', 740, 'product,4', 'product 5'],
                     },
                 }
             },
@@ -78,13 +79,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'auto_spawning': True
         }
 
-        self.lambda_context = types.SimpleNamespace()
-        self.lambda_context.aws_request_id = 'AWS_REQ_ID'
-        self.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        self.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context = types.SimpleNamespace()
+        lambda_context.aws_request_id = 'AWS_REQ_ID'
+        lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        global_vars.lambda_context = lambda_context
+        self.custom_lambda_context = lambda_context  # This is to access from tests.
 
         with patch('boto3.client'):
-            self.scheduler = module.Scheduler(self.custom_config, context=self.lambda_context)
+            self.scheduler = module.Scheduler(self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
@@ -129,7 +132,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         config['job_schema']['chunkable_attrs'] = [('bad_name_ending_with_s', {})]
 
         with patch('boto3.client'):
-            self.assertRaises(AssertionError, Scheduler, custom_config=config, context=self.lambda_context)
+            self.assertRaises(AssertionError, Scheduler, custom_config=config)
 
 
     def test_get_next_chunkable_attr(self):
@@ -146,13 +149,13 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test__remote_queue_file(self):
         self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_file)
-        self.assertIn(self.lambda_context.aws_request_id, self.scheduler.remote_queue_file)
+        self.assertIn(self.custom_lambda_context.aws_request_id, self.scheduler.remote_queue_file)
 
 
     def test__remote_queue_locked_file(self):
         self.assertIn(f"{self.scheduler.config['s3_prefix'].strip('/')}", self.scheduler.remote_queue_locked_file)
         self.assertIn('locked_', self.scheduler.remote_queue_locked_file)
-        self.assertIn(self.lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
+        self.assertIn(self.custom_lambda_context.aws_request_id, self.scheduler.remote_queue_locked_file)
 
 
     ### Tests of file operations ###
@@ -298,7 +301,6 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             for bad_f_name in [x for x in FUNCTIONS if not x == func_name]:
                 bad_f = getattr(self.scheduler, bad_f_name)
                 bad_f.assert_not_called()
-
 
 
     def test_chunk_dates__preserve_skeleton(self):
@@ -554,7 +556,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         NUMBER_TASKS_EXPECTED = [
             ('sections', 'section_funerals', 1),
-            ('sections', 'section_weddings', 5),
+            ('sections', 'section_weddings', 7),
             ('sections', 'section_conversions', 4),
             ('stores', 'store_training', 2),
             ('stores', 'store_baptizing', 1),
@@ -577,6 +579,32 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         # print(response)
 
         self.assertEqual([pl], response)
+
+
+    def test_chunk_job__max_items_per_batch(self):
+        """
+        Tests that `max_products_per_batch` will actually make chunks of products of specific size.
+        :return:
+        """
+        pl = deepcopy(self.PAYLOAD)
+        pl['sections']['section_weddings']['stores']['store_music']['max_products_per_batch'] = 2
+
+        response = self.scheduler.chunk_job(job=pl)
+
+        NUMBER_TASKS_EXPECTED = [
+            ('sections', 'section_weddings', 5),
+        ]
+
+        # for row in response:
+        #     pprint.pprint(row)
+        #     print('\n')
+
+        self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
+        batches = [x['products'] for x in response if x.get('stores') == ['store_music']]
+        print(batches)
+
+        self.assertEqual(batches,
+                         list(chunks(pl['sections']['section_weddings']['stores']['store_music']['products'], 2)))
 
 
     ### Tests of other methods ###
@@ -645,6 +673,18 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertTrue(self.scheduler.needs_chunking('stores', pl['sections']['section_conversions']))
         self.assertTrue(self.scheduler.needs_chunking(
                 'products', pl['sections']['section_conversions']['stores']['store_training']))
+        self.assertTrue(self.scheduler.needs_chunking('sections', pl))
+
+
+    def test_needs_chunking__max_items_per_batch(self):
+
+        pl = deepcopy(self.PAYLOAD)
+
+        # Verify that no chunking is required by default
+        self.assertFalse(self.scheduler.needs_chunking('sections', pl))
+
+        # Inject max_items_per_batch and recheck.
+        pl['sections']['section_conversions']['stores']['store_training']['max_products_per_batch'] = 3
         self.assertTrue(self.scheduler.needs_chunking('sections', pl))
 
 

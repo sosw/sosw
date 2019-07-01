@@ -5,13 +5,12 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
+os.environ["STAGE"] = "test"
+os.environ["autotest"] = "True"
+
 from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
-
-
-os.environ["STAGE"] = "test"
-os.environ["autotest"] = "True"
 
 
 class app_UnitTestCase(unittest.TestCase):
