@@ -282,7 +282,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(validate_datetime_from_something(1000), datetime.datetime.fromtimestamp(1000),
                          "Failed from epoch time")
 
-        t = time.time()
+        t = 1000.1234567
         self.assertEqual(validate_datetime_from_something(t * 1000),
                          datetime.datetime.fromtimestamp(t, tz=timezone.utc),
                          "Failed with epoch in milliseconds")
