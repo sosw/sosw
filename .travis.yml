@@ -2,13 +2,13 @@ sudo: enabled
 dist: xenial
 language: python
 python:
-- '3.6'
-- '3.7'
-- '3.8-dev'
+  - '3.6'
+  - '3.7'
+  - '3.8-dev'
 install:
-- pip install boto3
+  - pip install boto3
 script:
-- pytest sosw/test/suite_3_6_unit.py
+  - pytest sosw/test/suite_3_6_unit.py
 deploy:
   provider: pypi
   user: ngr
