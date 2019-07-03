@@ -500,7 +500,7 @@ def recursive_matches_strict(src, key, val, **kwargs):
         raise RuntimeError("Your function is stupid", src, key, val)
 
 
-def recursive_matches_extract(src, key, **kwargs):
+def recursive_matches_extract(src, key, separator=None, **kwargs):
     """
     Searches the 'src' recursively for nested elements provided in 'key' with dot notation.
     In case some levels are iterable (list, tuple) it checks every element in it till finds it.
@@ -515,8 +515,9 @@ def recursive_matches_extract(src, key, **kwargs):
         Please be aware that this method doesn't not check for duplicates in iterable elements on neither
         level during extraction.
 
-    :param dict src:    Input dictionary. Can contain nested dictionaries and lists.
-    :param str key:     Path to search with dot notation.
+    :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
+    :param str key:         Path to search with dot notation.
+    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
 
     In order to filter out some specific elements, you might want to use the optional 'exclude' attributes.
     If attributes are specified and the last level element following the path
@@ -533,20 +534,25 @@ def recursive_matches_extract(src, key, **kwargs):
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
         raise AttributeError("If you use 'exclude' attributes you must specify both 'exclude_key' and 'exclude_val'")
 
-    path_elements = key.split('.')
+    if not separator:
+        separator = '.'
+    else:
+        assert isinstance(separator, str), "Separator must be a string."
+
+    path_elements = key.split(separator)
     # logging.debug("Invoked func: ", src, key, path_elements)
 
     # if src is iterable: iterate recursively
     if isinstance(src, (list, tuple)):
         for element in src:
-            v = recursive_matches_extract(element, key, **kwargs)
+            v = recursive_matches_extract(element, key, separator=separator, **kwargs)
             if v:
                 return v
 
     # We should try to dig deeper.
     elif len(path_elements) > 1:
         try:
-            return recursive_matches_extract(src[path_elements[0]], '.'.join(path_elements[1:]), **kwargs)
+            return recursive_matches_extract(src[path_elements[0]], separator.join(path_elements[1:]), **kwargs)
         except KeyError:
             pass
 
