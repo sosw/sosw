@@ -21,6 +21,8 @@ __all__ = ['validate_account_to_dashed',
            'recursive_matches_soft',
            'recursive_matches_strict',
            'recursive_matches_extract',
+           'dunder_to_dict',
+           'nested_dict_from_keys',
            'convert_string_to_words',
            'construct_dates_from_event',
            'validate_list_of_words_from_csv_or_list',
@@ -38,8 +40,9 @@ import uuid
 import datetime
 from datetime import timezone
 
+from collections import defaultdict, Hashable
 from copy import deepcopy
-from typing import Iterable, Callable, Dict, Mapping
+from typing import Iterable, Callable, Dict, Mapping, List, Optional
 
 
 def validate_account_to_dashed(account):
@@ -500,7 +503,7 @@ def recursive_matches_strict(src, key, val, **kwargs):
         raise RuntimeError("Your function is stupid", src, key, val)
 
 
-def recursive_matches_extract(src, key, **kwargs):
+def recursive_matches_extract(src, key, separator=None, **kwargs):
     """
     Searches the 'src' recursively for nested elements provided in 'key' with dot notation.
     In case some levels are iterable (list, tuple) it checks every element in it till finds it.
@@ -515,8 +518,9 @@ def recursive_matches_extract(src, key, **kwargs):
         Please be aware that this method doesn't not check for duplicates in iterable elements on neither
         level during extraction.
 
-    :param dict src:    Input dictionary. Can contain nested dictionaries and lists.
-    :param str key:     Path to search with dot notation.
+    :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
+    :param str key:         Path to search with dot notation.
+    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
 
     In order to filter out some specific elements, you might want to use the optional 'exclude' attributes.
     If attributes are specified and the last level element following the path
@@ -533,20 +537,25 @@ def recursive_matches_extract(src, key, **kwargs):
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
         raise AttributeError("If you use 'exclude' attributes you must specify both 'exclude_key' and 'exclude_val'")
 
-    path_elements = key.split('.')
+    if not separator:
+        separator = '.'
+    else:
+        assert isinstance(separator, str), "Separator must be a string."
+
+    path_elements = key.split(separator)
     # logging.debug("Invoked func: ", src, key, path_elements)
 
     # if src is iterable: iterate recursively
     if isinstance(src, (list, tuple)):
         for element in src:
-            v = recursive_matches_extract(element, key, **kwargs)
+            v = recursive_matches_extract(element, key, separator=separator, **kwargs)
             if v:
                 return v
 
     # We should try to dig deeper.
     elif len(path_elements) > 1:
         try:
-            return recursive_matches_extract(src[path_elements[0]], '.'.join(path_elements[1:]), **kwargs)
+            return recursive_matches_extract(src[path_elements[0]], separator.join(path_elements[1:]), **kwargs)
         except KeyError:
             pass
 
@@ -564,6 +573,87 @@ def recursive_matches_extract(src, key, **kwargs):
 
     # If nothing found we return False
     return None
+
+
+def dunder_to_dict(data: dict, separator=None):
+    """
+    Converts the flat dict with keys using dunder notation for nesting elements to regular nested dictionary.
+    
+    E.g.:
+
+    .. code-block:: python
+    
+       data = {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
+       result = dunder_to_dict(data)
+
+       # result:
+
+       {
+           'a': 'v1',
+           'b': {
+               'c': 'v2',
+               'd': {'e': 'v3'}
+           }
+       }
+
+    :param data: A dictionary that is converted to Nested.
+    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
+    """
+
+    if not separator:
+        separator = '__'
+    else:
+        if not isinstance(separator, str):
+            raise TypeError(f"Separator must be a string.")
+
+    result = defaultdict(dict)
+
+    for k, v in data.items():
+        if separator not in k:  # Just set the value if key is not separated
+            result[k] = v
+
+        else:
+            if k.endswith(separator) or k.startswith(separator):
+                raise ValueError(f"Your keys should not have {separator} on sides of keys. Only as separators: {k}")
+
+            k_split = k.split(separator)
+            main_key, nested_keys = k_split[0], k_split[1:]
+
+            # Make sure that value is recursively parsed for separators as well.
+            if isinstance(v, dict):
+                v = dunder_to_dict(data=v, separator=separator)
+
+            # Construct a nested dictionary embedding value to the deepest level.
+            new_subdict = nested_dict_from_keys(nested_keys, value=v)
+
+            # Just merge the new nested dictionary in the final result.
+            result[main_key] = recursive_update(result[main_key], new_subdict)
+
+    return dict(result)
+
+    
+def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
+    """
+    Constructs a nested dictionary using a list of keys to embed recursively.
+    If `value` is provided it is assigned to the last subkey.
+
+    Examples:
+
+    ..  code-block:: python
+
+        nested_dict_from_keys(['a', 'b', 'c']) == {'a': {'b': {'c': None}}}
+        nested_dict_from_keys(['a', 'b', 'c'], value=42) == {'a': {'b': {'c': 42}}}
+
+    :param keys:    List of keys to embed.
+    :param value:   Optional value to set to lowest level
+    """
+
+    if len(keys) == 0:
+        return value
+    else:
+        assert isinstance(keys[0], Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
+        return {keys[0] : nested_dict_from_keys(keys[1:], value)}
+
 
 
 def convert_string_to_words(string):
