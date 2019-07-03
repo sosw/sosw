@@ -358,7 +358,7 @@ class Scheduler(Processor):
         if not attr:
             return [{**job, **skeleton}]
 
-        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
+        logger.info(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
 
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), job):
@@ -417,8 +417,8 @@ class Scheduler(Processor):
                     vals = self.validate_list_of_vals(current_vals)
 
                     # If batch_size is provided for this attr - we use it, by default chunk every.
-                    batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
-
+                    batch_size = int(job.get(f'max_{plural(attr)}_per_batch', 1))
+                    logger(f"Batching {batch_size} from job: {job}")
                     for val in chunks(vals, batch_size):
                         task = deepcopy(skeleton)
                         task.update(job_skeleton)
