@@ -44,6 +44,17 @@ class InvalidJob(ValueError):
 class Scheduler(Processor):
     """
     Scheduler is converting business jobs to one or multiple Worker tasks.
+
+    Job supports a lot of dynamic settings that will coordinate the chunking.
+
+    Parameters:
+
+    `max_YOURATTRs_per_batch`: int
+
+    This is applicable only to the lowest level of chunking.  If isolation of this parameters is not required, and all
+    values of this parameter are simple strings/integers the scheduler shall chunk them in batches of given size.
+    By default will chunk to 1kk objects in a list.
+
     """
 
     DEFAULT_CONFIG = {
@@ -356,84 +367,98 @@ class Scheduler(Processor):
         if not attr:
             return [{**job, **skeleton}]
 
-        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
+        # If we shall need batching of flat vals of this attr we find out the batch size.
+        # First we search in job (means the current level of recursive subdata being chunked.
+        # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
+        batch_size = job.get(f'max_{plural(attr)}_per_batch',
+                             skeleton.get(f'max_{plural(attr)}_per_batch', 1000000))
 
+
+        def push_list_chunks():
+            """ Appends chunks of lists using current skeleton and vals to chunk. """
+            for v in chunks(vals, batch_size):
+                data.append({**task_skeleton, **{plural(attr): v}})
+
+
+        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), job):
-
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
+            logger.info(f"Next attr: {next_attr}")
+
+            # If we shall need batching of flat vals of this attr we find out the batch size from job.
+            batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
 
             # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
+                logger.info(f"Iterating possible: {possible_attr}")
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
                 if not current_vals:
                     continue
 
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
-                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{attr}s"]}
-                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
-                             f"leaving job_skeleton: {job_skeleton}")
+                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
+                logger.info(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
+                            f"leaving job_skeleton: {job_skeleton}")
+
+                task_skeleton = {**deepcopy(skeleton), **job_skeleton}
 
                 # For dictionaries we have to either go deeper recursively, or just flatten keys if values are None-s.
                 if all(isinstance(v, dict) for v in current_vals):
                     for val in current_vals:
-                        for name, subdata in val.items():
-                            logger.debug(f"SubIterating `{name}` with {subdata}")
 
-                            task = deepcopy(skeleton)
-                            task.update(job_skeleton)
-                            task[plural(attr)] = [name]
+                        if all(x is None for x in val.values()):
+                            logger.info(f"Value is all a dict of Nones. Need to flatten")
+                            vals = self.validate_list_of_vals(val)
+                            push_list_chunks()
 
-                            if isinstance(subdata, dict):
-                                # print(f'DICT {subdata}, NEXTATTR {next_attr}')
-                                if not next_attr:
-                                    # If there is no lower level configured to chunk, just keep this subdata in payload
-                                    task.update(subdata)
+                        else:
+                            logger.info(f"Real dictionary with values. Can't flatten it to dict: {val}")
+                            for name, subdata in val.items():
+                                logger.info(f"SubIterating `{name}` with {subdata}")
+
+                                # Merge parts of task
+                                task = {**deepcopy(task_skeleton), **{plural(attr): [name]}}
+                                logger.info(f"Task sample: {task}")
+
+                                if isinstance(subdata, dict):
+                                    if not next_attr:
+                                        # If there is no lower level configured to chunk, just keep this subdata in payload
+                                        task.update(subdata)
+                                        data.append(task)
+                                    else:
+                                        logger.info(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                        data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
+
+                                # If None-s we just add a task. `Name` (which is actually a value in this scenario)
+                                # was already added when creating task skeleton.
+                                elif subdata is None:
+                                    logger.info(f"Appending task to data for {name} from {val}")
                                     data.append(task)
-                                    # raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
-                                    #                  f"In order to chunk this, you should support this level in: "
-                                    #                  f"`config.job_schema.chunkable_attrs`. "
-                                    #                  f"If you want to pass custom payload - put it as `payload` in "
-                                    #                  f"your job. Job was: {job}")
                                 else:
-                                    logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
-                                    data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
-
-                            # If None-s we just add a task. `Name` (which is actually a value in this scenario)
-                            # was already added when creating task skeleton.
-                            elif subdata is None:
-                                logger.debug(f"Appending task to data for {name} from {val}")
-                                data.append(task)
-
-                            else:
-                                raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
+                                    raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
 
                 # If current vals are not dictionaries, we just validate that they are flat supported values
                 else:
                     vals = self.validate_list_of_vals(current_vals)
-
-                    # If batch_size is provided for this attr - we use it, by default chunk every.
-                    batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
-
-                    for val in chunks(vals, batch_size):
-                        task = deepcopy(skeleton)
-                        task.update(job_skeleton)
-                        task[plural(attr)] = val
-                        data.append(task)
+                    push_list_chunks()
 
         else:
-            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
-            task = skeleton
-
+            logger.info(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
+            task_skeleton = {**deepcopy(skeleton)}
             for a in single_or_plural(attr):
                 if a in job:
                     attr_value = job.pop(a, None)
                     if attr_value:
                         try:
                             vals = self.validate_list_of_vals(attr_value)
-                            task[plural(attr)] = vals
+                            push_list_chunks()
+
+                            # We are done here for not-chunkable attr. Return now.
+                            return data
+
                         except InvalidJob:
                             logger.warning(f"Caught InvalidJob exception.")
                             # If a custom payload is not following the chunking convention - just translate it as is.
@@ -443,10 +468,8 @@ class Scheduler(Processor):
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
             # Populate the remaining parts of the job back to task.
-            task.update(job)
-
-            logger.debug(f"Appending task to data: {task}")
-            data.append(task)
+            task_skeleton.update(job)
+            data.append(task_skeleton)
 
         return data
 
@@ -569,7 +592,8 @@ class Scheduler(Processor):
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                    logger.exception(
+                            f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -711,7 +735,8 @@ class Scheduler(Processor):
         if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            self._queue_file_name = f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
+            self._queue_file_name = \
+                f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
             self._queue_file_name = name
 
@@ -734,5 +759,6 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
 
 global_vars = LambdaGlobals()
