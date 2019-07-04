@@ -385,11 +385,11 @@ class Scheduler(Processor):
         if self.needs_chunking(plural(attr), job):
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
-            logger.info(f"Next attr: {next_attr}")
+            logger.debug(f"Next attr: {next_attr}")
 
             # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
-                logger.info(f"Iterating possible: {possible_attr}")
+                logger.debug(f"Iterating possible: {possible_attr}")
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
                 if not current_vals:
                     continue
@@ -397,7 +397,7 @@ class Scheduler(Processor):
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
                 job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
-                logger.info(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
+                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
                             f"leaving job_skeleton: {job_skeleton}")
 
                 task_skeleton = {**deepcopy(skeleton), **job_skeleton}
@@ -407,18 +407,18 @@ class Scheduler(Processor):
                     for val in current_vals:
 
                         if all(x is None for x in val.values()):
-                            logger.info(f"Value is all a dict of Nones. Need to flatten")
+                            logger.debug(f"Value {val} is all a dict of Nones. Need to flatten")
                             vals = self.validate_list_of_vals(val)
                             push_list_chunks()
 
                         else:
-                            logger.info(f"Real dictionary with values. Can't flatten it to dict: {val}")
+                            logger.debug(f"Real dictionary with values. Can't flatten it to dict: {val}")
                             for name, subdata in val.items():
-                                logger.info(f"SubIterating `{name}` with {subdata}")
+                                logger.debug(f"SubIterating `{name}` with {subdata}")
 
                                 # Merge parts of task
                                 task = {**deepcopy(task_skeleton), **{plural(attr): [name]}}
-                                logger.info(f"Task sample: {task}")
+                                logger.debug(f"Task sample: {task}")
 
                                 if isinstance(subdata, dict):
                                     if not next_attr:
@@ -426,13 +426,13 @@ class Scheduler(Processor):
                                         task.update(subdata)
                                         data.append(task)
                                     else:
-                                        logger.info(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                        logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
                                         data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
 
                                 # If None-s we just add a task. `Name` (which is actually a value in this scenario)
                                 # was already added when creating task skeleton.
                                 elif subdata is None:
-                                    logger.info(f"Appending task to data for {name} from {val}")
+                                    logger.debug(f"Appending task to data for {name} from {val}")
                                     data.append(task)
                                 else:
                                     raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
@@ -443,7 +443,7 @@ class Scheduler(Processor):
                     push_list_chunks()
 
         else:
-            logger.info(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
+            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
             task_skeleton = {**deepcopy(skeleton)}
             for a in single_or_plural(attr):
                 if a in job:
