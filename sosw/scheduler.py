@@ -370,8 +370,8 @@ class Scheduler(Processor):
         # If we shall need batching of flat vals of this attr we find out the batch size.
         # First we search in job (means the current level of recursive subdata being chunked.
         # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
-        batch_size = job.get(f'max_{plural(attr)}_per_batch',
-                             skeleton.get(f'max_{plural(attr)}_per_batch', 1000000))
+        batch_size = int(job.get(f'max_{plural(attr)}_per_batch',
+                             skeleton.get(f'max_{plural(attr)}_per_batch', 1000000)))
 
 
         def push_list_chunks():
@@ -386,9 +386,6 @@ class Scheduler(Processor):
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
             logger.info(f"Next attr: {next_attr}")
-
-            # If we shall need batching of flat vals of this attr we find out the batch size from job.
-            batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
 
             # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
