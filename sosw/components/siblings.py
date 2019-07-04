@@ -112,7 +112,7 @@ class SiblingsManager(Processor):
 
         invocation_type = 'Event' if not os.environ.get('STAGE') == 'test' else 'DryRun'
 
-        if not self.any_events_rules_enabled(lambda_context) and not force:
+        if not force and not self.any_events_rules_enabled(lambda_context):
             logger.error("Can't call siblings because I don't find any enabled CloudWatch Rules for me.")
             return
 
