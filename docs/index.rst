@@ -89,6 +89,8 @@ Another deployment requirement is to create several `DynamoDB` tables:
 - ``sosw_retry_tasks``
 - ``sosw_closed_tasks``
 
+The more detailed guide for initial setup can be found in the :ref:`Installation`.
+
 | You can find the Cloudformation template for the databases in `the example`_.
 | If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
 
@@ -126,4 +128,3 @@ Indices and tables
 .. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-

@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "autotest-bucket"
+
+
+Parameters:
+
+  AutotestBucketName:
+    Description: "S3 bucket used for storing Lambda packages."
+    Type: String
+    Default: 'autotest-bucket'
+
+
+Resources:
+  AutotestBucket:
+     Type: AWS::S3::Bucket
+     Properties:
+       BucketName: !Sub "${AutotestBucketName}"
+
+
+Outputs:
+  AutotestBucket:
+    Description: "Sample Bucket for Packages and Other Artifacts"
+    Value: !Ref AutotestBucket
+    Export:
+      Name: "autotest-bucket"

@@ -2,8 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "sosw_orchestrator"
 
 Parameters:
-  ExecutionPolicy2:
-    Description: "Custom execution policy for sosw lambdas."
+  ExecutionPolicy:
+    Description: "Managed execution policy for sosw lambdas."
     Type: String
     Default: 'AWSLambdaBasicExecutionRole'
 
@@ -33,11 +33,7 @@ Resources:
           - "sts:AssumeRole"
       Path: "/"
       ManagedPolicyArns:
-        - Fn::Join:
-          - ':'
-          - - "arn:aws:iam:"
-            - !Ref AWS::AccountId
-            - !Sub "policy/${ExecutionPolicy2}"
+        - !Sub "arn:aws:iam::aws:policy/service-role/${ExecutionPolicy}"
 
       Policies:
       - PolicyName: "SoswOrchestratorPermissions"
@@ -47,12 +43,7 @@ Resources:
           - Effect: "Allow"
             Action: "dynamodb:Query"
             Resource:
-              - Fn::Join:
-                - ':'
-                - - "arn:aws:dynamodb"
-                  - !Ref AWS::Region
-                  - !Ref AWS::AccountId
-                  - "table/${ConfigTableName}"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
 
           - Effect: "Allow"
             Action: "dynamodb:*"
