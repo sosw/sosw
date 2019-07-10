@@ -1,25 +1,25 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "autotest-bucket"
+Description: "sosw-s3-bucket"
 
 
 Parameters:
 
-  AutotestBucketName:
+  SoswBucketName:
     Description: "S3 bucket used for storing Lambda packages."
     Type: String
-    Default: 'autotest-bucket'
+    Default: 'sosw-s3'
 
 
 Resources:
-  AutotestBucket:
+  SoswBucket:
      Type: AWS::S3::Bucket
      Properties:
-       BucketName: !Sub "${AutotestBucketName}"
+       BucketName: !Sub "${SoswBucketName}-${AWS::AccountId}"
 
 
 Outputs:
-  AutotestBucket:
+  SoswBucket:
     Description: "Sample Bucket for Packages and Other Artifacts"
-    Value: !Ref AutotestBucket
+    Value: !Ref SoswBucket
     Export:
-      Name: "autotest-bucket"
+      Name: "sosw-s3-bucket"

@@ -367,29 +367,31 @@ Resources:
           Key: 'Environment'
           Value: 'dev'
 
-
+#############################################
+# Export Values to CloudFormation Namespace #
+#############################################
 Outputs:
 
   SoswTasksDynamoTableName:
     Description: "Sosw Tasks main table of unfinished tasks"
     Value: !Ref SoswTasksDynamoTable
     Export:
-      Name: "ddb-sosw-tasks"
+      Name: "sosw-ddb-tasks"
 
   SoswConfigDynamoTableName:
     Description: "Sosw Config Table"
     Value: !Ref SoswConfigDynamoTable
     Export:
-      Name: "ddb-sosw-config"
+      Name: "sosw-ddb-config"
 
   SoswClosedTasksDynamoTableName:
       Description: "Sosw Tasks archived table"
       Value: !Ref SoswClosedTasksDynamoTable
       Export:
-        Name: "ddb-sosw-tasks-closed"
+        Name: "sosw-ddb-tasks-closed"
 
   SoswRetryTasksDynamoTableName:
       Description: "Sosw Tasks retry table"
       Value: !Ref SoswRetryTasksDynamoTable
       Export:
-        Name: "ddb-sosw-tasks-retry"
+        Name: "sosw-ddb-tasks-retry"
