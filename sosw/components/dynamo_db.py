@@ -299,7 +299,7 @@ class DynamoDbClient:
         for key, key_type in self.row_mapper.items():
             if row_dict.get(key) is not None:
                 if key_type == 'M':
-                    val = json.dumps(row_dict[key]) if isinstance(row_dict[key], dict) else row_dict[key]
+                    val = self.dict_to_dynamo(row_dict[key], strict=False)
                 else:
                     val = to_bool(row_dict[key]) if key_type == 'BOOL' else str(row_dict[key])
                 result[f"{add_prefix}{key}"] = {key_type: val}
@@ -315,7 +315,7 @@ class DynamoDbClient:
                 elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
                     result[key_with_prefix] = {'N': str(row_dict.get(key))}
                 elif isinstance(val, dict):
-                    result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key])}
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key], strict=False)}
                 else:
                     result[key_with_prefix] = {'S': str(row_dict.get(key))}
             else:
