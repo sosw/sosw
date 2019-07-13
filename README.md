@@ -1,5 +1,6 @@
 # Serverless Orchestrator of Serverless Workers (SOSW)
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
+[![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 
 **sosw** is a set of tools for orchestrating asynchronous invocations of AWS Lambda Workers.
 
