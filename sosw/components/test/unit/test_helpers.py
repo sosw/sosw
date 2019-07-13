@@ -547,6 +547,46 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIsNone(recursive_update(a, b)['b'])
 
 
+    def test_dunder_to_dict(self):
+        TESTS = [
+            ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"a": "v1", "b__d__e": "v3", "b__c": "v2"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"b__c": {"c1": 41}, "b__c__e": "e_val"}, {"b": {"c": {"c1": 41, "e": "e_val"}}}),
+
+            ({"a__b": {"c__x": 41}}, {"a": {"b": {"c": {"x": 41}}}}),
+            ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(dunder_to_dict(test), expected)
+
+
+    def test_dunder_to_dict__exceptions(self):
+        TESTS = [
+            (ValueError, {'data':{'__data': 42}}),
+            (ValueError, {'data':{'data__': 42}}),
+            (ValueError, {'data':{'__data__': 42}}),
+            (TypeError, {'data':{42: 42}}),
+            (TypeError, {'data':{'a': 42}, 'separator': 1}),    # Not good separator
+            (TypeError, {'data':{'a': 42, 'a__b': 43}}),        # Overlapping types of 'a'
+        ]
+
+        for exception, kwarg in TESTS:
+            print(kwarg)
+            self.assertRaises(exception, dunder_to_dict, **kwarg)
+
+
+    def test_nested_dict_from_keys(self):
+        TESTS = [
+            ((['a', 'b', 'c'],), {'a': {'b': {'c': None}}}),
+            (([42, 'b'],), {42: {'b': None}}),
+            (([42, 'b'],'final'), {42: {'b': 'final'}}),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(nested_dict_from_keys(*test), expected)
+
+
     def test_trim_arn_to_name(self):
 
         TESTS = [
