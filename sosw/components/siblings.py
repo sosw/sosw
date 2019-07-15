@@ -22,7 +22,7 @@ logger = logging.getLogger()
 class SiblingsManager(Processor):
     """
     This set of helpers can be used for Lambdas that want to invoke some siblings of self. Very useful for Lambdas
-    processing queues and running out of time. Some good usecase you can find in the code of `es_ingest_us`
+    processing queues and running out of time.
 
     The Role of your Lambda must have the following extra permissions to run correctly. Please note that we hardcode
     the Arn in the policy to avoid circular dependency when parsing YAML. This dependency is absolutely valid, but
