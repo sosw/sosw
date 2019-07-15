@@ -1,10 +1,11 @@
-# Serverless Orchestrator of Serverless Workers (SOSW)
+# Serverless Orchestrator of Serverless Workers (sosw)
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
+[![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 
 **sosw** is a set of tools for orchestrating asynchronous invocations of AWS Lambda Workers.
 
 ## Documentation
-[Read The Docs: sosw.readthedocs.io](https://sosw.readthedocs.io/en/latest/)
+[https://docs.sosw.app](https://docs.sosw.app/en/latest/)
 
 ## Essential Workflows
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/images/simple-sosw.png)
@@ -12,6 +13,9 @@
 ## Dependencies
 - Python 3.6, 3.7
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
+
+# Installation
+See the [Installation Guidelines](https://docs.sosw.app/en/latest/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
