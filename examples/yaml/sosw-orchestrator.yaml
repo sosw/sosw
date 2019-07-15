@@ -176,13 +176,13 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
-        S3Key: "lambdas/sosw_orchestrator.zip"
+        S3Key: "sosw/packages/sosw_orchestrator.zip"
       Description: "ABS. CloudFormation managed sosw Orchestrator."
       FunctionName: "sosw_orchestrator"
       Handler: "app.lambda_handler"
       MemorySize: 256
       Role: !GetAtt LambdaSoswOrchestratorRole.Arn
-      Runtime: "python3.6"
+      Runtime: "python3.7"
       Timeout: 60
 
       Tags:

@@ -46,11 +46,13 @@ The following commands are tested on a fresh EC2 instance running on default Ama
 
 .. code-block:: bash
 
-   # Install base system
+   # Install required system packages for SAM, AWS CLI and Python.
    sudo yum update -y
-   sudo yum install git python3.7 -y
+   sudo yum install zlib-devel build-essential python3.7 python3-devel git docker -y
 
-   sudo pip3 install -U pipenv pytest boto3 pip
+   # Update pip and ensure you have required Python packages locally for the user.
+   # You might not need all of them at first, but if you would like to test `sosw` or play with it run tests
+   sudo pip3 install -U pip pipenv
 
    sudo mkdir /var/app
    sudo chown ec2-user:ec2-user /var/app
@@ -58,6 +60,12 @@ The following commands are tested on a fresh EC2 instance running on default Ama
    cd /var/app
    git clone https://github.com/bimpression/sosw.git
    cd sosw
+
+   # Need to configure your AWS CLI environment.
+   # Assuming you are using a new machine we shall just copy config with default region `us-west-2` to $HOME.
+   # The credentials you should not keep in the profile. The correct secure way is to use IAM roles
+   # if running from the AWS infrastructure. Feel free to change or skip this step if your environment is configured.
+   cp -nr .aws ~/
 
    # Creating AWS CloudFormation stacks with required resources.
 
@@ -77,11 +85,69 @@ The following commands are tested on a fresh EC2 instance running on default Ama
 Provision Lambda Functions for Essentials
 -----------------------------------------
 
-In this tutorial we use AWS SAM for provisioning Lambdas.
+In this tutorial we were first going to use AWS SAM for provisioning Lambdas, but eventually gave it up.
+Too many black magic is required and you eventually loose control over the Lambda. The example of deploying Essentials
+uses raw bash scripts, AWS CLI and CloudFormation templates. If you want to contribute providing examples
+with SAM - welcome. Some sandbox can be found in `examples/sam/` in the repository.
 
 Unfortunately the tutorial is not yet ready, but the result should have four Lambdas all importing ``sosw`` from PyPI.
 Example code for Orchestrator is in :download:`/sam/orchestrator/app.py`.
 The only dependency in requirements.txt for SAM is ``sosw`` package.
+
+
+.. warning:: This is still unfinished tutorial. Use wizely.
+
+Non-hipster way just manually building the package and creating CF stack with raw CloudFormation.
+Gives you full control over what is happening with your services.
+
+.. code-block:: bash
+
+   # SET YOUR BUCKET
+   # TODO get this from current CloudFormation exports.
+   BUCKETNAME=sosw-s3-000000000000
+
+   FUNCTION=sosw_orchestrator
+   FUNCTIONDASHED=sosw-orchestrator
+
+   cd /var/app/sosw/examples/essentials/$FUNCTION
+
+   # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
+   # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
+   pip3 install -r requirements.txt --no-dependencies --target .
+
+   # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
+   zip -r /tmp/$FUNCTION.zip *
+
+   # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
+   aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
+
+   # Create CloudFormation Stack with Function resource and deploy it.
+   # aws cloudformation create-stack --stack-name=$FUNCTIONDASHED \
+   # --template-body=file://yaml/$FUNCTIONDASHED.yaml
+
+   cd /var/app/sosw/examples
+
+   # Package and Deploy CloudFormation stack for the Orchestrator.
+   # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
+   aws cloudformation package --template-file yaml/$FUNCTIONDASHED.yaml \
+      --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+   aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
+      --capabilities CAPABILITY_NAMED_IAM
+
+
+If you change anything in the code or simply want to redeploy the code use the following simple commands: 
+
+
+.. code-block:: bash
+
+   FUNCTION=sosw_orchestrator
+   BUCKETNAME=sosw-s3-000000000000
+
+   cd /var/app/sosw/examples/essentials/$FUNCTION
+   zip -r /tmp/$FUNCTION.zip *
+   aws lambda update-function-code --function-name $FUNCTION --s3-bucket $BUCKETNAME \
+      --s3-key sosw/packages/$FUNCTION.zip --publish
 
 
 Upload Essentials Configurations
