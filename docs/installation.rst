@@ -13,11 +13,6 @@ Steps
 #. Upload Essentials Configurations
 #. Create Scheduled Rules
 
-- Scheduler
-- Orchestrator
-- Scavenger
-- WorkerAssistant
-- Worker
 
 Setup AWS Account
 -----------------
@@ -28,11 +23,16 @@ the `AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/c
 Provision Required AWS Resources
 --------------------------------
 
-There are three tables required to run SOSW
+There are three tables required to run SOSW. Nobody should touch these tables except sosw essentials.
 
 - close_tasks
 - retry_tasks
 - tasks
+
+Plus there is another table that you may use for your sosw-managed lambdas as well - `config`. Unfortunately the
+AWS SSM Parameter Store has pretty low IO limits and having hundreds of parallel executions starts throttling.
+`sosw` introduces similar mechanism for accessing configurations and parameters using DynamoDB as a storage.
+All functions inheriting from core `sosw.Processor` will fetch their config automatically.
 
 These can be setup with the provided example :download:`CloudFormation template </yaml/sosw-shared-dynamodb.yaml>`
 easily and includes both a testing set of tables along with a production set.
@@ -40,7 +40,7 @@ easily and includes both a testing set of tables along with a production set.
 The following Guide assumes that you are running these comands from some machine using either Key or Role
 with permissions to control IAM, Lambda, CloudWatch, DynamoDB (and probably something else will come).
 
-.. warning:: Do not run this in Production environment unless you completely understand what is going on!
+.. warning:: Do not run this in Production AWS Account unless you completely understand what is going on!
 
 The following commands are tested on a fresh EC2 instance running on default Amazon Linux 2 AMI.
 
@@ -67,19 +67,60 @@ The following commands are tested on a fresh EC2 instance running on default Ama
    # if running from the AWS infrastructure. Feel free to change or skip this step if your environment is configured.
    cp -nr .aws ~/
 
-   # Creating AWS CloudFormation stacks with required resources.
 
-   # DynamoDB tables
-   aws cloudformation create-stack --stack-name=sosw-dev-dynamodb-tables \
-   --template-body=file://docs/yaml/sosw-shared-dynamodb.yaml
+Now you are ready to start creating AWS resources. First let us provide some shared resources that both
+`sosw` Essentials and `sosw`-managed Lambdas will use.
 
-   # A bucket for artifacts
-   aws cloudformation create-stack --stack-name=sosw-dev-s3-bucket \
-   --template-body=file://docs/yaml/sosw-s3-bucket.yaml
 
+.. code-block:: bash
+
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
+
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
+
+   PREFIX=/var/app/sosw/examples/yaml
+
+   # Create new CloudFormation stacks
+   for filename in `ls $PREFIX`; do
+
+      stack=`echo $stack | sed s/.yaml//`
+
+      aws cloudformation create-stack --stack-name=$stack \
+         --template-body=file://$PREFIX/$filename
+
+   done
 
 | Now take a break and wait for these resourced to be created.
 | You may enjoy the changes in CloudFormation GUI or make some coffee.
+
+If you later make any changes in these files (after the initial deployment), use the following script
+and it will update CloudFormation stacks.
+
+.. code-block:: bash
+
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
+
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
+
+   PREFIX=/var/app/sosw/examples/yaml
+
+   # Package and Deploy CloudFormation stacks
+   for filename in `ls $PREFIX`; do
+
+      stack=`echo $stack | sed s/.yaml//`
+      aws cloudformation package --template-file $PREFIX/$filename \
+         --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+      aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $stack \
+         --capabilities CAPABILITY_NAMED_IAM
+
+   done
 
 
 Provision Lambda Functions for Essentials
@@ -102,15 +143,18 @@ Gives you full control over what is happening with your services.
 
 .. code-block:: bash
 
-   # SET YOUR BUCKET
-   # TODO get this from current CloudFormation exports.
-   BUCKETNAME=sosw-s3-000000000000
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
+
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
 
 
-   for name in ["sosw_orchestrator", "sosw_scavenger", "sosw_scheduler",  "sosw_worker_assistant"]; do
+   for name in `ls /var/app/sosw/examples/essentials`; do
        echo "Deploying $name"
 
-      FUNCTION=name
+      FUNCTION=$name
       FUNCTIONDASHED=`echo $name | sed s/_/-/g`
 
       cd /var/app/sosw/examples/essentials/$FUNCTION
@@ -129,11 +173,9 @@ Gives you full control over what is happening with your services.
       # aws cloudformation create-stack --stack-name=$FUNCTIONDASHED \
       # --template-body=file://yaml/$FUNCTIONDASHED.yaml
 
-      cd /var/app/sosw/examples
-
-      # Package and Deploy CloudFormation stack for the Orchestrator.
+      # Package and Deploy CloudFormation stack for the Function.
       # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
-      aws cloudformation package --template-file yaml/$FUNCTIONDASHED.yaml \
+      aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
          --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
 
       aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
@@ -145,9 +187,14 @@ If you change anything in the code or simply want to redeploy the code use the f
 
 .. code-block:: bash
 
-   BUCKETNAME=sosw-s3-000000000000
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
 
-   for name in ["sosw_orchestrator", "sosw_scavenger", "sosw_scheduler",  "sosw_worker_assistant"]; do
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
+
+   for name in `ls /var/app/sosw/examples/essentials`; do
        echo "Deploying $name"
 
        cd /var/app/sosw/examples/essentials/$name

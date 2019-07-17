@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Default: 'AWSLambdaBasicExecutionRole'
 
-  ConfigTableName:
+  ConfigConfigTableName:
     Description: "Config Table."
     Type: String
     Default: 'config'
@@ -35,11 +35,6 @@ Resources:
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-          - Effect: "Allow"
-            Action: "dynamodb:Query"
-            Resource:
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
-
           - Effect: "Allow"
             Action: "dynamodb:*"
             Resource:
@@ -91,6 +86,8 @@ Resources:
                     - - "table"
                       - Fn::ImportValue: "sosw-ddb-tasks-closed"
 
+# This allows Orchestrator to invoke ANY of your functions. This is far from a good security practice.
+# Please use the commented below example where you specify at least a prefix of function names.
           - Effect: "Allow"
             Action: "lambda:InvokeFunction"
             Resource:
@@ -100,59 +97,18 @@ Resources:
                     - !Ref AWS::Region
                     - !Ref AWS::AccountId
                     - 'function'
-                    - 'some_function'
-
-
-          - Effect: "Allow"
-            Action: "lambda:InvokeFunction"
-            Resource:
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sosw_sandbox'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'abs_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'adw_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'bing_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sc_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sys_*'
+                    - '*'
+# Better example
+#          - Effect: "Allow"
+#            Action: "lambda:InvokeFunction"
+#            Resource:
+#              - Fn::Join:
+#                  - ':'
+#                  - - "arn:aws:lambda"
+#                    - !Ref AWS::Region
+#                    - !Ref AWS::AccountId
+#                    - 'function'
+#                    - 'sosw_managed_*'
 
           - Effect: "Allow"
             Action: "s3:*"
@@ -164,6 +120,14 @@ Resources:
                       - '/'
                       - - Fn::ImportValue: 'sosw-s3-bucket'
                         - "sosw/*"
+
+# You can also provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
+# See examples/yaml/sosw-shared-dynamodb.yaml
+#          - Effect: "Allow"
+#            Action: "dynamodb:Query"
+#            Resource:
+#              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
+#
 
       RoleName: "lambda_sosw_orchestrator"
 
