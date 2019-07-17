@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "sosw_orchestrator"
+Description: "sosw_scavenger"
 
 Parameters:
   ExecutionPolicy:
@@ -14,7 +14,7 @@ Parameters:
 
 Resources:
 
-  LambdaSoswOrchestratorRole:
+  LambdaSoswScavengerRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -31,7 +31,7 @@ Resources:
         - !Sub "arn:aws:iam::aws:policy/service-role/${ExecutionPolicy}"
 
       Policies:
-      - PolicyName: "SoswOrchestratorPermissions"
+      - PolicyName: "SoswScavengerPermissions"
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -65,10 +65,7 @@ Resources:
 # Closed tasks table and indexes
           - Effect: "Allow"
             Action:
-            - "dynamodb:BatchGetItem"
-            - "dynamodb:Describe*"
-            - "dynamodb:Get*"
-            - "dynamodb:Query"
+            - "dynamodb:*"
             Resource:
               - Fn::Join:
                 - ':'
@@ -91,97 +88,60 @@ Resources:
                     - - "table"
                       - Fn::ImportValue: "sosw-ddb-tasks-closed"
 
+# Retry tasks table
           - Effect: "Allow"
-            Action: "lambda:InvokeFunction"
+            Action:
+            - "dynamodb:*"
             Resource:
               - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'some_function'
-
-
-          - Effect: "Allow"
-            Action: "lambda:InvokeFunction"
-            Resource:
+                - ':'
+                - - "arn:aws:dynamodb"
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks-retry"
+                      - "index"
+                      - "*"
               - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sosw_sandbox'
+                - ':'
+                - - "arn:aws:dynamodb"
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks-closed"
 
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'abs_*'
+#          - Effect: "Allow"
+#            Action: "s3:*"
+#            Resource:
+#              - Fn::Join:
+#                  - ':'
+#                  - - "arn:aws:s3::"
+#                    - Fn::Join:
+#                      - '/'
+#                      - - Fn::ImportValue: 'sosw-s3-bucket'
+#                        - "sosw/*"
 
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'adw_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'bing_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sc_*'
-
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:lambda"
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'function'
-                    - 'sys_*'
-
-          - Effect: "Allow"
-            Action: "s3:*"
-            Resource:
-              - Fn::Join:
-                  - ':'
-                  - - "arn:aws:s3::"
-                    - Fn::Join:
-                      - '/'
-                      - - Fn::ImportValue: 'sosw-s3-bucket'
-                        - "sosw/*"
-
-      RoleName: "lambda_sosw_orchestrator"
+      RoleName: "lambda_sosw_scavenger"
 
 
 #################################
 # Lambda Function for Essential #
 #################################
-  LambdaSoswOrchestrator:
+  LambdaSoswScavenger:
     Type: "AWS::Lambda::Function"
     Properties:
       Code:
         S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
-        S3Key: "sosw/packages/sosw_orchestrator.zip"
+        S3Key: "sosw/packages/sosw_scavenger.zip"
       Description: "ABS. CloudFormation managed sosw Orchestrator."
-      FunctionName: "sosw_orchestrator"
+      FunctionName: "sosw_scavenger"
       Handler: "app.lambda_handler"
       MemorySize: 256
-      Role: !GetAtt LambdaSoswOrchestratorRole.Arn
+      Role: !GetAtt LambdaSoswScavengerRole.Arn
       Runtime: "python3.7"
       Timeout: 60
 
@@ -189,9 +149,6 @@ Resources:
        -
          Key: 'Environment'
          Value: 'dev'
-       -
-         Key: 'Pattern'
-         Value: 'empty'
 
 
 ##############################################
@@ -199,11 +156,11 @@ Resources:
 # The actual Rules are configured in the     #
 # scheduled-rules.yaml template.             #
 ##############################################
-  PermissionForEventsToInvokeLambdaSoswOrchestrator:
+  PermissionForEventsToInvokeLambdaSoswScavenger:
     Type: "AWS::Lambda::Permission"
     Properties:
       FunctionName:
-        Ref: "LambdaSoswOrchestrator"
+        Ref: "LambdaSoswScavenger"
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
 
@@ -213,8 +170,8 @@ Resources:
 #############################################
 Outputs:
 
-  LambdaSoswOrchestrator:
-    Description: "Sosw Orchestrator Essential"
-    Value: !Ref LambdaSoswOrchestrator
+  LambdaSoswScavenger:
+    Description: "Sosw Scavenger Essential"
+    Value: !Ref LambdaSoswScavenger
     Export:
-      Name: "sosw-lambda-orchestrator"
+      Name: "sosw-lambda-scavenger"

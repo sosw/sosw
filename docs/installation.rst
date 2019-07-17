@@ -106,49 +106,55 @@ Gives you full control over what is happening with your services.
    # TODO get this from current CloudFormation exports.
    BUCKETNAME=sosw-s3-000000000000
 
-   FUNCTION=sosw_orchestrator
-   FUNCTIONDASHED=sosw-orchestrator
 
-   cd /var/app/sosw/examples/essentials/$FUNCTION
+   for name in ["sosw_orchestrator", "sosw_scavenger", "sosw_scheduler",  "sosw_worker_assistant"]; do
+       echo "Deploying $name"
 
-   # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
-   # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
-   pip3 install -r requirements.txt --no-dependencies --target .
+      FUNCTION=name
+      FUNCTIONDASHED=`echo $name | sed s/_/-/g`
 
-   # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
-   zip -r /tmp/$FUNCTION.zip *
+      cd /var/app/sosw/examples/essentials/$FUNCTION
 
-   # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
-   aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
+      # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
+      # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
+      pip3 install -r requirements.txt --no-dependencies --target .
 
-   # Create CloudFormation Stack with Function resource and deploy it.
-   # aws cloudformation create-stack --stack-name=$FUNCTIONDASHED \
-   # --template-body=file://yaml/$FUNCTIONDASHED.yaml
+      # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
+      zip -r /tmp/$FUNCTION.zip *
 
-   cd /var/app/sosw/examples
+      # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
+      aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
 
-   # Package and Deploy CloudFormation stack for the Orchestrator.
-   # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
-   aws cloudformation package --template-file yaml/$FUNCTIONDASHED.yaml \
-      --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+      # Create CloudFormation Stack with Function resource and deploy it.
+      # aws cloudformation create-stack --stack-name=$FUNCTIONDASHED \
+      # --template-body=file://yaml/$FUNCTIONDASHED.yaml
 
-   aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
-      --capabilities CAPABILITY_NAMED_IAM
+      cd /var/app/sosw/examples
 
+      # Package and Deploy CloudFormation stack for the Orchestrator.
+      # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
+      aws cloudformation package --template-file yaml/$FUNCTIONDASHED.yaml \
+         --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+      aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
+         --capabilities CAPABILITY_NAMED_IAM
+   done
 
 If you change anything in the code or simply want to redeploy the code use the following simple commands: 
 
 
 .. code-block:: bash
 
-   FUNCTION=sosw_orchestrator
    BUCKETNAME=sosw-s3-000000000000
 
-   cd /var/app/sosw/examples/essentials/$FUNCTION
-   zip -r /tmp/$FUNCTION.zip *
-   aws lambda update-function-code --function-name $FUNCTION --s3-bucket $BUCKETNAME \
-      --s3-key sosw/packages/$FUNCTION.zip --publish
+   for name in ["sosw_orchestrator", "sosw_scavenger", "sosw_scheduler",  "sosw_worker_assistant"]; do
+       echo "Deploying $name"
 
+       cd /var/app/sosw/examples/essentials/$name
+       zip -r /tmp/$name.zip *
+       aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
+         --s3-key sosw/packages/$name.zip --publish$
+   done
 
 Upload Essentials Configurations
 --------------------------------

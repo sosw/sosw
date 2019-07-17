@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sosw_orchestrator"
+
+Parameters:
+  ExecutionPolicy:
+    Description: "Managed execution policy for sosw lambdas."
+    Type: String
+    Default: 'AWSLambdaBasicExecutionRole'
+
+  ConfigTableName:
+    Description: "Config Table."
+    Type: String
+    Default: 'config'
+
+Resources:
+
+  LambdaSoswOrchestratorRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/service-role/${ExecutionPolicy}"
+
+      Policies:
+      - PolicyName: "SoswOrchestratorPermissions"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action: "dynamodb:Query"
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
+
+          - Effect: "Allow"
+            Action: "dynamodb:*"
+            Resource:
+#              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}/table/${Fn::ImportValue: 'sosw-ddb-tasks'}/*"
+              - Fn::Join:
+                - ':'
+                - - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}"
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks"
+                      - "*"
+              - Fn::Join:
+                - ':'
+                - - "arn:aws:dynamodb"
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks"
+
+# Closed tasks table and indexes
+          - Effect: "Allow"
+            Action:
+            - "dynamodb:BatchGetItem"
+            - "dynamodb:Describe*"
+            - "dynamodb:Get*"
+            - "dynamodb:Query"
+            Resource:
+              - Fn::Join:
+                - ':'
+                - - "arn:aws:dynamodb"
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks-closed"
+                      - "index"
+                      - "*"
+              - Fn::Join:
+                - ':'
+                - - "arn:aws:dynamodb"
+                  - !Ref AWS::Region
+                  - !Ref AWS::AccountId
+                  - Fn::Join:
+                    - '/'
+                    - - "table"
+                      - Fn::ImportValue: "sosw-ddb-tasks-closed"
+
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource:
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'some_function'
+
+
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource:
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'sosw_sandbox'
+
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'abs_*'
+
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'adw_*'
+
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'bing_*'
+
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'sc_*'
+
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - 'sys_*'
+
+          - Effect: "Allow"
+            Action: "s3:*"
+            Resource:
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:s3::"
+                    - Fn::Join:
+                      - '/'
+                      - - Fn::ImportValue: 'sosw-s3-bucket'
+                        - "sosw/*"
+
+      RoleName: "lambda_sosw_orchestrator"
+
+
+#################################
+# Lambda Function for Essential #
+#################################
+  LambdaSoswOrchestrator:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
+        S3Key: "sosw/packages/sosw_orchestrator.zip"
+      Description: "ABS. CloudFormation managed sosw Orchestrator."
+      FunctionName: "sosw_orchestrator"
+      Handler: "app.lambda_handler"
+      MemorySize: 256
+      Role: !GetAtt LambdaSoswOrchestratorRole.Arn
+      Runtime: "python3.7"
+      Timeout: 60
+
+      Tags:
+       -
+         Key: 'Environment'
+         Value: 'dev'
+
+
+##############################################
+# Permissions for CloudWatch ScheduledEvents #
+# The actual Rules are configured in the     #
+# scheduled-rules.yaml template.             #
+##############################################
+  PermissionForEventsToInvokeLambdaSoswOrchestrator:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName:
+        Ref: "LambdaSoswOrchestrator"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+
+
+#############################################
+# Export Values to CloudFormation Namespace #
+#############################################
+Outputs:
+
+  LambdaSoswOrchestrator:
+    Description: "Sosw Orchestrator Essential"
+    Value: !Ref LambdaSoswOrchestrator
+    Export:
+      Name: "sosw-lambda-orchestrator"
