@@ -288,7 +288,7 @@ Resources:
   SoswConfigDynamoTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: "sosw_config"
+      TableName: "config"
       AttributeDefinitions:
         -
           AttributeName: 'env'

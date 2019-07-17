@@ -5,13 +5,13 @@ Steps
 -----
 
 .. toctree::
-   :numbered:
+:numbered:
 
-#. Setup AWS Account
-#. Provision Required AWS Resources
-#. Provision Lambda Functions for Essentials
-#. Upload Essentials Configurations
-#. Create Scheduled Rules
+    #. Setup AWS Account
+    #. Provision Required AWS Resources
+    #. Provision Lambda Functions for Essentials
+    #. Upload Essentials Configurations
+    #. Create Scheduled Rules
 
 
 Setup AWS Account
@@ -81,12 +81,12 @@ Now you are ready to start creating AWS resources. First let us provide some sha
    # Set your bucket name
    BUCKETNAME=sosw-s3-$ACCOUNT
 
-   PREFIX=/var/app/sosw/examples/yaml
+   PREFIX=/var/app/sosw/examples/yaml/initial
 
    # Create new CloudFormation stacks
    for filename in `ls $PREFIX`; do
 
-      stack=`echo $stack | sed s/.yaml//`
+      stack=`echo $filename | sed s/.yaml//`
 
       aws cloudformation create-stack --stack-name=$stack \
          --template-body=file://$PREFIX/$filename
@@ -97,7 +97,8 @@ Now you are ready to start creating AWS resources. First let us provide some sha
 | You may enjoy the changes in CloudFormation GUI or make some coffee.
 
 If you later make any changes in these files (after the initial deployment), use the following script
-and it will update CloudFormation stacks.
+and it will update CloudFormation stacks. No harm to run it if you are not sure. CloudFormation is smart enough
+not to panic if there are no changes.
 
 .. code-block:: bash
 
@@ -108,12 +109,12 @@ and it will update CloudFormation stacks.
    # Set your bucket name
    BUCKETNAME=sosw-s3-$ACCOUNT
 
-   PREFIX=/var/app/sosw/examples/yaml
+   PREFIX=/var/app/sosw/examples/yaml/initial
 
    # Package and Deploy CloudFormation stacks
    for filename in `ls $PREFIX`; do
 
-      stack=`echo $stack | sed s/.yaml//`
+      stack=`echo $filename | sed s/.yaml//`
       aws cloudformation package --template-file $PREFIX/$filename \
          --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
 
@@ -164,7 +165,7 @@ Gives you full control over what is happening with your services.
       pip3 install -r requirements.txt --no-dependencies --target .
 
       # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
-      zip -r /tmp/$FUNCTION.zip *
+      zip -qr /tmp/$FUNCTION.zip *
 
       # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
       aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
@@ -182,8 +183,8 @@ Gives you full control over what is happening with your services.
          --capabilities CAPABILITY_NAMED_IAM
    done
 
-If you change anything in the code or simply want to redeploy the code use the following simple commands: 
 
+If you change anything in the code or simply want to redeploy the code use the following simple script:
 
 .. code-block:: bash
 
@@ -197,11 +198,22 @@ If you change anything in the code or simply want to redeploy the code use the f
    for name in `ls /var/app/sosw/examples/essentials`; do
        echo "Deploying $name"
 
+      FUNCTIONDASHED=`echo $name | sed s/_/-/g`
+
        cd /var/app/sosw/examples/essentials/$name
-       zip -r /tmp/$name.zip *
+       zip -qr /tmp/$name.zip *
        aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
-         --s3-key sosw/packages/$name.zip --publish$
+         --s3-key sosw/packages/$name.zip --publish
+
+      # Package and Deploy (if there are changes) CloudFormation stack for the Function.
+      aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
+         --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+      aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
+         --capabilities CAPABILITY_NAMED_IAM
+
    done
+
 
 Upload Essentials Configurations
 --------------------------------

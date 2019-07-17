@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Default: 'AWSLambdaBasicExecutionRole'
 
-  ConfigConfigTableName:
+  ConfigTableName:
     Description: "Config Table."
     Type: String
     Default: 'config'
@@ -121,13 +121,14 @@ Resources:
                       - - Fn::ImportValue: 'sosw-s3-bucket'
                         - "sosw/*"
 
-# You can also provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
+# You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
 # See examples/yaml/sosw-shared-dynamodb.yaml
-#          - Effect: "Allow"
-#            Action: "dynamodb:Query"
-#            Resource:
-#              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
-#
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:DescribeTable"
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
 
       RoleName: "lambda_sosw_orchestrator"
 

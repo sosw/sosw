@@ -35,10 +35,6 @@ Resources:
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-          - Effect: "Allow"
-            Action: "dynamodb:Query"
-            Resource:
-              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
 
           - Effect: "Allow"
             Action: "dynamodb:*"
@@ -114,16 +110,14 @@ Resources:
                     - - "table"
                       - Fn::ImportValue: "sosw-ddb-tasks-closed"
 
-#          - Effect: "Allow"
-#            Action: "s3:*"
-#            Resource:
-#              - Fn::Join:
-#                  - ':'
-#                  - - "arn:aws:s3::"
-#                    - Fn::Join:
-#                      - '/'
-#                      - - Fn::ImportValue: 'sosw-s3-bucket'
-#                        - "sosw/*"
+# You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
+# See examples/yaml/sosw-shared-dynamodb.yaml
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:DescribeTable"
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
 
       RoleName: "lambda_sosw_scavenger"
 
