@@ -1,29 +1,29 @@
+.. _Installation Guidelines:
+
+
+============
 Installation
 ============
 
+
 Steps
 -----
-
-.. toctree::
-:numbered:
-
-    #. Setup AWS Account
-    #. Provision Required AWS Resources
-    #. Provision Lambda Functions for Essentials
-    #. Upload Essentials Configurations
-    #. Create Scheduled Rules
+#. `Setup AWS Account`_
+#. `Provision Required AWS Resources`_
+#. `Provision Lambda Functions for Essentials`_
+#. `Upload Essentials Configurations`_
+#. `Create Scheduled Rules`_
 
 
 Setup AWS Account
 -----------------
-
 As an AWS Lambda Serverless implementation deployment should be done in an AWS account. To setup a new account, follow
 the `AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>`_
 
+
 Provision Required AWS Resources
 --------------------------------
-
-There are three tables required to run SOSW. Nobody should touch these tables except sosw essentials.
+There are three tables required to run ``sosw``. Nobody should touch these tables except sosw essentials.
 
 - close_tasks
 - retry_tasks
@@ -34,7 +34,8 @@ AWS SSM Parameter Store has pretty low IO limits and having hundreds of parallel
 `sosw` introduces similar mechanism for accessing configurations and parameters using DynamoDB as a storage.
 All functions inheriting from core `sosw.Processor` will fetch their config automatically.
 
-These can be setup with the provided example :download:`CloudFormation template </yaml/sosw-shared-dynamodb.yaml>`
+These can be setup with the provided example
+:download:`CloudFormation template <../examples/yaml/initial/sosw-dev-shared-dynamodb.yaml>`
 easily and includes both a testing set of tables along with a production set.
 
 The following Guide assumes that you are running these comands from some machine using either Key or Role
@@ -126,16 +127,10 @@ not to panic if there are no changes.
 
 Provision Lambda Functions for Essentials
 -----------------------------------------
-
 In this tutorial we were first going to use AWS SAM for provisioning Lambdas, but eventually gave it up.
 Too many black magic is required and you eventually loose control over the Lambda. The example of deploying Essentials
 uses raw bash scripts, AWS CLI and CloudFormation templates. If you want to contribute providing examples
 with SAM - welcome. Some sandbox can be found in `examples/sam/` in the repository.
-
-Unfortunately the tutorial is not yet ready, but the result should have four Lambdas all importing ``sosw`` from PyPI.
-Example code for Orchestrator is in :download:`/sam/orchestrator/app.py`.
-The only dependency in requirements.txt for SAM is ``sosw`` package.
-
 
 .. warning:: This is still unfinished tutorial. Use wizely.
 
@@ -217,7 +212,6 @@ If you change anything in the code or simply want to redeploy the code use the f
 
 Upload Essentials Configurations
 --------------------------------
-
 sosw-managed Lambdas will automatically try to read their configuration from the DynamoDB table ``config``.
 Each Lambda looks for the document with hash_key ``config_name = 'LAMBDA_NAME_config'``.
 e.g. ``'sosw_orchestrator_config'``
@@ -225,13 +219,12 @@ e.g. ``'sosw_orchestrator_config'``
 The ``config_value`` should contain JSON-ified dictionary that will be recursively merged to the ``DEFAULT_CONFIG``
 of each Lambda.
 
-Please take your time to read more about :ref:`Config` and find the examples in :ref:`Orchestrator`,
+Please take your time to read more about :ref:`Config Sourse<Config_Sourse>` and find the examples in :ref:`Orchestrator`,
 :ref:`Scavenger`, :ref:`Scheduler`., etc.
 
 
 Create Scheduled Rules
 ----------------------
-
 The usual implementation expects the ``Orchestrator`` and ``Scavenger`` to run every minute, while ``Scheduler``
 and ``WorkerAssistant`` are executed per request. ``Scheduler`` may have any number of cronned Business Tasks with any
 desired periodicity of course.

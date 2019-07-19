@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 sphinx = "*"
+sphinx_rtd_theme = "*"
 pytest = "*"
 
 [packages]

@@ -4,6 +4,13 @@
 Contribution Guidelines
 =======================
 
+
+..  toctree::
+    :caption: See Also
+
+    Documentation Convention <convention>
+    Sprinting PyCon US 2019 <pycon-us-2019>
+
 Release cycle
 -------------
 
@@ -28,17 +35,17 @@ Follow the PEP8_ but both classes and functions are padded with 2 empty lines.
 Initialization
 --------------
 
-* Fork the repository: https://github.com/bimpression/sosw_
+* Fork the repository: `https://github.com/bimpression/sosw`_
 
 * Register Account in AWS: `SignUp`_
 
 * Run `pipenv sync --dev` to setup your virtual environment and download the required dependencies
 
-* Create DynamoDB Tables:
-  * You can find the CloudFormation template for the databases in `the example`_.
-  * If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
+* If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
 
-* Create Sandbox Lambda with Scheduler
+* Follow the :ref:`Installation Guidelines` to setup your environment.
+
+* Create Sandbox Lambda.
 
 * Play with it.
 

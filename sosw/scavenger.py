@@ -23,7 +23,7 @@ class Scavenger(Processor):
         'init_clients':      ['Task', 'Sns'],
         'sns_config':        {
             'recipient': 'arn:aws:sns:us-west-2:000000000000:sosw_info',
-            'subject':   'SOSW Info'
+            'subject':   '``sosw`` Info'
         },
         'retry_tasks_limit': 20  # TODO: What's the optimal number?
     }
@@ -60,7 +60,7 @@ class Scavenger(Processor):
             self.move_task_to_retry_table(task, labourer)
         else:
             logger.info(f"Closing dead task {task}")
-            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
+            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='``sosw`` Dead Task')
             self.task_client.archive_task(task[_('task_id')])
             self.stats['closed_dead_tasks'] += 1
 

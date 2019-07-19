@@ -10,7 +10,7 @@ Essential components of **`sosw`** are implemented as AWS Lambda functions thems
 Essential Workflow Schema
 -------------------------
 
-.. figure:: images/simple-sosw.png
+.. figure:: _static/images/simple-sosw.png
    :alt: Simple sosw workflows
    :align: center
 
@@ -64,7 +64,7 @@ The :ref:`Scavenger` is called automatically every minute by `Scheduled Events`_
 It collects the tasks marked as ``completed`` by the Workers and archives them.
 
 If the task did not successfully accomplish it tries to re-invoke it with configurable exponential delay.
-In case the task completely fails after several invocations, the Scavenger marks it is `dead` and removes
+In case the task completely fails after several invocations, the Scavenger marks it is ``dead`` and removes
 from the queue to avoid infinite retries. In this case some external alarm system: SNS or Lambda
 may be triggered as well.
 
@@ -72,51 +72,32 @@ Read more: :ref:`Scavenger`
 
 Installation
 ------------
-**`sosw`** requires you to implement/deploy several Lambda functions (Essentials) using the following core classes:
 
-.. toctree::
-   :titlesonly:
+:ref:`Installation Guidelines`
 
-   orchestrator
-   scheduler
-   scavenger
+**`sosw`** requires you to implement/deploy several Lambda functions (Essentials) using the appropriate core classes.
+The deployment is described in details, but assumes that you are familiar with basic AWS Serverless products.
 
-Optionally you  may deploy the :ref:`Worker Assistant`.
-
-Another deployment requirement is to create several `DynamoDB` tables:
-
-- ``sosw_tasks``
-- ``sosw_retry_tasks``
-- ``sosw_closed_tasks``
-
-The more detailed guide for initial setup can be found in the :ref:`Installation`.
+Another deployment requirement is to create several `DynamoDB` tables.
 
 | You can find the Cloudformation template for the databases in `the example`_.
 | If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
 
+Once again, the detailed guide for initial setup can be found in the :ref:`Installation Guidelines`.
 
-Other
------
 
 .. toctree::
    :titlesonly:
    :caption: Contents:
+   :maxdepth: 2
 
    installation
+   essentials/index
+   components/index
+   managers/index
 
-   worker
-   worker_assistant
-   orchestrator
-   scheduler
-   scavenger
-   processor
+   contribution/index
 
-   components
-   managers
-
-   contribution
-   pycon
-   convention
 
 Indices and tables
 ==================
