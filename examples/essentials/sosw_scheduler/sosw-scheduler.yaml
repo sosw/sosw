@@ -67,6 +67,12 @@ Resources:
             Resource:
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
 
+# Permissions to save temporary queue files
+          - Effect: "Allow"
+            Action: "s3:*"
+            Resource: !Sub "arn:aws:s3:::sosw-s3-${AWS::AccountId}/sosw/scheduler/*"
+
+
       RoleName: "lambda_sosw_scheduler"
 
 

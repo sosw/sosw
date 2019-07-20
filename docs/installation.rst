@@ -62,7 +62,7 @@ The following commands are tested on a fresh EC2 instance running on default Ama
 
    # Update pip and ensure you have required Python packages locally for the user.
    # You might not need all of them at first, but if you would like to test `sosw` or play with it run tests
-   sudo pip3 install -U pip pipenv
+   sudo pip3 install -U pip pipenv boto3
 
    sudo mkdir /var/app
    sudo chown ec2-user:ec2-user /var/app
@@ -200,14 +200,14 @@ If you change anything in the code or simply want to redeploy the code use the f
    BUCKETNAME=sosw-s3-$ACCOUNT
 
    for name in `ls /var/app/sosw/examples/essentials`; do
-       echo "Deploying $name"
+      echo "Deploying $name"
 
       FUNCTIONDASHED=`echo $name | sed s/_/-/g`
 
-       cd /var/app/sosw/examples/essentials/$name
-       zip -qr /tmp/$name.zip *
-       aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
-         --s3-key sosw/packages/$name.zip --publish
+      cd /var/app/sosw/examples/essentials/$name
+      zip -qr /tmp/$name.zip *
+      aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
+        --s3-key sosw/packages/$name.zip --publish
 
       # Package and Deploy (if there are changes) CloudFormation stack for the Function.
       aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
@@ -221,15 +221,24 @@ If you change anything in the code or simply want to redeploy the code use the f
 
 Upload Essentials Configurations
 --------------------------------
-sosw-managed Lambdas will automatically try to read their configuration from the DynamoDB table ``config``.
-Each Lambda looks for the document with hash_key ``config_name = 'LAMBDA_NAME_config'``.
-e.g. ``'sosw_orchestrator_config'``
+sosw-managed Lambdas (and Essentials themselves) will automatically try to read their configuration from the
+DynamoDB table ``config``. Each Lambda looks for the document with range_key ``config_name = 'LAMBDA_NAME_config'``
+(e.g. ``'sosw_orchestrator_config'``).
 
-The ``config_value`` should contain JSON-ified dictionary that will be recursively merged to the ``DEFAULT_CONFIG``
-of each Lambda.
+The ``config_value`` should contain a JSON that will be recursively merged to the ``DEFAULT_CONFIG`` of each Lambda.
 
-Please take your time to read more about :ref:`Config Sourse<Config_Sourse>` and find the examples in :ref:`Orchestrator`,
-:ref:`Scavenger`, :ref:`Scheduler`., etc.
+We have provided some very basic examples of configuring Essentials. The config files have some values that are
+dependant on your AWS Account ID, so we shall substitute it and then upload these configs to DynamoDB.
+It is much easier to do this in Python (even without using sosw), so we shall call a python script for that.
+
+.. code-block:: bash
+
+   cd /var/app/sosw/examples/essentials/.config
+   python3 config_uploader.py
+   cd /var/app/sosw
+
+Please take your time to read more about :ref:`Config Sourse<Config_Sourse>` and find advanced examples in the
+guidelines of :ref:`Orchestrator`, :ref:`Scavenger` and :ref:`Scheduler`.
 
 
 Create Scheduled Rules

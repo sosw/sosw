@@ -108,7 +108,24 @@ Resources:
                   - Fn::Join:
                     - '/'
                     - - "table"
-                      - Fn::ImportValue: "sosw-ddb-tasks-closed"
+                      - Fn::ImportValue: "sosw-ddb-tasks-retry"
+
+# CloudWatch metrics required for Ecology Client
+          - Effect: "Allow"
+            Action: "cloudwatch:GetMetric*"
+            Resource: "*"
+
+# Get Lambda settings required for Ecology Client
+          - Effect: "Allow"
+            Action: "lambda:Get*"
+            Resource:
+              - Fn::Join:
+                  - ':'
+                  - - "arn:aws:lambda"
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'function'
+                    - '*'
 
 # You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
 # See examples/yaml/sosw-shared-dynamodb.yaml
