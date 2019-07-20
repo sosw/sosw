@@ -30,11 +30,11 @@ class Orchestrator(Processor):
     DEFAULT_CONFIG = {
         'init_clients':                     ['Task'],
         'invocation_number_coefficient':    {
-            0: 0,
-            1: 0,
-            2: 0.5,
-            3: 0.75,
-            4: 1
+            "0": 0,
+            "1": 0,
+            "2": 0.5,
+            "3": 0.75,
+            "4": 1
         },
         'default_simultaneous_invocations': 2
     }
@@ -81,7 +81,8 @@ class Orchestrator(Processor):
 
         labourer_status = self.task_client.ecology_client.get_labourer_status(labourer=labourer)
 
-        coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items() if labourer_status == k)
+        coefficient = next(v for k, v in self.config['invocation_number_coefficient'].items()
+                           if int(labourer_status) == int(k))
 
         labourer_max = labourer.get_attr('max_simultaneous_invocations')
 
