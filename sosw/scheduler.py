@@ -87,7 +87,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -130,7 +130,9 @@ class Scheduler(Processor):
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
 
         # In case there is not chunking required, we just schedule `task` directly from the `job`.
-        if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
+        if not job \
+                or not self.chunkable_attrs \
+                or not self.needs_chunking(plural(self.chunkable_attrs[0]), job):
             data = [{'labourer_id': labourer.id, **job}]
 
         # Else there is much more logic how to chunk the job to tasks.
@@ -569,7 +571,8 @@ class Scheduler(Processor):
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                    logger.exception(
+                        f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -734,5 +737,6 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
 
 global_vars = LambdaGlobals()
