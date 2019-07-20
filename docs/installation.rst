@@ -17,8 +17,17 @@ Steps
 
 Setup AWS Account
 -----------------
-As an AWS Lambda Serverless implementation deployment should be done in an AWS account. To setup a new account, follow
-the `AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>`_
+``sosw`` implementation currently supports only AWS infrastructure. If you are running production operations on AWS,
+we highly recommend setting up a standalone account for your first experiments with ``sosw``.
+`AWS Organisations <https://aws.amazon.com/organizations/>`_ now provide an easy way to set sub-accounts from
+the primary one.
+
+To setup a completely isolated new account, follow the
+`AWS Documentation <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>`_
+
+We shall require several services, but they are all supposed to fit in the
+`AWS Free Tier. <https://aws.amazon.com/free/>`_ As long as the resources are created using CloudFormation,
+once you delete the stacks - the related resources will also be deleted automatically to avoid unnecessary charges.
 
 
 Provision Required AWS Resources
