@@ -265,13 +265,19 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     # Tests with boto3 implementation for 'dict_to_dynamo' and 'dynamo_to_dict':
 
     def test_dict_to_dynamo_strict__boto_version(self):
+        config = self.TEST_CONFIG.copy()
+        config['row_mapper']['some_list'] = 'L'
+
+        self.dynamo_client = DynamoDbClient(config=config)
+
         dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True,
-                    'some_bool2': 'True', 'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+                    'some_bool2': 'True', 'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, use_boto=True)
         expected = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
             'some_bool': {'BOOL': True}, 'some_bool2': {'S': 'True'},
-            'some_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}
+            'some_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}},
+            'some_list': {'L': [{'S': 'x'}, {'S': 'y'}]}
         }
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
@@ -279,91 +285,59 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
     def test_dict_to_dynamo_not_strict__boto_version(self):
         dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False',
-                    'other_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+                    'other_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False, use_boto=True)
         expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}, 'other_bool': {'BOOL': False},
-                    'other_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}}
+                    'other_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}},
+                    'some_list': {'L': [{'S': 'x'}, {'S': 'y'}]}}
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
     def test_dict_to_dynamo_prefix__boto_version(self):
-        dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
+        config = self.TEST_CONFIG.copy()
+        config['row_mapper']['some_list'] = 'L'
+
+        self.dynamo_client = DynamoDbClient(config=config)
+
+        dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no', 'some_list': ['x', 'y']}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, add_prefix="#", use_boto=True)
-        expected = {'#hash_col': {'S': 'cat'}, '#range_col': {'S': '123'}, '#some_col': {'S': 'no'}}
+        expected = {'#hash_col': {'S': 'cat'}, '#range_col': {'S': '123'}, '#some_col': {'S': 'no'},
+                    '#some_list': {'L': [{'S': 'x'}, {'S': 'y'}]}}
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
     def test_dynamo_to_dict__boto_version(self):
+        config = self.TEST_CONFIG.copy()
+        config['row_mapper']['some_list'] = 'L'
+
+        self.dynamo_client = DynamoDbClient(config=config)
+
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
             'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False},
-            'some_map':    {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}
+            'some_map':    {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}},
+            'some_list':   {'L': [{'S': 'x'}, {'S': 'y'}]}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, use_boto=True)
         expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
-                    'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+                    'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
         self.assertDictEqual(expected, dict_row)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper__boto_version(self):
         dynamo_row = {
             'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
-            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True}
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True},
+            'some_list': {'L': [{'S': 'x'}, {'S': 'y'}]}
         }
         dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
         expected = {
             'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
-            'extra_key_s': 'wowie', 'other_bool': True
+            'extra_key_s': 'wowie', 'other_bool': True, 'some_list': ['x', 'y']
         }
         self.assertDictEqual(dict_row, expected)
-
-
-    def test_dynamo_to_dict__dont_json_loads__boto_version(self):
-        config = self.TEST_CONFIG.copy()
-        config['dont_json_loads_results'] = True
-
-        self.dynamo_client = DynamoDbClient(config=config)
-
-        dynamo_row = {
-            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-            'duck_quack': {'S': '{"quack": "duck"}'}
-        }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
-        }
-        self.assertDictEqual(res, expected)
-
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False, use_boto=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
-        }
-        self.assertDictEqual(res, expected)
-
-
-    def test_dynamo_to_dict__do_json_loads__boto_version(self):
-        config = self.TEST_CONFIG.copy()
-        config['dont_json_loads_results'] = False
-
-        self.dynamo_client = DynamoDbClient(config=config)
-
-        dynamo_row = {
-            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
-            'duck_quack': {'S': '{"quack": "duck"}'}
-        }
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
-        }
-        self.assertDictEqual(res, expected)
-
-        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False, use_boto=True)
-        expected = {
-            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
-        }
-        self.assertDictEqual(res, expected)
 
 
 if __name__ == '__main__':

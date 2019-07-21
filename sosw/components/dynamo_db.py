@@ -339,16 +339,9 @@ class DynamoDbClient:
                 if not strict:
                     val = row_dict.get(key)
                     key_with_prefix = f"{add_prefix}{key}"
-                    if isinstance(val, bool):
-                        result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
-                    elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
-                        result[key_with_prefix] = {'N': str(row_dict.get(key))}
-                    elif isinstance(val, dict):
-                        result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key], strict=False)}
-                    else:
-                        result[key_with_prefix] = {'S': str(row_dict.get(key))}
+                    result[key_with_prefix] = self.type_serializer.serialize(val)
                 else:
-                    if not key in self.config.get('required_fields', []):
+                    if key not in self.config.get('required_fields', []):
                         logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                        f"syntax. This is not a required field, so we continue, but please investigate "
                                        f"row: {row_dict}")
