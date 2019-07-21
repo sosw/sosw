@@ -1,10 +1,10 @@
-========
-Managers
-========
+==========
+Essentials
+==========
 
 .. toctree::
    :titlesonly:
-   :caption: Managers:
+   :caption: Essentials:
 
    worker
    orchestrator
