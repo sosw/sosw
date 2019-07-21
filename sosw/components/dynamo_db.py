@@ -249,7 +249,20 @@ class DynamoDbClient:
         # Get all fields from dynamo_row
         else:
             for key, val_dict in dynamo_row.items():
-                result[key] = self.type_deserializer.deserialize(val_dict)
+                for val_type, val in val_dict.items():
+                    if val_type == 'S':
+                        # Try to load to a dictionary if looks like JSON.
+                        if val.startswith('{') and val.endswith('}') and \
+                                not self.config.get('dont_json_loads_results'):
+                            try:
+                                result[key] = json.loads(val)
+                            except ValueError:
+                                logger.warning(f"A JSON-looking string failed to parse: {val}")
+                                result[key] = val
+                        else:
+                            result[key] = val
+                    else:
+                        result[key] = self.type_deserializer.deserialize(val_dict)
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
         return result
