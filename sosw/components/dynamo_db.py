@@ -11,6 +11,7 @@ import pprint
 
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
+from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 from .benchmark import benchmark
 from .helpers import chunks, to_bool
@@ -69,6 +70,9 @@ class DynamoDbClient:
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
             self.row_mapper = self.config.get('row_mapper')
+
+        self.type_serializer = TypeSerializer()
+        self.type_deserializer = TypeDeserializer()
 
 
     def identify_dynamo_capacity(self, table_name=None):
@@ -199,7 +203,8 @@ class DynamoDbClient:
         return indexes
 
 
-    def dynamo_to_dict(self, dynamo_row: Dict, strict: bool = None, fetch_all_fields: Optional[bool] = None) -> Dict:
+    def dynamo_to_dict(self, dynamo_row: Dict, strict: bool = None, fetch_all_fields: Optional[bool] = None,
+                       use_boto: bool = False) -> Dict:
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
         We currently support only String or Numeric values. Latest ones are converted to int or float.
@@ -212,6 +217,7 @@ class DynamoDbClient:
         :param bool strict:           DEPRECATED.
         :param bool fetch_all_fields: If False only row_mapper fields will be extracted from dynamo_row, else, all
                                       fields will be extracted from dynamo_row.
+        :param bool use_boto          If True uses boto3 implementation for deserialization, else the custom one.
         :return: The row in a key-value format
         :rtype: dict
         """
@@ -222,60 +228,80 @@ class DynamoDbClient:
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         result = {}
-        if not fetch_all_fields:
-            for key, key_type in self.row_mapper.items():
-                val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
-                if val_dict:
-                    val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
-                    if key_type == 'BOOL':
-                        result[key] = val
-                    elif key_type == 'N':
-                        result[key] = float(val) if '.' in val else int(val)
-                    elif key_type == 'M':
-                        result[key] = self.dynamo_to_dict(val, strict=False)
-                    elif key_type == 'S':
-                        # Try to load to a dictionary if looks like JSON.
-                        if val.startswith('{') and val.endswith('}') and not self.config.get('dont_json_loads_results'):
-                            try:
-                                result[key] = json.loads(val)
-                            except ValueError:
-                                logger.warning("A JSON-looking string failed to parse: {}".format(val))
-                                result[key] = val
-                        else:
-                            result[key] = val
-                    else:
-                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
-                                           f"'S' or 'N' types. Others must be JSON-ified.")
+
+        # boto3 implementation.
+        if use_boto:
+            if not fetch_all_fields:
+                for key, key_type in self.row_mapper.items():
+                    val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
+                    if val_dict:
+                        result[key] = self.type_deserializer.deserialize(val_dict)
+            else:
+                result = {k: self.type_deserializer.deserialize(v) for k, v in dynamo_row.items()}
+
+        # Custom implementation.
         else:
-            for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
-                for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
-                    if key_type == 'BOOL':
-                        result[key] = val
-                    elif key_type == 'N':
-                        result[key] = float(val) if '.' in val else int(val)
-                    elif key_type == 'M':
-                        result[key] = self.dynamo_to_dict(val, strict=False)
-                    elif key_type == 'S':
-                        # Try to load to a dictionary if looks like JSON.
-                        if val.startswith('{') and val.endswith('}') and not self.config.get('dont_json_loads_results'):
-                            try:
-                                result[key] = json.loads(val)
-                            except ValueError:
-                                logger.warning(f"A JSON-looking string failed to parse: {val}")
+            logging.warning(f"dynamo_to_dict `use_boto=False` is deprecated in sosw 0.7.17+. "
+                            f"Please replace it's usage with `use_boto=True` (and refine changes according to: "
+                            f"https://boto3.amazonaws.com/v1/documentation/api/latest/_modules/boto3/dynamodb/"
+                            f"types.html)")
+
+            if not fetch_all_fields:
+                for key, key_type in self.row_mapper.items():
+                    val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
+                    if val_dict:
+                        val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
+                        if key_type == 'BOOL':
+                            result[key] = val
+                        elif key_type == 'N':
+                            result[key] = float(val) if '.' in val else int(val)
+                        elif key_type == 'M':
+                            result[key] = self.dynamo_to_dict(val, strict=False)
+                        elif key_type == 'S':
+                            # Try to load to a dictionary if looks like JSON.
+                            if val.startswith('{') and val.endswith('}') and \
+                                    not self.config.get('dont_json_loads_results'):
+                                try:
+                                    result[key] = json.loads(val)
+                                except ValueError:
+                                    logger.warning("A JSON-looking string failed to parse: {}".format(val))
+                                    result[key] = val
+                            else:
                                 result[key] = val
                         else:
+                            raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                               f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
+                                               f"'S' or 'N' types. Others must be JSON-ified.")
+            else:
+                for key, key_type_and_val in dynamo_row.items():
+                    for key_type, val in key_type_and_val.items():
+                        if key_type == 'BOOL':
                             result[key] = val
-                    else:
-                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
-                                           f"'S' or 'N' types. Others must be JSON-ified.")
+                        elif key_type == 'N':
+                            result[key] = float(val) if '.' in val else int(val)
+                        elif key_type == 'M':
+                            result[key] = self.dynamo_to_dict(val, strict=False)
+                        elif key_type == 'S':
+                            # Try to load to a dictionary if looks like JSON.
+                            if val.startswith('{') and val.endswith('}') and \
+                                    not self.config.get('dont_json_loads_results'):
+                                try:
+                                    result[key] = json.loads(val)
+                                except ValueError:
+                                    logger.warning(f"A JSON-looking string failed to parse: {val}")
+                                    result[key] = val
+                            else:
+                                result[key] = val
+                        else:
+                            raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
+                                               f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
+                                               f"'S' or 'N' types. Others must be JSON-ified.")
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
         return result
 
 
-    def dict_to_dynamo(self, row_dict, add_prefix=None, strict=True):
+    def dict_to_dynamo(self, row_dict, add_prefix=None, strict=True, use_boto=False):
         """
         Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.
 
@@ -287,6 +313,7 @@ class DynamoDbClient:
         :param bool strict:     If False, will get the type from the value in the dict (this works for numbers and
                                 strings). If True, won't add them if they're not in the required_fields, and if they
                                 are, will raise an error.
+        :param bool use_boto    If True uses boto3 implementation for serialization, else the custom one.
 
         :return:                DynamoDB Task item
         :rtype:                 dict
@@ -296,36 +323,77 @@ class DynamoDbClient:
             add_prefix = ''
 
         result = {}
-        for key, key_type in self.row_mapper.items():
-            if row_dict.get(key) is not None:
-                if key_type == 'M':
-                    val = self.dict_to_dynamo(row_dict[key], strict=False)
+
+        # boto3 implementation.
+        if use_boto:
+            for key, key_type in self.row_mapper.items():
+                if row_dict.get(key) is not None:
+                    val = row_dict[key]
+                    result[f"{add_prefix}{key}"] = self.type_serializer.serialize(val)
+
+            result_keys = result.keys()
+            if add_prefix:
+                result_keys = [x[len(add_prefix):] for x in result.keys()]
+
+            for key in list(set(row_dict.keys()) - set(result_keys)):
+                if not strict:
+                    val = row_dict.get(key)
+                    key_with_prefix = f"{add_prefix}{key}"
+                    if isinstance(val, bool):
+                        result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
+                    elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                        result[key_with_prefix] = {'N': str(row_dict.get(key))}
+                    elif isinstance(val, dict):
+                        result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key], strict=False)}
+                    else:
+                        result[key_with_prefix] = {'S': str(row_dict.get(key))}
                 else:
-                    val = to_bool(row_dict[key]) if key_type == 'BOOL' else str(row_dict[key])
-                result[f"{add_prefix}{key}"] = {key_type: val}
-        result_keys = result.keys()
-        if add_prefix:
-            result_keys = [x[len(add_prefix):] for x in result.keys()]
-        for key in list(set(row_dict.keys()) - set(result_keys)):
-            if not strict:
-                val = row_dict.get(key)
-                key_with_prefix = f"{add_prefix}{key}"
-                if isinstance(val, bool):
-                    result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
-                elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
-                    result[key_with_prefix] = {'N': str(row_dict.get(key))}
-                elif isinstance(val, dict):
-                    result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key], strict=False)}
+                    if not key in self.config.get('required_fields', []):
+                        logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
+                                       f"syntax. This is not a required field, so we continue, but please investigate "
+                                       f"row: {row_dict}")
+                    else:
+                        raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
+                                         f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
+
+        # Custom implementation.
+        else:
+            logging.warning(f"dynamo_to_dict `use_boto=False` is deprecated in sosw 0.7.17+. "
+                            f"Please replace it's usage with `use_boto=True` (and refine changes according to: "
+                            f"https://boto3.amazonaws.com/v1/documentation/api/latest/_modules/boto3/dynamodb/"
+                            f"types.html)")
+
+            for key, key_type in self.row_mapper.items():
+                if row_dict.get(key) is not None:
+                    if key_type == 'M':
+                        val = self.dict_to_dynamo(row_dict[key], strict=False)
+                    else:
+                        val = to_bool(row_dict[key]) if key_type == 'BOOL' else str(row_dict[key])
+                    result[f"{add_prefix}{key}"] = {key_type: val}
+            result_keys = result.keys()
+            if add_prefix:
+                result_keys = [x[len(add_prefix):] for x in result.keys()]
+            for key in list(set(row_dict.keys()) - set(result_keys)):
+                if not strict:
+                    val = row_dict.get(key)
+                    key_with_prefix = f"{add_prefix}{key}"
+                    if isinstance(val, bool):
+                        result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
+                    elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                        result[key_with_prefix] = {'N': str(row_dict.get(key))}
+                    elif isinstance(val, dict):
+                        result[key_with_prefix] = {'M': self.dict_to_dynamo(row_dict[key], strict=False)}
+                    else:
+                        result[key_with_prefix] = {'S': str(row_dict.get(key))}
                 else:
-                    result[key_with_prefix] = {'S': str(row_dict.get(key))}
-            else:
-                if not key in self.config.get('required_fields', []):
-                    logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
-                                   f"syntax. This is not a required field, so we continue, but please investigate "
-                                   f"row: {row_dict}")
-                else:
-                    raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
-                                     f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
+                    if not key in self.config.get('required_fields', []):
+                        logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
+                                       f"syntax. This is not a required field, so we continue, but please investigate "
+                                       f"row: {row_dict}")
+                    else:
+                        raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
+                                         f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
+
         logger.debug(f"dict_to_dynamo result: {result}")
         return result
 

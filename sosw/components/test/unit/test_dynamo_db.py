@@ -158,7 +158,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertDictEqual(res, expected)
 
 
-
     def test_get_by_query__validates_comparison(self):
         self.assertRaises(AssertionError, self.dynamo_client.get_by_query, keys={'k': '1'},
                           comparisons={'k': 'unsupported'})
@@ -261,6 +260,110 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                            return_count=True)
         expected_msg = "DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together"
         self.assertEqual(e.exception.args[0], expected_msg)
+
+
+    # Tests with boto3 implementation for 'dict_to_dynamo' and 'dynamo_to_dict':
+
+    def test_dict_to_dynamo_strict__boto_version(self):
+        dict_row = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': True,
+                    'some_bool2': 'True', 'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, use_boto=True)
+        expected = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'some_bool': {'BOOL': True}, 'some_bool2': {'S': 'True'},
+            'some_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}
+        }
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
+    def test_dict_to_dynamo_not_strict__boto_version(self):
+        dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False',
+                    'other_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False, use_boto=True)
+        expected = {'name': {'S': 'cat'}, 'age': {'N': '3'}, 'other_bool': {'BOOL': False},
+                    'other_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}}
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
+    def test_dict_to_dynamo_prefix__boto_version(self):
+        dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, add_prefix="#", use_boto=True)
+        expected = {'#hash_col': {'S': 'cat'}, '#range_col': {'S': '123'}, '#some_col': {'S': 'no'}}
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
+    def test_dynamo_to_dict__boto_version(self):
+        dynamo_row = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'extra_key':   {'N': '42'}, 'some_bool': {'BOOL': False},
+            'some_map':    {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}
+        }
+        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, use_boto=True)
+        expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
+                    'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+        self.assertDictEqual(expected, dict_row)
+
+
+    def test_dynamo_to_dict_no_strict_row_mapper__boto_version(self):
+        dynamo_row = {
+            'lambda_name': {'S': 'test_name'}, 'invocation_id': {'S': 'test_id'}, 'en_time': {'N': '123456'},
+            'extra_key_n': {'N': '42'}, 'extra_key_s': {'S': 'wowie'}, 'other_bool': {'BOOL': True}
+        }
+        dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
+        expected = {
+            'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'extra_key_n': 42,
+            'extra_key_s': 'wowie', 'other_bool': True
+        }
+        self.assertDictEqual(dict_row, expected)
+
+
+    def test_dynamo_to_dict__dont_json_loads__boto_version(self):
+        config = self.TEST_CONFIG.copy()
+        config['dont_json_loads_results'] = True
+
+        self.dynamo_client = DynamoDbClient(config=config)
+
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
+            'duck_quack': {'S': '{"quack": "duck"}'}
+        }
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
+        expected = {
+            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
+        }
+        self.assertDictEqual(res, expected)
+
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False, use_boto=True)
+        expected = {
+            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
+        }
+        self.assertDictEqual(res, expected)
+
+
+    def test_dynamo_to_dict__do_json_loads__boto_version(self):
+        config = self.TEST_CONFIG.copy()
+        config['dont_json_loads_results'] = False
+
+        self.dynamo_client = DynamoDbClient(config=config)
+
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'}, 'other_col': {'S': '{"how many": 300}'},
+            'duck_quack': {'S': '{"quack": "duck"}'}
+        }
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=True, use_boto=True)
+        expected = {
+            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}', 'duck_quack': '{"quack": "duck"}'
+        }
+        self.assertDictEqual(res, expected)
+
+        res = self.dynamo_client.dynamo_to_dict(dynamo_row, fetch_all_fields=False, use_boto=True)
+        expected = {
+            'hash_col': 'aaa', 'range_col': 123, 'other_col': '{"how many": 300}'
+        }
+        self.assertDictEqual(res, expected)
 
 
 if __name__ == '__main__':
