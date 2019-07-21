@@ -1,4 +1,6 @@
-# Serverless Orchestrator of Serverless Workers (``sosw``)
+![sosw](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png)
+
+# Serverless Orchestrator of Serverless Workers
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 

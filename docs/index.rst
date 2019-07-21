@@ -1,8 +1,8 @@
-====
-sosw
-====
+.. title:: Home
 
-**`sosw`** = Serverless Orchestrator of Serverless Workers
+=============================================
+Serverless Orchestrator of Serverless Workers
+=============================================
 
 **`sosw`** is a set of tools for orchestrating **asynchronous** invocations of AWS Lambda Functions.
 Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
