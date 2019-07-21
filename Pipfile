@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 sphinx = "*"
 sphinx_rtd_theme = "*"
+sphinx_sitemap = "*"
 pytest = "*"
 
 [packages]

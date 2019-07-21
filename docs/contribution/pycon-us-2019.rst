@@ -8,7 +8,7 @@ introduction as short as possible.
 Initialization
 --------------
 
-* Fork the repository: https://github.com/bimpression/sosw_
+* Fork the repository: `https://github.com/bimpression/sosw`_
 
 * Register Account in AWS: `SignUp`_
 
