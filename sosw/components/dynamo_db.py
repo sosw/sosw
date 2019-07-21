@@ -279,16 +279,17 @@ class DynamoDbClient:
 
         # Keys from row mapper
         for key, key_type in self.row_mapper.items():
-            if row_dict.get(key) is not None:
+            val = row_dict.get(key)
+            if val is not None:
                 key_with_prefix = f"{add_prefix}{key}"
                 if key_type == 'BOOL':
-                    result[key_with_prefix] = {'BOOL': to_bool(row_dict[key])}
+                    result[key_with_prefix] = {'BOOL': to_bool(val)}
                 elif key_type == 'N':
-                    result[key_with_prefix] = {'N': str(row_dict[key])}
+                    result[key_with_prefix] = {'N': str(val)}
                 elif key_type == 'S':
-                    result[key_with_prefix] = {'S': str(row_dict[key])}
+                    result[key_with_prefix] = {'S': str(val)}
                 else:
-                    result[key_with_prefix] = self.type_serializer.serialize(row_dict[key])
+                    result[key_with_prefix] = self.type_serializer.serialize(val)
 
         result_keys = result.keys()
         if add_prefix:
@@ -300,11 +301,11 @@ class DynamoDbClient:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
                 if isinstance(val, bool):
-                    result[key_with_prefix] = {'BOOL': to_bool(row_dict.get(key))}
+                    result[key_with_prefix] = {'BOOL': to_bool(val)}
                 elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
-                    result[key_with_prefix] = {'N': str(row_dict.get(key))}
+                    result[key_with_prefix] = {'N': str(val)}
                 elif isinstance(val, str):
-                    result[key_with_prefix] = {'S': str(row_dict.get(key))}
+                    result[key_with_prefix] = {'S': str(val)}
                 else:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
             else:
