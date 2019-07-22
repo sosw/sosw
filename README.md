@@ -1,4 +1,6 @@
-# Serverless Orchestrator of Serverless Workers (sosw)
+![sosw](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png)
+
+# Serverless Orchestrator of Serverless Workers
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 
@@ -8,13 +10,13 @@
 [https://docs.sosw.app](https://docs.sosw.app/en/latest/)
 
 ## Essential Workflows
-![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/images/simple-sosw.png)
+![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
 - Python 3.6, 3.7
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
-# Installation
+## Installation
 See the [Installation Guidelines](https://docs.sosw.app/en/latest/installation.html) in the Documentation.
 
 ## Development
@@ -66,6 +68,9 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 5. Create Sandbox Lambda with Scheduler
 6. Play with it.
 7. Read the Documentation Convention.
+
+#### More
+See more guidelines for contribution [in the docs](https://docs.sosw.app/en/latest/contribution/index.html).
 
 ### Building the docs
 Sphinx is used for building documentation. To build HTML documentation locally, use:

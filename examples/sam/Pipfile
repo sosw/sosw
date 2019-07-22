@@ -4,13 +4,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-sphinx = "*"
-sphinx_rtd_theme = "*"
-sphinx_sitemap = "*"
 pytest = "*"
 
 [packages]
 boto3 = "*"
+aws-sam-cli = "*"
 
 [requires]
 python_version = "3.7"

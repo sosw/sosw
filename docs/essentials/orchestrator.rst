@@ -10,7 +10,7 @@ supported ways in :ref:`Config <components-config>`
 
 The following diagram represents the basic Task Workflow initiated by the Orchestrator.
 
-.. figure:: images/orchestrator-invocation.png
+.. figure:: ../_static/images/orchestrator-invocation.png
    :alt: Invocation Process
    :align: center
 
