@@ -1,10 +1,27 @@
-__all__ = ['Scheduler']
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
 
+    sosw - Serverless Orchestrator of Serverless Workers
+    Copyright (C) 2019  sosw core contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+"""
+
+__all__ = ['Scheduler']
 __author__ = "Nikolay Grishchenko"
-__email__ = "dev@bimpression.com"
-__version__ = "0.1"
-__license__ = "MIT"
-__status__ = "Development"
+__version__ = "1.0"
 
 import datetime
 import json
@@ -569,7 +586,8 @@ class Scheduler(Processor):
                     self.stats['siblings_spawned'] += 1
 
                 except Exception as err:
-                    logger.exception(f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                    logger.exception(
+                        f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -711,7 +729,8 @@ class Scheduler(Processor):
         if name is None:
             filename_parts = self.config['queue_file'].rsplit('.', 1)
             assert len(filename_parts) == 2, "Got bad file name"
-            self._queue_file_name = f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
+            self._queue_file_name = \
+                f"{filename_parts[0]}_{global_vars.lambda_context.aws_request_id}.{filename_parts[1]}"
         else:
             self._queue_file_name = name
 
@@ -734,5 +753,6 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
 
 global_vars = LambdaGlobals()
