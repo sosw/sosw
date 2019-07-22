@@ -254,7 +254,9 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
-                    if key_type == 'S':
+                    if key_type == 'N':
+                        result[key] = float(val) if '.' in val else int(val)
+                    elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
                                 not self.config.get('dont_json_loads_results'):
@@ -272,7 +274,9 @@ class DynamoDbClient:
         else:
             for key, val_dict in dynamo_row.items():
                 for val_type, val in val_dict.items():
-                    if val_type == 'S':
+                    if val_type == 'N':
+                        result[key] = float(val) if '.' in val else int(val)
+                    elif val_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
                                 not self.config.get('dont_json_loads_results'):
