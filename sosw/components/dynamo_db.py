@@ -254,6 +254,9 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
                     if key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
@@ -274,6 +277,9 @@ class DynamoDbClient:
         else:
             for key, val_dict in dynamo_row.items():
                 for val_type, val in val_dict.items():
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
                     if val_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif val_type == 'S':
