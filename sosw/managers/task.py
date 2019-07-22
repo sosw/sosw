@@ -29,8 +29,8 @@ logger.setLevel(logging.INFO)
 class TaskManager(Processor):
     """.. _task:
 
-    TaskManager is the core class used by most SOSW Lambdas.
-    It handles all the operations with tasks thus the configuration of this Manager is essential during your SOSW implementation.
+    TaskManager is the core class used by most ``sosw`` Lambdas.
+    It handles all the operations with tasks thus the configuration of this Manager is essential during your ``sosw`` implementation.
 
     The default version of TaskManager works with DynamoDB tables to store and analyze the state of Tasks.
     This could be upgraded in future versions to work with other persistent storage or DBs.
