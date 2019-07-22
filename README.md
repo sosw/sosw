@@ -1,17 +1,23 @@
-# Serverless Orchestrator of Serverless Workers (SOSW)
+![sosw](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png)
+
+# Serverless Orchestrator of Serverless Workers
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
+[![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 
 **sosw** is a set of tools for orchestrating asynchronous invocations of AWS Lambda Workers.
 
 ## Documentation
-[Read The Docs: sosw.readthedocs.io](https://sosw.readthedocs.io/en/latest/)
+[https://docs.sosw.app](https://docs.sosw.app/en/latest/)
 
 ## Essential Workflows
-![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/images/simple-sosw.png)
+![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
 - Python 3.6, 3.7
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
+
+## Installation
+See the [Installation Guidelines](https://docs.sosw.app/en/latest/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
@@ -63,6 +69,9 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 6. Play with it.
 7. Read the Documentation Convention.
 
+#### More
+See more guidelines for contribution [in the docs](https://docs.sosw.app/en/latest/contribution/index.html).
+
 ### Building the docs
 Sphinx is used for building documentation. To build HTML documentation locally, use:
 
@@ -76,3 +85,26 @@ You can then use the built in Python web server to view the html version directl
 $ cd sosw-rtd
 $ python -m http.server
 ```
+
+## Copyright
+
+This document has been placed in the public domain.
+    
+    sosw - Serverless Orchestrator of Serverless Workers
+    Copyright (C) 2019  sosw core contributors:
+        Nikolay Grishchenko
+        Sophie Fogel
+        Gil Halperin
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.

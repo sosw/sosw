@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sosw-s3-bucket"
+
+
+Parameters:
+
+  SoswBucketName:
+    Description: "S3 bucket used for storing Lambda packages."
+    Type: String
+    Default: 'sosw-s3'
+
+
+Resources:
+  SoswBucket:
+     Type: AWS::S3::Bucket
+     Properties:
+       BucketName: !Sub "${SoswBucketName}-${AWS::AccountId}"
+
+
+Outputs:
+  SoswBucket:
+    Description: "Sample Bucket for Packages and Other Artifacts"
+    Value: !Ref SoswBucket
+    Export:
+      Name: "sosw-s3-bucket"

@@ -1,10 +1,27 @@
-__all__ = ['Scavenger']
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
 
-__author__ = "Sophie Fogel"
-__email__ = "dev@bimpression.com"
-__version__ = "0.1"
-__license__ = "MIT"
-__status__ = "Development"
+    sosw - Serverless Orchestrator of Serverless Workers
+    Copyright (C) 2019  sosw core contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+"""
+
+__all__ = ['Scavenger']
+__author__ = "Sophie Fogel, Nikolay Grishchenko"
+__version__ = "1.0"
 
 import logging
 import time
@@ -14,16 +31,25 @@ from sosw.app import Processor
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
 class Scavenger(Processor):
+    """
+    Scavenger main class performes the following operations:
+
+    - archive_tasks(labourer)
+    - handle_expired_tasks(labourer)
+    - retry_tasks(labourer)
+    """
+
     DEFAULT_CONFIG = {
         'init_clients':      ['Task', 'Sns'],
         'sns_config':        {
             'recipient': 'arn:aws:sns:us-west-2:000000000000:sosw_info',
-            'subject':   'SOSW Info'
+            'subject':   '``sosw`` Info'
         },
         'retry_tasks_limit': 20  # TODO: What's the optimal number?
     }
@@ -60,7 +86,7 @@ class Scavenger(Processor):
             self.move_task_to_retry_table(task, labourer)
         else:
             logger.info(f"Closing dead task {task}")
-            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
+            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='``sosw`` Dead Task')
             self.task_client.archive_task(task[_('task_id')])
             self.stats['closed_dead_tasks'] += 1
 

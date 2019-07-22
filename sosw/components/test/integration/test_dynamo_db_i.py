@@ -14,7 +14,7 @@ from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import chunks
 
 
-class dynamodb_client_IntegrationTestCase(unittest.TestCase):
+class DynamodbClientIntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = {
         'row_mapper':      {
             'lambda_name':   'S',
@@ -28,6 +28,7 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
             'some_col':      'S',
             'some_counter':  'N',
             'some_bool':     'BOOL',
+            'some_map':      'M',
         },
         'required_fields': ['lambda_name'],
         'table_name':      'autotest_dynamo_db',
@@ -58,7 +59,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
 
     def test_put(self):
-        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True,
+               'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
 
         client = boto3.client('dynamodb')
 
@@ -82,9 +84,8 @@ class dynamodb_client_IntegrationTestCase(unittest.TestCase):
 
         self.assertEqual(1, len(items))
 
-        expected = [{'hash_col':  {'S': 'cat'},
-                     'range_col': {'N': '123'},
-                     'some_bool': {'BOOL': True}}]
+        expected = [{'hash_col':  {'S': 'cat'}, 'range_col': {'N': '123'}, 'some_bool': {'BOOL': True},
+                     'some_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}}]
         self.assertEqual(expected, items)
 
 

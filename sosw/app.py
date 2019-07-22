@@ -1,4 +1,26 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+    Copyright (C) 2019  sosw core contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+"""
+
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
+__author__ = "Nikolay Grishchenko, Gil Halperin"
 
 import boto3
 import logging
@@ -11,12 +33,6 @@ from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
 
-
-__author__ = "Nikolay Grishchenko, Gil Halperin"
-__email__ = "dev@bimpression.com"
-__version__ = "0.7.11"
-__license__ = "MIT"
-__status__ = "Production"
 
 logger = logging.getLogger()
 
@@ -331,14 +347,16 @@ class LambdaGlobals:
     See Worker examples in documentation for more info.
     """
 
+
     def __init__(self):
         """
         Reset the lambda context for every reinitialization.
         The Processor may stay alive in the scope of Lambda container, but the context is unique per invocation.
         The Lambda Globals should also be reset by `get_lambda_handler` method.
         """
-        global  _lambda_context
+        global _lambda_context
         _lambda_context = None
+
 
     @property
     def lambda_context(self):
@@ -415,6 +433,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
 
     return lambda_handler
+
 
 # Global placeholder for global_vars.
 global_vars = LambdaGlobals()

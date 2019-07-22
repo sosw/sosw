@@ -1,3 +1,27 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+    Copyright (C) 2019  sosw core contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+"""
+
+__all__ = ['SiblingsManager']
+__author__ = "Nikolay Grishchenko"
+
 import boto3
 import datetime
 import json
@@ -8,21 +32,13 @@ from math import ceil
 from sosw import Processor
 
 
-__author__ = "Nikolay Grishchenko"
-__email__ = "dev@bimpression.com"
-__version__ = "1.00"
-__license__ = "MIT"
-__status__ = "Production"
-
-__all__ = ['SiblingsManager']
-
 logger = logging.getLogger()
 
 
 class SiblingsManager(Processor):
     """
     This set of helpers can be used for Lambdas that want to invoke some siblings of self. Very useful for Lambdas
-    processing queues and running out of time. Some good usecase you can find in the code of `es_ingest_us`
+    processing queues and running out of time.
 
     The Role of your Lambda must have the following extra permissions to run correctly. Please note that we hardcode
     the Arn in the policy to avoid circular dependency when parsing YAML. This dependency is absolutely valid, but
@@ -54,6 +70,7 @@ class SiblingsManager(Processor):
     events_client: boto3.client = None
     lambda_client: boto3.client = None
     cloudwatch_client: boto3.client = None
+
 
     def any_events_rules_enabled(self, lambda_context):
         """

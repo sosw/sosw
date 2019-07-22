@@ -5,14 +5,14 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(name='sosw',
-      version='0.7.15',
+      version='0.7.17',
       description='Serverless Orchestrator of Serverless Workers',
       long_description=long_description,
       long_description_content_type="text/markdown",
       url='http://github.com/bimpression/sosw',
       author='Nikolay Grishchenko',
       author_email='nikolay@bimpression.com',
-      license='MIT',
+      license='GNU General Public License v3',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Operating System :: Other OS',
@@ -22,7 +22,7 @@ setup(name='sosw',
           'Topic :: Software Development'
       ],
       # packages=['sosw'],
-      packages=find_packages(exclude=['docs', 'test']),
+      packages=find_packages(exclude=['docs', 'test', 'examples']),
       install_requires=[
           'boto3>=1.9'
       ],
