@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'docs.ext.hidden_code_block',
     'sphinx_sitemap',
 ]
 
