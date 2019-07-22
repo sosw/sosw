@@ -158,7 +158,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertDictEqual(res, expected)
 
 
-
     def test_get_by_query__validates_comparison(self):
         self.assertRaises(AssertionError, self.dynamo_client.get_by_query, keys={'k': '1'},
                           comparisons={'k': 'unsupported'})
