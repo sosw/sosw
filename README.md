@@ -1,4 +1,4 @@
-![sosw](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png)
+<img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png">
 
 # Serverless Orchestrator of Serverless Workers
 [![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
