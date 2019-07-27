@@ -51,7 +51,7 @@ Resources:
       Tags:
         -
           Key: 'Environment'
-          Value: 'production'
+          Value: 'sandbox'
 
 # Uncomment this table if you are going to run system/integration tests.
 #  AutotestSoswTasksDynamoTable:
@@ -144,7 +144,7 @@ Resources:
       Tags:
         -
           Key: 'Environment'
-          Value: 'production'
+          Value: 'sandbox'
 
 # Uncomment this table if you are going to run system/integration tests.
 #  AutotestSoswClosedTasksDynamoTable:
@@ -237,7 +237,7 @@ Resources:
       Tags:
         -
           Key: 'Environment'
-          Value: 'production'
+          Value: 'sandbox'
 
 
 # Uncomment this table if you are going to run system/integration tests.
@@ -310,7 +310,7 @@ Resources:
       Tags:
         -
           Key: 'Environment'
-          Value: 'production'
+          Value: 'sandbox'
 
 ## This is a custom policy the Lambdas should use to be able to READ config.
 ## Unfortunately there is now way to create resource-based permissions in DynamoDB.

@@ -1,4 +1,6 @@
-"""Config uploader.
+"""TODO DEPRECATED in favour of `config_updater`
+
+Config uploader.
 
 Reads the config files from current directory and saves them to the ``config`` table in DynamoDB.
 
