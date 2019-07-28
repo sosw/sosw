@@ -1,6 +1,7 @@
 import logging
 import unittest
 import os
+from decimal import Decimal
 
 from unittest.mock import MagicMock, patch, Mock
 
@@ -101,6 +102,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
                     'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
         self.assertDictEqual(expected, dict_row)
+        for k, v in dict_row.items():
+            self.assertNotIsInstance(v, Decimal)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):
@@ -114,6 +117,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'extra_key_s': 'wowie', 'other_bool': True
         }
         self.assertDictEqual(dict_row, expected)
+        for k, v in dict_row.items():
+            self.assertNotIsInstance(v, Decimal)
 
 
     def test_dynamo_to_dict__dont_json_loads(self):
