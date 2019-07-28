@@ -83,6 +83,17 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
+    def test_dict_to_dynamo__not_strict__map_type(self):
+        dict_row = {
+            'accept_mimetypes':     {'image/webp': 1, 'image/apng': 1, 'image/*': 1, '*/*': 0.8},
+        }
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
+        expected = {}
+        logging.info(f"dynamo_row: {dynamo_row}")
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
     def test_dict_to_dynamo_prefix(self):
         dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, add_prefix="#")

@@ -333,6 +333,8 @@ class DynamoDbClient:
                     result[key_with_prefix] = {'N': str(val)}
                 elif key_type == 'S':
                     result[key_with_prefix] = {'S': str(val)}
+                elif key_type == 'M':
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
                 else:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
 
@@ -351,6 +353,8 @@ class DynamoDbClient:
                     result[key_with_prefix] = {'N': str(val)}
                 elif isinstance(val, str):
                     result[key_with_prefix] = {'S': str(val)}
+                elif isinstance(val, dict):
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
                 else:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
             else:
