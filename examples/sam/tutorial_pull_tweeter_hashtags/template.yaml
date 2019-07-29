@@ -15,7 +15,7 @@ Resources:
       CodeUri: tutorial_pull_tweeter_hashtags/
       Handler: app.lambda_handler
       Runtime: python3.7
-      Name: tutorial_pull_tweeter_hashtags
+      FunctionName: tutorial_pull_tweeter_hashtags
 
 Outputs:
   TpthFunction:
