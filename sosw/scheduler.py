@@ -94,7 +94,7 @@ class Scheduler(Processor):
                 # ('section', {}),
                 # ('store', {}),
                 # ('product', {}),
-            ]
+            ],
         }
     }
 
@@ -389,8 +389,9 @@ class Scheduler(Processor):
         # If we shall need batching of flat vals of this attr we find out the batch size.
         # First we search in job (means the current level of recursive subdata being chunked.
         # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
+        MAX_BATCH = 1000000  # This is not configurable!
         batch_size = int(job.get(f'max_{plural(attr)}_per_batch',
-                             skeleton.get(f'max_{plural(attr)}_per_batch', 1000000)))
+                             skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
 
 
         def push_list_chunks():
@@ -402,6 +403,12 @@ class Scheduler(Processor):
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), job):
+
+            # Force batches to isolate if we shall be dealing with flat data.
+            # But we still respect the `max_PARAM_per_batch` if it is provided in job.
+            # Having batch_size == MAX_BATCH asserts that we had
+            batch_size = 1 if batch_size == MAX_BATCH else batch_size
+
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
             logger.debug(f"Next attr: {next_attr}")

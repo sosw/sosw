@@ -588,7 +588,17 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_chunk_job__max_items_per_batch(self):
         """
         Tests that `max_products_per_batch` will actually make chunks of products of specific size.
-        :return:
+
+        Here we have a tricky case:
+
+        `section_weddings` has 3 different `stores`. In `store_music` we have 5 `products`.
+        With max_products_per_batch we should have:
+
+        - store_1
+        - store_2
+        - store_3, products 1 + 2
+        - store_3, products 3 + 4
+        - store_3, products 5
         """
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_weddings']['stores']['store_music']['max_products_per_batch'] = 2
