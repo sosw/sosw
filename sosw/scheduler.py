@@ -169,6 +169,8 @@ class Scheduler(Processor):
             for row in data:
                 f.write(f"{json.dumps(row)}\n")
 
+        logger.info(f"Finished step: parse_job_to_file()")
+
 
     # def create_tasks(self, labourer: Labourer, data: List):
     #     """
@@ -586,13 +588,17 @@ class Scheduler(Processor):
             return
 
         else:
+            logger.info(f"Processing a file: {file_name}")
             while self.sufficient_execution_time_left:
+                logger.debug(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
+                            f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
+                    logger.info(f"No rows in file: {file_name}")
                     break
 
                 for task in data:
-                    logger.info(task)
+                    logger.debug(f"Pushing task to DynamoDB: {task}")
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
                     self.task_client.create_task(labourer=labourer, **t)
@@ -600,6 +606,7 @@ class Scheduler(Processor):
 
             else:
                 # Spawning another sibling to continue the processing
+                logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
                 try:
                     payload = dict(file_name=file_name)
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)

@@ -82,9 +82,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         lambda_context = types.SimpleNamespace()
         lambda_context.aws_request_id = 'AWS_REQ_ID'
         lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context.get_remaining_time_in_millis = MagicMock(return_value=300000)  # 5 minutes
         global_vars.lambda_context = lambda_context
-        self.custom_lambda_context = lambda_context  # This is to access from tests.
+        self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         with patch('boto3.client'):
             self.scheduler = module.Scheduler(self.custom_config)
@@ -209,6 +209,10 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.upload_and_unlock_queue_file = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.clean_tmp = MagicMock()
+
+        # This is a specific test patch for logging of remaining time.
+        # We actually want two rounds: first OK, second - low time. But the context.method is called twice each round.
+        self.custom_lambda_context.get_remaining_time_in_millis.side_effect = [300000, 300000, 1000, 1000]
 
         with patch('sosw.scheduler.Scheduler._sleeptime_for_dynamo', new_callable=PropertyMock) as mock_sleeptime:
             mock_sleeptime.return_value = 0.0001
