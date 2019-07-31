@@ -55,7 +55,7 @@ They may pass the remaining payload to another execution automatically. See exam
    
        @property
        def sufficient_execution_time_left(self) -> bool:
-           """ Return if there is a sufficient execution time for processing ('shutdown period' is in seconds). """
+           """ Return whether there is a sufficient execution time for processing ('shutdown period' is in seconds). """
            return global_vars.lambda_context.get_remaining_time_in_millis() > self.config['shutdown_period'] * 1000
    
    
