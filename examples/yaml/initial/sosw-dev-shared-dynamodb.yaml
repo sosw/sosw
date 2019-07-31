@@ -1,0 +1,424 @@
+###################################################################################
+# DynamoDB Tables                                                                 #
+# This template shall create 3 main tables for `sosw` and the `autotest_` copies  #
+# for them in case you are running integration tests.                             #
+###################################################################################
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sosw_shared_resources"
+
+Resources:
+
+  SoswTasksDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "sosw_tasks"
+      AttributeDefinitions:
+        -
+          AttributeName: 'task_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'labourer_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'greenfield'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'task_id'
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "sosw_tasks_greenfield"
+          KeySchema:
+            -
+              AttributeName: 'labourer_id'
+              KeyType: "HASH"
+            -
+              AttributeName: 'greenfield'
+              KeyType: "RANGE"
+
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'production'
+
+# Uncomment this table if you are going to run system/integration tests.
+#  AutotestSoswTasksDynamoTable:
+#    Type: "AWS::DynamoDB::Table"
+#    Properties:
+#      TableName: "autotest_sosw_tasks"
+#      AttributeDefinitions:
+#        -
+#          AttributeName: 'task_id'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'labourer_id'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'greenfield'
+#          AttributeType: 'N'
+#      KeySchema:
+#        -
+#          AttributeName: 'task_id'
+#          KeyType: "HASH"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 1
+#        WriteCapacityUnits: 1
+#
+#      GlobalSecondaryIndexes:
+#        -
+#          IndexName: "autotest_sosw_tasks_greenfield"
+#          KeySchema:
+#            -
+#              AttributeName: 'labourer_id'
+#              KeyType: "HASH"
+#            -
+#              AttributeName: 'greenfield'
+#              KeyType: "RANGE"
+#          Projection:
+#            ProjectionType: "ALL"
+#          ProvisionedThroughput:
+#            ReadCapacityUnits: 1
+#            WriteCapacityUnits: 1
+#
+#      Tags:
+#        -
+#          Key: 'Environment'
+#          Value: 'dev'
+#
+
+  SoswClosedTasksDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "sosw_closed_tasks"
+      AttributeDefinitions:
+        -
+          AttributeName: 'task_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'labourer_id_task_status'
+          AttributeType: 'S'
+        -
+          AttributeName: 'closed_at'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'task_id'
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "labourer_task_status_with_time"
+          KeySchema:
+            -
+              AttributeName: 'labourer_id_task_status'
+              KeyType: "HASH"
+            -
+              AttributeName: 'closed_at'
+              KeyType: "RANGE"
+
+          Projection:
+            NonKeyAttributes:
+              - 'completed_at'
+              - 'greenfield'
+              - 'attempts'
+            ProjectionType: "INCLUDE"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'production'
+
+# Uncomment this table if you are going to run system/integration tests.
+#  AutotestSoswClosedTasksDynamoTable:
+#    Type: "AWS::DynamoDB::Table"
+#    Properties:
+#      TableName: "autotest_sosw_closed_tasks"
+#      AttributeDefinitions:
+#        -
+#          AttributeName: 'task_id'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'labourer_id_task_status'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'closed_at'
+#          AttributeType: 'N'
+#      KeySchema:
+#        -
+#          AttributeName: 'task_id'
+#          KeyType: "HASH"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 1
+#        WriteCapacityUnits: 1
+#
+#      GlobalSecondaryIndexes:
+#        -
+#          IndexName: "labourer_task_status_with_time"
+#          KeySchema:
+#            -
+#              AttributeName: 'labourer_id_task_status'
+#              KeyType: "HASH"
+#            -
+#              AttributeName: 'closed_at'
+#              KeyType: "RANGE"
+#
+#          Projection:
+#            NonKeyAttributes:
+#              - 'completed_at'
+#              - 'greenfield'
+#              - 'attempts'
+#            ProjectionType: "INCLUDE"
+#          ProvisionedThroughput:
+#            ReadCapacityUnits: 1
+#            WriteCapacityUnits: 1
+#
+#      Tags:
+#        -
+#          Key: 'Environment'
+#          Value: 'dev'
+
+
+  SoswRetryTasksDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "sosw_retry_tasks"
+      AttributeDefinitions:
+        -
+          AttributeName: 'labourer_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'task_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'desired_launch_time'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'labourer_id'
+          KeyType: "HASH"
+        -
+          AttributeName: 'task_id'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+      LocalSecondaryIndexes:
+        -
+          IndexName: 'labourer_id_greenfield'
+          KeySchema:
+            -
+              AttributeName: 'labourer_id'
+              KeyType: "HASH"
+            -
+              AttributeName: 'desired_launch_time'
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'production'
+
+
+# Uncomment this table if you are going to run system/integration tests.
+#  AutotestSoswRetryTasksDynamoTable:
+#    Type: "AWS::DynamoDB::Table"
+#    Properties:
+#      TableName: "autotest_sosw_retry_tasks"
+#      AttributeDefinitions:
+#        -
+#          AttributeName: 'labourer_id'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'task_id'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'desired_launch_time'
+#          AttributeType: 'N'
+#      KeySchema:
+#        -
+#          AttributeName: 'labourer_id'
+#          KeyType: "HASH"
+#        -
+#          AttributeName: 'task_id'
+#          KeyType: "RANGE"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 1
+#        WriteCapacityUnits: 1
+#
+#      LocalSecondaryIndexes:
+#        -
+#          IndexName: 'labourer_id_greenfield'
+#          KeySchema:
+#            -
+#              AttributeName: 'labourer_id'
+#              KeyType: "HASH"
+#            -
+#              AttributeName: 'desired_launch_time'
+#              KeyType: "RANGE"
+#          Projection:
+#            ProjectionType: "ALL"
+#
+#      Tags:
+#        -
+#          Key: 'Environment'
+#          Value: 'dev'
+
+  # Configuration Tables
+  SoswConfigDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "config"
+      AttributeDefinitions:
+        -
+          AttributeName: 'env'
+          AttributeType: 'S'
+        -
+          AttributeName: 'config_name'
+          AttributeType: 'S'
+      KeySchema:
+        -
+          AttributeName: 'env'
+          KeyType: "HASH"
+        -
+          AttributeName: 'config_name'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'production'
+
+## This is a custom policy the Lambdas should use to be able to READ config.
+## Unfortunately there is now way to create resource-based permissions in DynamoDB.
+## You can create this policy only after the IAM roles using it will be created.
+#  SoswConfigDynamoTablePolicy:
+#    Type: AWS::IAM::Policy
+#    Properties:
+#      PolicyDocument:
+#          Version: "2012-10-17"
+#          Statement:
+#            -
+#              Sid: "Query"
+#              Effect: "Allow"
+#              Action:
+#                - "dynamodb:Query"
+#                - "dynamodb:DescribeTable"
+#              Resource: !Ref SoswConfigDynamoTable
+#              Roles:
+#                - "lambda_sosw_orchestrator"
+#                - "lambda_sosw_scavenger"
+## You can also import the role if you export them from Lambdas
+##                - Fn::ImportValue: sosw-role-orchestrator
+#
+#      PolicyName: ReadOnlyConfigTable
+
+
+ # This table is the genaral storage of configs for testing and dev environments. Be careful not to drop it.
+  AutotestSoswConfigDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "autotest_config"
+      AttributeDefinitions:
+        -
+          AttributeName: 'env'
+          AttributeType: 'S'
+        -
+          AttributeName: 'config_name'
+          AttributeType: 'S'
+      KeySchema:
+        -
+          AttributeName: 'env'
+          KeyType: "HASH"
+        -
+          AttributeName: 'config_name'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'dev'
+
+## Uncomment this table if you are going to run system/integration tests.
+#  # This table is used for testing behaviour of config components. Can be played with during tests.
+#  AutotestConfigComponentDynamoTable:
+#    Type: "AWS::DynamoDB::Table"
+#    Properties:
+#      TableName: "autotest_config_component"
+#      AttributeDefinitions:
+#        -
+#          AttributeName: 'env'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'config_name'
+#          AttributeType: 'S'
+#      KeySchema:
+#        -
+#          AttributeName: 'env'
+#          KeyType: "HASH"
+#        -
+#          AttributeName: 'config_name'
+#          KeyType: "RANGE"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 1
+#        WriteCapacityUnits: 1
+#
+#      Tags:
+#        -
+#          Key: 'Environment'
+#          Value: 'dev'
+
+#############################################
+# Export Values to CloudFormation Namespace #
+#############################################
+Outputs:
+
+  SoswTasksDynamoTableName:
+    Description: "Sosw Tasks main table of unfinished tasks"
+    Value: !Ref SoswTasksDynamoTable
+    Export:
+      Name: "sosw-ddb-tasks"
+
+  SoswConfigDynamoTableName:
+    Description: "Sosw Config Table"
+    Value: !Ref SoswConfigDynamoTable
+    Export:
+      Name: "sosw-ddb-config"
+
+  SoswClosedTasksDynamoTableName:
+      Description: "Sosw Tasks archived table"
+      Value: !Ref SoswClosedTasksDynamoTable
+      Export:
+        Name: "sosw-ddb-tasks-closed"
+
+  SoswRetryTasksDynamoTableName:
+      Description: "Sosw Tasks retry table"
+      Value: !Ref SoswRetryTasksDynamoTable
+      Export:
+        Name: "sosw-ddb-tasks-retry"

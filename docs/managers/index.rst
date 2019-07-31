@@ -6,7 +6,7 @@ Managers
    :titlesonly:
    :caption: Managers:
 
-   managers/task
-   managers/ecology
+   task
+   ecology
 
-   greenfield
+   ../greenfield
