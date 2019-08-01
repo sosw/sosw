@@ -254,7 +254,12 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
-                    if key_type == 'S':
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
+                    if key_type == 'N':
+                        result[key] = float(val) if '.' in val else int(val)
+                    elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
                                 not self.config.get('dont_json_loads_results'):
@@ -272,7 +277,12 @@ class DynamoDbClient:
         else:
             for key, val_dict in dynamo_row.items():
                 for val_type, val in val_dict.items():
-                    if val_type == 'S':
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
+                    if val_type == 'N':
+                        result[key] = float(val) if '.' in val else int(val)
+                    elif val_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
                                 not self.config.get('dont_json_loads_results'):
@@ -323,6 +333,8 @@ class DynamoDbClient:
                     result[key_with_prefix] = {'N': str(val)}
                 elif key_type == 'S':
                     result[key_with_prefix] = {'S': str(val)}
+                elif key_type == 'M':
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
                 else:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
 
@@ -341,6 +353,8 @@ class DynamoDbClient:
                     result[key_with_prefix] = {'N': str(val)}
                 elif isinstance(val, str):
                     result[key_with_prefix] = {'S': str(val)}
+                elif isinstance(val, dict):
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
                 else:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
             else:

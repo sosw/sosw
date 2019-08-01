@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "tutorial_pull_tweeter_hashtags"
+
+Parameters:
+  ExecutionPolicy:
+    Description: "Managed execution policy for sosw lambdas."
+    Type: String
+    Default: 'AWSLambdaBasicExecutionRole'
+
+  ConfigTableName:
+    Description: "Config Table."
+    Type: String
+    Default: 'config'
+
+  NameUnderscored:
+    Description: "Data Table for tutorial_pull_tweeter_hashtags"
+    Type: String
+    Default: 'tutorial_pull_tweeter_hashtags'
+
+Resources:
+########################################
+# DynamoDB table to store hashtag data #
+########################################
+  TutorialPullTweeterHashtagsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Ref NameUnderscored
+      AttributeDefinitions:
+        -
+          AttributeName: 'tag_name'
+          AttributeType: 'S'
+        -
+          AttributeName: 'date'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'tag_name'
+          KeyType: "HASH"
+        -
+          AttributeName: 'date'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'sandbox'
+
+##############################
+# IAM Role for the  Function #
+##############################
+  LambdaTutorialPullTweeterHashtagsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/service-role/${ExecutionPolicy}"
+
+      Policies:
+      - PolicyName: "TutorialPullTweeterHashtagsPermissions"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action: "dynamodb:*"
+            Resource: !Ref TutorialPullTweeterHashtagsTable
+
+# You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
+# See examples/yaml/sosw-shared-dynamodb.yaml
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:DescribeTable"
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
+
+      RoleName: !Sub "lambda_${NameUnderscored}"
+
+#################################
+# Lambda Function for Tutorial  #
+#################################
+  LambdaTutorialPullTweeterHashtags:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
+        S3Key: !Sub "sosw/packages/${NameUnderscored}.zip"
+      Description: "Tutorial."
+      FunctionName: !Ref NameUnderscored
+      Handler: "app.lambda_handler"
+      MemorySize: 128
+      Role: !GetAtt LambdaTutorialPullTweeterHashtagsRole.Arn
+      Runtime: "python3.7"
+      Timeout: 60
+
+      Tags:
+       -
+         Key: 'Environment'
+         Value: 'sandbox'
+
+##############################################
+# Permissions for CloudWatch ScheduledEvents #
+# The actual Rules are configured in the     #
+# scheduled-rules.yaml template.             #
+##############################################
+  PermissionForEventsToInvokeLambdaTutorialPullTweeterHashtags:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref "LambdaTutorialPullTweeterHashtags"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+
+
+#############################################
+# Export Values to CloudFormation Namespace #
+#############################################
+Outputs:
+
+  LambdaTutorialPullTweeterHashtags:
+    Description: "Tutorial Pull Tweeter Hashtag Data"
+    Value: !Ref LambdaTutorialPullTweeterHashtags
+    Export:
+      Name: !Sub "sosw-${NameUnderscored}"
