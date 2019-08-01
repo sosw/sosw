@@ -35,7 +35,7 @@ Follow the PEP8_ but both classes and functions are padded with 2 empty lines.
 Initialization
 --------------
 
-* Fork the repository: `<https://github.com/bimpression/sosw>`_
+* Fork the repository: `<https://github.com/sosw/sosw>`_
 
 * Register Account in AWS: `SignUp <https://portal.aws.amazon.com/billing/signup#/start>`_
 
@@ -52,7 +52,7 @@ Initialization
 * Read the :ref:`Documentation convention`
 
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 
 Building the docs
