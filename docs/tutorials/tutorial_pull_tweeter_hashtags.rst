@@ -1,0 +1,97 @@
+Tutorial Pull Tweeter Hashtags
+==============================
+
+In this tutorial we are going to pull the data about popularity of several different topics in the hash tags of tweets.
+Imagine that we have already classified some popular hashtags to several specific groups. Now we want to pull the data
+about their usage in the last day. 
+
+Every day we would want to read the data only for the last 3 previous days, so we add the chunking parameters:
+``"period": "last_2_days", "isolate_days": true``
+
+We shall pretend that pulling the data for every keyword takes several minutes. 
+In this case we add another parameter: ``“isolate_words”: true`` to make sure that each word shall be processed
+in an different Lambda execution.
+
+The following payload shall become our Job.
+This means that we shall chunk it per specific word / day combination and create independent tasks for the
+Worker Lambda for each chunk.
+
+.. code-block:: json
+
+   {
+     "topics": {
+       "cars": {
+         "words": ["toyota", "mazda", "nissan", "racing", "automobile", "car"]
+       },
+       "food": {
+         "words": ["recipe", "cooking", "eating", "food", "meal", "tasty"]
+       },
+       "shows": {
+         "words": ["opera", "cinema", "movie", "concert", "show", "musical"]
+       }
+     },
+     "period": "last_2_days",
+     "isolate_days": true,
+     "isolate_words": true
+   }
+
+
+Now the time has come to create the actual Lambda.
+
+Register Twitter App
+--------------------
+| First of all you will have to register your own twitter API credentials. https://developer.twitter.com/
+| Submitting the application takes 2-3 minutes, but after that you have to wait severals hours (or even days).
+  You can submit the application now and add them to config later. The Lambda shall handle the missing credentials.
+
+Package Lambda Code
+-------------------
+
+Creating the Lambda is very similar to the way we deployed ``sosw`` Essentials. We use the same scripts and deployment
+workflow. Feel free to use your own favourite method or contribute to upgrade this one.
+
+.. code-block:: bash
+
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
+
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
+
+   FUNCTION="tutorial_pull_tweeter_hashtags"
+   FUNCTIONDASHED=`echo $FUNCTION | sed s/_/-/g`
+
+   cd /var/app/sosw/examples/workers/$FUNCTION
+
+   # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
+   # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
+   pip3 install -r requirements.txt --no-dependencies --target .
+
+   # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
+   zip -qr /tmp/$FUNCTION.zip *
+
+   # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
+   aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
+
+   # Create CloudFormation Stack with Function resource and deploy it.
+   # aws cloudformation create-stack --stack-name=$FUNCTIONDASHED \
+   # --template-body=file://yaml/$FUNCTIONDASHED.yaml
+
+   # Package and Deploy CloudFormation stack for the Function.
+   # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
+   aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
+      --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+   aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
+      --capabilities CAPABILITY_NAMED_IAM
+
+
+This pattern has created the IAM Role for the function, the Lambda function itself and a DynamoDB table
+to save data to. All these resources are still falling under the AWS free tier if you do not abuse them.
+
+In order for this function to be managed by ``sosw``, we have to register in as a Labourer in the configs.
+As you probably remember the configs are in the ``config`` DynamoDB table.
+
+Specially for this tutorial we have a nice script to inject configs.
+
