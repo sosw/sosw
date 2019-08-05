@@ -229,10 +229,19 @@ The ``config_value`` should contain a JSON that will be recursively merged to th
 
 We have provided some very basic examples of configuring Essentials. The config files have some values that are
 dependant on your AWS Account ID, so we shall substitute it and then upload these configs to DynamoDB.
-It is much easier to do this in Python (even without using sosw), so we shall call a python script for that.
+It is much easier to do this in Python, so we shall call a python script for that.
+The script uses some `sosw` features for working with DynamoDB, so we shall have to install sosw.
 
 .. code-block:: bash
 
+   # New script. To be released in 0.7.21
+   # cd /var/app/sosw
+   # pipenv shell
+   # pip install sosw
+   # cd /var/app/sosw/examples/
+   # python3 config_updater.py
+
+   ### For now use old one:
    cd /var/app/sosw/examples/essentials/.config
    python3 config_uploader.py
    cd /var/app/sosw
