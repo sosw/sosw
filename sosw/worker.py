@@ -36,13 +36,25 @@ logger.setLevel(logging.INFO)
 
 class Worker(Processor):
     """
-    We recommend that you inherit your core Processor from this class in Lambdas that are orchestrated by `sosw`.
-
-    The ``__call__`` method is supposed to accept the ``event`` of the Lambda invocation.
-    This is a dictionary with the payload received in the lambda_handler during invocation.
+    We recommend that you inherit ``YOUR_FUNCTION.Processor`` from this class in Lambdas
+    that are orchestrated by ``sosw``.
 
     Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
     ``task_id`` in the ``event``.
+
+    The ``__call__`` method is supposed to accept the ``event`` of the Lambda invocation.
+    This is a dictionary with the payload received in the ``lambda_handler`` during invocation.
+
+    We encourage you to call ``super()`` at **the end** of your child function in order to collects stats
+    and report to WorkerAssistant. It is important not to call it in the beginning of your worker before the
+    actual work is done.
+
+    In case your worker function needs to return something - you probably **should not** inherit from `Worker`.
+    Basic stats aggregation is performed by :ref:`Processor` so calling it's ``super()`` will do the job.
+
+    .. note::
+       Make sure that ``YOUR_FUNCTION`` has permissions to call AWS Lambda API to invoke ``sosw_worker_assistant``!
+
     """
 
     DEFAULT_CONFIG = {
@@ -55,18 +67,14 @@ class Worker(Processor):
 
 
     def __call__(self, event: Dict):
-        """
-        You can either call super() at the end of your child function or completely overwrite this function.
-        """
-
-        # Mark the task as completed in DynamoDB if the event had task_id.
-        try:
-            self.mark_task_as_completed(event.get('task_id'))
-        except Exception:
-            logger.exception(f"Failed to call WorkerAssistant for event {event}")
-            pass
 
         super().__call__(event)
+
+        # Mark the task as completed in DynamoDB if the event had task_id.
+        task_id = event.get('task_id')
+        if task_id:
+            self.mark_task_as_completed(event.get('task_id'))
+
 
 
     def mark_task_as_completed(self, task_id: str):
