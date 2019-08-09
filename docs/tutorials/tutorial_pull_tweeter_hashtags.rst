@@ -66,7 +66,8 @@ workflow. Feel free to use your own favourite method or contribute to upgrade th
 
    # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
    # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
-   pip3 install -r requirements.txt --no-dependencies --target .
+   pip3 install sosw --no-dependencies --target .
+   pip3 install -r requirements.txt --target .
 
    # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
    zip -qr /tmp/$FUNCTION.zip *
@@ -80,7 +81,7 @@ workflow. Feel free to use your own favourite method or contribute to upgrade th
 
    # Package and Deploy CloudFormation stack for the Function.
    # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
-   aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
+   aws cloudformation package --template-file $FUNCTION.yaml \
       --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
 
    aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
@@ -90,8 +91,58 @@ workflow. Feel free to use your own favourite method or contribute to upgrade th
 This pattern has created the IAM Role for the function, the Lambda function itself and a DynamoDB table
 to save data to. All these resources are still falling under the AWS free tier if you do not abuse them.
 
-In order for this function to be managed by ``sosw``, we have to register in as a Labourer in the configs.
-As you probably remember the configs are in the ``config`` DynamoDB table.
+In case you will later make any changes to the application and need to re-deploy a new version,
+you may use the following script:
 
-Specially for this tutorial we have a nice script to inject configs.
+..  hidden-code-block:: bash
+    :label: Show script <br>
+
+   # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+   ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+      grep AccountId | awk -F "\"" '{print $4}'`
+
+   # Set your bucket name
+   BUCKETNAME=sosw-s3-$ACCOUNT
+
+   FUNCTION="tutorial_pull_tweeter_hashtags"
+   FUNCTIONDASHED=`echo $FUNCTION | sed s/_/-/g`
+
+   cd /var/app/sosw/examples/workers/$FUNCTION
+
+   # Install sosw package locally. The only dependency is boto3, but we shall have it in Lambda already.
+   # Saving a lot of packages size ignoring this dependency. We don't care which exactly pip to use, install locally.
+   pip3 install sosw --no-dependencies --target .
+   pip3 install -r requirements.txt --target .
+
+   # Make a source package. TODO is skip 'dist-info' and 'test' paths. Probably use `find` for this.
+   zip -qr /tmp/$FUNCTION.zip *
+
+   # Upload the file to S3, so that AWS Lambda will be able to easily take it from there.
+   aws s3 cp /tmp/$FUNCTION.zip s3://$BUCKETNAME/sosw/packages/
+
+   # Package and Deploy CloudFormation stack for the Function.
+   # It will create the Function and a custom IAM role for it with permissions to required DynamoDB tables.
+   aws cloudformation package --template-file $FUNCTION.yaml \
+      --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+   aws cloudformation deploy --template-file /tmp/deployment-output.yaml --stack-name $FUNCTIONDASHED \
+      --capabilities CAPABILITY_NAMED_IAM
+
+   aws lambda update-function-code --function-name $FUNCTION --s3-bucket $BUCKETNAME \
+   --s3-key sosw/packages/$FUNCTION.zip --publish
+
+
+
+In order for this function to be managed by ``sosw``, we have to register in as a Labourer in the configs
+of sosw-Essentials. As you probably remember the configs are in the ``config`` DynamoDB table.
+
+Specially for this tutorial we have a nice script to inject configs. It finds the JSON files of the worker in
+``FUNCTION/config`` and *"injects"* the `labourer.json` contents to the existing configs of Essentials.
+It will also create a config (empty for now) for the Worker Lambda itself.
+We shall append twitter credentials there later.
+
+.. code-block:: bash
+
+   cd /var/app/sosw/examples
+   python3 config_updater.py tutorial_pull_tweeter_hashtags
 

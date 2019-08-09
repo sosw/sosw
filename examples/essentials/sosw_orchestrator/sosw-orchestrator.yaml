@@ -179,6 +179,6 @@ Outputs:
 
   LambdaSoswOrchestrator:
     Description: "Sosw Orchestrator Essential"
-    Value: !Ref LambdaSoswOrchestrator
+    Value: !GetAtt LambdaSoswOrchestrator.Arn
     Export:
       Name: "sosw-lambda-orchestrator"

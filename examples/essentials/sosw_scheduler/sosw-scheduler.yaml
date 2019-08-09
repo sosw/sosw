@@ -120,6 +120,6 @@ Outputs:
 
   LambdaSoswScheduler:
     Description: "Sosw Scheduler Essential"
-    Value: !Ref LambdaSoswScheduler
+    Value: !GetAtt LambdaSoswScheduler.Arn
     Export:
       Name: "sosw-lambda-scheduler"

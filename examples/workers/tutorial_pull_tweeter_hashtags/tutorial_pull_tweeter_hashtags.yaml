@@ -17,6 +17,11 @@ Parameters:
     Type: String
     Default: 'tutorial_pull_tweeter_hashtags'
 
+  NameDashed:
+    Description: "Name of stack"
+    Type: String
+    Default: 'tutorial-pull-tweeter-hashtags'
+
 Resources:
 ########################################
 # DynamoDB table to store hashtag data #
@@ -30,14 +35,14 @@ Resources:
           AttributeName: 'tag_name'
           AttributeType: 'S'
         -
-          AttributeName: 'date'
+          AttributeName: 'since'
           AttributeType: 'N'
       KeySchema:
         -
           AttributeName: 'tag_name'
           KeyType: "HASH"
         -
-          AttributeName: 'date'
+          AttributeName: 'since'
           KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: 1
@@ -74,7 +79,7 @@ Resources:
           Statement:
           - Effect: "Allow"
             Action: "dynamodb:*"
-            Resource: !Ref TutorialPullTweeterHashtagsTable
+            Resource: !GetAtt TutorialPullTweeterHashtagsTable.Arn
 
 # You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
 # See examples/yaml/sosw-shared-dynamodb.yaml
@@ -84,6 +89,11 @@ Resources:
               - "dynamodb:DescribeTable"
             Resource:
               - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource:
+              - Fn::ImportValue: "sosw-lambda-worker-assistant"
+
 
       RoleName: !Sub "lambda_${NameUnderscored}"
 
@@ -131,4 +141,4 @@ Outputs:
     Description: "Tutorial Pull Tweeter Hashtag Data"
     Value: !Ref LambdaTutorialPullTweeterHashtags
     Export:
-      Name: !Sub "sosw-${NameUnderscored}"
+      Name: !Sub "sosw-${NameDashed}"
