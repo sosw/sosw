@@ -59,7 +59,7 @@ workflow. Feel free to use your own favourite method or contribute to upgrade th
     # Set your bucket name
     BUCKETNAME=sosw-s3-$ACCOUNT
 
-    FUNCTION="tutorial_pull_tweeter_hashtags"
+    FUNCTION="sosw_tutorial_pull_tweeter_hashtags"
     FUNCTIONDASHED=`echo $FUNCTION | sed s/_/-/g`
 
     cd /var/app/sosw/examples/workers/$FUNCTION
@@ -103,7 +103,7 @@ template and also publish the new version of the Lambda code package:
     # Set your bucket name
     BUCKETNAME=sosw-s3-$ACCOUNT
 
-    FUNCTION="tutorial_pull_tweeter_hashtags"
+    FUNCTION="sosw_tutorial_pull_tweeter_hashtags"
     FUNCTIONDASHED=`echo $FUNCTION | sed s/_/-/g`
 
     cd /var/app/sosw/examples/workers/$FUNCTION
@@ -138,7 +138,7 @@ you receive them and re-run the uploader.
 ..  code-block:: bash
 
     cd /var/app/sosw/examples
-    python3 config_updater.py tutorial_pull_tweeter_hashtags
+    python3 config_updater.py sosw_tutorial_pull_tweeter_hashtags
 
 Schedule task
 -------------
@@ -151,7 +151,7 @@ Schedule task
     :label: See full payload <br>
 
     {
-      "lambda_name": "tutorial_pull_tweeter_hashtags",
+      "lambda_name": "sosw_tutorial_pull_tweeter_hashtags",
       "job": {
         "topics": {
           "cars": {
@@ -175,7 +175,7 @@ This JSON payload is also available in the file ``FUNCTION/config/task.json``.
 ..  code-block:: bash
 
     cd /var/app/sosw/examples
-    PAYLOAD=`cat workers/tutorial_pull_tweeter_hashtags/config/task.json`
+    PAYLOAD=`cat workers/sosw_tutorial_pull_tweeter_hashtags/config/task.json`
     aws lambda invoke --function-name sosw_scheduler \
         --payload "$PAYLOAD" /tmp/output.txt && cat /tmp/output.txt
 

@@ -1,6 +1,6 @@
 {
   "job": {
-    "lambda_name": "tutorial_pull_tweeter_hashtags",
+    "lambda_name": "sosw_sosw_tutorial_pull_tweeter_hashtags",
     "topics": {
       "cars": {
         "words": [

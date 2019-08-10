@@ -1,4 +1,4 @@
-"""tutorial_pull_tweeter_hashtags
+"""sosw_tutorial_pull_tweeter_hashtags
 """
 
 import datetime
@@ -19,7 +19,7 @@ class Processor(Worker):
     DEFAULT_CONFIG = {
         "init_clients":     ["DynamoDb"],
         "dynamo_db_config": {
-            'table_name':      'tutorial_pull_tweeter_hashtags',
+            'table_name':      'sosw_tutorial_pull_tweeter_hashtags',
             'row_mapper':      {
                 'tag_name': 'S',
                 'since':    'N',

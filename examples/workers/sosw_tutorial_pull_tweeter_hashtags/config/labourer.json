@@ -1,0 +1,10 @@
+{
+  "task_config": {
+    "labourers": {
+      "sosw_tutorial_pull_tweeter_hashtags": {
+        "max_simultaneous_invocations": 5,
+        "arn": "arn:aws:lambda:us-west-2:000000000000:function:sosw_tutorial_pull_tweeter_hashtags"
+      }
+    }
+  }
+}
