@@ -156,6 +156,10 @@ class Scheduler(Processor):
             raise RuntimeError(f"The current Lambda container is already having some unprocessed file.")
 
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
+        if not labourer:
+            raise RuntimeError(f"Invalid (unregistered) Labourer: {labourer}. "
+                               f"Maybe your job is missing `lambda_name`, or the one provided is not registered "
+                               f"in the config of the Scheduler. Current job: {job}")
 
         # In case there is not chunking required, we just schedule `task` directly from the `job`.
         if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
