@@ -68,7 +68,7 @@ The following commands are tested on a fresh EC2 instance running on default Ama
    sudo chown ec2-user:ec2-user /var/app
 
    cd /var/app
-   git clone https://github.com/bimpression/sosw.git
+   git clone https://github.com/sosw/sosw.git
    cd sosw
 
    # Need to configure your AWS CLI environment.
