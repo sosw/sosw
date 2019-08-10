@@ -138,7 +138,7 @@ you receive them and re-run the uploader.
 ..  code-block:: bash
 
     cd /var/app/sosw/examples
-    python3 config_updater.py sosw_tutorial_pull_tweeter_hashtags
+    pipenv run python3 config_updater.py sosw_tutorial_pull_tweeter_hashtags
 
 Schedule task
 -------------

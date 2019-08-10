@@ -1,6 +1,6 @@
 """
-Config uploader
-===============
+Config processor
+================
 
 Universal helper for playing with configs. Should probably upgrade it and move to components or core helpers.
 
