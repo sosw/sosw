@@ -27,7 +27,9 @@ class Processor(Worker):
                 'count':    'N',
             },
             'required_fields': ['tag_name', 'since'],
-        }
+        },
+        "api_valid_params": ["term", "raw_query", "geocode", "since_id", "max_id", "until", "since", "count",
+                             "lang", "locale", "result_type", "include_entities", "return_json"],
     }
 
     dynamo_db_client: DynamoDbClient = None
@@ -67,8 +69,7 @@ class Processor(Worker):
         }
 
         # Inject the rest of event as optional args.
-        # No validation here, so never use this kind of code in Production!
-        query = {**query, **event}
+        query = {**query, **{k: v for k, v in event.items() if k in self.config['api_valid_params']}}
         logger.info(query)
 
         if not self.api:

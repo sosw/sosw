@@ -1,0 +1,40 @@
+{
+  "job": {
+    "lambda_name": "tutorial_pull_tweeter_hashtags",
+    "topics": {
+      "cars": {
+        "words": [
+          "toyota",
+          "mazda",
+          "nissan",
+          "racing",
+          "automobile",
+          "car"
+        ]
+      },
+      "food": {
+        "words": [
+          "recipe",
+          "cooking",
+          "eating",
+          "food",
+          "meal",
+          "tasty"
+        ]
+      },
+      "shows": {
+        "words": [
+          "opera",
+          "cinema",
+          "movie",
+          "concert",
+          "show",
+          "musical"
+        ]
+      }
+    },
+    "period": "last_2_days",
+    "isolate_days": true,
+    "isolate_words": true
+  }
+}

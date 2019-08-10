@@ -123,19 +123,59 @@ template and also publish the new version of the Lambda code package:
     aws lambda update-function-code --function-name $FUNCTION --s3-bucket $BUCKETNAME \
         --s3-key sosw/packages/$FUNCTION.zip --publish
 
-
-
+Upload configs
+--------------
 In order for this function to be managed by ``sosw``, we have to register in as a Labourer
 in the configs of sosw-Essentials. As you probably remember the configs are in the
 ``config`` DynamoDB table.
 
 Specially for this tutorial we have a nice script to inject configs. It finds the JSON files
-of the worker in ``FUNCTION/config`` and *"injects"* the `labourer.json` contents to the
-existing configs of Essentials. It will also create a config (empty for now) for the Worker
-Lambda itself. We shall append twitter credentials there later.
+of the worker in ``FUNCTION/config`` and *"injects"* the ``labourer.json`` contents to the
+existing configs of Essentials. It will also create a config for the Worker Lambda itself
+out of the ``self.json``. You shall add twitter credentials in the placeholders there once
+you receive them and re-run the uploader.
 
-.. code-block:: bash
+..  code-block:: bash
 
-   cd /var/app/sosw/examples
-   python3 config_updater.py tutorial_pull_tweeter_hashtags
+    cd /var/app/sosw/examples
+    python3 config_updater.py tutorial_pull_tweeter_hashtags
+
+Schedule task
+-------------
+| Congratulations!
+| You are ready to **run** the tutorial. You just to call the ``sosw_scheduler`` Lambda
+  with the Job that we constructed at the very beginning. The payload for the Scheduler
+  must have the ``labourer_id`` which is the name of Worker function and the optional ``job``.
+
+..  hidden-code-block:: json
+    :label: See full payload <br>
+
+    {
+      "lambda_name": "tutorial_pull_tweeter_hashtags",
+      "job": {
+        "topics": {
+          "cars": {
+            "words": ["toyota", "mazda", "nissan", "racing", "automobile", "car"]
+          },
+          "food": {
+            "words": ["recipe", "cooking", "eating", "food", "meal", "tasty"]
+          },
+          "shows": {
+            "words": ["opera", "cinema", "movie", "concert", "show", "musical"]
+          }
+        },
+        "period": "last_2_days",
+        "isolate_days": true,
+        "isolate_words": true
+      }
+    }
+
+This JSON payload is also available in the file ``FUNCTION/config/task.json``.
+
+..  code-block:: bash
+
+    cd /var/app/sosw/examples
+    PAYLOAD=`cat workers/tutorial_pull_tweeter_hashtags/config/task.json`
+    aws lambda invoke --function-name sosw_scheduler \
+        --payload "$PAYLOAD" /tmp/output.txt && cat /tmp/output.txt
 

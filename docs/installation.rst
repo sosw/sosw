@@ -252,7 +252,46 @@ guidelines of :ref:`Orchestrator`, :ref:`Scavenger` and :ref:`Scheduler`.
 
 Create Scheduled Rules
 ----------------------
-The usual implementation expects the ``Orchestrator`` and ``Scavenger`` to run every minute, while ``Scheduler``
-and ``WorkerAssistant`` are executed per request. ``Scheduler`` may have any number of cronned Business Tasks with any
-desired periodicity of course.
+The usual implementation expects the ``Orchestrator`` and ``Scavenger`` to run every minute,
+while ``Scheduler`` and ``WorkerAssistant`` are executed per request. ``Scheduler`` may have
+any number of cronned Business Tasks with any desired periodicity of course.
 
+The following script will create an AWS CloudWatch Events Scheduled Rule that will invoke
+the ``Orchestrator`` and ``Scavenger`` every minute.
+
+..  note::
+
+    Make sure not to leave this rule enabled after you finish your tutorial, because after
+    passing the free tier of AWS for Lambda functions it might cause unexpected charges.
+
+..  code-block:: bash
+
+    # Set parameters:
+    BUCKETNAME=sosw-s3-$ACCOUNT
+    PREFIX=/var/app/sosw/examples/yaml
+    FILENAME=sosw-dev-scheduled-rules.yaml
+    STACK=sosw-dev-scheduled-rules
+
+    aws cloudformation package --template-file $PREFIX/$FILENAME \
+        --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+    aws cloudformation deploy --template-file /tmp/deployment-output.yaml \
+        --stack-name $STACK --capabilities CAPABILITY_NAMED_IAM
+
+..  hidden-code-block:: bash
+    :label: Manual creation of rules <br>
+
+    ############
+    # WARNING! #
+    ############
+    # This is not recommended to run!
+    # Use CloudFormation.
+
+    ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+        grep AccountId | awk -F "\"" '{print $4}'`
+
+    aws events put-rule --schedule-expression 'rate(1 minute)' --name SoswEssentials
+    aws events put-targets --rule SoswEssentials \
+        --targets \
+            "Id"="1","Arn"="arn:aws:lambda:us-west-2:$ACCOUNT:function:sosw_orchestrator" \
+            "Id"="2","Arn"="arn:aws:lambda:us-west-2:$ACCOUNT:function:sosw_scavenger"
