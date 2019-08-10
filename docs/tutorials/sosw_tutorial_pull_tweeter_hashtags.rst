@@ -140,6 +140,31 @@ you receive them and re-run the uploader.
     cd /var/app/sosw/examples
     pipenv run python3 config_updater.py sosw_tutorial_pull_tweeter_hashtags
 
+After updating the configs we must reset the Essentials so that they read fresh configs from
+the DynamoDB. There is currently no special AWS API endpoint for this, so we just re-deploy
+the essentials.
+
+..  code-block:: bash
+
+    # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
+    ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
+        grep AccountId | awk -F "\"" '{print $4}'`
+
+    # Set your bucket name
+    BUCKETNAME=sosw-s3-$ACCOUNT
+
+    for name in `ls /var/app/sosw/examples/essentials`; do
+        echo "Deploying $name"
+
+        FUNCTIONDASHED=`echo $name | sed s/_/-/g`
+
+        cd /var/app/sosw/examples/essentials/$name
+        zip -qr /tmp/$name.zip *
+        aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
+            --s3-key sosw/packages/$name.zip --publish
+    done
+
+
 Schedule task
 -------------
 | Congratulations!
@@ -155,12 +180,15 @@ Schedule task
       "job": {
         "topics": {
           "cars": {
+            "isolate_words": true,
             "words": ["toyota", "mazda", "nissan", "racing", "automobile", "car"]
           },
           "food": {
+            "isolate_words": true,
             "words": ["recipe", "cooking", "eating", "food", "meal", "tasty"]
           },
           "shows": {
+            "isolate_words": true,
             "words": ["opera", "cinema", "movie", "concert", "show", "musical"]
           }
         },

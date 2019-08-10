@@ -3,6 +3,7 @@
     "lambda_name": "sosw_tutorial_pull_tweeter_hashtags",
     "topics": {
       "cars": {
+        "isolate_words": true,
         "words": [
           "toyota",
           "mazda",
@@ -13,6 +14,7 @@
         ]
       },
       "food": {
+        "isolate_words": true,
         "words": [
           "recipe",
           "cooking",
@@ -23,6 +25,7 @@
         ]
       },
       "shows": {
+        "isolate_words": true,
         "words": [
           "opera",
           "cinema",
@@ -35,6 +38,7 @@
     },
     "period": "last_2_days",
     "isolate_days": true,
+    "isolate_topics": true,
     "isolate_words": true
   }
 }

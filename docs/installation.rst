@@ -203,27 +203,27 @@ If you change anything in the code or simply want to redeploy the code use the f
 
     # Get your AccountId from EC2 metadata. Assuming you run this on EC2.
     ACCOUNT=`curl http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/ | \
-      grep AccountId | awk -F "\"" '{print $4}'`
+        grep AccountId | awk -F "\"" '{print $4}'`
 
     # Set your bucket name
     BUCKETNAME=sosw-s3-$ACCOUNT
 
     for name in `ls /var/app/sosw/examples/essentials`; do
-      echo "Deploying $name"
+        echo "Deploying $name"
 
-      FUNCTIONDASHED=`echo $name | sed s/_/-/g`
+        FUNCTIONDASHED=`echo $name | sed s/_/-/g`
 
-      cd /var/app/sosw/examples/essentials/$name
-      zip -qr /tmp/$name.zip *
-      aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
-        --s3-key sosw/packages/$name.zip --publish
+        cd /var/app/sosw/examples/essentials/$name
+        zip -qr /tmp/$name.zip *
+        aws lambda update-function-code --function-name $name --s3-bucket $BUCKETNAME \
+            --s3-key sosw/packages/$name.zip --publish
 
-      # Package and Deploy (if there are changes) CloudFormation stack for the Function.
-      aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
-         --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+        # Package and Deploy (if there are changes) CloudFormation stack for the Function.
+        aws cloudformation package --template-file $FUNCTIONDASHED.yaml \
+            --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
 
-      aws cloudformation deploy --template-file /tmp/deployment-output.yaml \
-        --stack-name $FUNCTIONDASHED --capabilities CAPABILITY_NAMED_IAM
+        aws cloudformation deploy --template-file /tmp/deployment-output.yaml \
+            --stack-name $FUNCTIONDASHED --capabilities CAPABILITY_NAMED_IAM
     done
 
 
