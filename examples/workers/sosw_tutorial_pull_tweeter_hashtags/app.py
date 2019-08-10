@@ -25,6 +25,7 @@ class Processor(Worker):
                 'since':    'N',
                 'until':    'N',
                 'count':    'N',
+                'topic':    'S',
             },
             'required_fields': ['tag_name', 'since'],
         },
@@ -49,9 +50,13 @@ class Processor(Worker):
     def __call__(self, event):
 
         # Constructing variables for period of search. Default: yesterday
-        until = validate_datetime_from_something(event.pop('end_date', datetime.date.today()))
-        since = validate_datetime_from_something(event.pop('start_date', (until - datetime.timedelta(days=1))))
-        assert since < until, f"Invalid dates. `start_date` must be before `end_date`: {since} is after {until}"
+        try:
+            q_date = event['date_list'][0]
+        except Exception:
+            q_date = datetime.date.today() - datetime.timedelta(days=1)
+
+        since = validate_datetime_from_something(q_date)
+        until = since + datetime.timedelta(days=1)
 
         # Concatenate words in a string and insert hashtag if missing. This is actual search query for twitter.
         words = event.pop('words')
@@ -97,7 +102,7 @@ class Processor(Worker):
             break
 
         # Prepare the data to write to DynamoDB
-        row = dict(tag_name=query['term'], count=self.stats['tweets_pulled'])
+        row = dict(tag_name=query['term'], count=self.stats['tweets_pulled'], topic=event.get('topics', ['other'])[0])
 
         # Inject date timestamps into row.
         for k in ['since', 'until']:
