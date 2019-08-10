@@ -107,10 +107,13 @@ that both ``sosw`` Essentials and ``sosw``-managed Lambdas will use.
 
     # Create new CloudFormation stacks
     for filename in `ls $PREFIX`; do
-        stack=`echo $filename | sed s/.yaml//`
+        STACK=`echo $filename | sed s/.yaml//`
 
-        aws cloudformation create-stack --stack-name=$stack \
-            --template-body=file://$PREFIX/$filename
+        aws cloudformation package --template-file $PREFIX/$filename \
+            --output-template-file /tmp/deployment-output.yaml --s3-bucket $BUCKETNAME
+
+        aws cloudformation deploy --template-file /tmp/deployment-output.yaml \
+            --stack-name $STACK --capabilities CAPABILITY_NAMED_IAM
     done
 
 ..  note::
