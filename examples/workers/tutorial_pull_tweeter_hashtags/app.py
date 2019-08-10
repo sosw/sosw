@@ -2,7 +2,6 @@
 """
 
 import datetime
-import dateutil
 import logging
 import twitter
 
@@ -47,39 +46,48 @@ class Processor(Worker):
 
     def __call__(self, event):
 
-        until = validate_datetime_from_something(event.pop('start_date', datetime.date.today()))
-        vars = {
-            "since":            (until - datetime.timedelta(days=1)).strftime('%Y-%m-%d'),
+        # Constructing variables for period of search. Default: yesterday
+        until = validate_datetime_from_something(event.pop('end_date', datetime.date.today()))
+        since = validate_datetime_from_something(event.pop('start_date', (until - datetime.timedelta(days=1))))
+        assert since < until, f"Invalid dates. `start_date` must be before `end_date`: {since} is after {until}"
+
+        # Concatenate words in a string and insert hashtag if missing. This is actual search query for twitter.
+        words = event.pop('words')
+        term = " ".join([w if w.startswith('#') else f"#{w}" for w in words])
+
+        # Variables for twitter API request.
+        query = {
+            "since":            since.strftime('%Y-%m-%d'),
             "until":            until.strftime('%Y-%m-%d'),
-            "term":             event.pop('words')[0],
-            "count":            100,
-            "lang":             "en",
-            "result_type":      "recent",
+            "term":             term,
+            "count":            100,  # Maximum value for pagination
+            "lang":             "en",  # Filter only tweets in English
+            "result_type":      "recent",  # Order by date so that we can paginate
             "include_entities": False
         }
 
         # Inject the rest of event as optional args.
         # No validation here, so never use this kind of code in Production!
-        vars = {**vars, **event}
-        logger.info(vars)
+        query = {**query, **event}
+        logger.info(query)
 
         if not self.api:
             logger.warning(f"No twitter API client. Skipping this invocation.")
             super().__call__(event)
             return
 
-        last_id = 0
+        last_id = 0  # Placeholder for pagination of twitter requests
         while True:
             if last_id:
-                vars["max_id"] = last_id
+                query["max_id"] = last_id
 
-            data = self.api.GetSearch(**vars)
+            data = self.api.GetSearch(**query)
 
             for row in data:
                 logger.debug(row)
 
             self.stats['tweets_pulled'] += len(data)
-            if len(data) == vars['count']:
+            if len(data) == query['count']:
                 last_id = data[-1].id
                 logger.info(f"last_id: {last_id}")
                 continue
@@ -88,12 +96,11 @@ class Processor(Worker):
             break
 
         # Prepare the data to write to DynamoDB
-        row = dict(tag_name=vars['term'], count=self.stats['tweets_pulled'])
+        row = dict(tag_name=query['term'], count=self.stats['tweets_pulled'])
 
         # Inject date timestamps into row.
         for k in ['since', 'until']:
-            row[k] = vars[k].timestamp() if isinstance(vars[k], datetime.datetime) \
-                else dateutil.parser.parse(vars[k]).timestamp()
+            row[k] = datetime.datetime.strptime(query[k], '%Y-%m-%d').timestamp()
 
         self.dynamo_db_client.put(row)
 
