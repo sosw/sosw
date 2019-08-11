@@ -41,9 +41,9 @@ concept and can be easily cleaned up if no longer required.
 
 ..  warning::
 
-    The following Guide assumes that you are running these comands from some EC2 machine using
-    either Key or Role with permissions to control IAM, CloudFormation, Lambda, CloudWatch,
-    DynamoDB, S3 (and probably something else).
+    The following Guide assumes that you are running these commands from an EC2
+    machine using either a Key or Role with permissions to control IAM,
+    CloudFormation, Lambda, CloudWatch, DynamoDB, S3 (and probably something else).
 
 If you are running this in the test account - feel free to grant the IAM role of your EC2
 instance the policy ``arn:aws:iam::aws:policy/AdministratorAccess``, but never do this in
@@ -118,14 +118,16 @@ that both ``sosw`` Essentials and ``sosw``-managed Lambdas will use.
 
 ..  note::
 
-    Now take a break and wait for these resourced to be created. You may observe the changes
-    in the CloudFormation web-console (Services -> CloudFormation).
+    Now, take a break and wait for these resources to be created. You may
+    observe the changes in the CloudFormation web-console (Services ->
+    CloudFormation).
 
 ..  warning:: DO NOT continue until all stacks reach the CREATE_COMPLETE status.
 
-If you later make any changes in these files (after the initial deployment), use the
-following script and it will update CloudFormation stacks. No harm to run it extra time.
-CloudFormation is smart enough not to take any action if there are no changes in templates.
+If you make any changes to these files in the future (after the initial
+deployment), use the following script and it will update CloudFormation stacks.
+There is ​no harm ​in running it extra time. CloudFormation is smart enough not
+to take any action if there are no actual changes in the templates.
 
 ..  hidden-code-block:: bash
     :label: Show script <br>
@@ -154,10 +156,11 @@ CloudFormation is smart enough not to take any action if there are no changes in
 Provision Lambda Functions for Essentials
 -----------------------------------------
 In this tutorial we were first going to use AWS SAM for provisioning Lambdas,
-but eventually gave it up. Too many black magic is required and you eventually loose
-control over the Lambda. The example of deploying Essentials uses raw bash/python scripts,
-AWS CLI and CloudFormation templates. If you want to contribute providing examples
-with SAM - welcome. Some sandbox can be found in `examples/sam/` in the repository.
+but eventually gave it up. Too much black magic is required and you eventually
+lose control over the Lambda. The example of deploying Essentials uses raw
+bash/python scripts, AWS CLI and CloudFormation templates. If you want to
+contribute providing examples with SAM, you are welcome to. Some sandboxes can
+be found in `examples/sam/` in the repository.
 
 ..  code-block:: bash
 
@@ -254,9 +257,9 @@ script uses some `sosw` features for working with DynamoDB, so we shall have to 
     # python3 config_uploader.py
     # cd /var/app/sosw
 
-Please take your time to read more about :ref:`Config Sourse<Config_Sourse>` and find
-advanced examples in the guidelines of :ref:`Orchestrator`, :ref:`Scavenger`
-and :ref:`Scheduler`.
+Please take your time to read more about :ref:`Config Source<Config_Source>`
+and find advanced examples in the guidelines of :ref:`Orchestrator`,
+:ref:`Scavenger` and :ref:`Scheduler`.
 
 
 Create Scheduled Rules
