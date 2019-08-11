@@ -28,8 +28,8 @@ Resources:
           AttributeName: 'task_id'
           KeyType: "HASH"
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 2
 
       GlobalSecondaryIndexes:
         -
@@ -45,8 +45,8 @@ Resources:
           Projection:
             ProjectionType: "ALL"
           ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
+            ReadCapacityUnits: 3
+            WriteCapacityUnits: 2
 
       Tags:
         -
@@ -117,8 +117,8 @@ Resources:
           AttributeName: 'task_id'
           KeyType: "HASH"
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 2
 
       GlobalSecondaryIndexes:
         -
@@ -138,8 +138,8 @@ Resources:
               - 'attempts'
             ProjectionType: "INCLUDE"
           ProvisionedThroughput:
-            ReadCapacityUnits: 5
-            WriteCapacityUnits: 5
+            ReadCapacityUnits: 3
+            WriteCapacityUnits: 2
 
       Tags:
         -
@@ -218,8 +218,8 @@ Resources:
           AttributeName: 'task_id'
           KeyType: "RANGE"
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 2
 
       LocalSecondaryIndexes:
         -
@@ -304,7 +304,7 @@ Resources:
           AttributeName: 'config_name'
           KeyType: "RANGE"
       ProvisionedThroughput:
-        ReadCapacityUnits: 5
+        ReadCapacityUnits: 3
         WriteCapacityUnits: 1
 
       Tags:

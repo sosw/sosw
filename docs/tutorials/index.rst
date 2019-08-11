@@ -1,3 +1,5 @@
+.. _Tutorials:
+
 =========
 Tutorials
 =========
@@ -6,4 +8,6 @@ Tutorials
    :titlesonly:
    :caption: Sample functions:
 
-   tutorial_pull_tweeter_hashtags
+   sosw_tutorial_pull_tweeter_hashtags
+
+   cleanup

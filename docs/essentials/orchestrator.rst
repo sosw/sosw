@@ -94,4 +94,4 @@ See also :ref:`Greenfield`
    :members:
 
 
-.. _CloudFormation template for Orchestrator: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/
+.. _CloudFormation template for Orchestrator: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/

@@ -1,4 +1,4 @@
-"""tutorial_pull_tweeter_hashtags
+"""sosw_tutorial_pull_tweeter_hashtags
 """
 
 import logging

@@ -35,7 +35,7 @@ Follow the PEP8_ but both classes and functions are padded with 2 empty lines.
 Initialization
 --------------
 
-* Fork the repository: `<https://github.com/bimpression/sosw>`_
+* Fork the repository: `<https://github.com/sosw/sosw>`_
 
 * Register Account in AWS: `SignUp <https://portal.aws.amazon.com/billing/signup#/start>`_
 
@@ -52,12 +52,17 @@ Initialization
 * Read the :ref:`Documentation convention`
 
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 
 Building the docs
 ------------------
 
-| To build the docs locally, run: ``sphinx-build -ab html ./docs ./sosw-rtd``
-| Then you can use the built in python web server: ``python -m http.server`` to view the html version
-  directly from localhost in your preferred browser.
+To build the docs locally, run: ``sphinx-build -ab html ./docs ./sosw-rtd``
+
+You can also use the built in python web server to view the html version directly from localhost
+in your preferred browser.
+
+.. code-block:: bash
+
+ sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
