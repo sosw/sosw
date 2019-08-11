@@ -8,7 +8,7 @@ introduction as short as possible.
 Initialization
 --------------
 
-* Fork the repository: `<https://github.com/bimpression/sosw>`_
+* Fork the repository: `<https://github.com/sosw/sosw>`_
 
 * Register Account in AWS: `SignUp`_
 
@@ -23,7 +23,7 @@ Initialization
 * Read the :ref:`Documentation convention`
 
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _SignUp: https://portal.aws.amazon.com/billing/signup#/start
 

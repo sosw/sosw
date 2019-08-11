@@ -1,7 +1,7 @@
-<img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/logo/sosw_black.png">
+<img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/logo/sosw_black.png">
 
 # Serverless Orchestrator of Serverless Workers
-[![Build Status](https://travis-ci.org/bimpression/sosw.svg?branch=master)](https://travis-ci.org/bimpression/sosw)
+[![Build Status](https://travis-ci.org/sosw/sosw.svg?branch=master)](https://travis-ci.org/sosw/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 
 **sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
@@ -13,7 +13,7 @@
 [https://docs.sosw.app](https://docs.sosw.app/en/latest/)
 
 ## Essential Workflows
-![Essential sosw Workflow Schema](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/_static/images/simple-sosw.png)
+![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
 - Python 3.6, 3.7
@@ -62,11 +62,11 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 - dictionaries are value-alligned
 
 #### Initialization
-1. Fork the repository: https://github.com/bimpression/sosw
+1. Fork the repository: https://github.com/sosw/sosw
 2. Register Account in AWS: [SignUp](https://portal.aws.amazon.com/billing/signup#/start)
 3. Run `pipenv sync –dev` to setup your virtual environment and download the required dependencies
 4. Create DynamoDB Tables: 
-    - You can find the CloudFormation template for the databases [in the example](https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml).
+    - You can find the CloudFormation template for the databases [in the example](https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml).
     - If you are not familiar with CloudFormation, we highly recommend at least learning the basics from [the tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html).
 5. Create Sandbox Lambda with Scheduler
 6. Play with it.

@@ -99,6 +99,7 @@ Once again, the detailed guide for initial setup can be found in the :ref:`Insta
    essentials/index
    components/index
    managers/index
+   tutorials/index
 
    contribution/index
 
@@ -110,6 +111,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html

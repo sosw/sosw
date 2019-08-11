@@ -46,7 +46,7 @@ class WorkerAssistant(Processor):
     DEFAULT_CONFIG = {
         'init_clients':     ['DynamoDb'],
         'dynamo_db_config': {
-            'table_name':       'autotest_sosw_tasks',
+            'table_name':       'sosw_tasks',
             'index_greenfield': 'sosw_tasks_greenfield',
             'row_mapper':       {
                 'task_id':             'S',

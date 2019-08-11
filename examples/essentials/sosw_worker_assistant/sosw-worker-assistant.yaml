@@ -116,6 +116,6 @@ Outputs:
 
   LambdaSoswWorkerAssistant:
     Description: "Sosw WorkerAssistant Essential"
-    Value: !Ref LambdaSoswWorkerAssistant
+    Value: !GetAtt LambdaSoswWorkerAssistant.Arn
     Export:
       Name: "sosw-lambda-worker-assistant"
