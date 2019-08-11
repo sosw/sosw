@@ -74,6 +74,11 @@ TEST_SCHEDULER_CONFIG = {
     }
 }
 
+TEST_WORKER_ASSISTANT_CONFIG = {
+    'init_clients':     [],
+    'dynamo_db_config': TASKS_TABLE_CONFIG,
+}
+
 TASKS = [
     {'task_id': '123', 'labourer_id': 'some_lambda', 'attempts': 3, 'greenfield': '123'},
     {'task_id': '124', 'labourer_id': 'another_lambda', 'attempts': 4, 'greenfield': '321'},
