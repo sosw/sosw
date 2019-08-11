@@ -5,11 +5,11 @@
   "job_schema": {
     "chunkable_attrs": [
       [
-        "store",
+        "topic",
         {}
       ],
       [
-        "department",
+        "word",
         {}
       ]
     ]

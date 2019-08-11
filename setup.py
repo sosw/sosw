@@ -12,7 +12,7 @@ setup(name='sosw',
       url='http://github.com/sosw/sosw',
       author='Nikolay Grishchenko',
       author_email='nikolay@bimpression.com',
-      license='GNU General Public License v3',
+      license='The MIT License (MIT)',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Operating System :: Other OS',

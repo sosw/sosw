@@ -99,6 +99,7 @@ Once again, the detailed guide for initial setup can be found in the :ref:`Insta
    essentials/index
    components/index
    managers/index
+   tutorials/index
 
    contribution/index
 

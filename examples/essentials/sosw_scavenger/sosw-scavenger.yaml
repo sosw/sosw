@@ -183,6 +183,6 @@ Outputs:
 
   LambdaSoswScavenger:
     Description: "Sosw Scavenger Essential"
-    Value: !Ref LambdaSoswScavenger
+    Value: !GetAtt LambdaSoswScavenger.Arn
     Export:
       Name: "sosw-lambda-scavenger"

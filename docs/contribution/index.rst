@@ -58,6 +58,11 @@ Initialization
 Building the docs
 ------------------
 
-| To build the docs locally, run: ``sphinx-build -ab html ./docs ./sosw-rtd``
-| Then you can use the built in python web server: ``python -m http.server`` to view the html version
-  directly from localhost in your preferred browser.
+To build the docs locally, run: ``sphinx-build -ab html ./docs ./sosw-rtd``
+
+You can also use the built in python web server to view the html version directly from localhost
+in your preferred browser.
+
+.. code-block:: bash
+
+ sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
