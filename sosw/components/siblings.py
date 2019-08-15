@@ -1,3 +1,34 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
+__all__ = ['SiblingsManager']
+__author__ = "Nikolay Grishchenko"
+
 import boto3
 import datetime
 import json
@@ -8,21 +39,13 @@ from math import ceil
 from sosw import Processor
 
 
-__author__ = "Nikolay Grishchenko"
-__email__ = "dev@bimpression.com"
-__version__ = "1.00"
-__license__ = "MIT"
-__status__ = "Production"
-
-__all__ = ['SiblingsManager']
-
 logger = logging.getLogger()
 
 
 class SiblingsManager(Processor):
     """
     This set of helpers can be used for Lambdas that want to invoke some siblings of self. Very useful for Lambdas
-    processing queues and running out of time. Some good usecase you can find in the code of `es_ingest_us`
+    processing queues and running out of time.
 
     The Role of your Lambda must have the following extra permissions to run correctly. Please note that we hardcode
     the Arn in the policy to avoid circular dependency when parsing YAML. This dependency is absolutely valid, but
@@ -54,6 +77,7 @@ class SiblingsManager(Processor):
     events_client: boto3.client = None
     lambda_client: boto3.client = None
     cloudwatch_client: boto3.client = None
+
 
     def any_events_rules_enabled(self, lambda_context):
         """
@@ -112,7 +136,7 @@ class SiblingsManager(Processor):
 
         invocation_type = 'Event' if not os.environ.get('STAGE') == 'test' else 'DryRun'
 
-        if not self.any_events_rules_enabled(lambda_context) and not force:
+        if not force and not self.any_events_rules_enabled(lambda_context):
             logger.error("Can't call siblings because I don't find any enabled CloudWatch Rules for me.")
             return
 

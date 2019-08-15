@@ -6,28 +6,17 @@ from unittest.mock import patch, Mock
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-
 from sosw.worker_assistant import WorkerAssistant
+from sosw.test.variables import TEST_WORKER_ASSISTANT_CONFIG
 
 
-class WorkerAssistantUnitTestCase(unittest.TestCase):
-    TEST_CONFIG = {'test': True}
+class WorkerAssistant_UnitTestCase(unittest.TestCase):
+    TEST_CONFIG = TEST_WORKER_ASSISTANT_CONFIG
 
 
     def setUp(self):
-        self.patcher = patch("sosw.app.get_config")
-        self.get_config_patch = self.patcher.start()
-
-        self.worker_assistant = WorkerAssistant(custom_config={'test': 1})
-
-
-    def tearDown(self):
-        self.patcher.stop()
-
-        try:
-            del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
-            pass
+        with patch('boto3.client'):
+            self.worker_assistant = WorkerAssistant(custom_config=self.TEST_CONFIG)
 
 
     def test_call__unknown_action__raises(self):
@@ -40,7 +29,7 @@ class WorkerAssistantUnitTestCase(unittest.TestCase):
 
     def test_call__mark_task_as_closed(self):
         event = {
-            'action': 'mark_task_as_completed',
+            'action':  'mark_task_as_completed',
             'task_id': '123',
         }
         self.worker_assistant.mark_task_as_completed = Mock(return_value=None)

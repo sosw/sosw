@@ -20,7 +20,7 @@ Possible states:
 
 The following diagram represents different states.
 
-.. figure:: images/greenfield-timeline.png
+.. figure:: _static/images/greenfield-timeline.png
    :alt: Greenfield Timeline
    :align: center
 

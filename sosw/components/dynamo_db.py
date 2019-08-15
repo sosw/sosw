@@ -1,5 +1,34 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
+
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
-__author__ = "Nikolay Grishchenko, Sophie Fogel"
+__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
 
 import boto3
@@ -11,9 +40,10 @@ import pprint
 
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
+from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 from .benchmark import benchmark
-from .helpers import chunks
+from .helpers import chunks, to_bool
 
 
 logger = logging.getLogger()
@@ -69,6 +99,9 @@ class DynamoDbClient:
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
             self.row_mapper = self.config.get('row_mapper')
+
+        self.type_serializer = TypeSerializer()
+        self.type_deserializer = TypeDeserializer()
 
 
     def identify_dynamo_capacity(self, table_name=None):
@@ -136,23 +169,22 @@ class DynamoDbClient:
 
     def get_table_indexes(self, table_name: Optional[str] = None) -> Dict:
         """
-        Returns table's **active** indexes: their hash key, range key, and projection type.
-
-        :return: Example:
+        Returns **active** indexes of the table: their hash key, range key, and projection type.
 
         .. code-block:: python
-            {
-                'index_1_name': {
-                    'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
-                    'hash_key': 'the_hash_key_column_name',
-                    'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
-                    'provisioned_throughput': {
-                        'write_capacity': 5,
-                        'read_capacity': 10
-                    }
-                },
-                'index_2_name': ...
-            }
+
+           {
+               'index_1_name': {
+                   'projection_type': 'ALL',  # One of: 'ALL'|'KEYS_ONLY'|'INCLUDE'
+                   'hash_key': 'the_hash_key_column_name',
+                   'range_key': 'the_range_key_column_name',  # Can be None if the index has no range key
+                   'provisioned_throughput': {
+                       'write_capacity': 5,
+                       'read_capacity': 10
+                   }
+               },
+               'index_2_name': ...
+           }
 
         """
 
@@ -200,7 +232,7 @@ class DynamoDbClient:
         return indexes
 
 
-    def dynamo_to_dict(self, dynamo_row, strict=True):
+    def dynamo_to_dict(self, dynamo_row: Dict, strict: bool = None, fetch_all_fields: Optional[bool] = None) -> Dict:
         """
         Convert the ugly DynamoDB syntax of the row, to regular dictionary.
         We currently support only String or Numeric values. Latest ones are converted to int or float.
@@ -209,43 +241,35 @@ class DynamoDbClient:
         e.g.:               {'key1': {'N': '3'}, 'key2': {'S': 'value2'}}
         will convert to:    {'key1': 3, 'key2': 'value2'}
 
-        :param dict dynamo_row:     DynamoDB row item
-        :param boolean  strict:     If True only row_mapper fields will be extracted from dynamo_row, else, all
-                                    fields will be extracted from dynamo_row.
+        :param dict dynamo_row:       DynamoDB row item
+        :param bool strict:           DEPRECATED.
+        :param bool fetch_all_fields: If False only row_mapper fields will be extracted from dynamo_row, else, all
+                                      fields will be extracted from dynamo_row.
+        :return: The row in a key-value format
         :rtype: dict
-        :return:                    Human readable row from dynamo
         """
 
+        if strict is not None:
+            logging.warning(f"dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
         result = {}
-        if strict:
+
+        # Get fields from dynamo_row which are present in row mapper
+        if not fetch_all_fields:
             for key, key_type in self.row_mapper.items():
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
                     if key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
-                        if val.startswith('{') and val.endswith('}') and not self.config.get('dont_json_loads_results'):
-                            try:
-                                result[key] = json.loads(val)
-                            except ValueError:
-                                logger.warning("A JSON-looking string failed to parse: {}".format(val))
-                                result[key] = val
-                        else:
-                            result[key] = val
-                    else:
-                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
-                                           f"'S' or 'N' types. Others must be JSON-ified.")
-        else:
-            for key, key_type_and_val in dynamo_row.items():  # {'key1': {'Type1': 'val2'}, 'key2': {'Type2': 'val2'}}
-                for key_type, val in key_type_and_val.items():  # Ex: {'N': "1234"} or {'S': "myvalue"}
-                    if key_type == 'N':
-                        result[key] = float(val) if '.' in val else int(val)
-                    elif key_type == 'S':
-                        # Try to load to a dictionary if looks like JSON.
-                        if val.startswith('{') and val.endswith('}') and not self.config.get('dont_json_loads_results'):
+                        if val.startswith('{') and val.endswith('}') and \
+                                not self.config.get('dont_json_loads_results'):
                             try:
                                 result[key] = json.loads(val)
                             except ValueError:
@@ -254,9 +278,30 @@ class DynamoDbClient:
                         else:
                             result[key] = val
                     else:
-                        raise RuntimeError(f"DynamoDbClient.dynamo_to_dict() found that self.row_mapper has "
-                                           f"unsupported key_type: {key_type}. DynamoDbClient now supports only "
-                                           f"'S' or 'N' types. Others must be JSON-ified.")
+                        result[key] = self.type_deserializer.deserialize(val_dict)
+
+        # Get all fields from dynamo_row
+        else:
+            for key, val_dict in dynamo_row.items():
+                for val_type, val in val_dict.items():
+
+                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # so we cast it to either an integer or a float.
+                    if val_type == 'N':
+                        result[key] = float(val) if '.' in val else int(val)
+                    elif val_type == 'S':
+                        # Try to load to a dictionary if looks like JSON.
+                        if val.startswith('{') and val.endswith('}') and \
+                                not self.config.get('dont_json_loads_results'):
+                            try:
+                                result[key] = json.loads(val)
+                            except ValueError:
+                                logger.warning(f"A JSON-looking string failed to parse: {val}")
+                                result[key] = val
+                        else:
+                            result[key] = val
+                    else:
+                        result[key] = self.type_deserializer.deserialize(val_dict)
 
         assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
         return result
@@ -282,37 +327,60 @@ class DynamoDbClient:
         if add_prefix is None:
             add_prefix = ''
 
-        result = {f"{add_prefix}{key}": {key_type: str(row_dict.get(key))} for (key, key_type) in
-                  self.row_mapper.items()
-                  if row_dict.get(key) is not None}
+        result = {}
+
+        # Keys from row mapper
+        for key, key_type in self.row_mapper.items():
+            val = row_dict.get(key)
+            if val is not None:
+                key_with_prefix = f"{add_prefix}{key}"
+                if key_type == 'BOOL':
+                    result[key_with_prefix] = {'BOOL': to_bool(val)}
+                elif key_type == 'N':
+                    result[key_with_prefix] = {'N': str(val)}
+                elif key_type == 'S':
+                    result[key_with_prefix] = {'S': str(val)}
+                elif key_type == 'M':
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
+                else:
+                    result[key_with_prefix] = self.type_serializer.serialize(val)
+
         result_keys = result.keys()
         if add_prefix:
             result_keys = [x[len(add_prefix):] for x in result.keys()]
+
+        # Keys which are not in row mapper
         for key in list(set(row_dict.keys()) - set(result_keys)):
             if not strict:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
-                if isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
-                    result[key_with_prefix] = {'N': str(row_dict.get(key))}
+                if isinstance(val, bool):
+                    result[key_with_prefix] = {'BOOL': to_bool(val)}
+                elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                    result[key_with_prefix] = {'N': str(val)}
+                elif isinstance(val, str):
+                    result[key_with_prefix] = {'S': str(val)}
+                elif isinstance(val, dict):
+                    result[key_with_prefix] = {'M': self.dict_to_dynamo(val, strict=False)}
                 else:
-                    result[key_with_prefix] = {'S': str(row_dict.get(key))}
+                    result[key_with_prefix] = self.type_serializer.serialize(val)
             else:
-                if not key in self.config.get('required_fields', []):
+                if key not in self.config.get('required_fields', []):
                     logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                    f"syntax. This is not a required field, so we continue, but please investigate "
                                    f"row: {row_dict}")
                 else:
                     raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                      f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
-        logger.debug(result)
+
+        logger.debug(f"dict_to_dynamo result: {result}")
         return result
 
 
-    # @benchmark
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = True, return_count: bool = False,
-                     desc: bool = False) -> Union[List[Dict], int]:
+                     filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
+                     desc: bool = False, fetch_all_fields: bool = None) -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -338,15 +406,21 @@ class DynamoDbClient:
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
             e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
-        :param bool strict:     If True, will only get the attributes specified in the row mapper.
-                                If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
         :param bool return_count: If True, will return the number of items in the result instead of the items themselves
         :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
                              To reverse the order set the argument `desc = True`.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
         """
+
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -398,6 +472,8 @@ class DynamoDbClient:
 
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
+            if return_count:
+                raise Exception(f"DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together")
 
         if desc:
             query_args['ScanIndexForward'] = False
@@ -412,7 +488,7 @@ class DynamoDbClient:
             return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
             if max_items and len(result) >= max_items:
                 break
@@ -465,8 +541,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    # @benchmark
-    def get_by_scan(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -475,24 +550,29 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
-            If false, will get all attributes. Default is True.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+            If True, will get all attributes. Default is False.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
+        response_iterator = self._build_scan_iterator(attrs, table_name)
 
         result = []
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
             self.stats['dynamo_scan_queries'] += 1
 
         return result
 
 
-    # @benchmark
-    def get_by_scan_generator(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan_generator(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -502,19 +582,25 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param bool strict: If True, will only get the attributes specified in the row mapper.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        if strict is not None:
+            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
+
+        response_iterator = self._build_scan_iterator(attrs, table_name)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
-            yield [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
+            yield [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None, strict=True):
+    def _build_scan_iterator(self, attrs=None, table_name=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -545,7 +631,8 @@ class DynamoDbClient:
         return response_iterator
 
 
-    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2):
+    def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
+                                  strict=None, fetch_all_fields=None):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -563,55 +650,69 @@ class DynamoDbClient:
                                 multiplied by 2 after each retry, so `retries` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
+        :param bool strict: DEPRECATED.
+        :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
+                                      If True, will get all attributes. Default is False.
         :return: List of items from the table
         :rtype: list
         """
+
+        if strict is not None:
+            logging.warning(f"batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
+                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
         # Convert given keys to dynamo syntax
         query_keys = [self.dict_to_dynamo(item) for item in keys_list]
 
-        batch_get_item_query = {
-            'RequestItems': {
-                table_name: {
-                    'Keys': query_keys
+        # Check if we skipped something - if we did, try again.
+        def get_unprocessed_keys(db_result):
+            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
+                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+
+        all_items = []
+
+        for query_keys_chunk in chunks(query_keys, 100):
+
+            batch_get_item_query = {
+                'RequestItems': {
+                    table_name: {
+                        'Keys': query_keys_chunk
+                    }
                 }
             }
-        }
 
-        logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+            logger.debug(f"latest_result: {latest_result}")
+            unprocessed_keys = get_unprocessed_keys(latest_result)
+            all_items += latest_result['Responses'][table_name]
+            logger.debug(f"batch_get_items_one_table response: {latest_result}")
 
-        db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-        logger.debug(f"batch_get_items_one_table response: {db_result}")
+            if unprocessed_keys:
+                # Retry several times
+                retry_num = 0
+                wait_time = retry_wait_base_time
+                while unprocessed_keys and retry_num < max_retries:
+                    logger.warning(f"batch_get_item action did NOT finish successfully.")
+                    time.sleep(wait_time)
+                    batch_get_item_query['RequestItems'][table_name]['Keys'] = unprocessed_keys
+                    latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
+                    logger.debug(f"latest_result: {latest_result}")
+                    all_items += latest_result['Responses'][table_name]
+                    retry_num += 1
+                    wait_time *= 2
+                    unprocessed_keys = get_unprocessed_keys(latest_result)
 
-
-        # Check if we skipped something - if we did, try again.
-        def is_action_incomplete(db_result):
-            return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]
-
-
-        if is_action_incomplete(db_result):
-            # Retry several times
-            retry_num = 0
-            wait_time = retry_wait_base_time
-            while is_action_incomplete(db_result) and retry_num < max_retries:
-                logger.warning(f"batch_get_item action did NOT finish successfully.")
-                time.sleep(wait_time)
-                db_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-                retry_num += 1
-                wait_time *= 2
-
-        # After the retries still we have a bad result... then raise Exception
-        if is_action_incomplete(db_result):
-            raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
-
-        items = db_result['Responses'][table_name]
+            # After the retries still we have a bad result... then raise Exception
+            if get_unprocessed_keys(latest_result):
+                raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
 
         result = []
-        for item in items:
-            result.append(self.dynamo_to_dict(item))
+        for item in all_items:
+            result.append(self.dynamo_to_dict(item, fetch_all_fields=fetch_all_fields))
 
         return result
 
@@ -639,7 +740,6 @@ class DynamoDbClient:
         return query
 
 
-    # @benchmark
     def put(self, row, table_name=None, overwrite_existing=True):
         """
         Adds a row to the database

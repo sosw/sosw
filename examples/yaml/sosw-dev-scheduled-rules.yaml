@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudWatch ScheduledEvents for Orchestrator and Scavenger"
+
+Resources:
+  ScheduledRuleSoswEssentials:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Name: "sosw-essentials"
+      Description: "Scheduler for sosw Essentials /1 min"
+      ScheduleExpression: "rate(1 minute)"
+      State: "ENABLED"
+      Targets:
+        -
+          Arn: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sosw_orchestrator"
+          Id: "SoswOrchestrator"
+        -
+          Arn: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sosw_scavenger"
+          Id: "SoswScavenger"
+
+
+# Each Lambda to be triggered by ScheduledRules should provide permissions for that.
+# These Permissions are usually in some generic Policy, but for this example they are directly
+# in the YAML templates of functions.
