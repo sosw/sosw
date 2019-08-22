@@ -821,3 +821,61 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
 
+
+    def test_apply_job_schema(self):
+        self.scheduler.config['job_schema_variants']['elisha'] = {
+            'chunkable_attrs': [
+                ('a', {}),
+            ]
+        }
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_elisha',
+            'job_schema_name': 'elisha'
+            },
+        })
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
+
+
+    def test_apply_job_schema__default(self):
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_elisha',
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')
+
+
+    def test_apply_job_schema__default_preserved(self):
+        """
+        First test checks a specific job schema name.
+        Second test checks if after calling the scheduler again we overwrite the config and use the default
+        specific job schema.
+
+        """
+
+        self.scheduler.config['job_schema_variants']['elisha'] = {
+            'chunkable_attrs': [
+                ('a', {}),
+            ]
+        }
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_elisha',
+            'job_schema_name': 'elisha'
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
+        self.scheduler({'job': {
+            'lambda_name': 'test_elisha',
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')

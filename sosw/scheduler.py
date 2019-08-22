@@ -98,11 +98,13 @@ class Scheduler(Processor):
         'rows_to_process': 50,
         'job_schema':      {},
         'job_schema_variants': {
-            'default': [
-                # ('section', {}),
-                # ('store', {}),
-                # ('product', {}),
-            ],
+            'default': {
+                'chunkable_attrs': [
+                    # ('section', {}),
+                    # ('store', {}),
+                    # ('product', {}),
+                ]
+            }
         }
     }
 
@@ -155,7 +157,7 @@ class Scheduler(Processor):
 
         """
 
-        self.config['job_schema'] = self.config['job_schema_variants'].get(name, 'default')
+        self.config['job_schema'] = self.config['job_schema_variants'][name or 'default']
 
 
     def parse_job_to_file(self, job: Dict):
