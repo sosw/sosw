@@ -18,6 +18,7 @@ def hello(name, age, tags=None):
 
     * And some bullet list
     * With couple rows
+    * Even 3 rows
 
     Now go parameters. PyCharm adds them automatically.
 

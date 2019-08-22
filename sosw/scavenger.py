@@ -1,10 +1,34 @@
-__all__ = ['Scavenger']
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
 
-__author__ = "Sophie Fogel"
-__email__ = "dev@bimpression.com"
-__version__ = "0.1"
-__license__ = "MIT"
-__status__ = "Development"
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
+__all__ = ['Scavenger']
+__author__ = "Sophie Fogel, Nikolay Grishchenko"
+__version__ = "1.0"
 
 import logging
 import time
@@ -12,6 +36,7 @@ from typing import Dict
 
 from sosw.app import Processor
 from sosw.labourer import Labourer
+from sosw.managers.task import TaskManager
 
 
 logger = logging.getLogger()
@@ -19,17 +44,25 @@ logger.setLevel(logging.INFO)
 
 
 class Scavenger(Processor):
+    """
+    Scavenger main class performes the following operations:
+
+    - archive_tasks(labourer)
+    - handle_expired_tasks(labourer)
+    - retry_tasks(labourer)
+    """
+
     DEFAULT_CONFIG = {
         'init_clients':      ['Task', 'Sns'],
         'sns_config':        {
             'recipient': 'arn:aws:sns:us-west-2:000000000000:sosw_info',
-            'subject':   'SOSW Info'
+            'subject':   '``sosw`` Info'
         },
         'retry_tasks_limit': 20  # TODO: What's the optimal number?
     }
 
     # these clients will be initialized by Processor constructor
-    task_client = None
+    task_client: TaskManager = None
     sns_client = None
 
 
@@ -60,7 +93,7 @@ class Scavenger(Processor):
             self.move_task_to_retry_table(task, labourer)
         else:
             logger.info(f"Closing dead task {task}")
-            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='SOSW Dead Task')
+            self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='``sosw`` Dead Task')
             self.task_client.archive_task(task[_('task_id')])
             self.stats['closed_dead_tasks'] += 1
 

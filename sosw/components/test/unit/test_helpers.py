@@ -282,9 +282,9 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(validate_datetime_from_something(1000), datetime.datetime.fromtimestamp(1000),
                          "Failed from epoch time")
 
-        t = time.time()
-        self.assertEqual(validate_datetime_from_something(t * 1000),
-                         datetime.datetime.fromtimestamp(t, tz=timezone.utc),
+        t = 1000.123456
+        self.assertEqual(validate_datetime_from_something(t),
+                         datetime.datetime.fromtimestamp(t),
                          "Failed with epoch in milliseconds")
 
         self.assertEqual(validate_datetime_from_something(1000.0), datetime.datetime.fromtimestamp(1000),
@@ -547,6 +547,46 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIsNone(recursive_update(a, b)['b'])
 
 
+    def test_dunder_to_dict(self):
+        TESTS = [
+            ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"a": "v1", "b__d__e": "v3", "b__c": "v2"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"b__c": {"c1": 41}, "b__c__e": "e_val"}, {"b": {"c": {"c1": 41, "e": "e_val"}}}),
+
+            ({"a__b": {"c__x": 41}}, {"a": {"b": {"c": {"x": 41}}}}),
+            ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(dunder_to_dict(test), expected)
+
+
+    def test_dunder_to_dict__exceptions(self):
+        TESTS = [
+            (ValueError, {'data':{'__data': 42}}),
+            (ValueError, {'data':{'data__': 42}}),
+            (ValueError, {'data':{'__data__': 42}}),
+            (TypeError, {'data':{42: 42}}),
+            (TypeError, {'data':{'a': 42}, 'separator': 1}),    # Not good separator
+            (TypeError, {'data':{'a': 42, 'a__b': 43}}),        # Overlapping types of 'a'
+        ]
+
+        for exception, kwarg in TESTS:
+            print(kwarg)
+            self.assertRaises(exception, dunder_to_dict, **kwarg)
+
+
+    def test_nested_dict_from_keys(self):
+        TESTS = [
+            ((['a', 'b', 'c'],), {'a': {'b': {'c': None}}}),
+            (([42, 'b'],), {42: {'b': None}}),
+            (([42, 'b'],'final'), {42: {'b': 'final'}}),
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(nested_dict_from_keys(*test), expected)
+
+
     def test_trim_arn_to_name(self):
 
         TESTS = [
@@ -602,6 +642,28 @@ class helpers_UnitTestCase(unittest.TestCase):
 
         for test, expected in TESTS:
             self.assertEqual(make_hash(test[0]) == make_hash(test[1]), expected, f"Failed specific test: {test}")
+
+
+    def test_to_bool(self):
+        self.assertEqual(True, to_bool(1))
+        self.assertEqual(True, to_bool(1.0))
+        self.assertEqual(True, to_bool('1'))
+        self.assertEqual(True, to_bool('True'))
+        self.assertEqual(True, to_bool('true'))
+        self.assertEqual(False, to_bool(0))
+        self.assertEqual(False, to_bool(0.0))
+        self.assertEqual(False, to_bool('0'))
+        self.assertEqual(False, to_bool('false'))
+        self.assertEqual(False, to_bool('False'))
+
+        self.assertEqual(True, to_bool(5))
+        self.assertEqual(True, to_bool(0.001))
+
+        with self.assertRaises(Exception):
+            to_bool('unexpected')
+
+        with self.assertRaises(Exception):
+            to_bool(object())
 
 
 if __name__ == '__main__':

@@ -1,4 +1,30 @@
 """
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
 Config manager component. Has methods for getting configuration for lambdas.
 Use `Config` class to get the correct methods we use for each action.
 Using SSMConfig or DynamoConfig directly is discouraged.
@@ -61,7 +87,7 @@ class SSMConfig:
                     Names=[name],
                     WithDecryption=True
             )
-        except:
+        except Exception:
             response = ssm_client.get_parameters(
                     Names=[name],
                     WithDecryption=False
@@ -233,7 +259,7 @@ class DynamoConfig:
 
         try:
             return json.loads(config_value)
-        except:
+        except Exception:
             return config_value if config_value is not None else {}
 
 
@@ -269,7 +295,7 @@ class DynamoConfig:
         for row in items:
             try:
                 row['config_value'] = json.loads(row['config_value'])
-            except:
+            except Exception:
                 pass
             config_name = row['config_name'].replace(prefix, '')
             res[config_name] = row['config_value']

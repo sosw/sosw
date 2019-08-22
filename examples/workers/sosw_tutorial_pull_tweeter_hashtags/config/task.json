@@ -1,0 +1,44 @@
+{
+  "job": {
+    "lambda_name": "sosw_tutorial_pull_tweeter_hashtags",
+    "topics": {
+      "cars": {
+        "isolate_words": true,
+        "words": [
+          "toyota",
+          "mazda",
+          "nissan",
+          "racing",
+          "automobile",
+          "car"
+        ]
+      },
+      "food": {
+        "isolate_words": true,
+        "words": [
+          "recipe",
+          "cooking",
+          "eating",
+          "food",
+          "meal",
+          "tasty"
+        ]
+      },
+      "shows": {
+        "isolate_words": true,
+        "words": [
+          "opera",
+          "cinema",
+          "movie",
+          "concert",
+          "show",
+          "musical"
+        ]
+      }
+    },
+    "period": "last_2_days",
+    "isolate_days": true,
+    "isolate_topics": true,
+    "isolate_words": true
+  }
+}

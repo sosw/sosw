@@ -6,7 +6,7 @@ import unittest
 
 from unittest.mock import MagicMock, patch
 
-from sosw.scheduler import Scheduler
+from sosw.scheduler import Scheduler, global_vars
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
@@ -52,7 +52,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         if only_remote:
             try:
                 os.remove(local or self.scheduler.local_queue_file)
-            except:
+            except Exception:
                 pass
 
 
@@ -68,12 +68,14 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch = self.patcher.start()
 
         self.custom_config = self.TEST_CONFIG.copy()
-        self.lambda_context = types.SimpleNamespace()
-        self.lambda_context.aws_request_id = 'AWS_REQ_ID'
-        self.lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        self.lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context = types.SimpleNamespace()
+        lambda_context.aws_request_id = 'AWS_REQ_ID'
+        lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
+        lambda_context.get_remaining_time_in_millis = MagicMock(return_value=300000)  # 5 minutes
+        global_vars.lambda_context = lambda_context
+        self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
-        self.scheduler = Scheduler(self.custom_config, context=self.lambda_context)
+        self.scheduler = Scheduler(self.custom_config)
 
         self.s3_client = boto3.client('s3')
 
@@ -84,12 +86,12 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         try:
             os.remove(self.scheduler.local_queue_file)
-        except:
+        except Exception:
             pass
 
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
-        except:
+        except Exception:
             pass
 
 

@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sosw_tutorial_pull_tweeter_hashtags"
+
+Parameters:
+  ExecutionPolicy:
+    Description: "Managed execution policy for sosw lambdas."
+    Type: String
+    Default: 'AWSLambdaBasicExecutionRole'
+
+  ConfigTableName:
+    Description: "Config Table."
+    Type: String
+    Default: 'config'
+
+  NameUnderscored:
+    Description: "Data Table for sosw_tutorial_pull_tweeter_hashtags"
+    Type: String
+    Default: 'sosw_tutorial_pull_tweeter_hashtags'
+
+  NameDashed:
+    Description: "Name of stack"
+    Type: String
+    Default: 'sosw-tutorial-pull-tweeter-hashtags'
+
+Resources:
+########################################
+# DynamoDB table to store hashtag data #
+########################################
+  SoswTutorialPullTweeterHashtagsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Ref NameUnderscored
+      AttributeDefinitions:
+        -
+          AttributeName: 'tag_name'
+          AttributeType: 'S'
+        -
+          AttributeName: 'since'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'tag_name'
+          KeyType: "HASH"
+        -
+          AttributeName: 'since'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 3
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'sandbox'
+
+##############################
+# IAM Role for the  Function #
+##############################
+  LambdaSoswTutorialPullTweeterHashtagsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::aws:policy/service-role/${ExecutionPolicy}"
+
+      Policies:
+      - PolicyName: "SoswTutorialPullTweeterHashtagsPermissions"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action: "dynamodb:*"
+            Resource: !GetAtt SoswTutorialPullTweeterHashtagsTable.Arn
+
+# You can provide access explicitly here, but we normally recommend keeping it in the Custom policy of ConfigTable.
+# See examples/yaml/sosw-shared-dynamodb.yaml
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:Query"
+              - "dynamodb:DescribeTable"
+            Resource:
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTableName}"
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource:
+              - Fn::ImportValue: "sosw-lambda-worker-assistant"
+
+
+      RoleName: !Sub "lambda_${NameUnderscored}"
+
+#################################
+# Lambda Function for Tutorial  #
+#################################
+  LambdaSoswTutorialPullTweeterHashtags:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
+        S3Key: !Sub "sosw/packages/${NameUnderscored}.zip"
+      Description: "Tutorial."
+      FunctionName: !Ref NameUnderscored
+      Handler: "app.lambda_handler"
+      MemorySize: 128
+      Role: !GetAtt LambdaSoswTutorialPullTweeterHashtagsRole.Arn
+      Runtime: "python3.7"
+      Timeout: 60
+
+      Tags:
+       -
+         Key: 'Environment'
+         Value: 'sandbox'
+
+##############################################
+# Permissions for CloudWatch ScheduledEvents #
+# The actual Rules are configured in the     #
+# scheduled-rules.yaml template.             #
+##############################################
+  PermissionForEventsToInvokeLambdaSoswTutorialPullTweeterHashtags:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref "LambdaSoswTutorialPullTweeterHashtags"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+
+
+#############################################
+# Export Values to CloudFormation Namespace #
+#############################################
+Outputs:
+
+  LambdaSoswTutorialPullTweeterHashtags:
+    Description: "Tutorial Pull Tweeter Hashtag Data"
+    Value: !Ref LambdaSoswTutorialPullTweeterHashtags
+    Export:
+      Name: !Sub "sosw-${NameDashed}"

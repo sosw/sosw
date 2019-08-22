@@ -1,3 +1,31 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
 __all__ = ['TaskManager']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
@@ -29,8 +57,8 @@ logger.setLevel(logging.INFO)
 class TaskManager(Processor):
     """.. _task:
 
-    TaskManager is the core class used by most SOSW Lambdas.
-    It handles all the operations with tasks thus the configuration of this Manager is essential during your SOSW implementation.
+    TaskManager is the core class used by most ``sosw`` Lambdas.
+    It handles all the operations with tasks thus the configuration of this Manager is essential during your ``sosw`` implementation.
 
     The default version of TaskManager works with DynamoDB tables to store and analyze the state of Tasks.
     This could be upgraded in future versions to work with other persistent storage or DBs.
@@ -292,7 +320,7 @@ class TaskManager(Processor):
 
         try:
             new_task['payload'] = self.construct_payload_for_task(**kw)
-        except:
+        except Exception:
             raise ValueError(f"Unexpected `payload` or custom attrs for task '{kwargs}'. Should be dict() or JSON.")
 
         # Saving to DynamoDB.
@@ -314,7 +342,7 @@ class TaskManager(Processor):
         if isinstance(payload, str):
             try:
                 result = json.loads(payload)
-            except:
+            except Exception:
                 result = dict(payload=payload)
         elif not isinstance(payload, dict):
             result = dict(payload=payload)
@@ -486,7 +514,7 @@ class TaskManager(Processor):
                 },
                 table_name=self.config['dynamo_db_config']['table_name'],
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                strict=True,
+                fetch_all_fields=False,
                 max_items=cnt,
                 comparisons={
                     self.get_db_field_name('greenfield'): '<'
@@ -605,6 +633,20 @@ class TaskManager(Processor):
         )
 
 
+    def _jsonify_payload_of_task(self, task: Dict) -> Dict:
+        """
+        Simple helper to make sure the `payload` of the `task` is a string. If it's a dict - JSONify it.
+        :param dict task:
+        """
+
+        payload = task.get('payload')
+        if isinstance(payload, dict):
+            logger.debug(f"JSON-ify payload of the task: {task}")
+            task['payload'] = json.dumps(payload)
+
+        return task
+
+
     def move_task_to_retry_table(self, task: Dict, wanted_delay: int):
         """
         Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
@@ -616,6 +658,8 @@ class TaskManager(Processor):
         # Add task to retry table
         retry_row = task.copy()
         retry_row[_('desired_launch_time')] = int(time.time()) + wanted_delay
+        retry_row = self._jsonify_payload_of_task(retry_row)
+
         self.dynamo_db_client.put(retry_row, table_name=self.config.get('sosw_retry_tasks_table'))
 
         # Delete task from tasks table
@@ -658,6 +702,8 @@ class TaskManager(Processor):
             del task['desired_launch_time']
             lowest_greenfield = lowest_greenfield - 1
             task[_('greenfield')] = lowest_greenfield
+            task = self._jsonify_payload_of_task(task)
+
             delete_keys = {_('labourer_id'): labourer.id, _('task_id'): task[_('task_id')]}
 
             # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table
