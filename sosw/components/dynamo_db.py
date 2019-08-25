@@ -266,6 +266,8 @@ class DynamoDbClient:
                     # so we cast it to either an integer or a float.
                     if key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
+                    elif key_type == 'M':
+                        result[key] = self.dynamo_to_dict(val, strict=False)
                     elif key_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
@@ -289,6 +291,8 @@ class DynamoDbClient:
                     # so we cast it to either an integer or a float.
                     if val_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
+                    elif val_type == 'M':
+                        result[key] = self.dynamo_to_dict(val, strict=False)
                     elif val_type == 'S':
                         # Try to load to a dictionary if looks like JSON.
                         if val.startswith('{') and val.endswith('}') and \
