@@ -13,7 +13,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.test.variables import TEST_TASK_CLIENT_CONFIG
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, TEST_WORKER_ASSISTANT_CONFIG
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
@@ -46,7 +46,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
 
-        self.assistant = WorkerAssistant(custom_config={'test': 1})
+        self.assistant = WorkerAssistant(custom_config=TEST_WORKER_ASSISTANT_CONFIG)
 
 
     def tearDown(self):
