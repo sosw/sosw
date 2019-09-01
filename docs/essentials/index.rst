@@ -3,8 +3,8 @@ Essentials
 ==========
 
 .. toctree::
-   :titlesonly:
    :caption: Essentials:
+   :maxdepth: 2
 
    worker
    orchestrator

@@ -426,7 +426,7 @@ class Scheduler(Processor):
 
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
-        if self.needs_chunking(plural(attr), job):
+        if self.needs_chunking(plural(attr), {**job, **skeleton}):
 
             # Force batches to isolate if we shall be dealing with flat data.
             # But we still respect the `max_PARAM_per_batch` if it is provided in job.
@@ -446,7 +446,7 @@ class Scheduler(Processor):
 
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
-                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
+                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr]}
                 logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
                             f"leaving job_skeleton: {job_skeleton}")
 
@@ -548,6 +548,15 @@ class Scheduler(Processor):
                 pass
 
 
+    @staticmethod
+    def get_isolate_attributes_from_job(data: dict) -> Dict:
+        """
+        Get a dictionary with settings for isolation from data.
+        """
+
+        return {k: v for k, v in data.items() if re.match('isolate_[\w]*|max_[\w]*_per_batch', k)}
+
+
     def needs_chunking(self, attr: str, data: Dict) -> bool:
         """
         Recursively analyses the data and identifies if the current level of data should be chunked.
@@ -559,6 +568,8 @@ class Scheduler(Processor):
 
         attrs = single_or_plural(attr)
         isolate_attrs = [f"isolate_{a}" for a in attrs] + [f"max_{a}_per_batch" for a in attrs]
+
+        root_isolate_attrs = self.get_isolate_attributes_from_job(data)
 
         if any(data[x] for x in isolate_attrs if x in data):
             logger.debug(f"needs_chunking(): Got requirement to isolate {attr} in the current scope: {data}")
@@ -577,11 +588,9 @@ class Scheduler(Processor):
                 for val in current_vals:
 
                     for name, subdata in val.items():
-                        logger.debug(f"needs_chunking(): Analysing {next_attr} in {subdata}")
-                        if not subdata:
-                            continue
                         logger.debug(f"needs_chunking(): Going recursive for {next_attr} in {subdata}")
-                        if self.needs_chunking(next_attr, subdata):
+                        if isinstance(subdata, dict) and self.needs_chunking(next_attr,
+                                                                             {**subdata, **root_isolate_attrs}):
                             logger.debug(f"needs_chunking(): Returning True for {next_attr} from {subdata}")
                             return True
 
