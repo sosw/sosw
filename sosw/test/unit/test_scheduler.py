@@ -865,7 +865,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
 
     def test_apply_job_schema(self):
-        self.scheduler.config['job_schema_variants']['elisha'] = {
+        self.scheduler.config['job_schema_variants']['sample_schema_name'] = {
             'chunkable_attrs': [
                 ('a', {}),
             ]
@@ -874,8 +874,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.parse_job_to_file = MagicMock()
         self.scheduler.process_file = MagicMock()
         self.scheduler({'job': {
-            'lambda_name': 'test_elisha',
-            'job_schema_name': 'elisha'
+            'lambda_name': 'test_lambda',
+            'job_schema_name': 'sample_schema_name'
             },
         })
         self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
@@ -885,7 +885,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.parse_job_to_file = MagicMock()
         self.scheduler.process_file = MagicMock()
         self.scheduler({'job': {
-            'lambda_name': 'test_elisha',
+            'lambda_name': 'test_lambda',
             },
         })
 
@@ -900,7 +900,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         """
 
-        self.scheduler.config['job_schema_variants']['elisha'] = {
+        self.scheduler.config['job_schema_variants']['sample_schema_name'] = {
             'chunkable_attrs': [
                 ('a', {}),
             ]
@@ -909,14 +909,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.parse_job_to_file = MagicMock()
         self.scheduler.process_file = MagicMock()
         self.scheduler({'job': {
-            'lambda_name': 'test_elisha',
-            'job_schema_name': 'elisha'
+            'lambda_name': 'test_lambda',
+            'job_schema_name': 'sample_schema_name'
             },
         })
 
         self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
         self.scheduler({'job': {
-            'lambda_name': 'test_elisha',
+            'lambda_name': 'test_lambda',
             },
         })
 

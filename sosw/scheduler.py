@@ -153,7 +153,7 @@ class Scheduler(Processor):
 
     def apply_job_schema(self, name: str = None):
         """
-        Apply a job_schema from variants by the name or apply the default one.
+        Apply a job_schema from job_schema_variants by the name or apply the default one.
 
         """
 

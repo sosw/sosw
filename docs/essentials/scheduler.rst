@@ -38,7 +38,7 @@ configurable rules for chunking specific for different workers.
             'greenfield':  'greenfield',
         }
     }
- 
+
     TASK_CLIENT_CONFIG = {
         'dynamo_db_config':                  TASKS_TABLE_CONFIG,
         'sosw_closed_tasks_table':           'sosw_closed_tasks',
@@ -52,15 +52,21 @@ configurable rules for chunking specific for different workers.
             },
         },
     }
- 
+
     SCHEDULER_CONFIG = {
- 
+
         'queue_bucket':       'some-bucket',
- 
+
         'task_config': TASK_CLIENT_CONFIG,
-        'job_schema':         {
-            'chunkable_attrs': [
-            ]
+        'job_schema': {},
+        'job_schema_variants': {
+            'default': {
+                'chunkable_attrs': [
+                    # ('section', {}),
+                    # ('store', {}),
+                    # ('product', {}),
+                ]
+            }
         }
     }
 
@@ -68,8 +74,10 @@ configurable rules for chunking specific for different workers.
 Job Schema
 ----------
 
-Description of what it is and how you can (or cannot) override it with
-`custom_config`, or attribute.
+After the Scheduler has parsed and validated the job from the event, it provides `custom_config` from this job.
+In case the `job_schema_name` is passed, a certain `job_schema` type will be applied from `job_schema_variants`,
+otherwise it takes the default one.
+Each time the Scheduler is called it overwrites the `custom_config` and use new specified `job_schema` type.
 
 .. automodule:: sosw.scheduler
    :members:
