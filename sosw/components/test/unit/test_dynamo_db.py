@@ -115,6 +115,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertDictEqual(expected, dict_row)
         for k, v in dict_row.items():
             self.assertNotIsInstance(v, Decimal)
+        for k, v in dict_row['some_map'].items():
+            self.assertNotIsInstance(v, Decimal)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):

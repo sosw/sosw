@@ -11,8 +11,8 @@ setup(name='sosw',
       long_description_content_type="text/markdown",
       url='http://github.com/sosw/sosw',
       author='Nikolay Grishchenko',
-      author_email='nikolay@bimpression.com',
-      license='The MIT License (MIT)',
+      author_email='ngr@sosw.app',
+      license='MIT',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Operating System :: Other OS',
@@ -21,7 +21,6 @@ setup(name='sosw',
           'Programming Language :: Python :: 3.7',
           'Topic :: Software Development'
       ],
-      # packages=['sosw'],
       packages=find_packages(exclude=['docs', 'test', 'examples']),
       install_requires=[
           'boto3>=1.9'
