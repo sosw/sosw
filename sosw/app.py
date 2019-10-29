@@ -430,9 +430,9 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         result = global_vars.processor(event)
 
-        logger.info(global_vars.processor.get_stats())
-        logger.info(global_vars.processor.reset_stats())
-        logger.info(result)
+        logger.info(f"stats: {global_vars.processor.get_stats()}")
+        global_vars.processor.reset_stats()
+        logger.info(f"result: {result}")
 
         global_vars.processor.reset_stats(recursive=True)
 
