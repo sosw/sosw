@@ -227,6 +227,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.setup_tasks(status='invoked')
+        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -236,6 +237,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='available')
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
+        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_running_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -244,6 +246,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
+        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
 
 

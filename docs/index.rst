@@ -1,16 +1,33 @@
-====
-sosw
-====
+.. title:: Home
 
-**`sosw`** = Serverless Orchestrator of Serverless Workers
+=============================================
+Serverless Orchestrator of Serverless Workers
+=============================================
 
-**`sosw`** is a set of tools for orchestrating **asynchronous** invocations of AWS Lambda Functions.
+..  image:: https://travis-ci.org/sosw/sosw.svg?branch=master
+    :alt: Travis - Build
+    :target: https://travis-ci.org/sosw/sosw
+.. image:: https://readthedocs.org/projects/sosw/badge/?version=latest
+    :alt: Read the Docs - Build
+    :target: https://docs.sosw.app/en/latest/?badge=latest
+.. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
+    :alt: PyPI - Installs / month
+    :target: https://pypi.org/project/sosw/
+..  image:: https://img.shields.io/pypi/l/sosw?color=blue
+    :alt: PyPI - License
+    :target: https://github.com/sosw/sosw/blob/master/LICENSE
+
+**`sosw`** - a set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
 Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
+
+
+.. note::
+   Please pronounce `sosw` correctly: */ˈsɔːsəʊ/*
 
 Essential Workflow Schema
 -------------------------
 
-.. figure:: images/simple-sosw.png
+.. figure:: _static/images/simple-sosw.png
    :alt: Simple sosw workflows
    :align: center
 
@@ -64,7 +81,7 @@ The :ref:`Scavenger` is called automatically every minute by `Scheduled Events`_
 It collects the tasks marked as ``completed`` by the Workers and archives them.
 
 If the task did not successfully accomplish it tries to re-invoke it with configurable exponential delay.
-In case the task completely fails after several invocations, the Scavenger marks it is `dead` and removes
+In case the task completely fails after several invocations, the Scavenger marks it is ``dead`` and removes
 from the queue to avoid infinite retries. In this case some external alarm system: SNS or Lambda
 may be triggered as well.
 
@@ -72,49 +89,33 @@ Read more: :ref:`Scavenger`
 
 Installation
 ------------
-**`sosw`** requires you to implement/deploy several Lambda functions (Essentials) using the following core classes:
 
-.. toctree::
-   :titlesonly:
+:ref:`Installation Guidelines`
 
-   orchestrator
-   scheduler
-   scavenger
+**`sosw`** requires you to implement/deploy several Lambda functions (Essentials) using the appropriate core classes.
+The deployment is described in details, but assumes that you are familiar with basic AWS Serverless products.
 
-Optionally you  may deploy the :ref:`Worker Assistant`.
-
-Another deployment requirement is to create several `DynamoDB` tables:
-
-- ``sosw_tasks``
-- ``sosw_retry_tasks``
-- ``sosw_closed_tasks``
+Another deployment requirement is to create several `DynamoDB` tables.
 
 | You can find the Cloudformation template for the databases in `the example`_.
 | If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
 
+Once again, the detailed guide for initial setup can be found in the :ref:`Installation Guidelines`.
 
-Other
------
 
 .. toctree::
    :titlesonly:
    :caption: Contents:
+   :maxdepth: 2
 
    installation
+   essentials/index
+   components/index
+   managers/index
+   tutorials/index
 
-   worker
-   worker_assistant
-   orchestrator
-   scheduler
-   scavenger
-   processor
+   contribution/index
 
-   components
-   managers
-
-   contribution
-   pycon
-   convention
 
 Indices and tables
 ==================
@@ -123,7 +124,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-

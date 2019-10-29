@@ -27,6 +27,7 @@ six
 snowballstemmer
 Sphinx
 sphinxcontrib-websupport
+sphinx-sitemap
 urllib3
 waitress
 WebOb

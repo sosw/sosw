@@ -9,9 +9,9 @@ setup(name='sosw',
       description='Serverless Orchestrator of Serverless Workers',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      url='http://github.com/bimpression/sosw',
+      url='http://github.com/sosw/sosw',
       author='Nikolay Grishchenko',
-      author_email='nikolay@bimpression.com',
+      author_email='ngr@sosw.app',
       license='MIT',
       classifiers=[
           'Development Status :: 4 - Beta',
@@ -21,8 +21,7 @@ setup(name='sosw',
           'Programming Language :: Python :: 3.7',
           'Topic :: Software Development'
       ],
-      # packages=['sosw'],
-      packages=find_packages(exclude=['docs', 'test']),
+      packages=find_packages(exclude=['docs', 'test', 'examples']),
       install_requires=[
           'boto3>=1.9'
       ],

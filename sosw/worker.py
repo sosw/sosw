@@ -1,17 +1,41 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
+__all__ = ['Worker']
+__author__ = "Nikolay Grishchenko"
+__version__ = "1.0"
+
 import json
 import logging
 
 from sosw.app import Processor
 from typing import Dict
 
-__author__ = "Nikolay Grishchenko"
-__email__ = "dev@bimpression.com"
-__version__ = "0.1"
-__license__ = "MIT"
-__status__ = "Production"
-
-
-__all__ = ['Worker']
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -29,12 +53,13 @@ class Worker(Processor):
     """
 
     DEFAULT_CONFIG = {
-        'init_clients': ['lambda'],
+        'init_clients':                 ['lambda'],
         'sosw_worker_assistant_lambda': 'sosw_worker_assistant'
     }
 
     # these clients will be initialized by Processor constructor
     lambda_client = None
+
 
     def __call__(self, event: Dict):
         """
@@ -43,7 +68,8 @@ class Worker(Processor):
 
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
-            self.mark_task_as_completed(event.get('task_id'))
+            if event.get('task_id'):
+                self.mark_task_as_completed(event['task_id'])
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -59,7 +85,7 @@ class Worker(Processor):
 
         worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
         payload = {
-            'action': 'mark_task_as_completed',
+            'action':  'mark_task_as_completed',
             'task_id': task_id
         }
         payload = json.dumps(payload)

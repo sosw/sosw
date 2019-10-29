@@ -1,6 +1,7 @@
 import boto3
 import os
 import random
+import time
 import types
 import unittest
 
@@ -48,6 +49,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.s3_client.upload_file(Filename=local or self.scheduler.local_queue_file,
                                    Bucket='autotest-bucket',
                                    Key=key or self.scheduler.remote_queue_file)
+        time.sleep(0.3)
 
         if only_remote:
             try:
@@ -71,8 +73,9 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         lambda_context = types.SimpleNamespace()
         lambda_context.aws_request_id = 'AWS_REQ_ID'
         lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
-        lambda_context.get_remaining_time_in_millis = MagicMock(side_effect=[100000, 100])
+        lambda_context.get_remaining_time_in_millis = MagicMock(return_value=300000)  # 5 minutes
         global_vars.lambda_context = lambda_context
+        self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         self.scheduler = Scheduler(self.custom_config)
 
@@ -102,6 +105,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         r = self.scheduler.get_and_lock_queue_file()
+        time.sleep(0.3)
 
         self.assertEqual(r, self.scheduler.local_queue_file)
 
@@ -122,6 +126,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.make_local_file('Demida')
 
         self.scheduler.upload_and_unlock_queue_file()
+        time.sleep(0.3)
 
         self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
@@ -138,6 +143,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.make_local_file('Nora')
 
         self.scheduler.upload_and_unlock_queue_file()
+        time.sleep(0.3)
 
         self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))

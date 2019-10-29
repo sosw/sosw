@@ -1,4 +1,33 @@
+"""
+..  hidden-code-block:: text
+    :label: View Licence Agreement <br>
+
+    sosw - Serverless Orchestrator of Serverless Workers
+
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+"""
+
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
+__author__ = "Nikolay Grishchenko, Gil Halperin"
 
 import boto3
 import logging
@@ -11,12 +40,6 @@ from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
 
-
-__author__ = "Nikolay Grishchenko, Gil Halperin"
-__email__ = "dev@bimpression.com"
-__version__ = "0.7.11"
-__license__ = "MIT"
-__status__ = "Production"
 
 logger = logging.getLogger()
 
@@ -331,14 +354,16 @@ class LambdaGlobals:
     See Worker examples in documentation for more info.
     """
 
+
     def __init__(self):
         """
         Reset the lambda context for every reinitialization.
         The Processor may stay alive in the scope of Lambda container, but the context is unique per invocation.
         The Lambda Globals should also be reset by `get_lambda_handler` method.
         """
-        global  _lambda_context
+        global _lambda_context
         _lambda_context = None
+
 
     @property
     def lambda_context(self):
@@ -415,6 +440,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
 
     return lambda_handler
+
 
 # Global placeholder for global_vars.
 global_vars = LambdaGlobals()
