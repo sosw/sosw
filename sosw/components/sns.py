@@ -56,8 +56,8 @@ class SnsManager():
 
     def __init__(self, **kwargs):
         """
-        :param recipient:   - str   - ARN of the default recipient.
-        :param subject:     - str   - Default subject for messages.
+        :param str recipient: ARN of the default recipient.
+        :param str subject: Default subject for messages.
         """
 
         self.stats = defaultdict(int)
@@ -77,7 +77,7 @@ class SnsManager():
 
         if not self.test:
             self.session = boto3.Session(region_name=kwargs.get('region', 'us-west-2'))
-            self.resource = self.session.client('sns')
+            self.client = self.session.client('sns')
 
 
     def __del__(self):
@@ -131,7 +131,7 @@ class SnsManager():
         message = "\n\n#####\n\n".join(self.queue)
 
         if message:
-            self.resource.publish(
+            self.client.publish(
                     TopicArn=self.recipient,
                     Subject=self.subject,
                     Message=message)
@@ -145,8 +145,8 @@ class SnsManager():
         Otherwize we accept None subject and simply append messages to queue.
         Once the subject changes - the queue is commite automatically.
 
-        :param message:     - str   - Message to be send in body of SNS message. Queued.
-        :param subject:     - str   - Optional. Custom subject for message.
+        :param str message: Message to be send in body of SNS message. Queued.
+        :param str subject: Optional. Custom subject for message.
         """
 
         if not any([self.subject, subject]):
@@ -171,16 +171,15 @@ class SnsManager():
         """
         Create a new topic name
 
-        :param topic_name:      - str   - New topic name to create
-
-        :return:                New topic ARN
-        :rtype:                 str
+        :param str topic_name: New topic name to create
+        :return: New topic ARN
+        :rtype: str
         """
 
         if not topic_name or not isinstance(topic_name, str):
             raise RuntimeError("You passed invalid topic name")
 
-        topic = self.resource.create_topic(Name=topic_name)
+        topic = self.client.create_topic(Name=topic_name)
 
         return topic.get('TopicArn')
 
@@ -189,15 +188,15 @@ class SnsManager():
         """
         Create a subscription to the topic
 
-        :param topic_arn:       - str   - ARN of a topic
-        :param protocol:        - str   - The type of endpoint to subscribe
-        :param endpoint:        - str   - Endpoint that can receive notifications from Amazon SNS
+        :param str topic_arn: ARN of a topic
+        :param str protocol: The type of endpoint to subscribe
+        :param str endpoint: Endpoint that can receive notifications from Amazon SNS
         """
 
         if not all([topic_arn, protocol, endpoint]):
             raise RuntimeError("You must send valid topic ARN, Protocol and Endpoint to add a subscription")
 
-        self.resource.subscribe(
+        self.client.subscribe(
             TopicArn=topic_arn,
             Protocol=protocol,
             Endpoint=endpoint
