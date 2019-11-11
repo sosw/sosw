@@ -796,21 +796,21 @@ class DynamoDbClient:
 
         table_name = self._get_validate_table_name(table_name)
 
-        if not attributes_to_update and not attributes_to_increment:
+        if not attributes_to_update and not attributes_to_increment and not attributes_to_remove:
             raise ValueError(f"In dynamodb.update, please specify either attributes_to_update "
-                             f"or attributes_to_increment")
+                             f"or attributes_to_increment or attributes_to_remove")
 
         expression_attributes = {}
-        update_expr_parts = []
+        update_set_val_expr_parts = []
         attribute_values = {}
         if attributes_to_update:
             for col in attributes_to_update:
-                update_expr_parts.append(f"#{col} = :{col}")
+                update_set_val_expr_parts.append(f"#{col} = :{col}")
                 expression_attributes[f"#{col}"] = col
 
         if attributes_to_increment:
             for col in attributes_to_increment:
-                update_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
+                update_set_val_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
                 expression_attributes[f"#{col}"] = col
                 attribute_values.update({'zero': '0'})
 
@@ -820,15 +820,26 @@ class DynamoDbClient:
         attribute_values.update(attributes_to_increment or {})
         attribute_values = self.dict_to_dynamo(attribute_values.copy(), add_prefix=":", strict=False)
 
-        update_expr = "SET " + ", ".join(update_expr_parts)
+        update_expr_parts = []
+
+        if update_set_val_expr_parts:
+            set_expression = "SET " + ", ".join(update_set_val_expr_parts)
+            update_expr_parts.append(set_expression)
+
+        if attributes_to_remove:
+            remove_expression = "REMOVE " + ", ".join(attributes_to_remove)
+            update_expr_parts.append(remove_expression)
 
         update_item_query = {
-            'ExpressionAttributeNames':  expression_attributes,  # Ex. {'#attr_name': 'attr_name', ...}
-            'ExpressionAttributeValues': attribute_values,  # Ex. {':attr_name': 'some_value', ...}
             'Key':                       keys,  # Ex. {'key_name':   'key_value', ...}
             'TableName':                 table_name,
-            'UpdateExpression':          update_expr  # Ex. "SET #attr_name = :attr_name AND ..."
+            'UpdateExpression':          " ".join(update_expr_parts)  # Ex. "SET #attr_name = :attr_name ..."
         }
+
+        if expression_attributes:
+            update_item_query['ExpressionAttributeNames'] = expression_attributes  # Ex. {'#attr_name': 'attr_name', ..}
+        if attribute_values:
+            update_item_query['ExpressionAttributeValues'] = attribute_values  # Ex. {':attr_name': 'some_value', ...}
 
         if condition_expression:
             expr, values = self._parse_filter_expression(condition_expression)
