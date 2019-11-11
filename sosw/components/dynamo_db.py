@@ -772,7 +772,7 @@ class DynamoDbClient:
     # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
-               condition_expression: Optional[str] = None):
+               condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
         """
         Updates an item in DynamoDB. Will create a new item if doesn't exist.
         If you want to make sure it exists, use ``patch`` method
@@ -789,6 +789,7 @@ class DynamoDbClient:
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
             Example: {'some_counter': '3'}
+        :param list attributes_to_remove: Will remove these attributes from the record
         :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
         """
