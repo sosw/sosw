@@ -33,7 +33,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'some_list':     'L'
         },
         'required_fields': ['lambda_name'],
-        'table_name':      'autotest_dynamo_db'
+        'table_name':      'autotest_dynamo_db',
+        'hash_key':        'hash_col',
     }
 
 
@@ -282,6 +283,39 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                            return_count=True)
         expected_msg = "DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together"
         self.assertEqual(e.exception.args[0], expected_msg)
+
+
+    def test_patch__transfers_attrs_to_remove(self):
+
+        keys = {'hash_col': 'a'}
+        attributes_to_update = {'some_col': 'b'}
+        attributes_to_increment = {'some_counter': 3}
+        table_name = 'the_table'
+        attributes_to_remove = ['remove_me']
+
+        # using kwargs
+        self.dynamo_client.update = Mock()
+
+        self.dynamo_client.patch(keys=keys, attributes_to_update=attributes_to_update,
+                                 attributes_to_increment=attributes_to_increment, table_name=table_name,
+                                 attributes_to_remove=attributes_to_remove)
+
+        self.dynamo_client.update.assert_called_once_with(keys=keys, attributes_to_update=attributes_to_update,
+                                                          attributes_to_increment=attributes_to_increment,
+                                                          table_name=table_name,
+                                                          attributes_to_remove=attributes_to_remove,
+                                                          condition_expression='attribute_exists hash_col')
+
+        # not kwargs
+        self.dynamo_client.update = Mock()
+
+        self.dynamo_client.patch(keys, attributes_to_update, attributes_to_increment, table_name, attributes_to_remove)
+
+        self.dynamo_client.update.assert_called_once_with(keys=keys, attributes_to_update=attributes_to_update,
+                                                          attributes_to_increment=attributes_to_increment,
+                                                          table_name=table_name,
+                                                          attributes_to_remove=attributes_to_remove,
+                                                          condition_expression='attribute_exists hash_col')
 
 
 if __name__ == '__main__':

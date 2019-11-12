@@ -772,10 +772,10 @@ class DynamoDbClient:
     # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
-               condition_expression: Optional[str] = None):
+               condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
         """
         Updates an item in DynamoDB. Will create a new item if doesn't exist.
-        If you want to make sure it exists, use ``patch`` method
+        IMPORTANT - If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
@@ -789,27 +789,28 @@ class DynamoDbClient:
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
             Example: {'some_counter': '3'}
+        :param list attributes_to_remove: Will remove these attributes from the record
         :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
         """
 
         table_name = self._get_validate_table_name(table_name)
 
-        if not attributes_to_update and not attributes_to_increment:
+        if not attributes_to_update and not attributes_to_increment and not attributes_to_remove:
             raise ValueError(f"In dynamodb.update, please specify either attributes_to_update "
-                             f"or attributes_to_increment")
+                             f"or attributes_to_increment or attributes_to_remove")
 
         expression_attributes = {}
-        update_expr_parts = []
+        update_set_val_expr_parts = []
         attribute_values = {}
         if attributes_to_update:
             for col in attributes_to_update:
-                update_expr_parts.append(f"#{col} = :{col}")
+                update_set_val_expr_parts.append(f"#{col} = :{col}")
                 expression_attributes[f"#{col}"] = col
 
         if attributes_to_increment:
             for col in attributes_to_increment:
-                update_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
+                update_set_val_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
                 expression_attributes[f"#{col}"] = col
                 attribute_values.update({'zero': '0'})
 
@@ -819,15 +820,26 @@ class DynamoDbClient:
         attribute_values.update(attributes_to_increment or {})
         attribute_values = self.dict_to_dynamo(attribute_values.copy(), add_prefix=":", strict=False)
 
-        update_expr = "SET " + ", ".join(update_expr_parts)
+        update_expr_parts = []
+
+        if update_set_val_expr_parts:
+            set_expression = "SET " + ", ".join(update_set_val_expr_parts)
+            update_expr_parts.append(set_expression)
+
+        if attributes_to_remove:
+            remove_expression = "REMOVE " + ", ".join(attributes_to_remove)
+            update_expr_parts.append(remove_expression)
 
         update_item_query = {
-            'ExpressionAttributeNames':  expression_attributes,  # Ex. {'#attr_name': 'attr_name', ...}
-            'ExpressionAttributeValues': attribute_values,  # Ex. {':attr_name': 'some_value', ...}
             'Key':                       keys,  # Ex. {'key_name':   'key_value', ...}
             'TableName':                 table_name,
-            'UpdateExpression':          update_expr  # Ex. "SET #attr_name = :attr_name AND ..."
+            'UpdateExpression':          " ".join(update_expr_parts)  # Ex. "SET #attr_name = :attr_name ..."
         }
+
+        if expression_attributes:
+            update_item_query['ExpressionAttributeNames'] = expression_attributes  # Ex. {'#attr_name': 'attr_name', ..}
+        if attribute_values:
+            update_item_query['ExpressionAttributeValues'] = attribute_values  # Ex. {':attr_name': 'some_value', ...}
 
         if condition_expression:
             expr, values = self._parse_filter_expression(condition_expression)
@@ -841,14 +853,18 @@ class DynamoDbClient:
 
 
     def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
-              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+              attributes_to_remove: Optional[List[str]] = None):
         """
         Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
         """
 
         hash_key = self.config['hash_key']
         condition_expression = f'attribute_exists {hash_key}'
-        self.update(keys, attributes_to_update, attributes_to_increment, table_name, condition_expression)
+        self.update(keys=keys, attributes_to_update=attributes_to_update,
+                    attributes_to_increment=attributes_to_increment, table_name=table_name,
+                    condition_expression=condition_expression,
+                    attributes_to_remove=attributes_to_remove)
 
 
     def delete(self, keys: Dict, table_name: Optional[str] = None):
