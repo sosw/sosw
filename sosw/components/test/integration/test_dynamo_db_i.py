@@ -639,5 +639,27 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.assertNotIn('other_col', updated_row)
 
 
+    def test_patch__remove_attrs__without_update(self):
+        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.patch(keys, attributes_to_update={}, table_name=self.table_name,
+                                 attributes_to_remove=['other_col'])
+
+        updated_row = self.dynamo_boto3_client.get_item(
+                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
+                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_col'], 'no'), "Field was not supposed to be updated"
+        self.assertNotIn('other_col', updated_row)
+
+
 if __name__ == '__main__':
     unittest.main()
