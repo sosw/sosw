@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(name='sosw',
-      version='0.7.25',
+      version='0.7.27',
       description='Serverless Orchestrator of Serverless Workers',
       long_description=long_description,
       long_description_content_type="text/markdown",
