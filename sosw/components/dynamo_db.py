@@ -844,6 +844,7 @@ class DynamoDbClient:
         if condition_expression:
             expr, values = self._parse_filter_expression(condition_expression)
             update_item_query['ConditionExpression'] = expr
+            update_item_query['ExpressionAttributeValues'] = update_item_query.get('ExpressionAttributeValues', {})
             update_item_query['ExpressionAttributeValues'].update(values)
 
         logger.debug(f"Updating an item, query: {update_item_query}")
