@@ -84,10 +84,8 @@ class DynamoDbClient:
 
         self.config = config
 
-        if not str(config.get('table_name')).startswith('autotest_mock_'):
-            self.dynamo_client = boto3.client('dynamodb')
-        else:
-            logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
+        # create a dynamodb client
+        self.dynamo_client = boto3.client('dynamodb', region_name=config.get('region_name'))
 
         # storage for table description(s)
         self._table_descriptions: Optional[Dict[str, Dict]] = {}
