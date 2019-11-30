@@ -666,5 +666,22 @@ class helpers_UnitTestCase(unittest.TestCase):
             to_bool(object())
 
 
+    def test_get_lambda_event_from_sns_message(self):
+        event_true = {'Records': [{'Sns': {'Message': ''}}]}
+        event_false = {'Records': [{}]}
+
+        self.assertEqual(is_event_from_sns(event_true), True)
+        self.assertEqual(is_event_from_sns(event_false), False)
+
+
+    def test_is_event_from_sns(self):
+        event_true = {'Records': [{'Sns': {'Message': ''}}]}
+        event_false = {'Records': [{}]}
+
+        self.assertEqual(is_event_from_sns(event_true), True)
+        self.assertEqual(is_event_from_sns(event_false), False)
+
+
+
 if __name__ == '__main__':
     unittest.main()
