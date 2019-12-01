@@ -32,6 +32,7 @@ __author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
 
 import boto3
+import datetime
 import logging
 import json
 import os
@@ -962,6 +963,27 @@ class DynamoDbClient:
         else:
             self.identify_dynamo_capacity(table_name=table_name)
             return self._table_capacity[table_name]
+
+
+    def sleep_db(self, last_action_time: datetime.datetime, action: str):
+        """
+        Sleeps between calls to dynamodb (if it needs to).
+        Uses the table's capacity to decide how long it needs to sleep.
+
+        :param last_action_time: Last time when we did this action (read/write) to this dynamo table
+        :param action: "read" or "write"
+        """
+
+        capacity = self.get_capacity()[action]  # Capacity per second
+        time_between_actions = 1 / capacity
+
+        time_elapsed = datetime.datetime.now().timestamp() - last_action_time.timestamp()
+
+        time_to_sleep = time_between_actions - time_elapsed
+
+        if time_to_sleep > 0:
+            logging.debug(f"Sleeping {time_to_sleep} sec")
+            time.sleep(time_to_sleep)
 
 
     def reset_stats(self):
