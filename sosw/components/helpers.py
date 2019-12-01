@@ -58,7 +58,7 @@ __all__ = ['validate_account_to_dashed',
            'trim_arn_to_account',
            'make_hash',
            'to_bool',
-           'get_lambda_event_from_sns_message',
+           'get_message_dict_from_sns_event',
            'is_event_from_sns'
            ]
 
@@ -892,7 +892,7 @@ def to_bool(val):
     raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")
 
 
-def get_lambda_event_from_sns_message(event):
+def get_message_dict_from_sns_event(event):
     """
     Extract SNS event message and returns it as dict
 

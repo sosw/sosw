@@ -666,12 +666,14 @@ class helpers_UnitTestCase(unittest.TestCase):
             to_bool(object())
 
 
-    def test_get_lambda_event_from_sns_message(self):
-        event_true = {'Records': [{'Sns': {'Message': ''}}]}
-        event_false = {'Records': [{}]}
+    def test_get_message_dict_from_sns_event(self):
+        event_true = {'Records': [{'Sns': {'Message': '{}'}}]}
+        event_false = {'Records': [{'Sns': {'Message': ''}}]}
+        event_empty = {'Records': [{'Sns': {}}]}
 
-        self.assertEqual(is_event_from_sns(event_true), True)
-        self.assertEqual(is_event_from_sns(event_false), False)
+        self.assertEqual(get_message_dict_from_sns_event(event_true), {})
+        self.assertRaises(Exception, validate_account_to_dashed, event_false)
+        self.assertRaises(ValueError, validate_account_to_dashed, event_empty)
 
 
     def test_is_event_from_sns(self):
@@ -680,7 +682,6 @@ class helpers_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(is_event_from_sns(event_true), True)
         self.assertEqual(is_event_from_sns(event_false), False)
-
 
 
 if __name__ == '__main__':
