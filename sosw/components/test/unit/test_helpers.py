@@ -672,7 +672,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         event_empty = {'Records': [{'Sns': {}}]}
 
         self.assertEqual(get_message_dict_from_sns_event(event_true), {})
-        self.assertRaises(Exception, validate_account_to_dashed, event_false)
+        self.assertRaises(ValueError, validate_account_to_dashed, event_false)
         self.assertRaises(ValueError, validate_account_to_dashed, event_empty)
 
 
