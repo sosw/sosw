@@ -1,3 +1,4 @@
+import datetime
 import logging
 import unittest
 import os
@@ -316,6 +317,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                           table_name=table_name,
                                                           attributes_to_remove=attributes_to_remove,
                                                           condition_expression='attribute_exists hash_col')
+
+
+    def test_sleep_db(self):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
+        self.dynamo_client.get_capacity.assert_called_once()
+        self.assertRaises(KeyError, self.dynamo_client.sleep_db, last_action_time=datetime.datetime.now(), action='call')
 
 
 if __name__ == '__main__':
