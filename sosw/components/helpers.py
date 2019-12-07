@@ -896,10 +896,10 @@ def get_message_dict_from_sns_event(event):
     """
     Extract SNS event message and returns it as dict
 
-    :param dict event: SNS Event (payload)
+    :param dict event: Lambda SNS event (payload)
 
     :rtype dict
-    :return: Lambda Event (payload)
+    :return: The SNS message, converted to dict
     """
 
     message = event['Records'][0]['Sns'].get('Message')
@@ -909,9 +909,9 @@ def get_message_dict_from_sns_event(event):
 
 def is_event_from_sns(event):
     """
-    Check if the invocation was with SNS.
+    Check if the lambda invocation was with SNS.
 
-    :param dict event: SNS / Lambda Event (payload)
+    :param dict event: Lambda Event (payload)
 
     :rtype: bool
     :return: True / False
