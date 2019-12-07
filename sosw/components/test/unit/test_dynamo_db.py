@@ -338,5 +338,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         # Finally sleep function should be called twice
         self.assertEqual(time.sleep.call_count, 2)
 
+
 if __name__ == '__main__':
     unittest.main()
