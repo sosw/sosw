@@ -1,5 +1,6 @@
 import datetime
 import logging
+import time
 import unittest
 import os
 from decimal import Decimal
@@ -320,11 +321,22 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_sleep_db(self):
+        time.sleep = MagicMock()
         self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
         self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
+
         self.dynamo_client.get_capacity.assert_called_once()
         self.assertRaises(KeyError, self.dynamo_client.sleep_db, last_action_time=datetime.datetime.now(), action='call')
 
+        # Check that went to sleep
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=2)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+
+        # Shouldn't go to sleep
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=1000)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        # Finally sleep function should be called twice
+        self.assertEqual(time.sleep.call_count, 2)
 
 if __name__ == '__main__':
     unittest.main()
