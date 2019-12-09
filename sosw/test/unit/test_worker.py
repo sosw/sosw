@@ -34,4 +34,7 @@ class Worker_UnitTestCase(unittest.TestCase):
         p.mark_task_as_completed = MagicMock(return_value=None)
 
         p({'task_id': '123'})
-        p.mark_task_as_completed.assert_called_once_with('123')
+        p.mark_task_as_completed.assert_called_with('123', None)
+
+        p({'task_id': '123'}, result='{}')
+        p.mark_task_as_completed.assert_called_with('123', '{}')
