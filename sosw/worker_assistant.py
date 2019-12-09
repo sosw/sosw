@@ -66,6 +66,7 @@ class WorkerAssistant(Processor):
                 'desired_launch_time': 'N',
                 'arn':                 'S',
                 'payload':             'S',
+                'stats':               'S',
                 'result':              'S'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
