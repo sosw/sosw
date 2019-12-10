@@ -677,7 +677,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(get_message_dict_from_sns_event(event_2), {})
         self.assertEqual(get_message_dict_from_sns_event(event_3), {})
         self.assertEqual(get_message_dict_from_sns_event(event_4), {})
-        self.assertEqual(get_message_dict_from_sns_event(event_4), {})
+        self.assertEqual(get_message_dict_from_sns_event(event_5), {})
 
 
     def test_is_event_from_sns(self):
