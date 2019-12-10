@@ -894,7 +894,7 @@ def to_bool(val):
 
 def get_message_dict_from_sns_event(event):
     """
-    Extract SNS event message and returns it as dict
+    Extract SNS event message and returns it invocation was with SNS
 
     :param dict event: Lambda SNS event (payload)
 
@@ -902,12 +902,15 @@ def get_message_dict_from_sns_event(event):
     :return: The SNS message, converted to dict
     """
 
-    message = event['Records'][0]['Sns'].get('Message')
+    result = {}
 
-    try:
-        result = json.loads(message)
-    except (TypeError, json.decoder.JSONDecodeError):
-        result = {}
+    if is_event_from_sns(event):
+        sns_event = event['Records'][0]['Sns']
+
+        try:
+            result = json.loads(sns_event.get('Message'))
+        except (AttributeError, TypeError, json.decoder.JSONDecodeError):
+            pass
 
     return result
 
@@ -924,4 +927,9 @@ def is_event_from_sns(event):
 
     record = event['Records'][0]
 
-    return bool(record.get('Sns'))
+    try:
+        result = bool(record.get('Sns'))
+    except:
+        result = False
+
+    return result
