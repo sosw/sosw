@@ -61,7 +61,7 @@ class Worker(Processor):
     lambda_client = None
 
 
-    def __call__(self, event: Dict, result=None):
+    def __call__(self, event: Dict):
         """
         You can either call super() at the end of your child function or completely overwrite this function.
         """
@@ -69,7 +69,7 @@ class Worker(Processor):
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
             if event.get('task_id'):
-                self.mark_task_as_completed(event['task_id'], result)
+                self.mark_task_as_completed(event['task_id'])
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -92,8 +92,8 @@ class Worker(Processor):
         if self.stats:
             payload.update({'stats': self.stats})
 
-        if result:
-            payload.update({'result': self.stats})
+        if self.result:
+            payload.update({'result': self.result})
 
         payload = json.dumps(payload)
 

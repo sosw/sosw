@@ -66,8 +66,8 @@ class WorkerAssistant(Processor):
                 'desired_launch_time': 'N',
                 'arn':                 'S',
                 'payload':             'S',
-                'stats':               'S',
-                'result':              'S'
+                'stats':               'M',
+                'result':              'S',
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -85,7 +85,7 @@ class WorkerAssistant(Processor):
         mapper = {
             'mark_task_as_completed': {
                 'function':        self.mark_task_as_completed,
-                'required_params': ['task_id', 'stats']
+                'required_params': ['task_id']
             }
         }
 
@@ -97,16 +97,20 @@ class WorkerAssistant(Processor):
                 if req_param not in event:
                     raise Exception(f"Missing required parameter `{req_param}` in event for action `{action}`")
 
-            if 'result' in event:
-                mapper[action]['required_params'].append('result')
-
             func_kwargs = {k: event[k] for k in event if k in required_params}
+
+            if 'stats' in event:
+                func_kwargs.update({'stats': event['stats']})
+
+            if 'result' in event:
+                func_kwargs.update({'result': event['result']})
+
             return func(**func_kwargs)
         else:
             raise Exception(f"Action `{action}` is not supported")
 
 
-    def mark_task_as_completed(self, task_id: str, stats: str, result=None):
+    def mark_task_as_completed(self, task_id: str, stats: dict, result=None):
         assert isinstance(task_id, str), f"`task_id` must be a string"
 
         _ = self.get_db_field_name
