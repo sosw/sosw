@@ -65,6 +65,7 @@ __all__ = ['validate_account_to_dashed',
 import collections
 import datetime
 import json
+import logging
 import re
 import uuid
 
@@ -72,6 +73,10 @@ from collections import defaultdict, Hashable
 from copy import deepcopy
 from datetime import timezone
 from typing import Iterable, Callable, Dict, Mapping, List, Optional
+
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def validate_account_to_dashed(account):
@@ -904,7 +909,13 @@ def get_message_dict_from_sns_event(event):
 
     message = event['Records'][0]['Sns'].get('Message')
 
-    return json.loads(message)
+    try:
+        result = json.loads(message)
+    except (TypeError, json.decoder.JSONDecodeError):
+        logger.warning(f'Failed to decode message from SNS.')
+        result = {}
+
+    return result
 
 
 def is_event_from_sns(event):

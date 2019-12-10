@@ -684,5 +684,12 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(is_event_from_sns(event_false), False)
 
 
+    def test_is_event_from_sns_invalid_events(self):
+        # We want to raise Exceptions if event is not valid or empty
+        self.assertRaises(TypeError, is_event_from_sns, "{}")
+        self.assertRaises(TypeError, is_event_from_sns, "")
+        self.assertRaises(KeyError, is_event_from_sns, {})
+
+
 if __name__ == '__main__':
     unittest.main()
