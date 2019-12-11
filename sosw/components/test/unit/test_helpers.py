@@ -678,34 +678,36 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertRaises(Exception, get_message_dict_from_sns_event, test)
 
 
-    def test_is_event_from_sns(self):
-        event_1 = {'Records': [{'Sns': {'Message': ''}}]}
-        event_2 = {'Records': [{'Sns': None}]}
-        event_3 = {'Records': [{'Sns': {}}]}
-        event_4 = {'Records': [{'Sns': '{"Message": ""}'}]}
-        event_5 = {'Records': [{'Sns': ''}]}
-        event_6 = {'Records': [{}]}
-        event_7 = {'Records': ['']}
-        event_8 = {'Records': ['{}']}
-        event_9 = {'Records': ['{"Sns": "{"Message": ""}"}']}
+    def test_is_event_from_sns_false(self):
+        TESTS = [
+            {'Records': [{'Sns': None}]},
+            {'Records': [{'Sns': {}}]},
+            {'Records': [{'Sns': ''}]},
+            {'Records': [{}]},
+            {'Records': ['']},
+            {'Records': ['{}']},
+            {'Records': ['{"Sns": "{"Message": "{}"']}
+        ]
 
-        self.assertEqual(is_event_from_sns(event_1), True)
-        self.assertEqual(is_event_from_sns(event_2), False)
-        self.assertEqual(is_event_from_sns(event_3), False)
-        self.assertEqual(is_event_from_sns(event_4), True)
-        self.assertEqual(is_event_from_sns(event_5), False)
-        self.assertEqual(is_event_from_sns(event_6), False)
-        self.assertEqual(is_event_from_sns(event_7), False)
-        self.assertEqual(is_event_from_sns(event_8), False)
-        self.assertEqual(is_event_from_sns(event_9), False)
+        for test in TESTS:
+            self.assertEqual(is_event_from_sns(test), False)
+
+
+    def test_is_event_from_sns_true(self):
+        TESTS = [
+            {'Records': [{'Sns': {'Message': ''}}]},
+            {'Records': [{'Sns': '{"Message": "{}"'}]}
+        ]
+
+        for test in TESTS:
+            self.assertEqual(is_event_from_sns(test), True)
 
 
     def test_is_event_from_sns_invalid_events(self):
-        # We want to raise Exceptions if event is not valid or empty
-        self.assertRaises(TypeError, is_event_from_sns, "{}")
-        self.assertRaises(TypeError, is_event_from_sns, "")
-        self.assertRaises(TypeError, is_event_from_sns, None)
-        self.assertRaises(KeyError, is_event_from_sns, {})
+        self.assertEqual(is_event_from_sns("{}"), False)
+        self.assertEqual(is_event_from_sns(""), False)
+        self.assertEqual(is_event_from_sns(None), False)
+        self.assertEqual(is_event_from_sns({}), False)
 
 
 if __name__ == '__main__':
