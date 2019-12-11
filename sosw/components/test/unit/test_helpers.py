@@ -678,6 +678,30 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertRaises(Exception, get_message_dict_from_sns_event, test)
 
 
+    def test_get_message_dict_from_sns_event(self):
+        sns_event = {
+            'Records': [{
+                'EventSource':          'aws:sns',
+                'EventVersion':         '1.0',
+                'EventSubscriptionArn': 'arn:EventSubscriptionArn',
+                'Sns':                  {
+                    'Type':              'Notification',
+                    'MessageId':         '000000000000',
+                    'TopicArn':          'arn:TopicArn',
+                    'Subject':           'Error 500',
+                    'Message':           '{"Records":[{"eventVersion":"2.0","eventSource":"aws:s3","awsRegion":"us-west-2","s3":{"bucket":{},"object":{}}}]}',
+                    'Timestamp':         '2019-10-13T08:41:52.671Z',
+                    'SignatureVersion':  '1',
+                    'Signature':         'Signature',
+                    'MessageAttributes': {}
+                }
+            }]
+        }
+
+        self.assertEqual(get_message_dict_from_sns_event(sns_event),
+                         {"Records": [{"eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2", "s3": {"bucket": {}, "object": {}}}]})
+
+
     def test_is_event_from_sns_false(self):
         TESTS = [
             {'Records': [{'Sns': None}]},
