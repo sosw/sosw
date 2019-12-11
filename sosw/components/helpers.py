@@ -894,41 +894,28 @@ def to_bool(val):
 
 def get_message_dict_from_sns_event(event):
     """
-    Extract SNS event message and returns it invocation was with SNS
+    Extract SNS event message and return it loaded as a dict.
 
-    :param dict event: Lambda SNS event (payload)
-
+    :param dict event: Lambda SNS event (payload). Must be a JSON document.
     :rtype dict
     :return: The SNS message, converted to dict
     """
 
-    result = {}
-
     if is_event_from_sns(event):
-        sns_event = event['Records'][0]['Sns']
-
-        try:
-            result = json.loads(sns_event.get('Message'))
-        except (AttributeError, TypeError, json.decoder.JSONDecodeError):
-            pass
-
-    return result
+        return json.loads(event['Records'][0]['Sns']['Message'])
+    raise ValueError(f"Event is not from SNS")
 
 
 def is_event_from_sns(event):
     """
-    Check if the lambda invocation was with SNS.
+    Check if the lambda invocation was by SNS.
 
     :param dict event: Lambda Event (payload)
-
     :rtype: bool
-    :return: True / False
     """
 
-    record = event['Records'][0]
-
     try:
-        result = bool(record.get('Sns'))
+        result = bool(event['Records'][0]['Sns'])
     except:
         result = False
 

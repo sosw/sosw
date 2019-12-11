@@ -667,17 +667,15 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_get_message_dict_from_sns_event(self):
-        event_1 = {'Records': [{'Sns': {'Message': '{}'}}]}
-        event_2 = {'Records': [{'Sns': {'Message': ''}}]}
-        event_3 = {'Records': [{'Sns': "{'Message': ''}"}]}
-        event_4 = {'Records': [{'Sns': {'Message': None}}]}
-        event_5 = {'Records': [{'Sns': {}}]}
+        TESTS = [
+            {'Records': [{'Sns': {'Message': ''}}]},
+            {'Records': [{'Sns': "{'Message': ''}"}]},
+            {'Records': [{'Sns': {'Message': None}}]},
+            {'Records': [{'Sns': {}}]},
+        ]
 
-        self.assertEqual(get_message_dict_from_sns_event(event_1), {})
-        self.assertEqual(get_message_dict_from_sns_event(event_2), {})
-        self.assertEqual(get_message_dict_from_sns_event(event_3), {})
-        self.assertEqual(get_message_dict_from_sns_event(event_4), {})
-        self.assertEqual(get_message_dict_from_sns_event(event_5), {})
+        for test in TESTS:
+            self.assertRaises(Exception, get_message_dict_from_sns_event, test)
 
 
     def test_is_event_from_sns(self):
