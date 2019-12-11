@@ -1,4 +1,4 @@
-.. _Config_Sourse:
+.. _Config_Source:
 
 Config Source
 -------------
