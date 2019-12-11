@@ -353,7 +353,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         # Shouldn't go to sleep
         last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=900)
         self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
-        # Finally sleep function should be called twice
+        # Sleep function should not be called
         self.assertEqual(mock_sleep.call_count, 0)
 
 
