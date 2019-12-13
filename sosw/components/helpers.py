@@ -903,6 +903,7 @@ def get_message_dict_from_sns_event(event):
 
     if is_event_from_sns(event):
         return json.loads(event['Records'][0]['Sns']['Message'])
+
     raise ValueError(f"Event is not from SNS")
 
 
