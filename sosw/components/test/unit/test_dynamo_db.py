@@ -1,4 +1,6 @@
+import datetime
 import logging
+import time
 import unittest
 import os
 from decimal import Decimal
@@ -316,6 +318,43 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                           table_name=table_name,
                                                           attributes_to_remove=attributes_to_remove,
                                                           condition_expression='attribute_exists hash_col')
+
+
+    def test_sleep_db__get_capacity_called(self):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
+        self.dynamo_client.get_capacity.assert_called_once()
+
+
+    def test_sleep_db__wrong_action(self):
+        self.assertRaises(KeyError, self.dynamo_client.sleep_db, last_action_time=datetime.datetime.now(),
+                          action='call')
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__fell_asleep(self, mock_sleep):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        # Check that went to sleep
+        time_between_ms = 100
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=time_between_ms)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        self.assertEqual(mock_sleep.call_count, 1)
+        args, kwargs = mock_sleep.call_args
+
+        # Should sleep around 1 / capacity second minus "time_between_ms" minus code execution time
+        self.assertGreater(args[0], 1 / self.dynamo_client.get_capacity()['write'] - time_between_ms - 0.02)
+        self.assertLess(args[0], 1 / self.dynamo_client.get_capacity()['write'])
+
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__(self, mock_sleep):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+
+        # Shouldn't go to sleep
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=900)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        # Sleep function should not be called
+        self.assertEqual(mock_sleep.call_count, 0)
 
 
 if __name__ == '__main__':
