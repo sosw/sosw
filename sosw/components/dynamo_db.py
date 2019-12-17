@@ -473,7 +473,7 @@ class DynamoDbClient:
             'TableName':                 table_name,
             'Select':                    select,
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
-            'KeyConditionExpression':    cond_expr,  # Ex: "key1_name = :key1_name AND ..."
+            'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
 
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB,
