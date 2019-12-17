@@ -383,7 +383,8 @@ class DynamoDbClient:
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
-                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = []) -> Union[List[Dict], int]:
+                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None) \
+            -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
