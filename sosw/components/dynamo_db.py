@@ -476,8 +476,8 @@ class DynamoDbClient:
             'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
 
-        # In case of any of the attributes names are in the list of Reserved Words in DynamoDB,
-        # then 'ExpressionAttributeNames' dict should be passed to the query.
+        # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
+        # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
         if expr_attrs_names:
             query_args['ExpressionAttributeNames'].update({f'#{el}': el for el in expr_attrs_names})
 
