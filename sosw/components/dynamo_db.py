@@ -439,11 +439,8 @@ class DynamoDbClient:
 
         for key_attr_name in keys:
             # Check if key attribute name is in `expr_attrs_names`, and create a prefix
-            # Add prefix in case need to use `ExpressionAttributeNames`
-            if any([i for i in [key_attr_name, key_attr_name[11:]] if i in expr_attrs_names]):
-                expr_attr_prefix = '#'
-            else:
-                expr_attr_prefix = ''
+            # We add this prefix in case need to use `ExpressionAttributeNames`
+            expr_attr_prefix = '#' if key_attr_name in expr_attrs_names else ''
 
             # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
             if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
@@ -460,6 +457,7 @@ class DynamoDbClient:
 
             elif compr == 'between':
                 key = key_attr_name[11:]
+                expr_attr_prefix = '#' if key in expr_attrs_names else ''
                 cond_expr_parts.append(f"{expr_attr_prefix}{key} between :st_between_{key} and :en_between_{key}")
             else:
                 assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
