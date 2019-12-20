@@ -220,6 +220,19 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.dynamo_client.dynamo_client.get_paginator.assert_called()
 
 
+    def test_get_by_query__expr_attr(self):
+        keys = {'st_between_range_col': '3', 'en_between_range_col': '6', 'session': 'ses1'}
+        expr_attrs_names = ['range_col', 'session']
+
+        self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
+        self.dynamo_client.get_by_query(keys=keys, expr_attrs_names=expr_attrs_names)
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertIn('#range_col', kwargs['ExpressionAttributeNames'])
+        self.assertIn('#session', kwargs['ExpressionAttributeNames'])
+        self.assertIn('#range_col between :st_between_range_col and :en_between_range_col AND #session = :session',
+                      kwargs['KeyConditionExpression'])
+
 
     def test__parse_filter_expression(self):
         TESTS = {
