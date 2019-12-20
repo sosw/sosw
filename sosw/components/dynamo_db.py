@@ -440,7 +440,7 @@ class DynamoDbClient:
         for key_attr_name in keys:
             # Check if key attribute name is in `expr_attrs_names`, and create a prefix
             # We add this prefix in case need to use `ExpressionAttributeNames`
-            expr_attr_prefix = '#' if key_attr_name in expr_attrs_names else ''
+            expr_attr_prefix = '#' if expr_attrs_names and key_attr_name in expr_attrs_names else ''
 
             # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
             if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
@@ -457,7 +457,7 @@ class DynamoDbClient:
 
             elif compr == 'between':
                 key = key_attr_name[11:]
-                expr_attr_prefix = '#' if key in expr_attrs_names else ''
+                expr_attr_prefix = '#' if expr_attrs_names and key in expr_attrs_names else ''
                 cond_expr_parts.append(f"{expr_attr_prefix}{key} between :st_between_{key} and :en_between_{key}")
             else:
                 assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
@@ -478,7 +478,7 @@ class DynamoDbClient:
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
         # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
         if expr_attrs_names:
-            query_args['ExpressionAttributeNames'].update({f'#{el}': el for el in expr_attrs_names})
+            query_args['ExpressionAttributeNames'] = {f'#{el}': el for el in expr_attrs_names}
 
         # In case we have a filter expression, we parse it and add variables (values) to the ExpressionAttributeValues
         # Expression is also transformed to use these variables.

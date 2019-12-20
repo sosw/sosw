@@ -220,6 +220,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.dynamo_client.dynamo_client.get_paginator.assert_called()
 
 
+
     def test__parse_filter_expression(self):
         TESTS = {
             'key = 42': ("key = :filter_key", {":filter_key": {'N': '42'}}),
