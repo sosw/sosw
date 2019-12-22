@@ -57,17 +57,20 @@ __all__ = ['validate_account_to_dashed',
            'trim_arn_to_name',
            'trim_arn_to_account',
            'make_hash',
-           'to_bool'
+           'to_bool',
+           'get_message_dict_from_sns_event',
+           'is_event_from_sns'
            ]
 
-import re
 import collections
-import uuid
 import datetime
-from datetime import timezone
+import json
+import re
+import uuid
 
 from collections import defaultdict, Hashable
 from copy import deepcopy
+from datetime import timezone
 from typing import Iterable, Callable, Dict, Mapping, List, Optional
 
 
@@ -604,11 +607,11 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
 def dunder_to_dict(data: dict, separator=None):
     """
     Converts the flat dict with keys using dunder notation for nesting elements to regular nested dictionary.
-    
+
     E.g.:
 
     .. code-block:: python
-    
+
        data = {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
        result = dunder_to_dict(data)
 
@@ -887,3 +890,34 @@ def to_bool(val):
         elif val.lower() in ['false', '0']:
             return False
     raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")
+
+
+def get_message_dict_from_sns_event(event):
+    """
+    Extract SNS event message and return it loaded as a dict.
+
+    :param dict event: Lambda SNS event (payload). Must be a JSON document.
+    :rtype dict
+    :return: The SNS message, converted to dict
+    """
+
+    if is_event_from_sns(event):
+        return json.loads(event['Records'][0]['Sns']['Message'])
+
+    raise ValueError(f"Event is not from SNS")
+
+
+def is_event_from_sns(event):
+    """
+    Check if the lambda invocation was by SNS.
+
+    :param dict event: Lambda Event (payload)
+    :rtype: bool
+    """
+
+    try:
+        result = bool(event['Records'][0]['Sns'])
+    except:
+        result = False
+
+    return result
