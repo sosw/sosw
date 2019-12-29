@@ -49,7 +49,7 @@ class Worker(Processor):
     This is a dictionary with the payload received in the lambda_handler during invocation.
 
     Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
-    ``task_id`` in the ``event``. Worker create a payload with ``stats`` and ``result`` if passed and invoke worker
+    ``task_id`` in the ``event``. Worker create a payload with ``stats`` and ``result`` if exist and invoke worker
     assistant lambda.
     """
 
@@ -70,12 +70,7 @@ class Worker(Processor):
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
             if event.get('task_id'):
-                func_kwargs = {'task_id': event['task_id']}
-
-                if 'result' in event:
-                    func_kwargs.update({'result': event['result']})
-
-                self.mark_task_as_completed(**func_kwargs)
+                self.mark_task_as_completed(event['task_id'])
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -83,7 +78,7 @@ class Worker(Processor):
         super().__call__(event)
 
 
-    def mark_task_as_completed(self, task_id: str, result=None):
+    def mark_task_as_completed(self, task_id: str):
         """ Call worker assistant lambda and tell it to close task """
 
         if not self.lambda_client:
@@ -98,8 +93,8 @@ class Worker(Processor):
         if self.stats:
             payload.update({'stats': self.stats})
 
-        if result:
-            payload.update({'result': result})
+        if self.result:
+            payload.update({'result': self.result})
 
         payload = json.dumps(payload)
 
