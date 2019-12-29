@@ -110,7 +110,7 @@ class WorkerAssistant(Processor):
             raise Exception(f"Action `{action}` is not supported")
 
 
-    def mark_task_as_completed(self, task_id: str, stats: dict, result=None):
+    def mark_task_as_completed(self, task_id: str, stats=None, result=None):
         assert isinstance(task_id, str), f"`task_id` must be a string"
 
         _ = self.get_db_field_name

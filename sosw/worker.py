@@ -69,7 +69,12 @@ class Worker(Processor):
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
             if event.get('task_id'):
-                self.mark_task_as_completed(event['task_id'])
+                func_kwargs = {'task_id': event['task_id']}
+
+                if 'result' in event:
+                    func_kwargs.update({'result': event['result']})
+
+                self.mark_task_as_completed(**func_kwargs)
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -77,7 +82,7 @@ class Worker(Processor):
         super().__call__(event)
 
 
-    def mark_task_as_completed(self, task_id: str, result=None):
+    def mark_task_as_completed(self, task_id: str):
         """ Call worker assistant lambda and tell it to close task """
 
         if not self.lambda_client:

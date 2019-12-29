@@ -12,7 +12,6 @@ os.environ["autotest"] = "True"
 
 class Worker_UnitTestCase(unittest.TestCase):
 
-
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
@@ -34,4 +33,4 @@ class Worker_UnitTestCase(unittest.TestCase):
         p.mark_task_as_completed = MagicMock(return_value=None)
 
         p({'task_id': '123'})
-        p.mark_task_as_completed.assert_called_with('123')
+        p.mark_task_as_completed.assert_called_once_with(task_id='123')
