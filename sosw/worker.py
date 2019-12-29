@@ -49,7 +49,8 @@ class Worker(Processor):
     This is a dictionary with the payload received in the lambda_handler during invocation.
 
     Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
-    ``task_id`` in the ``event``.
+    ``task_id`` in the ``event``. Worker create a payload with ``stats`` and ``result`` if passed and invoke worker
+    assistant lambda.
     """
 
     DEFAULT_CONFIG = {
