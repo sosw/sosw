@@ -82,7 +82,7 @@ class Worker(Processor):
         super().__call__(event)
 
 
-    def mark_task_as_completed(self, task_id: str):
+    def mark_task_as_completed(self, task_id: str, result=None):
         """ Call worker assistant lambda and tell it to close task """
 
         if not self.lambda_client:
@@ -97,8 +97,8 @@ class Worker(Processor):
         if self.stats:
             payload.update({'stats': self.stats})
 
-        if self.result:
-            payload.update({'result': self.result})
+        if result:
+            payload.update({'result': result})
 
         payload = json.dumps(payload)
 
