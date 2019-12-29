@@ -26,7 +26,7 @@ class Worker_UnitTestCase(unittest.TestCase):
             pass
 
 
-    def test_close_task__called(self):
+    def test_mark_task_as_completed__called(self):
         with patch('boto3.client'):
             p = Worker()
 
