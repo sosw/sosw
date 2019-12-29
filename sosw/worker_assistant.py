@@ -65,7 +65,9 @@ class WorkerAssistant(Processor):
                 'closed_at':           'N',
                 'desired_launch_time': 'N',
                 'arn':                 'S',
-                'payload':             'S'
+                'payload':             'S',
+                'stats':               'M',
+                'result':              'S',
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -96,19 +98,31 @@ class WorkerAssistant(Processor):
                     raise Exception(f"Missing required parameter `{req_param}` in event for action `{action}`")
 
             func_kwargs = {k: event[k] for k in event if k in required_params}
+
+            if 'stats' in event:
+                func_kwargs.update({'stats': event['stats']})
+
+            if 'result' in event:
+                func_kwargs.update({'result': event['result']})
+
             return func(**func_kwargs)
         else:
             raise Exception(f"Action `{action}` is not supported")
 
 
-    def mark_task_as_completed(self, task_id: str):
+    def mark_task_as_completed(self, task_id: str, stats=None, result=None):
         assert isinstance(task_id, str), f"`task_id` must be a string"
 
         _ = self.get_db_field_name
 
+        fields_to_update = {_('completed_at'): int(time.time()), _('stats'): stats}
+
+        if result:
+            fields_to_update.update({_('result'): result})
+
         self.dynamo_db_client.update(
-                keys={_('task_id'): task_id},
-                attributes_to_update={_('completed_at'): int(time.time())},
+            keys={_('task_id'): task_id},
+            attributes_to_update=fields_to_update,
         )
 
 
