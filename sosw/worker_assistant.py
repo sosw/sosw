@@ -26,15 +26,19 @@
     SOFTWARE.
 """
 
+
 __all__ = ['WorkerAssistant']
 __author__ = "Sophie Fogel"
 __version__ = "1.0"
 
+
+import json
 import time
 
 from sosw import Processor
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import get_one_from_dict
+from typing import Dict
 
 
 class WorkerAssistant(Processor):
@@ -100,25 +104,28 @@ class WorkerAssistant(Processor):
             func_kwargs = {k: event[k] for k in event if k in required_params}
 
             if 'stats' in event:
-                func_kwargs.update({'stats': event['stats']})
+                func_kwargs.update({'stats': json.loads(event['stats'])})
 
             if 'result' in event:
-                func_kwargs.update({'result': event['result']})
+                func_kwargs.update({'result': json.loads(event['result'])})
 
             return func(**func_kwargs)
         else:
             raise Exception(f"Action `{action}` is not supported")
 
 
-    def mark_task_as_completed(self, task_id: str, stats=None, result=None):
+    def mark_task_as_completed(self, task_id: str, stats: Dict = None, result: Dict = None):
         assert isinstance(task_id, str), f"`task_id` must be a string"
 
         _ = self.get_db_field_name
 
-        fields_to_update = {_('completed_at'): int(time.time()), _('stats'): stats}
+        fields_to_update = {_('completed_at'): int(time.time())}
+
+        if stats:
+            fields_to_update.update({f'stat_{k}': v for k, v in stats.items()})
 
         if result:
-            fields_to_update.update({_('result'): result})
+            fields_to_update.update({f'result_{k}': v for k, v in result.items()})
 
         self.dynamo_db_client.update(
             keys={_('task_id'): task_id},
