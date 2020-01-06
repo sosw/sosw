@@ -78,6 +78,7 @@ class Processor:
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
+        self.result = defaultdict(int)
 
         self.register_clients(self.config.get('init_clients', []))
 

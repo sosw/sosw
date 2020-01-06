@@ -32,6 +32,7 @@ __author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
 
 import boto3
+import datetime
 import logging
 import json
 import os
@@ -84,10 +85,8 @@ class DynamoDbClient:
 
         self.config = config
 
-        if not str(config.get('table_name')).startswith('autotest_mock_'):
-            self.dynamo_client = boto3.client('dynamodb')
-        else:
-            logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
+        # create a dynamodb client
+        self.dynamo_client = boto3.client('dynamodb', region_name=config.get('region_name'))
 
         # storage for table description(s)
         self._table_descriptions: Optional[Dict[str, Dict]] = {}
@@ -384,7 +383,8 @@ class DynamoDbClient:
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
-                     desc: bool = False, fetch_all_fields: bool = None) -> Union[List[Dict], int]:
+                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None) \
+            -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -416,6 +416,12 @@ class DynamoDbClient:
                              To reverse the order set the argument `desc = True`.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
+        :param list expr_attrs_names: List of attributes names, in case if an attribute name begins with a number or
+            contains a space, a special character, or a reserved word, you must use an expression attribute name to
+            replace that attribute's name in the expression.
+            Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
+            `ExpressionAttributeNames`:
+            {'#session': 'session', '#key': 'key'}
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
@@ -432,6 +438,10 @@ class DynamoDbClient:
         cond_expr_parts = []
 
         for key_attr_name in keys:
+            # Check if key attribute name is in `expr_attrs_names`, and create a prefix
+            # We add this prefix in case need to use `ExpressionAttributeNames`
+            expr_attr_prefix = '#' if expr_attrs_names and key_attr_name in expr_attrs_names else ''
+
             # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
             if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
                 compr = 'between'
@@ -443,14 +453,15 @@ class DynamoDbClient:
                 compr = '='
 
             if compr == 'begins_with':
-                cond_expr_parts.append(f"begins_with ({key_attr_name}, :{key_attr_name})")
+                cond_expr_parts.append(f"begins_with ({expr_attr_prefix}{key_attr_name}, :{key_attr_name})")
 
             elif compr == 'between':
                 key = key_attr_name[11:]
-                cond_expr_parts.append(f"{key} between :st_between_{key} and :en_between_{key}")
+                expr_attr_prefix = '#' if expr_attrs_names and key in expr_attrs_names else ''
+                cond_expr_parts.append(f"{expr_attr_prefix}{key} between :st_between_{key} and :en_between_{key}")
             else:
                 assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
-                cond_expr_parts.append(f"{key_attr_name} {compr} :{key_attr_name}")
+                cond_expr_parts.append(f"{expr_attr_prefix}{key_attr_name} {compr} :{key_attr_name}")
 
         cond_expr = " AND ".join(cond_expr_parts)
 
@@ -463,6 +474,11 @@ class DynamoDbClient:
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
             'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
+
+        # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
+        # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
+        if expr_attrs_names:
+            query_args['ExpressionAttributeNames'] = {f'#{el}': el for el in expr_attrs_names}
 
         # In case we have a filter expression, we parse it and add variables (values) to the ExpressionAttributeValues
         # Expression is also transformed to use these variables.
@@ -844,8 +860,9 @@ class DynamoDbClient:
         if condition_expression:
             expr, values = self._parse_filter_expression(condition_expression)
             update_item_query['ConditionExpression'] = expr
-            update_item_query['ExpressionAttributeValues'] = update_item_query.get('ExpressionAttributeValues', {})
-            update_item_query['ExpressionAttributeValues'].update(values)
+            if values:
+                update_item_query['ExpressionAttributeValues'] = update_item_query.get('ExpressionAttributeValues', {})
+                update_item_query['ExpressionAttributeValues'].update(values)
 
         logger.debug(f"Updating an item, query: {update_item_query}")
         response = self.dynamo_client.update_item(**update_item_query)
@@ -963,6 +980,27 @@ class DynamoDbClient:
         else:
             self.identify_dynamo_capacity(table_name=table_name)
             return self._table_capacity[table_name]
+
+
+    def sleep_db(self, last_action_time: datetime.datetime, action: str):
+        """
+        Sleeps between calls to dynamodb (if it needs to).
+        Uses the table's capacity to decide how long it needs to sleep.
+
+        :param last_action_time: Last time when we did this action (read/write) to this dynamo table
+        :param action: "read" or "write"
+        """
+
+        capacity = self.get_capacity()[action]  # Capacity per second
+        time_between_actions = 1 / capacity
+
+        time_elapsed = datetime.datetime.now().timestamp() - last_action_time.timestamp()
+
+        time_to_sleep = time_between_actions - time_elapsed
+
+        if time_to_sleep > 0:
+            logging.debug(f"Sleeping {time_to_sleep} sec")
+            time.sleep(time_to_sleep)
 
 
     def reset_stats(self):

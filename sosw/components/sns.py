@@ -70,6 +70,7 @@ class SnsManager():
             self.subject = kwargs.get('subject')
 
         self.queue = []
+        self.separator = "\n\n#####\n\n"
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
         if self.test:
@@ -112,6 +113,15 @@ class SnsManager():
         self.set_client_attr('subject', value=str(value))
 
 
+    def set_separator(self, separator):
+        """
+        Set custom separator for messages from the queue
+        """
+
+        assert isinstance(separator, str), f"Invalid format of separator: {separator}. Separator must be string."
+        setattr(self, 'separator', separator)
+
+
     def commit(self):
         """
         Combines messages from self.queue and pushes them to self.recipient.
@@ -128,7 +138,7 @@ class SnsManager():
             raise RuntimeError("You did not specify Subject for the message. "
                                "We don't want you to write code like this, please fix.")
 
-        message = "\n\n#####\n\n".join(self.queue)
+        message = self.separator.join(self.queue)
 
         if message:
             self.client.publish(

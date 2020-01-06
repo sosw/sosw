@@ -461,6 +461,22 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.assertEqual(result, 3)
 
 
+    def test_get_by_query__expr_attr(self):
+        rows = [
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 122},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 123}
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, table_name=self.table_name)
+
+        result = self.dynamo_client.get_by_query({self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+                                                 table_name=self.table_name, expr_attrs_names=[self.HASH_COL])
+
+        self.assertEqual(result[0], rows[0])
+
+
     def test_get_by_query__reverse(self):
         rows = [
             {self.HASH_COL: 'cat1', self.RANGE_COL: 121, 'some_col': 'test1'},
@@ -625,6 +641,28 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.update(keys, attributes_to_update={}, table_name=self.table_name,
                                   attributes_to_remove=['other_col'])
+
+        updated_row = self.dynamo_boto3_client.get_item(
+                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
+                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_col'], 'no'), "Field was not supposed to be updated"
+        self.assertNotIn('other_col', updated_row)
+
+
+    def test_patch__remove_attrs__without_update(self):
+        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.patch(keys, attributes_to_update={}, table_name=self.table_name,
+                                 attributes_to_remove=['other_col'])
 
         updated_row = self.dynamo_boto3_client.get_item(
                 Key={self.HASH_COL: {'S': row[self.HASH_COL]},
