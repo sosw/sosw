@@ -463,18 +463,18 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__expr_attr(self):
         rows = [
-            {self.HASH_COL: 'cat1', self.RANGE_COL: 121, 'session': 'test1'},
-            {self.HASH_COL: 'cat1', self.RANGE_COL: 122, 'session': 'test2'},
-            {self.HASH_COL: 'cat1', self.RANGE_COL: 123, 'session': 'test3'}
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 122},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 123}
         ]
 
         for x in rows:
             self.dynamo_client.put(x, table_name=self.table_name)
 
-        result = self.dynamo_client.get_by_query({self.HASH_COL: 'cat1'}, table_name=self.table_name,
-                                                 expr_attrs_names=['session'])
+        result = self.dynamo_client.get_by_query({self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+                                                 table_name=self.table_name, expr_attrs_names=[self.HASH_COL])
 
-        self.assertEqual(result, 3)
+        self.assertEqual(result[0], rows[0])
 
 
     def test_get_by_query__reverse(self):
