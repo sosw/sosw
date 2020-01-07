@@ -1,6 +1,7 @@
 import boto3
 import os
 import random
+import time
 import types
 import unittest
 
@@ -48,6 +49,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.s3_client.upload_file(Filename=local or self.scheduler.local_queue_file,
                                    Bucket='autotest-bucket',
                                    Key=key or self.scheduler.remote_queue_file)
+        time.sleep(0.3)
 
         if only_remote:
             try:
@@ -103,6 +105,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
 
         r = self.scheduler.get_and_lock_queue_file()
+        time.sleep(0.3)
 
         self.assertEqual(r, self.scheduler.local_queue_file)
 
@@ -123,6 +126,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.make_local_file('Demida')
 
         self.scheduler.upload_and_unlock_queue_file()
+        time.sleep(0.3)
 
         self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))
@@ -139,6 +143,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.make_local_file('Nora')
 
         self.scheduler.upload_and_unlock_queue_file()
+        time.sleep(0.3)
 
         self.assertFalse(self.exists_in_s3(self.scheduler.remote_queue_locked_file))
         self.assertTrue(self.exists_in_s3(self.scheduler.remote_queue_file))

@@ -49,7 +49,8 @@ class Worker(Processor):
     This is a dictionary with the payload received in the lambda_handler during invocation.
 
     Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
-    ``task_id`` in the ``event``.
+    ``task_id`` in the ``event``. Worker create a payload with ``stats`` and ``result`` if exist and invoke worker
+    assistant lambda.
     """
 
     DEFAULT_CONFIG = {
@@ -68,7 +69,8 @@ class Worker(Processor):
 
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
-            self.mark_task_as_completed(event.get('task_id'))
+            if event.get('task_id'):
+                self.mark_task_as_completed(event['task_id'])
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -85,8 +87,15 @@ class Worker(Processor):
         worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
         payload = {
             'action':  'mark_task_as_completed',
-            'task_id': task_id
+            'task_id': task_id,
         }
+
+        if self.stats:
+            payload.update({'stats': self.stats})
+
+        if self.result:
+            payload.update({'result': self.result})
+
         payload = json.dumps(payload)
 
         lambda_response = self.lambda_client.invoke(

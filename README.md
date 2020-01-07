@@ -3,11 +3,15 @@
 # Serverless Orchestrator of Serverless Workers
 [![Build Status](https://travis-ci.org/sosw/sosw.svg?branch=master)](https://travis-ci.org/sosw/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs)](https://pypi.org/project/sosw/)
+[![PyPI - Licence](https://img.shields.io/pypi/l/sosw?color=blue)](https://github.com/sosw/sosw/blob/master/LICENSE)
 
 **sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
- ---
- Please pronounce `sosw` correctly: _/ˈsɔːsəʊ/_
- ---
+
+---
+ Please pronounce **sosw** correctly: _/ˈsɔː səʊ/_
+
+---
 
 ## Documentation
 [https://docs.sosw.app](https://docs.sosw.app/en/latest/)
