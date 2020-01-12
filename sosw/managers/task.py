@@ -82,9 +82,7 @@ class TaskManager(Processor):
                 'closed_at':           'N',
                 'desired_launch_time': 'N',
                 'arn':                 'S',
-                'payload':             'S',
-                'stats':               'M',
-                'result':              'M'
+                'payload':             'S'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -157,10 +155,10 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         q = dict(
-            keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
-            comparisons={_('greenfield'): '<='},
-            max_items=1,
-            index_name=self.config['dynamo_db_config']['index_greenfield']
+                keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
+                comparisons={_('greenfield'): '<='},
+                max_items=1,
+                index_name=self.config['dynamo_db_config']['index_greenfield']
         )
         if reverse:
             q['desc'] = True
@@ -199,10 +197,10 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         queue_count = self.dynamo_db_client.get_by_query(
-            keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
-            comparisons={'greenfield': '<='},
-            index_name=self.config['dynamo_db_config']['index_greenfield'],
-            return_count=True)
+                keys={_('labourer_id'): labourer.id, _('greenfield'): str(time.time())},
+                comparisons={'greenfield': '<='},
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                return_count=True)
 
         return queue_count
 
@@ -417,9 +415,9 @@ class TaskManager(Processor):
         # support lambda currently. See below:
         # https://github.com/aio-libs/aiobotocore
         lambda_response = self.lambda_client.invoke(
-            FunctionName=labourer.arn,
-            InvocationType='Event',
-            Payload=json.dumps(call_payload)
+                FunctionName=labourer.arn,
+                InvocationType='Event',
+                Payload=json.dumps(call_payload)
         )
         logger.debug(lambda_response)
 
@@ -448,10 +446,10 @@ class TaskManager(Processor):
         assert labourer.id == task[_('labourer_id')], f"Task doesn't belong to the Labourer {labourer}: {task}"
 
         self.dynamo_db_client.update(
-            {_('task_id'): task[_('task_id')]},
-            attributes_to_update={_('greenfield'): int(time.time()) + self.config['greenfield_invocation_delta']},
-            attributes_to_increment={_('attempts'): 1},
-            condition_expression=f"{_('greenfield')} < {labourer.get_attr('start')}"
+                {_('task_id'): task[_('task_id')]},
+                attributes_to_update={_('greenfield'): int(time.time()) + self.config['greenfield_invocation_delta']},
+                attributes_to_increment={_('attempts'): 1},
+                condition_expression=f"{_('greenfield')} < {labourer.get_attr('start')}"
         )
 
 
@@ -510,17 +508,17 @@ class TaskManager(Processor):
         max_greenfield = labourer.get_attr('start')
 
         result = self.dynamo_db_client.get_by_query(
-            {
-                self.get_db_field_name('labourer_id'): labourer.id,
-                self.get_db_field_name('greenfield'):  max_greenfield
-            },
-            table_name=self.config['dynamo_db_config']['table_name'],
-            index_name=self.config['dynamo_db_config']['index_greenfield'],
-            fetch_all_fields=False,
-            max_items=cnt,
-            comparisons={
-                self.get_db_field_name('greenfield'): '<'
-            })
+                {
+                    self.get_db_field_name('labourer_id'): labourer.id,
+                    self.get_db_field_name('greenfield'):  max_greenfield
+                },
+                table_name=self.config['dynamo_db_config']['table_name'],
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                fetch_all_fields=False,
+                max_items=cnt,
+                comparisons={
+                    self.get_db_field_name('greenfield'): '<'
+                })
 
         logger.debug(f"get_next_for_labourer() received: {result} from {self.config['dynamo_db_config']['table_name']} "
                      f"for labourer: {labourer.id} max greenfield: {max_greenfield}")
@@ -571,13 +569,13 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         q = dict(
-            keys={
-                _('labourer_id'):                labourer.id,
-                f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
-                f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
-            },
-            index_name=self.config['dynamo_db_config']['index_greenfield'],
-            filter_expression=f'attribute_not_exists {_("completed_at")}'
+                keys={
+                    _('labourer_id'):                labourer.id,
+                    f"st_between_{_('greenfield')}": labourer.get_attr('expired'),
+                    f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
+                },
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                filter_expression=f'attribute_not_exists {_("completed_at")}'
         )
 
         if count:
@@ -625,13 +623,13 @@ class TaskManager(Processor):
         _ = self.get_db_field_name
 
         return self.dynamo_db_client.get_by_query(
-            keys={
-                _('labourer_id'):                labourer.id,
-                f"st_between_{_('greenfield')}": labourer.get_attr('start'),
-                f"en_between_{_('greenfield')}": labourer.get_attr('expired'),
-            },
-            index_name=self.config['dynamo_db_config']['index_greenfield'],
-            filter_expression=f"attribute_not_exists {_('completed_at')}",
+                keys={
+                    _('labourer_id'):                labourer.id,
+                    f"st_between_{_('greenfield')}": labourer.get_attr('start'),
+                    f"en_between_{_('greenfield')}": labourer.get_attr('expired'),
+                },
+                index_name=self.config['dynamo_db_config']['index_greenfield'],
+                filter_expression=f"attribute_not_exists {_('completed_at')}",
         )
 
 
@@ -713,7 +711,7 @@ class TaskManager(Processor):
             if parse_version(str(boto3.__version__)) >= parse_version('1.9.54'):
                 put_query = self.dynamo_db_client.make_put_transaction_item(task)
                 delete_query = self.dynamo_db_client.make_delete_transaction_item(
-                    delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+                        delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
                 self.dynamo_db_client.transact_write(put_query, delete_query)
 
             else:
@@ -742,13 +740,13 @@ class TaskManager(Processor):
         durations = []
 
         q = dict(
-            keys={
-                _('labourer_id_task_status'): f"{labourer.id}_1",
-            },
-            table_name=_cfg('sosw_closed_tasks_table'),
-            index_name=_cfg('sosw_closed_tasks_labourer_status_index'),
-            max_items=_cfg('max_closed_to_analyse_for_duration'),
-            desc=True
+                keys={
+                    _('labourer_id_task_status'): f"{labourer.id}_1",
+                },
+                table_name=_cfg('sosw_closed_tasks_table'),
+                index_name=_cfg('sosw_closed_tasks_labourer_status_index'),
+                max_items=_cfg('max_closed_to_analyse_for_duration'),
+                desc=True
         )
 
         # Fetch last X closed tasks
@@ -769,7 +767,7 @@ class TaskManager(Processor):
             else:
                 # Duration of completed tasks we calculate based on the value of last `greenfield` and `completed_at`
                 durations.append(
-                    task[_('completed_at')] - task[_('greenfield')] + _cfg('greenfield_invocation_delta'))
+                        task[_('completed_at')] - task[_('greenfield')] + _cfg('greenfield_invocation_delta'))
 
         # Return the average
         try:
