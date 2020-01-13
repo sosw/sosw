@@ -26,7 +26,6 @@
     SOFTWARE.
 """
 
-
 __all__ = ['TaskManager']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
@@ -44,7 +43,6 @@ from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
 from sosw.components.benchmark import benchmark
-from components.decorators import logging_wrapper
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
 from sosw.labourer import Labourer
@@ -462,7 +460,6 @@ class TaskManager(Processor):
     #             attributes_to_update={_('closed_at'): int(time.time())},
     #     )
 
-    @logging_wrapper(logging.DEBUG)
     def archive_task(self, task_id: str):
         _ = self.get_db_field_name
 
@@ -515,7 +512,7 @@ class TaskManager(Processor):
                 },
                 table_name=self.config['dynamo_db_config']['table_name'],
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                fetch_all_fields=True,
+                fetch_all_fields=False,
                 max_items=cnt,
                 comparisons={
                     self.get_db_field_name('greenfield'): '<'
@@ -546,7 +543,6 @@ class TaskManager(Processor):
             },
             'comparisons': {_('greenfield'): '>='},
             'index_name':  self.config['dynamo_db_config']['index_greenfield'],
-            'fetch_all_fields': True
         }
 
         if completed is True:
@@ -577,8 +573,7 @@ class TaskManager(Processor):
                     f"en_between_{_('greenfield')}": labourer.get_attr('invoked'),
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
-                filter_expression=f'attribute_not_exists {_("completed_at")}',
-                fetch_all_fields=True
+                filter_expression=f'attribute_not_exists {_("completed_at")}'
         )
 
         if count:
@@ -615,7 +610,6 @@ class TaskManager(Processor):
             'comparisons':       {_('greenfield'): '>='},
             'index_name':        self.config['dynamo_db_config']['index_greenfield'],
             'filter_expression': f"attribute_exists {_('completed_at')}",
-            'fetch_all_fields': True
         }
 
         return self.dynamo_db_client.get_by_query(**query_args)
@@ -682,7 +676,6 @@ class TaskManager(Processor):
             'comparisons': {_('desired_launch_time'): "<="},
             'table_name':  self.config['sosw_retry_tasks_table'],
             'index_name':  self.config['sosw_retry_tasks_greenfield_index'],
-            'fetch_all_fields': True
         }
         if limit:
             attrs['max_items'] = limit
