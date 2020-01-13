@@ -34,13 +34,11 @@ __version__ = "1.0"
 
 import json
 import time
-import logging
 
 from sosw import Processor
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import get_one_from_dict
 from typing import Dict
-from components.decorators import logging_wrapper
 
 
 class WorkerAssistant(Processor):
@@ -122,7 +120,6 @@ class WorkerAssistant(Processor):
             raise Exception(f"Action `{action}` is not supported")
 
 
-    @logging_wrapper(logging.DEBUG)
     def mark_task_as_completed(self, task_id: str, stats: Dict = None, result: Dict = None):
         assert isinstance(task_id, str), f"`task_id` must be a string"
 
