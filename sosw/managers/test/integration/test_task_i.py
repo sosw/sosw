@@ -500,7 +500,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # self.assertTrue(False)
 
 
-    def test_get_task_by_id__(self):
+    def test_get_task_by_id__check_return_task_with_all_attrs(self):
         tasks = self.setup_tasks()
         time.sleep(0.3)
         result = self.manager.get_task_by_id(tasks[0]['task_id'])
