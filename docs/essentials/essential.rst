@@ -5,7 +5,8 @@ Essential
 
 The main roles of Essential is:
 
-* Update config file from DynamoDB table
+* Update the config of the Essential children classes to include common base properties.
+
 
 
 .. automodule:: sosw.essential

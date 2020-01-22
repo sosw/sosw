@@ -7,6 +7,7 @@ Essentials
    :caption: Essentials:
 
    worker
+   essential
    orchestrator
    scheduler
    scavenger
