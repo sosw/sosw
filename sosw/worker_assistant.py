@@ -35,13 +35,13 @@ __version__ = "1.0"
 import json
 import time
 
-from sosw import Processor
+from sosw.essential import Essential
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import get_one_from_dict
 from typing import Dict
 
 
-class WorkerAssistant(Processor):
+class WorkerAssistant(Essential):
     """
     Worker Assistant is the interface Worker Lambdas should call to mark their tasks completed.
 

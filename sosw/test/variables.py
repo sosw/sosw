@@ -74,6 +74,21 @@ TEST_SCHEDULER_CONFIG = {
     }
 }
 
+TEST_ESSENTIAL_CONFIG = {
+    'test': True
+}
+
+TEST_ESSENTIAL_LABOURER_CONFIG = {
+    "labourers": {
+          "some_function": {
+            "arn": "arn:aws:lambda:us-west-2:000000000000:function:some_function"
+          },
+          "sandbox": {
+            "arn": "arn:aws:lambda:us-west-2:000000000000:function:sandbox"
+          }
+    }
+}
+
 TEST_WORKER_ASSISTANT_CONFIG = {
     'init_clients':     [],
     'dynamo_db_config': TASKS_TABLE_CONFIG,

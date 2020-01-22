@@ -35,7 +35,7 @@ import math
 
 from typing import List
 
-from sosw.app import Processor
+from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.ecology import EcologyManager
 from sosw.managers.task import TaskManager
@@ -45,7 +45,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Orchestrator(Processor):
+class Orchestrator(Essential):
     """
     | Orchestrator class.
     | Iterates the pre-configured Labourers and invokes appropriate number of Tasks for each one.

@@ -31,10 +31,9 @@ __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.0"
 
 import logging
-import time
 from typing import Dict
 
-from sosw.app import Processor
+from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -43,7 +42,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Scavenger(Processor):
+class Scavenger(Essential):
     """
     Scavenger main class performes the following operations:
 
