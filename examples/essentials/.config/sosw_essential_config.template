@@ -1,0 +1,8 @@
+{
+  "labourers": {
+    "sosw_sandbox": {
+      "max_simultaneous_invocations": 5,
+      "arn": "arn:aws:lambda:us-west-2:000000000000:function:sosw_sandbox"
+    }
+  }
+}
