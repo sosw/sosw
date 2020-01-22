@@ -10,9 +10,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Essential(Orchestrator):
+class EssentialOrchestrator(Orchestrator):
     pass
 
 
 global_vars = LambdaGlobals()
-lambda_handler = get_lambda_handler(Essential, global_vars)
+lambda_handler = get_lambda_handler(EssentialOrchestrator, global_vars)
