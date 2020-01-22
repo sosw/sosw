@@ -42,7 +42,8 @@ logger.setLevel(logging.INFO)
 
 class Essential(Processor):
     """
-    Class
+    This class has methods to create necessary functionality for SOSW Essentials. First of all, it recursively updates
+    a config from a file (dict of common configs for each who inherits it)
     """
 
     def __init__(self, *args, **kwargs):
