@@ -59,7 +59,9 @@ __all__ = ['validate_account_to_dashed',
            'make_hash',
            'to_bool',
            'get_message_dict_from_sns_event',
-           'is_event_from_sns'
+           'is_event_from_sns',
+           'unwrap_event_recursively',
+           'is_event_from_sqs',
            ]
 
 import collections
@@ -71,7 +73,9 @@ import uuid
 from collections import defaultdict, Hashable
 from copy import deepcopy
 from datetime import timezone
-from typing import Iterable, Callable, Dict, Mapping, List, Optional
+from typing import Iterable, Callable, Dict, Mapping, List, Optional, Union
+
+from sosw.components.exceptions import EventNotFromSourceException
 
 
 def validate_account_to_dashed(account):
@@ -892,6 +896,13 @@ def to_bool(val):
     raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")
 
 
+def _unwrap_msg_dict_from_sns_event(event) -> Dict:
+    try:
+        return json.loads(event['Records'][0]['Sns']['Message'])
+    except:
+        return json.loads(event['Message'])
+
+
 def get_message_dict_from_sns_event(event):
     """
     Extract SNS event message and return it loaded as a dict.
@@ -902,7 +913,7 @@ def get_message_dict_from_sns_event(event):
     """
 
     if is_event_from_sns(event):
-        return json.loads(event['Records'][0]['Sns']['Message'])
+        return _unwrap_msg_dict_from_sns_event(event)
 
     raise ValueError(f"Event is not from SNS")
 
@@ -916,8 +927,114 @@ def is_event_from_sns(event):
     """
 
     try:
-        result = bool(event['Records'][0]['Sns'])
+        return bool(event['Records'][0]['Sns']['Message'])
     except:
-        result = False
+        pass
 
-    return result
+    try:
+        return bool('Message' in event and 'TopicArn' in event and ':sns:' in event['TopicArn'])
+    except:
+        pass
+
+    return False
+
+
+def _unwrap_message_dicts_from_sqs_event(event) -> List[Dict]:
+    sqs_messages = []
+
+    for record in event['Records']:
+        d = json.loads(record['body'])
+        sqs_messages.append(d)
+
+    return sqs_messages
+
+
+def is_event_from_sqs(event) -> bool:
+    try:
+        return event['Records'][0]['eventSource'] == 'aws:sqs'
+    except:
+        pass
+
+    return False
+
+
+unwrap_checker_methods = {
+    # Methods with input: event, output: bool
+    'sns': is_event_from_sns,
+    'sqs': is_event_from_sqs,
+}
+
+unwrap_extractor_methods = {
+    # Methods with input: event, output: Dict / List[Dict]
+    'sns': _unwrap_msg_dict_from_sns_event,
+    'sqs': _unwrap_message_dicts_from_sqs_event,
+}
+
+
+def _unwrap_event_messages(event: Dict, source: str) -> List[Dict]:
+    """
+    *source* can be sns / sqs
+    Unwrap list of messages from *source*, if the event is from this source.
+    Will unwrap a single layer (unlike ``unwrap_event_recursively`` - which is recursive).
+    If the event is not from this source, will raiseEventNotFromSourceException
+
+    .. code-block:: python
+
+        unwrapped_sns_messages = _unwrap_event_messages(event, source='sns'):
+
+    :param event:
+    :param source: 'sns' or 'sqs'
+    :return: List of events/messages unwrapped from the *source*
+    :raises: EventNotFromSourceException
+    """
+
+    checker_method = unwrap_checker_methods[source]
+    extractor_method = unwrap_extractor_methods[source]
+
+    if checker_method(event):  # is_event_from_sns/sqs
+        unwrapped = extractor_method(event)  # _unwrap_msg_dicts_from_sns/sqs_event
+        return unwrapped if isinstance(unwrapped, list) else [unwrapped]
+
+    raise EventNotFromSourceException(f"Event is not from {source}, can't unwrap it")
+
+
+def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -> Union[Dict, List[Dict]]:
+    """
+    Recursively unwraps lambda event from SQS and/or SNS event skeletons.
+    Supported sources: 'sqs', 'sns'.
+    Will unwrap recursively until the event is not wrapped anymore, or up to depth of 10
+
+    .. code-block:: python
+
+        unwrapped_messages = unwrap_event_recursively(event, sources=['sns', 'sqs']):
+
+    :param event: Lambda event
+    :param sources: List of strings describing what the event might be wrapped by. If empty, will unwrapped from all.
+    :return: List of dictionaries - unwrapped messages from the event
+    """
+
+    messages = [event]
+    sources = sources or ['sns', 'sqs']
+    sources = [x.lower() for x in sources]
+    max_depth = 10  # Unwrapping up to depth of 10, as a safety mechanism against infinite loop
+
+    for i in range(max_depth):
+        original = deepcopy(messages)
+
+        for source in sources:
+            converted_messages = []
+
+            for msg in messages:
+                try:
+                    unwrapped = _unwrap_event_messages(msg, source=source)
+                except EventNotFromSourceException:
+                    unwrapped = [msg]
+
+                converted_messages.extend(unwrapped)
+
+            messages = converted_messages
+
+        if original == messages:
+            break
+
+    return messages if len(messages) > 1 else messages[0]

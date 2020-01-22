@@ -3,6 +3,9 @@ from datetime import timezone
 import time
 import unittest
 import os
+from copy import deepcopy
+
+from sosw.components.test.unit.helpers_test_variables import *
 
 
 os.environ["STAGE"] = "test"
@@ -666,12 +669,15 @@ class helpers_UnitTestCase(unittest.TestCase):
             to_bool(object())
 
 
-    def test_get_message_dict_from_sns_event(self):
+    def test_get_message_dict_from_sns_event__raises(self):
         TESTS = [
             {'Records': [{'Sns': {'Message': ''}}]},
             {'Records': [{'Sns': "{'Message': ''}"}]},
             {'Records': [{'Sns': {'Message': None}}]},
             {'Records': [{'Sns': {}}]},
+            {'Message': '{"...": "..."}', 'TopicArn': ''},
+            {'Message': '', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'},
+            {'Message': 'text message', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'}
         ]
 
         for test in TESTS:
@@ -702,6 +708,13 @@ class helpers_UnitTestCase(unittest.TestCase):
                          {"Records": [{"eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2", "s3": {"bucket": {}, "object": {}}}]})
 
 
+    def test_get_message_dict_from_sns_event__from_sqs(self):
+        # sqs msg inside sns
+        sns_event = {'Message': '{"hello": "I am Inigo Montoya"}', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'}
+
+        self.assertEqual(get_message_dict_from_sns_event(sns_event), {"hello": "I am Inigo Montoya"})
+
+
     def test_is_event_from_sns_false(self):
         TESTS = [
             {'Records': [{'Sns': None}]},
@@ -718,13 +731,8 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_is_event_from_sns_true(self):
-        TESTS = [
-            {'Records': [{'Sns': {'Message': ''}}]},
-            {'Records': [{'Sns': '{"Message": "{}"'}]}
-        ]
-
-        for test in TESTS:
-            self.assertEqual(is_event_from_sns(test), True)
+        self.assertEqual(is_event_from_sns({'Records': [{'Sns': {'Message': '...'}}]}), True)
+        self.assertEqual(is_event_from_sns({'Message': '...', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'}), True)
 
 
     def test_is_event_from_sns_invalid_events(self):
@@ -732,6 +740,42 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(is_event_from_sns(""), False)
         self.assertEqual(is_event_from_sns(None), False)
         self.assertEqual(is_event_from_sns({}), False)
+
+
+    def test_unwrap_event_recursively__not_wrapped(self):
+        event = {"hello": "I am Inigo Montoya"}
+        self.assertEqual(event, unwrap_event_recursively(deepcopy(event)))
+        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sns']))
+        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sqs']))
+        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sns', 'sqs']))
+
+
+    def test_unwrap_event_recursively__sns(self):
+        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(SNS_EVENT)))
+
+
+    def test_unwrap_event_recursively__sns2(self):
+        # SNS message inside SQS
+        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(SNS_NESTED))
+
+
+    def test_unwrap_event_recursively__sqs_dict(self):
+        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(SQS_EVENT)))
+
+
+    def test_unwrap_event_recursively__sns_inside_sqs(self):
+        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(EVENT_SNS_INSIDE_SQS)))
+
+
+    def test_is_event_from_sqs__signle(self):
+        self.assertTrue(is_event_from_sqs(SQS_EVENT))
+        self.assertTrue(is_event_from_sqs(SQS_EVENT_MANY))
+        self.assertFalse(is_event_from_sqs(SNS_EVENT))
+
+
+    def test_is_event_from_sqs__many(self):
+        self.assertEqual([{"hello": "I am Inigo Montoya"}, {"hello2": "I am Inigo Montoya2"}],
+                         unwrap_event_recursively(deepcopy(SQS_EVENT_MANY)))
 
 
 if __name__ == '__main__':
