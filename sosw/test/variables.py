@@ -38,6 +38,13 @@ TEST_TASK_CLIENT_CONFIG = {
     'sosw_retry_tasks_table':            'autotest_sosw_retry_tasks',
     'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
     'ecology_config':                    TEST_ECOLOGY_CLIENT_CONFIG,
+    'labourers':                         {
+        'some_function': {
+            'arn':                          'arn:aws:lambda:us-west-2:000000000000:function:some_function',
+            'max_simultaneous_invocations': 10,
+        },
+        1:               {'arn': 'bar'},
+    },
 }
 
 TEST_ORCHESTRATOR_CONFIG = {
@@ -68,7 +75,7 @@ TEST_SCHEDULER_CONFIG = {
 }
 
 TEST_ESSENTIAL_CONFIG = {
-
+    'test': True
 }
 
 TEST_ESSENTIAL_LABOURER_CONFIG = {
