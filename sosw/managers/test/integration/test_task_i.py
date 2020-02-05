@@ -495,10 +495,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertLessEqual(self.manager.get_average_labourer_duration(some_labourer), 900)
         self.assertGreaterEqual(self.manager.get_average_labourer_duration(some_labourer), 10)
 
-        # Benchmarking
-        # print(self.manager.get_stats())
-        # self.assertTrue(False)
-
 
     def test_get_task_by_id__check_return_task_with_all_attrs(self):
         tasks = self.setup_tasks()
