@@ -33,7 +33,6 @@ __version__ = "1.0"
 import boto3
 import json
 import logging
-import os
 import time
 import uuid
 
@@ -46,7 +45,6 @@ from sosw.app import Processor
 from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
-# from sosw.managers.ecology import EcologyManager
 from sosw.labourer import Labourer
 
 
@@ -487,7 +485,7 @@ class TaskManager(Processor):
     def get_task_by_id(self, task_id: str) -> Dict:
         """ Fetches the full data of the Task. """
 
-        tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
+        tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id}, fetch_all_fields=True)
         assert len(tasks) in [0, 1], "Fetched more than 1 task by primary key(). Something broke your DB " \
                                      "schema."
         return tasks[0] if tasks else {}
@@ -630,6 +628,7 @@ class TaskManager(Processor):
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression=f"attribute_not_exists {_('completed_at')}",
+                fetch_all_fields=True
         )
 
 
