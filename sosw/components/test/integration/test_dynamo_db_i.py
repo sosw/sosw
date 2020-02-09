@@ -388,7 +388,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x}, self.table_name) for x in range(3)]
         [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1, 'session_id': x}, self.table_name)
          for x in range(3, 6)]
-        self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 6, 'mark': 0, 'session_id': 3}, self.table_name)
+        self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 0, 'mark': 0, 'session_id': 3}, self.table_name)
         self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 7, 'mark': 'a'}, self.table_name)
 
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: 4}
@@ -399,9 +399,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.assertEqual(len(result), 2)
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='}, fetch_all_fields=True,
-                                                 filter_expression=['mark = 1', 'OR mark = 0', 'AND session_id = 3'])
+                                                 filter_expression=['mark = 1', 'OR mark = 0'])
 
-        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result), 3)
 
 
     def test_get_by_query__comparison_begins_with(self):
