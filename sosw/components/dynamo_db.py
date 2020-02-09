@@ -484,7 +484,7 @@ class DynamoDbClient:
         # Expression is also transformed to use these variables.
         if filter_expression:
             if isinstance(filter_expression, str):
-                expr, values, _ = self._parse_filter_expression(filter_expression)
+                expr, values = self._parse_filter_expression(filter_expression)
                 query_args['FilterExpression'] = expr
                 query_args['ExpressionAttributeValues'].update(values)
             if isinstance(filter_expression, list):
