@@ -490,7 +490,7 @@ class DynamoDbClient:
             if isinstance(filter_expression, list):
                 for expression in filter_expression:
                     expr, values = self._parse_filter_expression(expression)
-                    query_args['FilterExpression'] += expr
+                    query_args['FilterExpression'] = query_args.setdefault('FilterExpression', '') + expr
                     query_args['ExpressionAttributeValues'].update(values)
         if index_name:
             query_args['IndexName'] = index_name

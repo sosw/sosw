@@ -225,13 +225,14 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         expr_attrs_names = ['range_col', 'session']
 
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
-        self.dynamo_client.get_by_query(keys=keys, expr_attrs_names=expr_attrs_names)
+        self.dynamo_client.get_by_query(keys=keys, expr_attrs_names=expr_attrs_names, filter_expression=['session = ses1'])
 
         args, kwargs = self.paginator_mock.paginate.call_args
         self.assertIn('#range_col', kwargs['ExpressionAttributeNames'])
         self.assertIn('#session', kwargs['ExpressionAttributeNames'])
         self.assertIn('#range_col between :st_between_range_col and :en_between_range_col AND #session = :session',
                       kwargs['KeyConditionExpression'])
+        self.assertEqual('session = :filter_session', kwargs['FilterExpression'])
 
 
     def test__parse_filter_expression(self):
