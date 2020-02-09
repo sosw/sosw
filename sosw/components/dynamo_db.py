@@ -534,9 +534,10 @@ class DynamoDbClient:
         assert isinstance(expression, str), f"Filter expression must be a string: {expression}"
 
         words = [x.strip() for x in expression.split()]
-        logic_operator = words[0]
+        logic_operator = None
 
-        if logic_operator in ['AND', 'OR']:
+        if words[0] in ['AND', 'OR']:
+            logic_operator = words[0]
             words = words[1:]
 
         # Filter Expression should be 2, 3 or 5 words. See doc for more details.

@@ -241,7 +241,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'cat = meaw': ("cat = :filter_cat", {":filter_cat": {'S': 'meaw'}}),
             'magic between 41 and 42': ("magic between :st_between_magic and :en_between_magic",
                                         {":st_between_magic": {'N': '41'}, ":en_between_magic": {'N': '42'}}),
-            'attribute_not_exists boo': ("attribute_not_exists (boo)", {})
+            'attribute_not_exists boo': ("attribute_not_exists (boo)", {}),
+            'AND gender = male': (" AND gender = :filter_gender", {":filter_gender": {"S": "male"}})
         }
 
         for data, expected in TESTS.items():
