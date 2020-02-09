@@ -384,6 +384,21 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.assertEqual([x[self.RANGE_COL] for x in result], list(range(3)))
 
 
+    def test_get_by_query__several_filter_expression(self):
+        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x}, self.table_name) for x in range(3)]
+        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1, 'session': x}, self.table_name) for x in
+         range(3, 6)]
+        self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 6, 'mark': 0}, self.table_name)
+        self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 7, 'mark': 'a'}, self.table_name)
+
+        keys = {self.HASH_COL: 'cat', self.RANGE_COL: 4}
+
+        result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='},
+                                                 fetch_all_fields=True, filter_expression=['attribute_exists mark', 'AND session < 5'])
+
+        self.assertEqual(len(result), 2)
+
+
     def test_get_by_query__comparison_begins_with(self):
         self.table_name = 'autotest_config_component'  # This table has a string range key
         self.HASH_KEY = ('env', 'S')
