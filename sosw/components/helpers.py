@@ -998,7 +998,7 @@ def _unwrap_event_messages(event: Dict, source: str) -> List[Dict]:
     raise EventNotFromSourceException(f"Event is not from {source}, can't unwrap it")
 
 
-def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -> Union[Dict, List[Dict]]:
+def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -> List[Dict]:
     """
     Recursively unwraps lambda event from SQS and/or SNS event skeletons.
     Supported sources: 'sqs', 'sns'.
@@ -1014,8 +1014,7 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
     """
 
     messages = [event]
-    sources = sources or ['sns', 'sqs']
-    sources = [x.lower() for x in sources]
+    sources = [x.lower() for x in sources or ['sns', 'sqs']]
     max_depth = 10  # Unwrapping up to depth of 10, as a safety mechanism against infinite loop
 
     for i in range(max_depth):
@@ -1037,4 +1036,4 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
         if original == messages:
             break
 
-    return messages if len(messages) > 1 else messages[0]
+    return messages
