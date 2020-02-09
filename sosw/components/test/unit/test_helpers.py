@@ -744,27 +744,27 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_unwrap_event_recursively__not_wrapped(self):
         event = {"hello": "I am Inigo Montoya"}
-        self.assertEqual(event, unwrap_event_recursively(deepcopy(event)))
-        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sns']))
-        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sqs']))
-        self.assertEqual(event, unwrap_event_recursively(deepcopy(event), sources=['sns', 'sqs']))
+        self.assertEqual([event], unwrap_event_recursively(deepcopy(event)))
+        self.assertEqual([event], unwrap_event_recursively(deepcopy(event), sources=['sns']))
+        self.assertEqual([event], unwrap_event_recursively(deepcopy(event), sources=['sqs']))
+        self.assertEqual([event], unwrap_event_recursively(deepcopy(event), sources=['sns', 'sqs']))
 
 
     def test_unwrap_event_recursively__sns(self):
-        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(SNS_EVENT)))
+        self.assertEqual([{"hello": "I am Inigo Montoya"}], unwrap_event_recursively(deepcopy(SNS_EVENT)))
 
 
     def test_unwrap_event_recursively__sns2(self):
         # SNS message inside SQS
-        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(SNS_NESTED))
+        self.assertEqual([{"hello": "I am Inigo Montoya"}], unwrap_event_recursively(SNS_NESTED))
 
 
     def test_unwrap_event_recursively__sqs_dict(self):
-        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(SQS_EVENT)))
+        self.assertEqual([{"hello": "I am Inigo Montoya"}], unwrap_event_recursively(deepcopy(SQS_EVENT)))
 
 
     def test_unwrap_event_recursively__sns_inside_sqs(self):
-        self.assertEqual({"hello": "I am Inigo Montoya"}, unwrap_event_recursively(deepcopy(EVENT_SNS_INSIDE_SQS)))
+        self.assertEqual([{"hello": "I am Inigo Montoya"}], unwrap_event_recursively(deepcopy(EVENT_SNS_INSIDE_SQS)))
 
 
     def test_is_event_from_sqs__signle(self):
