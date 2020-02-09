@@ -386,7 +386,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
     def test_get_by_query__several_filter_expression(self):
         [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x}, self.table_name) for x in range(3)]
-        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1, 'session': x}, self.table_name) for x in
+        [self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: x, 'mark': 1, 'session_id': x}, self.table_name) for x in
          range(3, 6)]
         self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 6, 'mark': 0}, self.table_name)
         self.dynamo_client.put({self.HASH_COL: 'cat', self.RANGE_COL: 7, 'mark': 'a'}, self.table_name)
