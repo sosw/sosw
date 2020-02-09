@@ -396,7 +396,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='}, fetch_all_fields=True,
                                                  filter_expression=['attribute_exists mark', 'AND session_id < 5'])
 
-        self.assertEqual(len(result), 2)
+        self.assertEqual(len(result), 3)
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='}, fetch_all_fields=True,
                                                  filter_expression=['mark = 1', 'OR mark = 0'])
