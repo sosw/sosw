@@ -382,7 +382,7 @@ class DynamoDbClient:
 
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
+                     filter_expression: Union[str, list] = None, strict: bool = None, return_count: bool = False,
                      desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None) \
             -> Union[List[Dict], int]:
         """
@@ -408,8 +408,8 @@ class DynamoDbClient:
             Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
 
         :param int max_items:   Limit the number of items to fetch.
-        :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
-            e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+        :param str, list filter_expression:  Supports regular comparisons and `between`. Input must be a regular human
+            string or list of strings e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
         :param bool strict: DEPRECATED.
         :param bool return_count: If True, will return the number of items in the result instead of the items themselves
         :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
@@ -483,10 +483,15 @@ class DynamoDbClient:
         # In case we have a filter expression, we parse it and add variables (values) to the ExpressionAttributeValues
         # Expression is also transformed to use these variables.
         if filter_expression:
-            expr, values = self._parse_filter_expression(filter_expression)
-            query_args['FilterExpression'] = expr
-            query_args['ExpressionAttributeValues'].update(values)
-
+            if isinstance(filter_expression, str):
+                expr, values, _ = self._parse_filter_expression(filter_expression)
+                query_args['FilterExpression'] = expr
+                query_args['ExpressionAttributeValues'].update(values)
+            if isinstance(filter_expression, list):
+                for expression in filter_expression:
+                    expr, values = self._parse_filter_expression(expression)
+                    query_args['FilterExpression'] += expr
+                    query_args['ExpressionAttributeValues'].update(values)
         if index_name:
             query_args['IndexName'] = index_name
 
@@ -529,6 +534,10 @@ class DynamoDbClient:
         assert isinstance(expression, str), f"Filter expression must be a string: {expression}"
 
         words = [x.strip() for x in expression.split()]
+        logic_operator = words[0]
+
+        if logic_operator in ['AND', 'OR']:
+            words = words[1:]
 
         # Filter Expression should be 2, 3 or 5 words. See doc for more details.
         # This must be a function
@@ -557,6 +566,9 @@ class DynamoDbClient:
                                                  f"en_between_{key}": words[4]}, add_prefix=':', strict=False)
         else:
             raise ValueError(f"Unsupported expression for Filtering: {expression}")
+
+        if logic_operator:
+            result_expr = f" {logic_operator} {result_expr}"
 
         return result_expr, result_values
 
