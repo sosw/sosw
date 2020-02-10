@@ -897,6 +897,9 @@ def to_bool(val):
 
 
 def _unwrap_msg_dict_from_sns_event(event) -> Dict:
+    if 'Records' in event and len(event['Records']) > 1:
+        raise ValueError(f"SNS event is not expected to have more than one record. Event: {event}")
+
     try:
         return json.loads(event['Records'][0]['Sns']['Message'])
     except:
