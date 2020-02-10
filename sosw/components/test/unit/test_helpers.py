@@ -683,6 +683,15 @@ class helpers_UnitTestCase(unittest.TestCase):
         for test in TESTS:
             self.assertRaises(Exception, get_message_dict_from_sns_event, test)
 
+    def test_get_message_dict_from_sns_event__many_messages__raises(self):
+        event = deepcopy(SNS_EVENT)
+        event['Records'] = [event['Records'][0], event['Records'][0]]
+
+        with self.assertRaises(ValueError) as assertion_context:
+            get_message_dict_from_sns_event(event)
+
+        self.assertTrue("SNS event is not expected to have more than one record" in str(assertion_context.exception))
+
 
     def test_get_message_dict_from_sns_event(self):
         sns_event = {
