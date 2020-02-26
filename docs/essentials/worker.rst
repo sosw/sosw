@@ -57,3 +57,8 @@ Please find the following elementary example of Worker Lambda.
         # Setting the entry point of the lambda.
         global_vars = LambdaGlobals()
         lambda_handler = get_lambda_handler(Processor, global_vars)
+
+In case you inherit from the ``Worker`` you do not have to implement anything custom
+for the function to be properly orchestrated. Just do not forget to call the ``super().__call__(event)``
+at the end of your execution. It will automatically collect and update the ``stats`` as well as call
+the ``WorkerAssistant`` Lambda function to close the task.
