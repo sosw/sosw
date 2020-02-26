@@ -42,7 +42,11 @@ logger.setLevel(logging.INFO)
 
 class Essential(Processor):
     """
-    This class abstracts common base properties and methods for Essential children.
+    This class abstracts common base properties and methods shared by essential Lambda functions.
+
+    Currently implemented:
+
+    * Update the ``self.config`` with shared settings (e.g list of registered Labourers)
     """
 
     def __init__(self, *args, **kwargs):
