@@ -281,6 +281,23 @@ class DynamoConfig:
         dynamo_client.update(keys={'env': env, 'config_name': name}, attributes_to_update={'config_value': val})
 
 
+    def create_config(self, name, val, **kwargs):
+        """
+        Create a new config record in DynamoDB
+
+        :param  str     name:   Field name to address.
+        :param  object  val:    Field value to update.
+        """
+
+        if self.test or os.environ.get('STAGE') in ['test', 'autotest']:
+            env = "dev"
+        else:
+            env = "production"
+
+        dynamo_client = self._get_dynamo_client()
+        dynamo_client.create(row={'env': env, 'config_name': name, 'config_value': val})
+
+
     def get_credentials_by_prefix(self, prefix, env="production"):
 
         prefix = prefix if prefix.endswith('_') else prefix + '_'
