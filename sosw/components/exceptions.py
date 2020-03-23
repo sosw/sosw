@@ -1,0 +1,2 @@
+class EventNotFromSourceException(ValueError):
+    pass

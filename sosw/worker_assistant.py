@@ -35,13 +35,13 @@ __version__ = "1.0"
 import json
 import time
 
-from sosw import Processor
+from sosw.essential import Essential
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import get_one_from_dict
 from typing import Dict
 
 
-class WorkerAssistant(Processor):
+class WorkerAssistant(Essential):
     """
     Worker Assistant is the interface Worker Lambdas should call to mark their tasks completed.
 
@@ -104,10 +104,16 @@ class WorkerAssistant(Processor):
             func_kwargs = {k: event[k] for k in event if k in required_params}
 
             if 'stats' in event:
-                func_kwargs.update({'stats': json.loads(event['stats'])})
+                if isinstance(event['stats'], str):
+                    func_kwargs.update({'stats': json.loads(event['stats'])})
+                else:
+                    func_kwargs.update({'stats': event['stats']})
 
             if 'result' in event:
-                func_kwargs.update({'result': json.loads(event['result'])})
+                if isinstance(event['result'], str):
+                    func_kwargs.update({'result': json.loads(event['result'])})
+                else:
+                    func_kwargs.update({'result': event['result']})
 
             return func(**func_kwargs)
         else:

@@ -41,7 +41,8 @@ from collections import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
-from sosw.app import Processor, LambdaGlobals
+from sosw.essential import Essential
+from sosw.app import LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
 from sosw.managers.task import TaskManager
@@ -65,7 +66,7 @@ class InvalidJob(ValueError):
     pass
 
 
-class Scheduler(Processor):
+class Scheduler(Essential):
     """
     Scheduler is converting business jobs to one or multiple Worker tasks.
 
