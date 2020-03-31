@@ -20,7 +20,7 @@
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
-- Python 3.6, 3.7
+- Python 3.6, 3.7, 3.8
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
