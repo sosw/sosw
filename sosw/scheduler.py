@@ -37,7 +37,7 @@ import os
 import re
 import time
 
-from collections import Iterable
+from collections import abc, Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
@@ -119,6 +119,9 @@ class Scheduler(Essential):
         super().__init__(*args, **kwargs)
 
         self.set_queue_file()
+
+        # Take the default chunkable attrs from config. You can override this in __call__ method.
+        self.chunkable_attrs = self.get_chunkable_attrs()
 
 
     def __call__(self, event: Dict):
@@ -594,7 +597,10 @@ class Scheduler(Essential):
 
         attrs = js.get('chunkable_attrs')
 
-        attrs = list([x if isinstance(x, str) else x[0] for x in attrs])
+        attrs = list([x[0] if isinstance(x, abc.Container) and not isinstance(x, str) else x for x in attrs])
+
+        assert all(isinstance(x, str) for x in attrs), \
+            f"We support names of attributes only as strings. Received: {attrs}"
 
         assert not any(x.endswith('s') for x in attrs), \
             f"We do not currently support attributes that end with 's'. " \

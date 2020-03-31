@@ -374,7 +374,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(len(r), 5)
         for i, task in enumerate(r):
             self.assertEqual(task['a'], 'foo')
-            self.assertEqual(task['date_list'], [f"{self.TODAY - datetime.timedelta(days=6-i)}"])
+            self.assertEqual(task['date_list'], [f"{self.TODAY - datetime.timedelta(days=6 - i)}"])
 
 
     def test_chunk_dates__raises_invalid_period_pattern(self):
@@ -430,6 +430,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             for test, expected in TESTS:
                 self.assertEqual(self.scheduler.yesterday(test), expected)
 
+
     def test_today(self):
         TESTS = [
             ('today', ['2019-04-10']),
@@ -441,6 +442,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             for test, expected in TESTS:
                 self.assertEqual(self.scheduler.today(test), expected)
+
 
     def test_previous_x_days(self):
         today = datetime.date(2019, 4, 30)
@@ -455,6 +457,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
             for test, expected in TESTS:
                 self.assertEqual(self.scheduler.previous_x_days(test), expected)
+
 
     def test_last_week(self):
         today = datetime.date(2019, 4, 30)
@@ -640,7 +643,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         ]
 
         for test, expected in TESTS:
-            self.assertEqual(self.scheduler.extract_job_from_payload(test), expected)
+            self.assertEqual(expected, self.scheduler.extract_job_from_payload(test)[0])
 
 
     def test_extract_job_from_payload_raises(self):
@@ -655,6 +658,21 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         for test in TESTS:
             self.assertRaises(Exception, self.scheduler.extract_job_from_payload, test)
+
+
+    def test_get_chunkable_attrs(self):
+
+        TESTS = [
+            # Ignore the rest of job_schema other than chunkable_attrs
+            ({'chunkable_attrs': ['first_name', 'gender'], 'foo': 42}, ['first_name', 'gender']),
+            ({'chunkable_attrs': ['foo', 'bar']}, ['foo', 'bar']),  # Strings only
+            ({'chunkable_attrs': [('foo', {1: 2}), ('bar', 'baz')]}, ['foo', 'bar']),  # Tuples only
+            ({'chunkable_attrs': ['foo', ('bar', 'baz')]}, ['foo', 'bar']),  # Mix of strings and tuples
+            (None, ['section', 'store', 'product']),  # Default one from config
+        ]
+
+        for test, expected in TESTS:
+            self.assertEqual(expected, self.scheduler.get_chunkable_attrs(test))
 
 
     def test_needs_chunking__isolate_root(self):
@@ -820,4 +838,3 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
-
