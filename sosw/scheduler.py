@@ -120,20 +120,17 @@ class Scheduler(Essential):
 
         self.set_queue_file()
 
-        self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
-        assert not any(x.endswith('s') for x in self.chunkable_attrs), \
-            f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
-
-    def __call__(self, event):
+    def __call__(self, event: Dict):
         """
         Process an event.
-
-        :param dict event: event data
         """
 
-        job = self.extract_job_from_payload(event)
+        # Extract job and possible custom job_schema from event.
+        job, custom_job_schema = self.extract_job_from_payload(event)
+
+        # Update the chunkable attributes with respect to custom job_schema first.
+        self.chunkable_attrs = self.get_chunkable_attrs(custom_job_schema)
 
         # If called as sibling
         if 'file_name' in job:
@@ -576,8 +573,41 @@ class Scheduler(Essential):
         return False
 
 
+    def get_chunkable_attrs(self, job_schema: Optional[Dict] = None) -> List[str]:
+        """
+        Extract custom attributes that sosw will try to chunk the task by.
+        Takes the provided (custom) job schema with higher priority.
+
+        The chunkable attrs can be provided as an iterable of strings or iterable of tuples.
+        In case of a tuple the first element is used.
+
+        ..  code-block:: python
+
+            get_chunkable_attrs(job_schema={"chunkable_attrs": ["first_name", ("age", 32), "gender"], "foo": 42})
+
+        Will return: ``["first_name", "age", "gender"]``
+
+        ..  warning: We do not currently support attributes that end with the letter ``"s"``.
+        """
+
+        js = job_schema or self.config['job_schema']
+
+        attrs = js.get('chunkable_attrs')
+
+        attrs = list([x if isinstance(x, str) else x[0] for x in attrs])
+
+        assert not any(x.endswith('s') for x in attrs), \
+            f"We do not currently support attributes that end with 's'. " \
+            f"In the config you should use singular form of attribute. Received from config: {attrs}"
+
+        return attrs
+
+
     def extract_job_from_payload(self, event: Dict):
-        """ Parse and basically validate job from the event. """
+        """
+        | Extract a job from the event and do some basic validation.
+        | If a 'job schema' is provided in the payload we also extract it to use later in the chunking mechanism.
+        """
 
 
         def load(obj):
@@ -585,12 +615,15 @@ class Scheduler(Essential):
 
 
         jh = load(event)
+
+        custom_job_schema = load(jh['job_schema']) if 'job_schema' in jh else None
+
         job = load(jh['job']) if 'job' in jh else jh
 
         assert 'lambda_name' in job, f"Job is missing required parameter 'lambda_name': {job}"
         job['lambda_name'] = trim_arn_to_name(job['lambda_name'])
 
-        return job
+        return job, custom_job_schema
 
 
     def process_file(self):
