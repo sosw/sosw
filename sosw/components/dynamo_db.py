@@ -570,7 +570,7 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
-        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If True, will get all attributes. Default is False.
