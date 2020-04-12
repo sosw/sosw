@@ -466,7 +466,7 @@ class DynamoDbClient:
 
 
     # @benchmark
-    def get_by_scan(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -475,13 +475,14 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
         :param bool strict: If True, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name, strict)
 
         result = []
         for page in response_iterator:
@@ -492,7 +493,7 @@ class DynamoDbClient:
 
 
     # @benchmark
-    def get_by_scan_generator(self, attrs=None, table_name=None, strict=True):
+    def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=True):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -502,19 +503,20 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
         :param bool strict: If True, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
         :return: List of items from the table, each item in key-value format
         :rtype: list
         """
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, strict)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name, strict)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
             yield [self.dynamo_to_dict(x, strict=strict) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None, strict=True):
+    def _build_scan_iterator(self, attrs=None, table_name=None, index_name=None, strict=True):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -538,10 +540,16 @@ class DynamoDbClient:
         if filter_values:
             query_args['ExpressionAttributeValues'] = filter_values
 
+        index_name = index_name or self.config.get('index_name')
+
+        if index_name:
+            query_args['IndexName'] = index_name
+
         logger.debug(f"Scanning dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('scan')
         response_iterator = paginator.paginate(**query_args)
+
         return response_iterator
 
 
