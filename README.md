@@ -1,7 +1,7 @@
 <img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/logo/sosw_black.png">
 
 # Serverless Orchestrator of Serverless Workers
-[![Build Status](https://travis-ci.org/sosw/sosw.svg?branch=master)](https://travis-ci.org/sosw/sosw)
+[![Build Status](https://travis-ci.com/sosw/sosw.svg?branch=master)](https://travis-ci.com/sosw/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs)](https://pypi.org/project/sosw/)
 [![PyPI - Licence](https://img.shields.io/pypi/l/sosw?color=blue)](https://github.com/sosw/sosw/blob/master/LICENSE)
