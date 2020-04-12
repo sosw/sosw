@@ -20,10 +20,6 @@ Release cycle
 
 - Make your pull requests to the staging branch with highest number
 
-- Latest documentation is compiled from branch ``docme``.
-  It should be up to date with latest **staging** branch, not the master.
-  Make PRs with documentation change directly to ``docme``.
-
 
 Code formatting
 ---------------
@@ -51,10 +47,6 @@ Initialization
 
 * Read the :ref:`Documentation convention`
 
-
-.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
-.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
-
 Building the docs
 ------------------
 
@@ -66,3 +58,23 @@ in your preferred browser.
 .. code-block:: bash
 
  sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+
+Pull Requests
+------------
+
+Great that you are ready to contribute!
+
+* Make sure your code passes all the tests
+
+* Make sure the documentation builds correctly
+
+* Push the changes to your fork
+
+* Make a PR to the base repository of sosw
+
+Some guidelines of how to do that can be found in `GitHub documentation`_.
+
+
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
+.. _GitHub documentation>: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork

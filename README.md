@@ -56,9 +56,6 @@ $ pytest ./sosw/test/suite_3_6_unit.py
 - Master branch commits (merges) are automatically packaged and published to PyPI.
 - Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro)
 - Make your pull requests to the latest staging branch (with highest number)
-- Latest documentation is compiled from branch `docme`.
-  It should be up to date with latest **staging** branch, not the master.
-  Make PRs with documentation change directly to `docme`.
 
 #### Code formatting
 Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
@@ -77,20 +74,14 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 7. Read the Documentation Convention.
 
 #### More
-See more guidelines for contribution [in the docs](https://docs.sosw.app/en/latest/contribution/index.html).
+See more guidelines for contribution [in the docs](https://docs.sosw.app/en/master/contribution/index.html).
 
 ### Building the docs
-Sphinx is used for building documentation. To build HTML documentation locally, use:
+Sphinx is used for building documentation.
+You can build HTML documentation locally then use the built in Python web server to view the html version directly from `localhost` in your preferred browser.
 
 ```bash
-$ sphinx-build -ab html ./docs ./sosw-rtd
-```
-
-You can then use the built in Python web server to view the html version directly from `localhost` in your preferred browser.
-
-```bash
-$ cd sosw-rtd
-$ python -m http.server
+$ sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
 ```
 
 ## Copyright
@@ -100,7 +91,7 @@ This document has been placed in the public domain.
     sosw - Serverless Orchestrator of Serverless Workers
     
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>:
+    Copyright (C) 2018-2020  sosw core contributors <info@sosw.app>:
         Nikolay Grishchenko
         Sophie Fogel
         Gil Halperin
