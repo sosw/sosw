@@ -3,20 +3,27 @@
     :label: View Licence Agreement <br>
 
     sosw - Serverless Orchestrator of Serverless Workers
-    Copyright (C) 2019  sosw core contributors
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 
 __all__ = ['Scavenger']
@@ -24,10 +31,9 @@ __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.0"
 
 import logging
-import time
 from typing import Dict
 
-from sosw.app import Processor
+from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -36,7 +42,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Scavenger(Processor):
+class Scavenger(Essential):
     """
     Scavenger main class performes the following operations:
 

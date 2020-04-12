@@ -3,20 +3,27 @@
     :label: View Licence Agreement <br>
 
     sosw - Serverless Orchestrator of Serverless Workers
-    Copyright (C) 2019  sosw core contributors
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 
 __all__ = ['Worker']
@@ -42,7 +49,8 @@ class Worker(Processor):
     This is a dictionary with the payload received in the lambda_handler during invocation.
 
     Worker has all the common methods of :ref:`Processor` and tries to mark task as completed if received
-    ``task_id`` in the ``event``.
+    ``task_id`` in the ``event``. Worker create a payload with ``stats`` and ``result`` if exist and invoke worker
+    assistant lambda.
     """
 
     DEFAULT_CONFIG = {
@@ -61,7 +69,8 @@ class Worker(Processor):
 
         # Mark the task as completed in DynamoDB if the event had task_id.
         try:
-            self.mark_task_as_completed(event.get('task_id'))
+            if event.get('task_id'):
+                self.mark_task_as_completed(event['task_id'])
         except Exception:
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
@@ -78,8 +87,15 @@ class Worker(Processor):
         worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
         payload = {
             'action':  'mark_task_as_completed',
-            'task_id': task_id
+            'task_id': task_id,
         }
+
+        if self.stats:
+            payload.update({'stats': self.stats})
+
+        if self.result:
+            payload.update({'result': self.result})
+
         payload = json.dumps(payload)
 
         lambda_response = self.lambda_client.invoke(

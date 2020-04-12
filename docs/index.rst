@@ -4,8 +4,25 @@
 Serverless Orchestrator of Serverless Workers
 =============================================
 
-**`sosw`** is a set of tools for orchestrating **asynchronous** invocations of AWS Lambda Functions.
+..  image:: https://travis-ci.org/sosw/sosw.svg?branch=master
+    :alt: Travis - Build
+    :target: https://travis-ci.org/sosw/sosw
+.. image:: https://readthedocs.org/projects/sosw/badge/?version=latest
+    :alt: Read the Docs - Build
+    :target: https://docs.sosw.app/en/latest/?badge=latest
+.. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
+    :alt: PyPI - Installs / month
+    :target: https://pypi.org/project/sosw/
+..  image:: https://img.shields.io/pypi/l/sosw?color=blue
+    :alt: PyPI - License
+    :target: https://github.com/sosw/sosw/blob/master/LICENSE
+
+**`sosw`** - a set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
 Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
+
+
+.. note::
+   Please pronounce `sosw` correctly: */ˈsɔːsəʊ/*
 
 Essential Workflow Schema
 -------------------------
@@ -95,6 +112,7 @@ Once again, the detailed guide for initial setup can be found in the :ref:`Insta
    essentials/index
    components/index
    managers/index
+   tutorials/index
 
    contribution/index
 
@@ -106,6 +124,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _the example: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html

@@ -1,6 +1,9 @@
+import datetime
 import logging
+import time
 import unittest
 import os
+from decimal import Decimal
 
 from unittest.mock import MagicMock, patch, Mock
 
@@ -32,7 +35,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'some_list':     'L'
         },
         'required_fields': ['lambda_name'],
-        'table_name':      'autotest_dynamo_db'
+        'table_name':      'autotest_dynamo_db',
+        'hash_key':        'hash_col',
     }
 
 
@@ -82,6 +86,17 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
+    def test_dict_to_dynamo__not_strict__map_type(self):
+        dict_row = {
+            'accept_mimetypes':     {'image/webp': 1, 'image/apng': 1, 'image/*': 1, '*/*': 0.8},
+        }
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
+        expected = {}
+        logging.info(f"dynamo_row: {dynamo_row}")
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
     def test_dict_to_dynamo_prefix(self):
         dict_row = {'hash_col': 'cat', 'range_col': '123', 'some_col': 'no'}
         dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, add_prefix="#")
@@ -101,6 +116,10 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         expected = {'lambda_name': 'test_name', 'invocation_id': 'test_id', 'en_time': 123456, 'some_bool': False,
                     'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
         self.assertDictEqual(expected, dict_row)
+        for k, v in dict_row.items():
+            self.assertNotIsInstance(v, Decimal)
+        for k, v in dict_row['some_map'].items():
+            self.assertNotIsInstance(v, Decimal)
 
 
     def test_dynamo_to_dict_no_strict_row_mapper(self):
@@ -114,6 +133,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'extra_key_s': 'wowie', 'other_bool': True
         }
         self.assertDictEqual(dict_row, expected)
+        for k, v in dict_row.items():
+            self.assertNotIsInstance(v, Decimal)
 
 
     def test_dynamo_to_dict__dont_json_loads(self):
@@ -199,6 +220,20 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.dynamo_client.dynamo_client.get_paginator.assert_called()
 
 
+    def test_get_by_query__expr_attr(self):
+        keys = {'st_between_range_col': '3', 'en_between_range_col': '6', 'session': 'ses1'}
+        expr_attrs_names = ['range_col', 'session']
+
+        self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
+        self.dynamo_client.get_by_query(keys=keys, expr_attrs_names=expr_attrs_names)
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertIn('#range_col', kwargs['ExpressionAttributeNames'])
+        self.assertIn('#session', kwargs['ExpressionAttributeNames'])
+        self.assertIn('#range_col between :st_between_range_col and :en_between_range_col AND #session = :session',
+                      kwargs['KeyConditionExpression'])
+
+
     def test__parse_filter_expression(self):
         TESTS = {
             'key = 42': ("key = :filter_key", {":filter_key": {'N': '42'}}),
@@ -264,6 +299,76 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                            return_count=True)
         expected_msg = "DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together"
         self.assertEqual(e.exception.args[0], expected_msg)
+
+
+    def test_patch__transfers_attrs_to_remove(self):
+
+        keys = {'hash_col': 'a'}
+        attributes_to_update = {'some_col': 'b'}
+        attributes_to_increment = {'some_counter': 3}
+        table_name = 'the_table'
+        attributes_to_remove = ['remove_me']
+
+        # using kwargs
+        self.dynamo_client.update = Mock()
+
+        self.dynamo_client.patch(keys=keys, attributes_to_update=attributes_to_update,
+                                 attributes_to_increment=attributes_to_increment, table_name=table_name,
+                                 attributes_to_remove=attributes_to_remove)
+
+        self.dynamo_client.update.assert_called_once_with(keys=keys, attributes_to_update=attributes_to_update,
+                                                          attributes_to_increment=attributes_to_increment,
+                                                          table_name=table_name,
+                                                          attributes_to_remove=attributes_to_remove,
+                                                          condition_expression='attribute_exists hash_col')
+
+        # not kwargs
+        self.dynamo_client.update = Mock()
+
+        self.dynamo_client.patch(keys, attributes_to_update, attributes_to_increment, table_name, attributes_to_remove)
+
+        self.dynamo_client.update.assert_called_once_with(keys=keys, attributes_to_update=attributes_to_update,
+                                                          attributes_to_increment=attributes_to_increment,
+                                                          table_name=table_name,
+                                                          attributes_to_remove=attributes_to_remove,
+                                                          condition_expression='attribute_exists hash_col')
+
+
+    def test_sleep_db__get_capacity_called(self):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
+        self.dynamo_client.get_capacity.assert_called_once()
+
+
+    def test_sleep_db__wrong_action(self):
+        self.assertRaises(KeyError, self.dynamo_client.sleep_db, last_action_time=datetime.datetime.now(),
+                          action='call')
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__fell_asleep(self, mock_sleep):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        # Check that went to sleep
+        time_between_ms = 100
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=time_between_ms)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        self.assertEqual(mock_sleep.call_count, 1)
+        args, kwargs = mock_sleep.call_args
+
+        # Should sleep around 1 / capacity second minus "time_between_ms" minus code execution time
+        self.assertGreater(args[0], 1 / self.dynamo_client.get_capacity()['write'] - time_between_ms - 0.02)
+        self.assertLess(args[0], 1 / self.dynamo_client.get_capacity()['write'])
+
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__(self, mock_sleep):
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+
+        # Shouldn't go to sleep
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=900)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        # Sleep function should not be called
+        self.assertEqual(mock_sleep.call_count, 0)
 
 
 if __name__ == '__main__':

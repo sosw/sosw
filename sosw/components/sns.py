@@ -3,20 +3,27 @@
     :label: View Licence Agreement <br>
 
     sosw - Serverless Orchestrator of Serverless Workers
-    Copyright (C) 2019  sosw core contributors
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 
 __all__ = ['SnsManager']
@@ -49,8 +56,8 @@ class SnsManager():
 
     def __init__(self, **kwargs):
         """
-        :param recipient:   - str   - ARN of the default recipient.
-        :param subject:     - str   - Default subject for messages.
+        :param str recipient: ARN of the default recipient.
+        :param str subject: Default subject for messages.
         """
 
         self.stats = defaultdict(int)
@@ -63,6 +70,7 @@ class SnsManager():
             self.subject = kwargs.get('subject')
 
         self.queue = []
+        self.separator = "\n\n#####\n\n"
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
         if self.test:
@@ -70,7 +78,7 @@ class SnsManager():
 
         if not self.test:
             self.session = boto3.Session(region_name=kwargs.get('region', 'us-west-2'))
-            self.resource = self.session.client('sns')
+            self.client = self.session.client('sns')
 
 
     def __del__(self):
@@ -105,6 +113,15 @@ class SnsManager():
         self.set_client_attr('subject', value=str(value))
 
 
+    def set_separator(self, separator):
+        """
+        Set custom separator for messages from the queue
+        """
+
+        assert isinstance(separator, str), f"Invalid format of separator: {separator}. Separator must be string."
+        setattr(self, 'separator', separator)
+
+
     def commit(self):
         """
         Combines messages from self.queue and pushes them to self.recipient.
@@ -121,10 +138,10 @@ class SnsManager():
             raise RuntimeError("You did not specify Subject for the message. "
                                "We don't want you to write code like this, please fix.")
 
-        message = "\n\n#####\n\n".join(self.queue)
+        message = self.separator.join(self.queue)
 
         if message:
-            self.resource.publish(
+            self.client.publish(
                     TopicArn=self.recipient,
                     Subject=self.subject,
                     Message=message)
@@ -138,8 +155,8 @@ class SnsManager():
         Otherwize we accept None subject and simply append messages to queue.
         Once the subject changes - the queue is commite automatically.
 
-        :param message:     - str   - Message to be send in body of SNS message. Queued.
-        :param subject:     - str   - Optional. Custom subject for message.
+        :param str message: Message to be send in body of SNS message. Queued.
+        :param str subject: Optional. Custom subject for message.
         """
 
         if not any([self.subject, subject]):
@@ -158,3 +175,39 @@ class SnsManager():
                 self.subject = subject
             logger.info("The caller asked to forse_commit, so we commit the queue immediately.")
             self.commit()
+
+
+    def create_topic(self, topic_name):
+        """
+        Create a new topic name
+
+        :param str topic_name: New topic name to create
+        :return: New topic ARN
+        :rtype: str
+        """
+
+        if not topic_name or not isinstance(topic_name, str):
+            raise RuntimeError("You passed invalid topic name")
+
+        topic = self.client.create_topic(Name=topic_name)
+
+        return topic.get('TopicArn')
+
+
+    def create_subscription(self, topic_arn, protocol, endpoint):
+        """
+        Create a subscription to the topic
+
+        :param str topic_arn: ARN of a topic
+        :param str protocol: The type of endpoint to subscribe
+        :param str endpoint: Endpoint that can receive notifications from Amazon SNS
+        """
+
+        if not all([topic_arn, protocol, endpoint]):
+            raise RuntimeError("You must send valid topic ARN, Protocol and Endpoint to add a subscription")
+
+        self.client.subscribe(
+            TopicArn=topic_arn,
+            Protocol=protocol,
+            Endpoint=endpoint
+        )

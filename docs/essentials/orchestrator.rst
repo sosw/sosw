@@ -87,11 +87,10 @@ The following diagram represents the basic Task Workflow initiated by the Orches
 
 Example `CloudFormation template for Orchestrator`_
 
-
 See also :ref:`Greenfield`
 
 .. automodule:: sosw.orchestrator
    :members:
 
 
-.. _CloudFormation template for Orchestrator: https://raw.githubusercontent.com/bimpression/sosw/docme/docs/yaml/
+.. _CloudFormation template for Orchestrator: https://raw.githubusercontent.com/sosw/sosw/master/examples/essentials/sosw_orchestrator/sosw-orchestrator.yaml

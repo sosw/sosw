@@ -3,20 +3,27 @@
     :label: View Licence Agreement <br>
 
     sosw - Serverless Orchestrator of Serverless Workers
-    Copyright (C) 2019  sosw core contributors
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    The MIT License (MIT)
+    Copyright (C) 2019  sosw core contributors <info@sosw.app>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.html>.
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 
 __all__ = ['Scheduler']
@@ -34,7 +41,8 @@ from collections import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
-from sosw.app import Processor, LambdaGlobals
+from sosw.essential import Essential
+from sosw.app import LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
 from sosw.managers.task import TaskManager
@@ -58,9 +66,20 @@ class InvalidJob(ValueError):
     pass
 
 
-class Scheduler(Processor):
+class Scheduler(Essential):
     """
     Scheduler is converting business jobs to one or multiple Worker tasks.
+
+    Job supports a lot of dynamic settings that will coordinate the chunking.
+
+    Parameters:
+
+    `max_YOURATTRs_per_batch`: int
+
+    This is applicable only to the lowest level of chunking.  If isolation of this parameters is not required, and all
+    values of this parameter are simple strings/integers the scheduler shall chunk them in batches of given size.
+    By default will chunk to 1kk objects in a list.
+
     """
 
     DEFAULT_CONFIG = {
@@ -83,7 +102,7 @@ class Scheduler(Processor):
                 # ('section', {}),
                 # ('store', {}),
                 # ('product', {}),
-            ]
+            ],
         }
     }
 
@@ -145,6 +164,10 @@ class Scheduler(Processor):
             raise RuntimeError(f"The current Lambda container is already having some unprocessed file.")
 
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
+        if not labourer:
+            raise RuntimeError(f"Invalid (unregistered) Labourer: {labourer}. "
+                               f"Maybe your job is missing `lambda_name`, or the one provided is not registered "
+                               f"in the config of the Scheduler. Current job: {job}")
 
         # In case there is not chunking required, we just schedule `task` directly from the `job`.
         if not all([self.chunkable_attrs, self.needs_chunking(plural(self.chunkable_attrs[0]), job)]):
@@ -157,6 +180,8 @@ class Scheduler(Processor):
         with open(self.local_queue_file, 'w') as f:
             for row in data:
                 f.write(f"{json.dumps(row)}\n")
+
+        logger.info(f"Finished step: parse_job_to_file()")
 
 
     # def create_tasks(self, labourer: Labourer, data: List):
@@ -373,84 +398,102 @@ class Scheduler(Processor):
         if not attr:
             return [{**job, **skeleton}]
 
-        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
+        # If we shall need batching of flat vals of this attr we find out the batch size.
+        # First we search in job (means the current level of recursive subdata being chunked.
+        # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
+        MAX_BATCH = 1000000  # This is not configurable!
+        batch_size = int(job.get(f'max_{plural(attr)}_per_batch',
+                             skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
 
+
+        def push_list_chunks():
+            """ Appends chunks of lists using current skeleton and vals to chunk. """
+            for v in chunks(vals, batch_size):
+                data.append({**task_skeleton, **{plural(attr): v}})
+
+
+        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), job):
 
+            # Force batches to isolate if we shall be dealing with flat data.
+            # But we still respect the `max_PARAM_per_batch` if it is provided in job.
+            # Having batch_size == MAX_BATCH asserts that we had
+            batch_size = 1 if batch_size == MAX_BATCH else batch_size
+
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
+            logger.debug(f"Next attr: {next_attr}")
 
             # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
+                logger.debug(f"Iterating possible: {possible_attr}")
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
                 if not current_vals:
                     continue
 
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
-                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{attr}s"]}
+                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
                 logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
-                             f"leaving job_skeleton: {job_skeleton}")
+                            f"leaving job_skeleton: {job_skeleton}")
+
+                task_skeleton = {**deepcopy(skeleton), **job_skeleton}
 
                 # For dictionaries we have to either go deeper recursively, or just flatten keys if values are None-s.
                 if all(isinstance(v, dict) for v in current_vals):
                     for val in current_vals:
-                        for name, subdata in val.items():
-                            logger.debug(f"SubIterating `{name}` with {subdata}")
 
-                            task = deepcopy(skeleton)
-                            task.update(job_skeleton)
-                            task[plural(attr)] = [name]
+                        if all(x is None for x in val.values()):
+                            logger.debug(f"Value {val} is all a dict of Nones. Need to flatten")
+                            vals = self.validate_list_of_vals(val)
+                            push_list_chunks()
 
-                            if isinstance(subdata, dict):
-                                # print(f'DICT {subdata}, NEXTATTR {next_attr}')
-                                if not next_attr:
-                                    # If there is no lower level configured to chunk, just keep this subdata in payload
-                                    task.update(subdata)
+                        else:
+                            logger.debug(f"Real dictionary with values. Can't flatten it to dict: {val}")
+                            for name, subdata in val.items():
+                                logger.debug(f"SubIterating `{name}` with {subdata}")
+
+                                # Merge parts of task
+                                task = {**deepcopy(task_skeleton), **{plural(attr): [name]}}
+                                logger.debug(f"Task sample: {task}")
+
+                                if isinstance(subdata, dict):
+                                    if not next_attr:
+                                        # If there is no lower level configured to chunk, just keep this subdata in payload
+                                        task.update(subdata)
+                                        data.append(task)
+                                    else:
+                                        logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                        data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
+
+                                # If None-s we just add a task. `Name` (which is actually a value in this scenario)
+                                # was already added when creating task skeleton.
+                                elif subdata is None:
+                                    logger.debug(f"Appending task to data for {name} from {val}")
                                     data.append(task)
-                                    # raise InvalidJob(f"Unexpected dictionary for unchunkable attribute: {attr}. "
-                                    #                  f"In order to chunk this, you should support this level in: "
-                                    #                  f"`config.job_schema.chunkable_attrs`. "
-                                    #                  f"If you want to pass custom payload - put it as `payload` in "
-                                    #                  f"your job. Job was: {job}")
                                 else:
-                                    logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
-                                    data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
-
-                            # If None-s we just add a task. `Name` (which is actually a value in this scenario)
-                            # was already added when creating task skeleton.
-                            elif subdata is None:
-                                logger.debug(f"Appending task to data for {name} from {val}")
-                                data.append(task)
-
-                            else:
-                                raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
+                                    raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
 
                 # If current vals are not dictionaries, we just validate that they are flat supported values
                 else:
                     vals = self.validate_list_of_vals(current_vals)
-
-                    # If batch_size is provided for this attr - we use it, by default chunk every.
-                    batch_size = job.get(f'max_{plural(attr)}_per_batch', 1)
-
-                    for val in chunks(vals, batch_size):
-                        task = deepcopy(skeleton)
-                        task.update(job_skeleton)
-                        task[plural(attr)] = val
-                        data.append(task)
+                    push_list_chunks()
 
         else:
             logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
-            task = skeleton
-
+            task_skeleton = {**deepcopy(skeleton)}
             for a in single_or_plural(attr):
                 if a in job:
                     attr_value = job.pop(a, None)
                     if attr_value:
                         try:
                             vals = self.validate_list_of_vals(attr_value)
-                            task[plural(attr)] = vals
+                            push_list_chunks()
+
+                            # We are done here for not-chunkable attr. Return now.
+                            return data
+
                         except InvalidJob:
                             logger.warning(f"Caught InvalidJob exception.")
                             # If a custom payload is not following the chunking convention - just translate it as is.
@@ -460,10 +503,8 @@ class Scheduler(Processor):
             else:
                 logger.error(f"Did not find values for {attr} in job: {job}")
             # Populate the remaining parts of the job back to task.
-            task.update(job)
-
-            logger.debug(f"Appending task to data: {task}")
-            data.append(task)
+            task_skeleton.update(job)
+            data.append(task_skeleton)
 
         return data
 
@@ -566,13 +607,17 @@ class Scheduler(Processor):
             return
 
         else:
+            logger.info(f"Processing a file: {file_name}")
             while self.sufficient_execution_time_left:
+                logger.debug(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
+                            f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
+                    logger.info(f"No rows in file: {file_name}")
                     break
 
                 for task in data:
-                    logger.info(task)
+                    logger.debug(f"Pushing task to DynamoDB: {task}")
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
                     self.task_client.create_task(labourer=labourer, **t)
@@ -580,6 +625,7 @@ class Scheduler(Processor):
 
             else:
                 # Spawning another sibling to continue the processing
+                logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
                 try:
                     payload = dict(file_name=file_name)
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)

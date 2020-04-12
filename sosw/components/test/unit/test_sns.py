@@ -105,8 +105,23 @@ class sns_TestCase(unittest.TestCase):
         self.assertRaises(AssertionError, self.sns.set_recipient, 'just_new_recipient_not_full_arn')
 
 
-    # def test_true(self):
-    #     self.assertTrue(False, "Break the test not to deploy")
+    def test_create_topic_invalid_name(self):
+        with self.assertRaises(RuntimeError) as exc:
+            self.sns.create_topic('')
+
+        self.assertEqual(str(exc.exception), "You passed invalid topic name")
+
+    def test_create_topic_return_value(self):
+        self.sns.client = MagicMock()
+        self.sns.client.create_topic = MagicMock(return_value={'TopicArn': 'test_arn'})
+        self.assertEqual(self.sns.create_topic('topic_name'), 'test_arn')
+
+
+    def test_create_subscription_invalid_params(self):
+        with self.assertRaises(RuntimeError) as exc:
+            self.sns.create_subscription('', 'protocol', 'endpoint')
+
+        self.assertEqual(str(exc.exception), "You must send valid topic ARN, Protocol and Endpoint to add a subscription")
 
 
 if __name__ == '__main__':

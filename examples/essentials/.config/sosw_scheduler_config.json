@@ -5,21 +5,17 @@
   "job_schema": {
     "chunkable_attrs": [
       [
-        "store",
+        "topic",
         {}
       ],
       [
-        "department",
+        "word",
         {}
       ]
     ]
   },
   "queue_bucket": "sosw-s3-000000000000",
   "task_config": {
-    "labourers": {
-      "sosw_sandbox": {
-        "arn": "arn:aws:lambda:us-west-2:000000000000:function:sosw_sandbox"
-      }
-    }
+
   }
 }
