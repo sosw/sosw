@@ -14,7 +14,7 @@
 ---
 
 ## Documentation
-[https://docs.sosw.app](https://docs.sosw.app/en/latest/)
+[https://docs.sosw.app](https://docs.sosw.app/en/master/)
 
 ## Essential Workflows
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
@@ -24,7 +24,7 @@
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
-See the [Installation Guidelines](https://docs.sosw.app/en/latest/installation.html) in the Documentation.
+See the [Installation Guidelines](https://docs.sosw.app/en/master/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
@@ -50,12 +50,23 @@ $ pytest ./sosw/test/suite_3_6_unit.py
 
 ### Contribution Guidelines
 
+The latest [Contribution Guidelines](https://docs.sosw.app/en/master/contribution/index.html) with examples are in the documentation.
+
 #### Release cycle
 - We follow both [Semantic Versioning](https://semver.org/) pattern
   and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where comply
 - Master branch commits (merges) are automatically packaged and published to PyPI.
 - Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro)
-- Make your pull requests to the latest staging branch (with highest number)
+- Make your pull requests to the closest staging branch (with smallest after release number of either current or next Minor)
+- Make sure your branch is up to date with the branch you are making a PR to
+
+Example:
+  - Latest released version in PyPI `0.7.31`
+  - Closest staging Minor branch in sosw/sosw `0_7_33`
+  - Latest Minor staging branch in sosw/sosw `0_7_35`
+  - Closest Next Minor branch in sosw/sosw `0_9_1`
+
+Your PR should be to either `0_7_33` or `0_9_1` depending on the importance of changes. 
 
 #### Code formatting
 Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:

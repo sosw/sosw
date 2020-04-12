@@ -5,8 +5,9 @@ Contribution Guidelines
 =======================
 
 
+..  contents::
+
 ..  toctree::
-    :caption: See Also
 
     Documentation Convention <convention>
     Sprinting PyCon US 2019 <pycon-us-2019>
@@ -16,10 +17,25 @@ Release cycle
 
 - Master branch commits are automatically packaged and published to PyPI.
 
-- Branches for staging versions follow the pattern: ``X_X_X``
+- We follow both `Semantic Versioning`_ pattern and PEP440_ recommendations where comply
 
-- Make your pull requests to the staging branch with highest number
+- Branches for planned staging versions follow the pattern: ``X_Y_Z`` (Major.Minor.Micro)
 
+- Make your pull requests go to the closest staging branch (with smallest after release number of either current or next Minor)
+
+- Make sure your branch is up to date with the branch you are making a PR to
+
+Example:
+
+  - Latest released version in PyPI ``0.7.31``
+  - Closest staging Minor branch in sosw/sosw ``0_7_33``
+  - Latest Minor staging branch in sosw/sosw ``0_7_35``
+  - Closest Next Minor branch in sosw/sosw ``0_9_1``
+
+Your PR should be to either ``0_7_33`` or ``0_9_1`` depending on the importance of changes.
+
+.. _`Semantic Versioning`: https://semver.org/
+.. _PEP440: https://www.python.org/dev/peps/pep-0440/
 
 Code formatting
 ---------------
@@ -47,6 +63,8 @@ Initialization
 
 * Read the :ref:`Documentation convention`
 
+.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
+
 Building the docs
 ------------------
 
@@ -59,22 +77,53 @@ in your preferred browser.
 
  sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
 
-Pull Requests
-------------
+Pull Requests Checklist
+-----------------------
 
 Great that you are ready to contribute!
 
+* Make sure your fork is up to date with upstream
+
+..  code-block:: bash
+
+    # Clean everything
+    git reset --hard
+    git clean -fdx
+    git checkout master
+
+    # Fetch possible changes to YOUR master
+    git pull origin master
+
+    # Check if remote upstream is configured
+    git remote -v
+
+    # If missing upstream
+    git remote add upstream https://github.com/sosw/sosw
+
+    # Update your fork remote with the upstream changes
+    git pull upstream master
+    git push origin master
+
 * Make sure your code passes all the tests
+
+..  code-block:: bash
+
+    pytest sosw/test/suite_3_6_unit.py
 
 * Make sure the documentation builds correctly
 
-* Push the changes to your fork
+..  code-block:: bash
 
-* Make a PR to the base repository of sosw
+    sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
 
-Some guidelines of how to do that can be found in `GitHub documentation`_.
+* Push the changes to your fork remote
 
+..  code-block:: bash
 
-.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
-.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
-.. _GitHub documentation>: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork
+    git push origin master
+
+* Make a PR to the upstream repository of sosw
+
+Some guidelines of how to do create PRs from forks can be found in `GitHub documentation`_.
+
+.. _GitHub documentation: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork
