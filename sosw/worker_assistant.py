@@ -90,6 +90,10 @@ class WorkerAssistant(Essential):
             'mark_task_as_completed': {
                 'function':        self.mark_task_as_completed,
                 'required_params': ['task_id']
+            },
+            'mark_task_as_failed': {
+                'function':        self.mark_task_as_failed,
+                'required_params': ['task_id']
             }
         }
 
@@ -137,6 +141,30 @@ class WorkerAssistant(Essential):
             keys={_('task_id'): task_id},
             attributes_to_update=fields_to_update,
         )
+
+
+    def mark_task_as_failed(self, task_id: str, stats: Dict = None, result: Dict = None):
+        assert isinstance(task_id, str), f"`task_id` must be a string"
+
+        _ = self.get_db_field_name
+
+        fields_to_update = {}
+
+        if stats:
+            fields_to_update.update({f'stat_{k}': v for k, v in stats.items()})
+
+        if result:
+            fields_to_update.update({f'result_{k}': v for k, v in result.items()})
+
+        update_kwargs = {
+            'keys': {_('task_id'): task_id},
+            'attributes_to_increment': {_('failed_attempts'): 1},
+        }
+
+        if fields_to_update:
+            update_kwargs['attributes_to_update'] = fields_to_update
+
+        self.dynamo_db_client.update(**update_kwargs)
 
 
     def get_db_field_name(self, field: str) -> str:
