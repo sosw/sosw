@@ -561,7 +561,7 @@ class DynamoDbClient:
         return result_expr, result_values
 
 
-    def get_by_scan(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -570,6 +570,7 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If True, will get all attributes. Default is False.
@@ -582,7 +583,7 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
 
         result = []
         for page in response_iterator:
@@ -592,7 +593,7 @@ class DynamoDbClient:
         return result
 
 
-    def get_by_scan_generator(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -602,6 +603,7 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
@@ -614,13 +616,13 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
             yield [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None):
+    def _build_scan_iterator(self, attrs=None, table_name=None, index_name=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -644,10 +646,16 @@ class DynamoDbClient:
         if filter_values:
             query_args['ExpressionAttributeValues'] = filter_values
 
+        index_name = index_name or self.config.get('index_name')
+
+        if index_name:
+            query_args['IndexName'] = index_name
+
         logger.debug(f"Scanning dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('scan')
         response_iterator = paginator.paginate(**query_args)
+
         return response_iterator
 
 
