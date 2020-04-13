@@ -160,7 +160,6 @@ class WorkerAssistant(Essential):
             'keys': {_('task_id'): task_id},
             'attributes_to_increment': {_('failed_attempts'): 1},
         }
-
         if fields_to_update:
             update_kwargs['attributes_to_update'] = fields_to_update
 
