@@ -104,3 +104,31 @@ class Worker(Processor):
                 Payload=payload
         )
         logger.debug(f"mark_task_as_completed response: {lambda_response}")
+
+
+    def mark_task_as_failed(self, task_id: str):
+        """ Call worker assistant lambda and tell it to update task info """
+
+        if not self.lambda_client:
+            self.register_clients(['lambda'])
+
+        worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
+        payload = {
+            'action':  'mark_task_as_failed',
+            'task_id': task_id,
+        }
+
+        if self.stats:
+            payload.update({'stats': self.stats})
+
+        if self.result:
+            payload.update({'result': self.result})
+
+        payload = json.dumps(payload)
+
+        lambda_response = self.lambda_client.invoke(
+                FunctionName=worker_assistant_lambda_name,
+                InvocationType='Event',
+                Payload=payload
+        )
+        logger.debug(f"mark_task_as_failed response: {lambda_response}")
