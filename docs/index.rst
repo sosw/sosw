@@ -4,9 +4,9 @@
 Serverless Orchestrator of Serverless Workers
 =============================================
 
-..  image:: https://travis-ci.org/sosw/sosw.svg?branch=master
+..  image:: https://travis-ci.com/sosw/sosw.svg?branch=master
     :alt: Travis - Build
-    :target: https://travis-ci.org/sosw/sosw
+    :target: https://travis-ci.com/sosw/sosw
 .. image:: https://readthedocs.org/projects/sosw/badge/?version=latest
     :alt: Read the Docs - Build
     :target: https://docs.sosw.app/en/latest/?badge=latest
