@@ -528,6 +528,32 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
             assert r in result, f"row not in result from dynamo scan: {r}"
 
 
+    def test_get_by_scan__with_index_name(self):
+        rows = [
+            {self.HASH_COL: 'cat0', self.RANGE_COL: 123, 'other_col': 'abc123'},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 122, 'some_col': 'test2'},
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, self.table_name)
+
+        result = self.dynamo_client.get_by_scan(table_name=self.table_name, index_name='autotest_index')
+
+        self.assertEqual(len(result), 1)
+
+        result = result[0]
+        expected_row = rows[0]
+
+        for key in expected_row:
+            self.assertEqual(expected_row[key], result[key])
+        for key in result:
+            self.assertEqual(expected_row[key], result[key])
+
+        no_index_name_result = self.dynamo_client.get_by_scan(table_name=self.table_name)
+
+        self.assertEqual(len(no_index_name_result), 2)
+
+
     def test_batch_get_items(self):
         rows = [
             {self.HASH_COL: 'cat1', self.RANGE_COL: 121, 'some_col': 'test1'},
