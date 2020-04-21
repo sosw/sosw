@@ -620,6 +620,7 @@ class Scheduler(Essential):
                     logger.debug(f"Pushing task to DynamoDB: {task}")
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
+                    t['log_stream_name'] = getattr(global_vars.lambda_context, 'log_stream_name', None)
                     self.task_client.create_task(labourer=labourer, **t)
                     time.sleep(self._sleeptime_for_dynamo)
 

@@ -80,7 +80,8 @@ class TaskManager(Processor):
                 'closed_at':           'N',
                 'desired_launch_time': 'N',
                 'arn':                 'S',
-                'payload':             'S'
+                'payload':             'S',
+                'log_stream_name':     'S'
             },
             'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
 
@@ -320,6 +321,9 @@ class TaskManager(Processor):
             new_task['payload'] = self.construct_payload_for_task(**kw)
         except Exception:
             raise ValueError(f"Unexpected `payload` or custom attrs for task '{kwargs}'. Should be dict() or JSON.")
+
+        if kw.get('log_stream_name'):
+            new_task['log_stream_name'] = kw['log_stream_name']
 
         # Saving to DynamoDB.
         self.dynamo_db_client.put(new_task)
