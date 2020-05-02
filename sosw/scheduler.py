@@ -123,7 +123,7 @@ class Scheduler(Essential):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -403,7 +403,7 @@ class Scheduler(Essential):
         # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
         MAX_BATCH = 1000000  # This is not configurable!
         batch_size = int(job.get(f'max_{plural(attr)}_per_batch',
-                             skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
+                                 skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
 
 
         def push_list_chunks():
@@ -436,7 +436,7 @@ class Scheduler(Essential):
                 # not related to current `attr`
                 job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
                 logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
-                            f"leaving job_skeleton: {job_skeleton}")
+                             f"leaving job_skeleton: {job_skeleton}")
 
                 task_skeleton = {**deepcopy(skeleton), **job_skeleton}
 
@@ -473,7 +473,8 @@ class Scheduler(Essential):
                                     logger.debug(f"Appending task to data for {name} from {val}")
                                     data.append(task)
                                 else:
-                                    raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
+                                    raise InvalidJob(
+                                        f"Unsupported type of val: {subdata} for attribute {possible_attr}")
 
                 # If current vals are not dictionaries, we just validate that they are flat supported values
                 else:
@@ -600,6 +601,7 @@ class Scheduler(Essential):
 
         """
 
+        _ = self.get_db_field_name
         file_name = self.get_and_lock_queue_file()
 
         if not file_name:
@@ -610,7 +612,7 @@ class Scheduler(Essential):
             logger.info(f"Processing a file: {file_name}")
             while self.sufficient_execution_time_left:
                 logger.debug(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
-                            f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
+                             f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
                     logger.info(f"No rows in file: {file_name}")
@@ -621,6 +623,7 @@ class Scheduler(Essential):
                     t = json.loads(task)
                     labourer = self.task_client.get_labourer(t['labourer_id'])
                     self.task_client.create_task(labourer=labourer, **t)
+                    self.meta_handler.post(task_id=task[_('task_id')], action='created')
                     time.sleep(self._sleeptime_for_dynamo)
 
             else:
@@ -633,7 +636,7 @@ class Scheduler(Essential):
 
                 except Exception as err:
                     logger.exception(
-                        f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                            f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -799,6 +802,11 @@ class Scheduler(Essential):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
+
+    def get_db_field_name(self, key: str) -> str:
+        """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
+        return self.task_client.get_db_field_name(key)
 
 
 global_vars = LambdaGlobals()

@@ -34,6 +34,7 @@ import json
 import logging
 
 from sosw.app import Processor
+from sosw.managers.meta_handler import MetaHandler
 from typing import Dict
 
 
@@ -60,6 +61,7 @@ class Worker(Processor):
 
     # these clients will be initialized by Processor constructor
     lambda_client = None
+    meta_handler: MetaHandler = None
 
 
     def __call__(self, event: Dict):
@@ -103,6 +105,7 @@ class Worker(Processor):
                 InvocationType='Event',
                 Payload=payload
         )
+        self.meta_handler.post(task_id=task_id, action='completed')
         logger.debug(f"mark_task_as_completed response: {lambda_response}")
 
 
@@ -131,4 +134,5 @@ class Worker(Processor):
                 InvocationType='Event',
                 Payload=payload
         )
+        self.meta_handler.post(task_id=task_id, action='failed')
         logger.debug(f"mark_task_as_failed response: {lambda_response}")
