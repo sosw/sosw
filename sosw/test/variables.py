@@ -121,3 +121,26 @@ RETRY_TASKS = [
         'desired_launch_time': 9999, 'arn': 'some_arn', 'payload': {}
     },
 ]
+
+TEST_META_HANDLER_CONFIG = {
+        'init_clients': ['DynamoDb'],
+        'dynamo_db_config': {
+            'table_name': 'autotest_sosw_tasks_meta',
+            'row_mapper': {
+                'task_id': 'S',
+                'created_at': 'N',
+                'author': 'S',
+                'invocation_id': 'S',
+                'log_stream_name': 'S',
+                'action': 'S'
+            },
+            'required_fields': [
+                'task_id',
+                'created_at',
+                'author',
+                'invocation_id',
+                'log_stream_name',
+                'action'
+            ],
+        },
+    }
