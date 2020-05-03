@@ -818,7 +818,7 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
                         jsons = set(json.dumps(sorted(x.items())) for x in nv)
                         new[k] = [dict(json.loads(x)) for x in jsons]
                     except (TypeError, AttributeError):
-                        # In not all values of iterable are hashable and not Dictionaries we just merge them as is.
+                        # If not all values of iterable are hashable and not Dictionaries we just merge them as is.
                         new[k] = nv
             else:
                 new[k] = v
