@@ -22,7 +22,6 @@ class NewDate(datetime.datetime):
     Overwrite datetime.datetime.now() to return fixed date
     """
 
-
     @classmethod
     def now(cls):
         return cls(2000, 1, 1)
