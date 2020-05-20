@@ -144,3 +144,11 @@ TEST_META_HANDLER_CONFIG = {
             ],
         },
     }
+
+TEST_META_HANDLER_LAMBDA_CONTEXT = {
+    'function_name':   'test_author',
+    'aws_request_id':  'test_invocation_id',
+    'log_stream_name': 'test_invocation_id__log_stream_name'
+}
+
+TEST_META_HANDLER_POST_ARGS = {'task_id': 'test_task_id', 'action': 'archive_task'}
