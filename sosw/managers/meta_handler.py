@@ -31,12 +31,8 @@ __author__ = "Mark Bulgakov"
 __version__ = "1.0"
 
 import datetime
-import json
 import logging
 
-from copy import deepcopy
-from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
 from sosw.components.dynamo_db import DynamoDbClient
