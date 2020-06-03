@@ -9,9 +9,6 @@
 **sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
 
 ---
- Please pronounce **sosw** correctly: _/ˈsɔː səʊ/_
-
----
 
 ## Documentation
 [https://docs.sosw.app](https://docs.sosw.app/en/master/)
