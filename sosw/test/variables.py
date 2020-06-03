@@ -121,3 +121,34 @@ RETRY_TASKS = [
         'desired_launch_time': 9999, 'arn': 'some_arn', 'payload': {}
     },
 ]
+
+TEST_META_HANDLER_CONFIG = {
+        'init_clients': ['DynamoDb'],
+        'dynamo_db_config': {
+            'table_name': 'autotest_sosw_tasks_meta',
+            'row_mapper': {
+                'task_id': 'S',
+                'created_at': 'N',
+                'author': 'S',
+                'invocation_id': 'S',
+                'log_stream_name': 'S',
+                'action': 'S'
+            },
+            'required_fields': [
+                'task_id',
+                'created_at',
+                'author',
+                'invocation_id',
+                'log_stream_name',
+                'action'
+            ],
+        },
+    }
+
+TEST_META_HANDLER_LAMBDA_CONTEXT = {
+    'function_name':   'test_author',
+    'aws_request_id':  'test_invocation_id',
+    'log_stream_name': 'test_invocation_id__log_stream_name'
+}
+
+TEST_META_HANDLER_POST_ARGS = {'task_id': 'test_task_id', 'action': 'archive_task'}
