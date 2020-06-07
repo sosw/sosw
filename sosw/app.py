@@ -71,6 +71,8 @@ class Processor:
             logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
+        self.config = recursive_update(self.config, self.DEFAULT_CONFIG) \
+            if getattr(self, 'config', {}) else self.DEFAULT_CONFIG or {}
         self.config = self.DEFAULT_CONFIG or {}
         self.config = recursive_update(self.config,
                                        self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})

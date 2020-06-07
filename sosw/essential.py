@@ -33,7 +33,6 @@ __version__ = "1.0"
 import logging
 
 from sosw.app import Processor
-from sosw.components.helpers import recursive_update
 
 
 logger = logging.getLogger()
@@ -50,8 +49,5 @@ class Essential(Processor):
     """
 
     def __init__(self, *args, **kwargs):
+        self.config = self.get_config("sosw_essential_config") or {}
         super().__init__(*args, **kwargs)
-        self.config = recursive_update(
-            self.config,
-            self.get_config("sosw_essential_config") or {}
-        )
