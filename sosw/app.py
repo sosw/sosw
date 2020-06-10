@@ -71,18 +71,28 @@ class Processor:
             logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
-        self.config = recursive_update(self.config, self.DEFAULT_CONFIG) \
-            if getattr(self, 'config', {}) else self.DEFAULT_CONFIG or {}
-        self.config = self.DEFAULT_CONFIG or {}
-        self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
-        self.config = recursive_update(self.config, custom_config or {})
+        self.init_config(custom_config)
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
 
         self.register_clients(self.config.get('init_clients', []))
+
+
+    def init_config(self, custom_config=None):
+        """
+        Init config of the Processor
+        Overwrite this method if custom logic of recursive updates in configs is required
+        """
+
+        # Initialize config from default config
+        self.config = self.DEFAULT_CONFIG or {}
+        # Update config recursively from any existing lambda function config
+        self.config = recursive_update(self.config,
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+        # Update config recursively from custom config
+        self.config = recursive_update(self.config, custom_config or {})
 
 
     @benchmark
