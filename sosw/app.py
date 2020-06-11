@@ -33,8 +33,9 @@ import boto3
 import logging
 import os
 
-from importlib import import_module
 from collections import defaultdict
+from importlib import import_module
+from typing import Dict
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -80,10 +81,15 @@ class Processor:
         self.register_clients(self.config.get('init_clients', []))
 
 
-    def init_config(self, custom_config=None):
+    def init_config(self, custom_config: Dict = None):
         """
-        Init config of the Processor
+        By default tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        After that, a specific custom config of the Lambda will recursively update the existing one.
+        The last step is update config recursively with a passed custom_config.
+
         Overwrite this method if custom logic of recursive updates in configs is required
+
+        :param Dict custom_config: dict with custom configurations
         """
 
         # Initialize config from default config
