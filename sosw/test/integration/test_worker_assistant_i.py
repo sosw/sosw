@@ -38,6 +38,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
+        self.get_config_patch.return_value = {}
 
         self.table_name = self.config['dynamo_db_config']['table_name']
         self.HASH_KEY = ('task_id', 'S')
