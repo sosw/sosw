@@ -26,6 +26,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         self.custom_config = self.TEST_CONFIG.copy()
         self.orchestrator = Orchestrator(self.custom_config)
+        self.get_config_patch.return_value = {}
         self.orchestrator.task_client.ecology_client = MagicMock()
         self.orchestrator.task_client.ecology_client.get_labourer_status.return_value = 4
         self.orchestrator.task_client.ecology_client.count_running_tasks_for_labourer.return_value = 0
