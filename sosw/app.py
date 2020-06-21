@@ -33,8 +33,9 @@ import boto3
 import logging
 import os
 
-from importlib import import_module
 from collections import defaultdict
+from importlib import import_module
+from typing import Dict
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -71,16 +72,33 @@ class Processor:
             logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
-        self.config = self.DEFAULT_CONFIG or {}
-        self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
-        self.config = recursive_update(self.config, custom_config or {})
+        self.init_config(custom_config)
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
 
         self.register_clients(self.config.get('init_clients', []))
+
+
+    def init_config(self, custom_config: Dict = None):
+        """
+        By default tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        After that, a specific custom config of the Lambda will recursively update the existing one.
+        The last step is update config recursively with a passed custom_config.
+
+        Overwrite this method if custom logic of recursive updates in configs is required
+
+        :param Dict custom_config: dict with custom configurations
+        """
+
+        # Initialize config from default config
+        self.config = self.DEFAULT_CONFIG or {}
+        # Update config recursively from any existing lambda function config
+        self.config = recursive_update(self.config,
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+        # Update config recursively from custom config
+        self.config = recursive_update(self.config, custom_config or {})
 
 
     @benchmark

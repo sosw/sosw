@@ -31,6 +31,7 @@ __author__ = "Mark Bulgakov"
 __version__ = "1.0"
 
 import logging
+import os
 
 from sosw.app import Processor
 from sosw.components.helpers import recursive_update
@@ -52,11 +53,26 @@ class Essential(Processor):
 
     meta_handler: MetaHandler = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.config = recursive_update(
-            self.config,
-            self.get_config("sosw_essential_config") or {}
-        )
 
+    def __init__(self, *args, **kwargs):
+        self.init_config()
         self.meta_handler = MetaHandler()
+
+        super().__init__(*args, **kwargs)
+
+
+    def init_config(self, custom_config=None):
+        """
+        Overwritten parent method.
+        We expect to receive essential config first, after that all the updates should be done
+        """
+
+        # Initialize config from essential config
+        self.config = self.get_config("sosw_essential_config") or {}
+        #  # Update config recursively from DEFAULT_CONFIG
+        self.config = recursive_update(self.config, self.DEFAULT_CONFIG)
+        # Update config recursively from any existing lambda function config
+        self.config = recursive_update(self.config,
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+        # Update config recursively from custom config
+        self.config = recursive_update(self.config, custom_config or {})

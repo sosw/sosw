@@ -73,6 +73,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
+        self.get_config_patch.return_value = {}
 
         self.custom_config = deepcopy(self.TEST_CONFIG)
         self.custom_config['siblings_config'] = {
