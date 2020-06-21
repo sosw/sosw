@@ -30,6 +30,7 @@ class NewDate(datetime.datetime):
 class meta_handler_UnitTestCase(unittest.TestCase):
 
     def setUp(self):
+        # FIXME CRITICAL! Stop doing this. This breaks global datetime.
         datetime.datetime = NewDate
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
