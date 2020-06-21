@@ -27,8 +27,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.custom_config = deepcopy(self.TEST_CONFIG)
 
         with patch('boto3.client'):
-            self.orchestrator = Orchestrator(self.custom_config)
-
+            self.orchestrator = Orchestrator(custom_config=self.custom_config)
 
 
     def tearDown(self):

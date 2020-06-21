@@ -72,7 +72,7 @@ class Processor:
             logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
             self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
 
-        self.init_config(custom_config)
+        self.init_config(custom_config=custom_config)
         logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
 
         self.stats = defaultdict(int)
@@ -191,7 +191,7 @@ class Processor:
     @staticmethod
     def get_config(name):
         """
-        Returns config by name from SSM. Override this to provide your config handling method.
+        Returns config by name from DynamoDB config or SSM. Override this to provide your config handling method.
 
         :param name: Name of the config
         :rtype: dict

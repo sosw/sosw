@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from sosw.scheduler import Scheduler, InvalidJob, global_vars
 from sosw.labourer import Labourer
 from sosw.components.helpers import chunks
+from sosw.managers.meta_handler import MetaHandler
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
 
@@ -74,8 +75,8 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
         self.get_config_patch.return_value = {}
-
         self.custom_config = deepcopy(self.TEST_CONFIG)
+
         self.custom_config['siblings_config'] = {
             'auto_spawning': True
         }
@@ -88,13 +89,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         with patch('boto3.client'):
-            self.scheduler = module.Scheduler(self.custom_config)
+            self.scheduler = module.Scheduler(custom_config=self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.task_client.get_labourer.return_value = self.LABOURER
         self.scheduler.siblings_client = MagicMock()
+        self.scheduler.meta_handler = MagicMock(signature=MetaHandler)
 
         self.scheduler.st_time = time.time()
 

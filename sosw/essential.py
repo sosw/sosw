@@ -55,8 +55,8 @@ class Essential(Processor):
 
 
     def __init__(self, *args, **kwargs):
-        self.init_config()
-        self.meta_handler = MetaHandler()
+        self.init_config(custom_config=args[0] if args else kwargs.get('custom_config'))
+        self.meta_handler = MetaHandler(custom_config=self.config.get('meta_handler_config'))
 
         super().__init__(*args, **kwargs)
 
