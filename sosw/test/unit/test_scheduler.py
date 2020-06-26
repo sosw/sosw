@@ -479,16 +479,22 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
     def test_custom_period_patterns(self):
 
-        class ChildScheduler(Scheduler):
-            config = {'custom_period_patterns': ['get_june_days']}
+        class ChildScheduler(module.Scheduler):
 
-            def get_june_days(self):
+            def __init__(self, custom_config):
+                super().__init__(custom_config=custom_config)
+
+            def get_june_days(self, period):
                 return ['2020-06-24', '2020-06-23', '2020-06-22']
 
-        child = ChildScheduler()
-        r = child.chunk_dates(job={'period': 'get_june_days'})
+        with patch('boto3.client'):
+            custom_config = deepcopy(self.TEST_CONFIG)
+            custom_config['custom_period_patterns'] = ['get_june_days']
+            child = ChildScheduler(custom_config=custom_config)
 
-        self.assertEqual(r, [{'period': 'get_june_days', 'date_list': ['2020-06-24', '2020-06-23', '2020-06-22']}])
+            r = child.chunk_dates(job={'period': 'get_june_days'})
+
+            self.assertEqual(r, [{'date_list': ['2020-06-24', '2020-06-23', '2020-06-22']}])
 
 
     ### Tests of chunk_job ###
