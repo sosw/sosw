@@ -477,6 +477,20 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 self.assertEqual(self.scheduler.last_week(test), expected)
 
 
+    def test_custom_period_patterns(self):
+
+        class ChildScheduler(Scheduler):
+            config = {'custom_period_patterns': ['get_june_days']}
+
+            def get_june_days(self):
+                return ['2020-06-24', '2020-06-23', '2020-06-22']
+
+        child = ChildScheduler()
+        r = child.chunk_dates(job={'period': 'get_june_days'})
+
+        self.assertEqual(r, [{'period': 'get_june_days', 'date_list': ['2020-06-24', '2020-06-23', '2020-06-22']}])
+
+
     ### Tests of chunk_job ###
     def test_chunk_job__not_chunkable_config(self):
         self.scheduler.chunkable_attrs = []
