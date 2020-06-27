@@ -32,17 +32,20 @@ __version__ = "1.0"
 
 import datetime
 import logging
+import os
 
 
-from sosw.app import Processor
+from sosw.app import global_vars
 from sosw.components.dynamo_db import DynamoDbClient
+from sosw.components.helpers import recursive_update
+from typing import Dict
 
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class MetaHandler(Processor):
+class MetaHandler:
     """
     MetaHandler is helper class for Essential classes.
     It works with DynamoDB table to store the meta data of operations on Tasks.
@@ -78,7 +81,18 @@ class MetaHandler(Processor):
         'log_stream_name': 'log_stream_name'
     }
 
-    dynamo_db_client: DynamoDbClient = None
+    def __init__(self, custom_config: Dict = None, **kwargs):
+
+        # Initialize config from default config
+        self.config = self.DEFAULT_CONFIG or {}
+
+        # Update config recursively from custom config
+        self.config = recursive_update(self.config, custom_config or {})
+
+        self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+
+        if not self.test:
+            self.dynamo_db_client = DynamoDbClient(config=self.config)
 
 
     def post(self, task_id: str, action: str, **kwargs):
@@ -97,9 +111,9 @@ class MetaHandler(Processor):
             row[field] = value
 
         for field, mapping in self.CONTEXT_FIELDS_MAPPINGS.items():
-            row[field] = self.lambda_context[mapping]
+            row[field] = global_vars.lambda_context[mapping]
 
-        self.dynamo_db_client.create(row)
+        self.dynamo_db_client.create(row=row)
 
 
     def _ma(self, field_name):
