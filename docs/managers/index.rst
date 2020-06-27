@@ -8,5 +8,6 @@ Managers
 
    task
    ecology
+   meta_handler
 
    ../greenfield

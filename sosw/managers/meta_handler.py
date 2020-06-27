@@ -27,12 +27,12 @@
 """
 
 __all__ = ['MetaHandler']
-__author__ = "Mark Bulgakov"
+__author__ = "Mark Bulgakov, Nikolay Grishchenko"
 __version__ = "1.0"
 
-import datetime
 import logging
 import os
+import time
 
 
 from sosw.app import global_vars
@@ -52,7 +52,6 @@ class MetaHandler:
     """
 
     DEFAULT_CONFIG = {
-        'init_clients': ['DynamoDb'],
         'dynamo_db_config': {
             'table_name': 'sosw_tasks_meta',
             'row_mapper': {
@@ -91,16 +90,22 @@ class MetaHandler:
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        if not self.test:
-            self.dynamo_db_client = DynamoDbClient(config=self.config)
+        try:
+            self.dynamo_db_client = DynamoDbClient(config=self.config['dynamo_db_config'])
+        except:
+            self.dynamo_db_client = None
 
 
     def post(self, task_id: str, action: str, **kwargs):
-        """ Write row with meta data to sosw_tasks_meta DynamoDB Table """
+        """
+        Write row with meta data to sosw_tasks_meta DynamoDB Table if configured.
+        As long as collecting the meta data is optional, the ``MetaHandler`` will either save it
+        to DynamoDB or just log.
+        """
 
         row = {
             'task_id': task_id,
-            'created_at': datetime.datetime.now().timestamp(),
+            'created_at': time.time(),
             'action': self._ma(action)
         }
 
@@ -113,9 +118,11 @@ class MetaHandler:
         for field, mapping in self.CONTEXT_FIELDS_MAPPINGS.items():
             row[field] = global_vars.lambda_context[mapping]
 
-        self.dynamo_db_client.create(row=row)
-
+        if self.dynamo_db_client:
+            self.dynamo_db_client.create(row=row)
+        else:
+            logger.info("DynamoDB client/table is not configured for meta_handler. Skip saving task meta data: %", row)
 
     def _ma(self, field_name):
-        # TODO: implement mappings for the actions names
+        # FIXMEONEDAY: implement mappings for the actions names
         return str(field_name)
