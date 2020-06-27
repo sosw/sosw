@@ -331,7 +331,13 @@ class Scheduler(Essential):
                     # Call the appropriate method with given value from job.
                     logger.debug(f"Found period '{period}' for job {job}")
                     method_name = pattern.replace('[0-9]+', 'x', 1)
-                    date_list = getattr(self, method_name)(period)
+                    try:
+                        date_list = getattr(self, method_name)(period)
+
+                    except TypeError:
+                        # For methods without parameter
+                        date_list = getattr(self, method_name)()
+
                     break
             else:
                 raise ValueError(f"Unsupported period requested: {period}. Valid (basic) options are: "

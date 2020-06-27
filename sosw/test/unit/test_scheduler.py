@@ -484,7 +484,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             def __init__(self, custom_config):
                 super().__init__(custom_config=custom_config)
 
-            def get_june_days(self, period):
+            def get_june_days(self):
                 return ['2020-06-24', '2020-06-23', '2020-06-22']
 
         with patch('boto3.client'):
