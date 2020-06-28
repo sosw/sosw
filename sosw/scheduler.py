@@ -313,22 +313,42 @@ class Scheduler(Essential):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days',
-                       'last_week']
+        period_patterns = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days',
+                           'last_week']
+
+        # Adding custom methods for creating date list found in config of child classes
+        custom_period_patterns = self.config.get('custom_period_patterns')
+        if custom_period_patterns:
+            if isinstance(custom_period_patterns, (list, tuple)):
+                for method in custom_period_patterns:
+                    if isinstance(method, str):
+                        period_patterns.append(method)
+                    else:
+                        raise TypeError(f"Pattern '{method}' expected to be str, got {type(method)}")
+            else:
+                raise TypeError(f"'custom_period_patterns' expected to be (list, tuple), "
+                                f"got {type(custom_period_patterns)}")
 
         if period:
 
             date_list = []
-            for pattern in PERIOD_KEYS:
+            for pattern in period_patterns:
                 if re.match(pattern, period):
                     # Call the appropriate method with given value from job.
                     logger.debug(f"Found period '{period}' for job {job}")
                     method_name = pattern.replace('[0-9]+', 'x', 1)
-                    date_list = getattr(self, method_name)(period)
+                    try:
+                        date_list = getattr(self, method_name)(period)
+
+                    except TypeError:
+                        # For methods without parameter
+                        date_list = getattr(self, method_name)()
+
                     break
             else:
-                raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week'")
+                raise ValueError(f"Unsupported period requested: {period}. Valid (basic) options are: "
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', "
+                                 f"'last_week'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
