@@ -322,6 +322,8 @@ class Scheduler(Essential):
             for method in custom_period_patterns:
                 if isinstance(method, str):
                     period_patterns.append(method)
+                else:
+                    raise TypeError(f"Pattern '{method}' expected to be str, got {type(method)}")
 
         if period:
 
