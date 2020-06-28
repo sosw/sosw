@@ -318,12 +318,16 @@ class Scheduler(Essential):
 
         # Adding custom methods for creating date list found in config of child classes
         custom_period_patterns = self.config.get('custom_period_patterns')
-        if isinstance(custom_period_patterns, (list, tuple)):
-            for method in custom_period_patterns:
-                if isinstance(method, str):
-                    period_patterns.append(method)
-                else:
-                    raise TypeError(f"Pattern '{method}' expected to be str, got {type(method)}")
+        if custom_period_patterns:
+            if isinstance(custom_period_patterns, (list, tuple)):
+                for method in custom_period_patterns:
+                    if isinstance(method, str):
+                        period_patterns.append(method)
+                    else:
+                        raise TypeError(f"Pattern '{method}' expected to be str, got {type(method)}")
+            else:
+                raise TypeError(f"'custom_period_patterns' expected to be (list, tuple), "
+                                f"got {type(custom_period_patterns)}")
 
         if period:
 
