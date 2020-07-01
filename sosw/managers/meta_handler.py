@@ -52,6 +52,7 @@ class MetaHandler:
     """
 
     DEFAULT_CONFIG = {
+        'write_meta_to_ddb': True,
         'dynamo_db_config': {
             'table_name': 'sosw_tasks_meta',
             'row_mapper': {
@@ -88,11 +89,13 @@ class MetaHandler:
         # Update config recursively from custom config
         self.config = recursive_update(self.config, custom_config or {})
 
-        self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
-
-        try:
-            self.dynamo_db_client = DynamoDbClient(config=self.config['dynamo_db_config'])
-        except:
+        if self.config['write_meta_to_ddb']:
+            try:
+                self.dynamo_db_client = DynamoDbClient(config=self.config['dynamo_db_config'])
+            except:
+                logging.exception("Failed to initialize MetaHandler DynamoDbClient")
+                self.dynamo_db_client = None
+        else:
             self.dynamo_db_client = None
 
 
