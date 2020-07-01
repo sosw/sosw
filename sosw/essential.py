@@ -34,7 +34,8 @@ import logging
 import os
 
 from sosw.app import Processor
-from sosw.components.helpers import *
+from sosw.components.helpers import recursive_update
+from sosw.managers.meta_handler import MetaHandler
 
 
 logger = logging.getLogger()
@@ -50,9 +51,14 @@ class Essential(Processor):
     * Update the ``self.config`` with shared settings (e.g list of registered Labourers)
     """
 
+    meta_handler: MetaHandler = None
+
+
     def __init__(self, *args, **kwargs):
-        self.init_config()
+
         super().__init__(*args, **kwargs)
+
+        self.meta_handler = MetaHandler(custom_config=self.config.get('meta_handler_config'))
 
 
     def init_config(self, custom_config=None):

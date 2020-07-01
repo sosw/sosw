@@ -361,7 +361,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertIn(tasks[0], result_tasks)
         self.assertIn(tasks[1], result_tasks)
 
-
+    @unittest.skip("This funciton moved to Scavenger")
     def test_retry_tasks(self):
         _ = self.manager.get_db_field_name
 
@@ -432,6 +432,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
 
 
+    @unittest.skip("This funciton moved to Scavenger")
     @patch.object(boto3, '__version__', return_value='1.9.53')
     def test_retry_tasks__old_boto(self, n):
         self.test_retry_tasks()

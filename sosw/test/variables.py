@@ -23,6 +23,26 @@ TASKS_TABLE_CONFIG = {
     }
 }
 
+META_TABLE_CONFIG = {
+    'table_name':      'autotest_sosw_tasks_meta',
+    'row_mapper':      {
+        'task_id':         'S',
+        'created_at':      'N',
+        'author':          'S',
+        'invocation_id':   'S',
+        'log_stream_name': 'S',
+        'action':          'S'
+    },
+    'required_fields': [
+        'task_id',
+        'created_at',
+        'author',
+        'invocation_id',
+        'log_stream_name',
+        'action'
+    ],
+}
+
 TEST_ECOLOGY_CLIENT_CONFIG = {
     'test': True
 }
@@ -47,10 +67,17 @@ TEST_TASK_CLIENT_CONFIG = {
     },
 }
 
+META_HANDLER_CLIENT_CONFIG = {
+    'test':         True,
+    'init_clients': [],
+    'dynamo_db_config': META_TABLE_CONFIG
+}
+
 TEST_ORCHESTRATOR_CONFIG = {
     'init_clients':   [],
     'task_config':    TEST_TASK_CLIENT_CONFIG,
     'ecology_config': TEST_ECOLOGY_CLIENT_CONFIG,
+    'meta_handler_config': META_HANDLER_CLIENT_CONFIG,
 }
 
 TEST_SCAVENGER_CONFIG = {
@@ -58,6 +85,7 @@ TEST_SCAVENGER_CONFIG = {
     'dynamo_db_config': TASKS_TABLE_CONFIG,
     'ecology_config':   TEST_ECOLOGY_CLIENT_CONFIG,
     'task_config':      TEST_TASK_CLIENT_CONFIG,
+    'meta_handler_config': META_HANDLER_CLIENT_CONFIG,
 }
 
 TEST_SCHEDULER_CONFIG = {
@@ -65,6 +93,7 @@ TEST_SCHEDULER_CONFIG = {
     'ecology_config': TEST_ECOLOGY_CLIENT_CONFIG,
     'siblings_config': TEST_SIBLINGS_CLIENT_CONFIG,
     'task_config':    TEST_TASK_CLIENT_CONFIG,
+    'meta_handler_config': META_HANDLER_CLIENT_CONFIG,
     'job_schema':     {
         'chunkable_attrs': [
             ('section', {}),
@@ -94,6 +123,7 @@ TEST_ESSENTIAL_LABOURER_CONFIG = {
 TEST_WORKER_ASSISTANT_CONFIG = {
     'init_clients':     [],
     'dynamo_db_config': TASKS_TABLE_CONFIG,
+    'meta_handler_config': META_HANDLER_CLIENT_CONFIG,
 }
 
 TASKS = [
@@ -121,3 +151,34 @@ RETRY_TASKS = [
         'desired_launch_time': 9999, 'arn': 'some_arn', 'payload': {}
     },
 ]
+
+TEST_META_HANDLER_CONFIG = {
+        'init_clients': ['DynamoDb'],
+        'dynamo_db_config': {
+            'table_name': 'autotest_sosw_tasks_meta',
+            'row_mapper': {
+                'task_id': 'S',
+                'created_at': 'N',
+                'author': 'S',
+                'invocation_id': 'S',
+                'log_stream_name': 'S',
+                'action': 'S'
+            },
+            'required_fields': [
+                'task_id',
+                'created_at',
+                'author',
+                'invocation_id',
+                'log_stream_name',
+                'action'
+            ],
+        },
+    }
+
+TEST_META_HANDLER_LAMBDA_CONTEXT = {
+    'function_name':   'test_author',
+    'aws_request_id':  'test_invocation_id',
+    'log_stream_name': 'test_invocation_id__log_stream_name'
+}
+
+TEST_META_HANDLER_POST_ARGS = {'task_id': 'test_task_id', 'action': 'archive_task'}

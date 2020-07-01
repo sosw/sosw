@@ -1,6 +1,6 @@
 ###################################################################################
 # DynamoDB Tables                                                                 #
-# This template shall create 3 main tables for `sosw` and the `autotest_` copies  #
+# This template shall create 4 main tables for `sosw` and the `autotest_` copies  #
 # for them in case you are running integration tests.                             #
 ###################################################################################
 
@@ -284,6 +284,34 @@ Resources:
 #          Key: 'Environment'
 #          Value: 'dev'
 
+  SoswTasksMetaDynamoTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "sosw_tasks_meta"
+      AttributeDefinitions:
+        -
+          AttributeName: 'task_id'
+          AttributeType: 'S'
+        -
+          AttributeName: 'created_at'
+          AttributeType: 'N'
+      KeySchema:
+        -
+          AttributeName: 'task_id'
+          KeyType: "HASH"
+        -
+          AttributeName: 'created_at'
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 2
+
+      Tags:
+        -
+          Key: 'Environment'
+          Value: 'sandbox'
+
+
   # Configuration Tables
   SoswConfigDynamoTable:
     Type: "AWS::DynamoDB::Table"
@@ -416,6 +444,12 @@ Outputs:
       Value: !Ref SoswClosedTasksDynamoTable
       Export:
         Name: "sosw-ddb-tasks-closed"
+
+  SoswTasksMetaDynamoTableName:
+      Description: "Sosw Tasks Meta Data table"
+      Value: !Ref SoswTasksMetaDynamoTable
+      Export:
+        Name: "sosw-ddb-tasks-meta"
 
   SoswRetryTasksDynamoTableName:
       Description: "Sosw Tasks retry table"
