@@ -17,6 +17,7 @@ from sosw.components.test.unit.test_sns import sns_TestCase
 # Managers
 from ..managers.test.unit.test_task import *
 from ..managers.test.unit.test_ecology import *
+from ..managers.test.unit.test_meta_handler import *
 
 def suite():
     test_suite = unittest.TestSuite()
@@ -40,6 +41,7 @@ def suite():
     # Managers
     test_suite.addTest(unittest.makeSuite(ecology_manager_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(task_manager_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(meta_handler_UnitTestCase))
 
     return test_suite
 

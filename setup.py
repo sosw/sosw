@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(name='sosw',
-      version='0.7.31',
+      version='0.7.33',
       description='Serverless Orchestrator of Serverless Workers',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -19,6 +19,7 @@ setup(name='sosw',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
           'Topic :: Software Development'
       ],
       packages=find_packages(exclude=['docs', 'test', 'examples']),

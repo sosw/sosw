@@ -550,6 +550,22 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIsNone(recursive_update(a, b)['b'])
 
 
+    def test_recursive_update__unhashable_types_in_lists(self):
+
+        # The first element in a list is identical (and should not be duplicated).
+        # The second elements are different and should be merged.
+        a = {'a': [{'a': 1, 'b': 1}, {'a': '42', 'b': '42'}]}
+        b = {'a': [{'a': 1, 'b': 1}, {'a': 2, 'b': 2}]}
+
+        r = recursive_update(a, b)
+
+        self.assertEqual(len(r['a']), 3)
+
+        self.assertIn({'a': 1, 'b': 1}, r['a'])
+        self.assertIn({'a': 2, 'b': 2}, r['a'])
+        self.assertIn({'a': '42', 'b': '42'}, r['a'])
+
+
     def test_dunder_to_dict(self):
         TESTS = [
             ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
@@ -566,12 +582,12 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_dunder_to_dict__exceptions(self):
         TESTS = [
-            (ValueError, {'data':{'__data': 42}}),
-            (ValueError, {'data':{'data__': 42}}),
-            (ValueError, {'data':{'__data__': 42}}),
-            (TypeError, {'data':{42: 42}}),
-            (TypeError, {'data':{'a': 42}, 'separator': 1}),    # Not good separator
-            (TypeError, {'data':{'a': 42, 'a__b': 43}}),        # Overlapping types of 'a'
+            (ValueError, {'data': {'__data': 42}}),
+            (ValueError, {'data': {'data__': 42}}),
+            (ValueError, {'data': {'__data__': 42}}),
+            (TypeError, {'data': {42: 42}}),
+            (TypeError, {'data': {'a': 42}, 'separator': 1}),  # Not good separator
+            (TypeError, {'data': {'a': 42, 'a__b': 43}}),  # Overlapping types of 'a'
         ]
 
         for exception, kwarg in TESTS:
@@ -583,7 +599,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         TESTS = [
             ((['a', 'b', 'c'],), {'a': {'b': {'c': None}}}),
             (([42, 'b'],), {42: {'b': None}}),
-            (([42, 'b'],'final'), {42: {'b': 'final'}}),
+            (([42, 'b'], 'final'), {42: {'b': 'final'}}),
         ]
 
         for test, expected in TESTS:
@@ -683,6 +699,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         for test in TESTS:
             self.assertRaises(Exception, get_message_dict_from_sns_event, test)
 
+
     def test_get_message_dict_from_sns_event__many_messages__raises(self):
         event = deepcopy(SNS_EVENT)
         event['Records'] = [event['Records'][0], event['Records'][0]]
@@ -714,7 +731,12 @@ class helpers_UnitTestCase(unittest.TestCase):
         }
 
         self.assertEqual(get_message_dict_from_sns_event(sns_event),
-                         {"Records": [{"eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2", "s3": {"bucket": {}, "object": {}}}]})
+                         {
+                             "Records": [{
+                                             "eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2",
+                                             "s3":           {"bucket": {}, "object": {}}
+                                         }]
+                         })
 
 
     def test_get_message_dict_from_sns_event__from_sqs(self):
@@ -741,7 +763,8 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_is_event_from_sns_true(self):
         self.assertEqual(is_event_from_sns({'Records': [{'Sns': {'Message': '...'}}]}), True)
-        self.assertEqual(is_event_from_sns({'Message': '...', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'}), True)
+        self.assertEqual(is_event_from_sns({'Message': '...', 'TopicArn': 'arn:aws:sns:us-west-2:000:some_topic'}),
+                         True)
 
 
     def test_is_event_from_sns_invalid_events(self):

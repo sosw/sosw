@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,11 @@ __author__ = "Mark Bulgakov"
 __version__ = "1.0"
 
 import logging
+import os
 
 from sosw.app import Processor
 from sosw.components.helpers import recursive_update
+from sosw.managers.meta_handler import MetaHandler
 
 
 logger = logging.getLogger()
@@ -49,9 +51,28 @@ class Essential(Processor):
     * Update the ``self.config`` with shared settings (e.g list of registered Labourers)
     """
 
+    meta_handler: MetaHandler = None
+
+
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
-        self.config = recursive_update(
-            self.config,
-            self.get_config("sosw_essential_config") or {}
-        )
+
+        self.meta_handler = MetaHandler(custom_config=self.config.get('meta_handler_config'))
+
+
+    def init_config(self, custom_config=None):
+        """
+        Overwritten parent method.
+        We expect to receive essential config first, after that all the updates should be done
+        """
+
+        # Initialize config from essential config
+        self.config = self.get_config("sosw_essential_config") or {}
+        #  # Update config recursively from DEFAULT_CONFIG
+        self.config = recursive_update(self.config, self.DEFAULT_CONFIG)
+        # Update config recursively from any existing lambda function config
+        self.config = recursive_update(self.config,
+                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+        # Update config recursively from custom config
+        self.config = recursive_update(self.config, custom_config or {})

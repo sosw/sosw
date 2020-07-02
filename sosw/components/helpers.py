@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -64,13 +64,12 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sqs',
            ]
 
-import collections
 import datetime
 import json
 import re
 import uuid
 
-from collections import defaultdict, Hashable
+from collections import abc, defaultdict
 from copy import deepcopy
 from datetime import timezone
 from typing import Iterable, Callable, Dict, Mapping, List, Optional, Union
@@ -684,7 +683,7 @@ def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
     if len(keys) == 0:
         return value
     else:
-        assert isinstance(keys[0], Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
+        assert isinstance(keys[0], abc.Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
         return {keys[0]: nested_dict_from_keys(keys[1:], value)}
 
 
@@ -798,19 +797,29 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     new = deepcopy(d)
 
     for k, v in u.items():
-        if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
+        if isinstance(v, abc.Mapping) and isinstance(d.get(k), (abc.Mapping, type(None))):
             new[k] = recursive_update(d.get(k, {}), v)
 
         elif isinstance(v, (set, list, tuple)):
             if isinstance(d.get(k), (set, list, tuple)):
                 # Merge lists of uniques. I really want this helper to eat anything and return what it should. :)
-                nv = list(set(d[k])) + list(v)
+                nv = list(d[k]) + list(v)
                 try:
-                    # The types of values in list could be unhashable, so it is not that easy filter uniques.
                     new[k] = list(set(nv))
+                # The types of values in list could be unhashable, so it is not that easy filter uniques.
+                # In case the elements are dictionaries try JSONification and unuque by strings.
                 except TypeError:
-                    # In this case we just merge lists as is.
-                    new[k] = nv
+                    new[k] = None
+
+                # If types are not hashable we still try to deal with them as if Dictionaries.
+                # In this case we filter unique ones by JSON values and them unfold them back and reconstruct Dicts.
+                if not new[k]:
+                    try:
+                        jsons = set(json.dumps(sorted(x.items())) for x in nv)
+                        new[k] = [dict(json.loads(x)) for x in jsons]
+                    except (TypeError, AttributeError):
+                        # If not all values of iterable are hashable and not Dictionaries we just merge them as is.
+                        new[k] = nv
             else:
                 new[k] = v
         else:

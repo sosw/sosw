@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,6 @@ from typing import List
 
 from sosw.essential import Essential
 from sosw.labourer import Labourer
-from sosw.managers.ecology import EcologyManager
 from sosw.managers.task import TaskManager
 
 
@@ -66,8 +65,6 @@ class Orchestrator(Essential):
     task_client: TaskManager = None
 
 
-    # ecology_client: EcologyManager = None
-
     def __call__(self, event):
 
         labourers = self.task_client.register_labourers()
@@ -81,6 +78,7 @@ class Orchestrator(Essential):
         Invokes required queued tasks for `labourer`.
         """
 
+        _ = self.get_db_field_name
         number_of_tasks = self.get_desired_invocation_number_for_labourer(labourer=labourer)
 
         if number_of_tasks < 1:
@@ -94,6 +92,7 @@ class Orchestrator(Essential):
 
             for task in tasks_to_process:
                 self.task_client.invoke_task(task=task, labourer=labourer)
+                self.meta_handler.post(task_id=task[_('task_id')], action='invoked')
 
 
     def get_desired_invocation_number_for_labourer(self, labourer: Labourer) -> int:
@@ -127,3 +126,8 @@ class Orchestrator(Essential):
         :return:
         """
         return self.task_client.get_labourers()
+
+
+    def get_db_field_name(self, key: str) -> str:
+        """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
+        return self.task_client.get_db_field_name(key)

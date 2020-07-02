@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ import json
 import logging
 
 from sosw.app import Processor
+from sosw.managers.meta_handler import MetaHandler
 from typing import Dict
 
 
@@ -60,6 +61,7 @@ class Worker(Processor):
 
     # these clients will be initialized by Processor constructor
     lambda_client = None
+    meta_handler: MetaHandler = None
 
 
     def __call__(self, event: Dict):
@@ -103,4 +105,34 @@ class Worker(Processor):
                 InvocationType='Event',
                 Payload=payload
         )
+        self.meta_handler.post(task_id=task_id, action='completed')
         logger.debug(f"mark_task_as_completed response: {lambda_response}")
+
+
+    def mark_task_as_failed(self, task_id: str):
+        """ Call worker assistant lambda and tell it to update task info """
+
+        if not self.lambda_client:
+            self.register_clients(['lambda'])
+
+        worker_assistant_lambda_name = self.config.get('sosw_worker_assistant_lambda', 'sosw_worker_assistant')
+        payload = {
+            'action':  'mark_task_as_failed',
+            'task_id': task_id,
+        }
+
+        if self.stats:
+            payload.update({'stats': self.stats})
+
+        if self.result:
+            payload.update({'result': self.result})
+
+        payload = json.dumps(payload)
+
+        lambda_response = self.lambda_client.invoke(
+                FunctionName=worker_assistant_lambda_name,
+                InvocationType='Event',
+                Payload=payload
+        )
+        self.meta_handler.post(task_id=task_id, action='failed')
+        logger.debug(f"mark_task_as_failed response: {lambda_response}")

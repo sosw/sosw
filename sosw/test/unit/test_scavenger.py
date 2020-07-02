@@ -6,6 +6,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 
 from sosw.scavenger import Scavenger
 from sosw.labourer import Labourer
+from sosw.managers.meta_handler import MetaHandler
 from sosw.test.variables import TEST_SCAVENGER_CONFIG, TASKS, LABOURERS
 
 
@@ -20,15 +21,17 @@ class Scavenger_UnitTestCase(unittest.TestCase):
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
+        self.get_config_patch.return_value = {}
+        self.custom_config = deepcopy(self.TEST_CONFIG)
 
-        self.custom_config = self.TEST_CONFIG.copy()
         with patch('boto3.client'):
-            self.scavenger = Scavenger(self.custom_config)
+            self.scavenger = Scavenger(custom_config=self.custom_config)
 
         # Mock clients
         self.scavenger.task_client = MagicMock()
         self.scavenger.ecology_client = MagicMock()
         self.scavenger.sns_client = MagicMock()
+        self.scavenger.meta_handler = MagicMock(signature=MetaHandler)
 
         self.scavenger.get_db_field_name = MagicMock(side_effect=lambda x: x)
         _ = self.scavenger.get_db_field_name
