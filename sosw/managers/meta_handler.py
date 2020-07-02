@@ -98,6 +98,8 @@ class MetaHandler:
         else:
             self.dynamo_db_client = None
 
+        logger.info("Initialized MetaHandler with config %s and DynamoDbClient %s", self.config, self.dynamo_db_client)
+
 
     def post(self, task_id: str, action: str, **kwargs):
         """
@@ -119,7 +121,7 @@ class MetaHandler:
             row[field] = value
 
         for field, mapping in self.CONTEXT_FIELDS_MAPPINGS.items():
-            row[field] = global_vars.lambda_context[mapping]
+            row[field] = getattr(global_vars.lambda_context, mapping)
 
         if self.dynamo_db_client:
             self.dynamo_db_client.create(row=row)

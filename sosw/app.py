@@ -154,7 +154,7 @@ class Processor:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                 except AttributeError as e:
-                    logger.info(f"Didn't find {service} with suffix {suffix} in module {module_name}")
+                    logger.debug(f"Didn't find {service} with suffix {suffix} in module {module_name}")
                     continue
 
                 some_client_config = self.config.get(f"{module_name}_config")
