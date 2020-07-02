@@ -6,7 +6,8 @@ python:
   - '3.7'
   - '3.8'
 install:
-  - pip install boto3
+  # TODO start using pipenv files with Travis.
+  - pip install boto3 attrdict
 script:
   - pytest sosw/test/suite_3_6_unit.py
 deploy:
