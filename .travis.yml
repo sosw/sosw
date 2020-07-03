@@ -9,7 +9,8 @@ jobs:
         - pip install pipenv
         - pipenv install --dev
       script:
-        - pytest sosw/test/suite_unit.py
+        - cd sosw
+        - pipenv run pytest test/suite_unit.py
 
 deploy:
   provider: pypi
