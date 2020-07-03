@@ -9,7 +9,7 @@ jobs:
         - pip install pipenv
         - pipenv install --dev --skip-lock
       script:
-        - pipenv shell --dev
+        - pipenv shell
         - pytest sosw/test/suite_unit.py
 
 deploy:
