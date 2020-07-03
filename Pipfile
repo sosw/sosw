@@ -5,10 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 attrdict = "*"
+boto3 = "*"
+pytest = "*"
 sphinx = "*"
 sphinx_rtd_theme = "*"
 sphinx_sitemap = "*"
-pytest = "*"
 
 [packages]
 boto3 = "*"
