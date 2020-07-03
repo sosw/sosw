@@ -108,7 +108,7 @@ Great that you are ready to contribute!
 
 ..  code-block:: bash
 
-    pytest sosw/test/suite_3_6_unit.py
+    pytest sosw/test/suite_unit.py
 
 * Make sure the documentation builds correctly
 

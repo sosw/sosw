@@ -22,7 +22,7 @@ setup(name='sosw',
           'Programming Language :: Python :: 3.8',
           'Topic :: Software Development'
       ],
-      packages=find_packages(exclude=['docs', 'test', 'examples']),
+      packages=find_packages(exclude=['docs', 'test', 'examples', "test/**/*"]),
       install_requires=[
           'boto3>=1.9'
       ],

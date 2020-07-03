@@ -1,14 +1,21 @@
 sudo: enabled
 dist: xenial
 language: python
-python:
-  - '3.6'
-  - '3.7'
-  - '3.8'
+jobs:
+  include:
+    - name: '3.6'
+      python: '3.6'
+    - name: '3.7'
+      python: '3.7'
+    - name: '3.8'
+      python: '3.8'
+
 install:
-  - pip install boto3
+  - pip install pipenv
+  - pipenv install --dev --skip-lock
 script:
-  - pytest sosw/test/suite_3_6_unit.py
+  - pipenv run pytest sosw/test/suite_unit.py
+
 deploy:
   provider: pypi
   skip_existing: true
