@@ -699,7 +699,7 @@ def convert_string_to_words(string):
     if not isinstance(string, str):
         raise TypeError(f"Input must be string, got {type(string)}")
 
-    return re.sub('\s+', ',', string.lower().strip())
+    return re.sub(r'\s+', ',', string.lower().strip())
 
 
 def construct_dates_from_event(event: dict) -> tuple:
