@@ -8,6 +8,7 @@ jobs:
       install:
         - pip install pipenv
         - pipenv install --dev
+        - pipenv install pytest
       script:
         - pipenv run pytest sosw/test/suite_unit.py
 
