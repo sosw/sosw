@@ -42,7 +42,7 @@ $ pipenv sync --dev
 
 Running unit tests:
 ```bash
-$ pytest ./sosw/test/suite_3_6_unit.py
+$ pytest ./sosw/test/suite_unit.py
 ```
 
 ### Contribution Guidelines

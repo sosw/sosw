@@ -5,11 +5,14 @@ python:
   - '3.6'
   - '3.7'
   - '3.8'
+
 install:
-  # TODO start using pipenv files with Travis.
-  - pip install boto3 attrdict
+  - pip install pipenv
+  - pipenv install --dev
+
 script:
-  - pytest sosw/test/suite_3_6_unit.py
+  - pytest sosw/test/suite_unit.py
+
 deploy:
   provider: pypi
   skip_existing: true
