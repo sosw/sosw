@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 attrdict = "*"
 boto3 = "*"
+#pylint = "*"
 pytest = "*"
 sphinx = "*"
 sphinx_rtd_theme = "*"
