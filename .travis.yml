@@ -9,6 +9,10 @@ jobs:
       python: '3.7'
     - name: '3.8'
       python: '3.8'
+      script:
+        - pipenv run pytest sosw/test/suite_unit.py
+        - pipenv install pylint
+        - pylint sosw/
 
 install:
   - pip install pipenv

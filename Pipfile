@@ -13,4 +13,3 @@ sphinx_sitemap = "*"
 
 [packages]
 boto3 = "*"
-pytest = "*"
