@@ -12,8 +12,9 @@ the meta data  automatically. The required schema for the table is described in
 The setup script will create the table by default.
 
 MetaHandler can also be automatically initialised by classes, inheriting from ``Worker``. They will then write
-several events to the meta table as well. To enable that you have to provide these Lambdas with some details
-in the ``meta_handler_config`` of their custom config. And make sure they have write permissions for this table.
+``'completed'`` and ``'failed'`` events to the DynamoDB tasks meta data table. In order to enable this feature,
+you have to provide ``'meta_handler_config'`` in your custom_config. You will also need to grant write
+permissions for this table to your Lambda.
 
 Config example:
 
