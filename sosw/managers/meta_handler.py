@@ -55,6 +55,7 @@ class MetaHandler:
         'write_meta_to_ddb': True,
         'dynamo_db_config': {
             'table_name': 'sosw_tasks_meta',
+            'hash_key': 'task_id',
             'row_mapper': {
                 'task_id': 'S',
                 'created_at': 'N',
