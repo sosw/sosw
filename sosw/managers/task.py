@@ -403,7 +403,7 @@ class TaskManager(Processor):
                 call_payload = json.loads(call_payload)
             except JSONDecodeError as err:
                 logger.exception(f"Failed to decode payload: {call_payload}. Probably invalid task.")
-                # TODO should panic, but not die here. Just skip the task.
+                self.stats['invalid_tasks_skipped'] += 1
 
         call_payload.update(task)
 

@@ -1,4 +1,4 @@
-import datetime
+import attrdict
 import logging
 import os
 import unittest
@@ -20,7 +20,7 @@ os.environ["autotest"] = "True"
 
 class meta_handler_UnitTestCase(unittest.TestCase):
 
-    CONTEXT_FIELDS = {v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()}
+    TEST_CONTEXT = attrdict.AttrDict({v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()})
 
 
     def setUp(self):
@@ -29,7 +29,7 @@ class meta_handler_UnitTestCase(unittest.TestCase):
         self.config = deepcopy(TEST_META_HANDLER_CONFIG)
 
         with patch('boto3.client'):
-            global_vars.lambda_context = self.CONTEXT_FIELDS
+            global_vars.lambda_context = self.TEST_CONTEXT
             self.manager = MetaHandler(custom_config=self.config)
 
         self.manager.dynamo_db_client = MagicMock(spec=dynamo_db.DynamoDbClient)

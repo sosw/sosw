@@ -72,7 +72,7 @@ import uuid
 from collections import abc, defaultdict
 from copy import deepcopy
 from datetime import timezone
-from typing import Iterable, Callable, Dict, Mapping, List, Optional, Union
+from typing import Iterable, Callable, Dict, Mapping, List, Optional
 
 from sosw.components.exceptions import EventNotFromSourceException
 
@@ -89,10 +89,9 @@ def validate_account_to_dashed(account):
     account = str(account).strip()
     if re.match("[0-9]{3}-[0-9]{3}-[0-9]{4}", account):
         return account
-    elif re.match("^[0-9]{10}$", account):
+    if re.match("^[0-9]{10}$", account):
         return '-'.join([str(account)[0:3], str(account)[3:6], str(account)[6:]])
-    else:
-        raise ValueError("Invalid account format provided: {}".format(account))
+    raise ValueError("Invalid account format provided: {}".format(account))
 
 
 def validate_account_to_int(account):
@@ -106,8 +105,7 @@ def validate_account_to_int(account):
     account = str(account).strip().replace('-', '')
     if re.match("^[0-9]{10}$", account):
         return int(account)
-    else:
-        raise ValueError("Invalid account format provided: {}".format(account))
+    raise ValueError("Invalid account format provided: {}".format(account))
 
 
 def validate_list_of_numbers_from_csv(data):
@@ -121,19 +119,18 @@ def validate_list_of_numbers_from_csv(data):
 
     if isinstance(data, str):
         return [int(x.strip()) for x in data.split(',') if x.strip().isnumeric()]
-    else:
-        if isinstance(data, (int, float)):
-            return [data]
-        result = []
-        try:
-            for x in data:
-                if isinstance(x, (int, float)):
-                    result.append(int(x))
-                elif isinstance(x, str) and x.strip().isnumeric():
-                    result.append(int(x.strip()))
-        except TypeError:
-            pass
-        return result
+    if isinstance(data, (int, float)):
+        return [data]
+    result = []
+    try:
+        for x in data:
+            if isinstance(x, (int, float)):
+                result.append(int(x))
+            elif isinstance(x, str) and x.strip().isnumeric():
+                result.append(int(x.strip()))
+    except TypeError:
+        pass
+    return result
 
 
 def validate_uuid4(uuid_string):
@@ -148,7 +145,7 @@ def validate_uuid4(uuid_string):
     """
 
     try:
-        val = uuid.UUID(uuid_string, version=4)
+        _ = uuid.UUID(uuid_string, version=4)
     except ValueError:
         # If it's a value error, then the string
         # is not a valid hex code for a UUID.
@@ -202,9 +199,8 @@ def rstrip_all(input, patterns):
     if not r == rabbit:
         # Go recursive in case we stripped smth in this iteration.
         return rstrip_all(r, patterns)
-    else:
-        # If nothing left to change, return the rabbit.
-        return rabbit
+    # If nothing left to change, return the rabbit.
+    return rabbit
 
 
 def get_one_or_none_from_dict(input, name, vtype=None):
@@ -247,8 +243,7 @@ def get_one_or_none_from_dict(input, name, vtype=None):
     if isinstance(results, (list, tuple, set)):
         if len(results) > 1:
             raise ValueError("More than one {}s found in input.".format(name))
-        else:
-            return convert(results[0], vtype)
+        return convert(results[0], vtype)
     elif results:
         raise ValueError("Some not-iterable '{}s' found in input: {}".format(name, str(type(result))))
 
@@ -270,8 +265,7 @@ def get_one_from_dict(input, name, vtype=None):
     result = get_one_or_none_from_dict(input, name, vtype)
     if result:
         return result
-    else:
-        raise ValueError("Did not find any value {} in the input {}".format(name, input))
+    raise ValueError("Did not find any value {} in the input {}".format(name, input))
 
 
 def get_list_of_multiple_or_one_or_empty_from_dict(input, name, vtype=None):
@@ -473,7 +467,7 @@ def recursive_matches_soft(src, key, val, **kwargs):
         return any(recursive_matches_soft(element, key, val, **kwargs) for element in src)
 
     # We should try to dig deeper.
-    elif len(path_elements) > 1:
+    if len(path_elements) > 1:
         try:
             if recursive_matches_soft(src[path_elements[0]], '.'.join(path_elements[1:]), val, **kwargs):
                 return True
@@ -521,9 +515,9 @@ def recursive_matches_strict(src, key, val, **kwargs):
     # if src is iterable: iterate
     if isinstance(src, (list, tuple)):
         return any(recursive_matches_strict(x, key, val, **kwargs) for x in src)
-    elif len(path_elements) > 1:
+    if len(path_elements) > 1:
         return recursive_matches_strict(src[path_elements[0]], '.'.join(path_elements[1:]), val, **kwargs)
-    elif len(path_elements) == 1:
+    if len(path_elements) == 1:
         try:
             if kwargs.get('exclude_key') and src[kwargs['exclude_key']] == kwargs['exclude_val']:
                 # logging.debug("Skipping element because it matches exclude parameters.")
@@ -636,7 +630,7 @@ def dunder_to_dict(data: dict, separator=None):
         separator = '__'
     else:
         if not isinstance(separator, str):
-            raise TypeError(f"Separator must be a string.")
+            raise TypeError("Separator must be a string.")
 
     result = defaultdict(dict)
 
@@ -682,9 +676,8 @@ def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
 
     if len(keys) == 0:
         return value
-    else:
-        assert isinstance(keys[0], abc.Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
-        return {keys[0]: nested_dict_from_keys(keys[1:], value)}
+    assert isinstance(keys[0], abc.Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
+    return {keys[0]: nested_dict_from_keys(keys[1:], value)}
 
 
 def convert_string_to_words(string):
@@ -699,7 +692,7 @@ def convert_string_to_words(string):
     if not isinstance(string, str):
         raise TypeError(f"Input must be string, got {type(string)}")
 
-    return re.sub('\s+', ',', string.lower().strip())
+    return re.sub(r'\s+', ',', string.lower().strip())
 
 
 def construct_dates_from_event(event: dict) -> tuple:
@@ -723,10 +716,10 @@ def construct_dates_from_event(event: dict) -> tuple:
     days_back = event.get('days_back')
 
     if st_date and days_back:
-        raise AttributeError(f"construct_dates_from_event() doesn't allow st_date and days_back simultaneously")
+        raise AttributeError("construct_dates_from_event() doesn't allow st_date and days_back simultaneously")
 
     if not st_date and not days_back:
-        raise AttributeError(f"construct_dates_from_event() expects either st_date or days_back")
+        raise AttributeError("construct_dates_from_event() expects either st_date or days_back")
 
     if days_back:
         st_date = en_date - datetime.timedelta(days=int(days_back))
@@ -879,10 +872,10 @@ def make_hash(o):
         return tuple([make_hash(e) for e in o])
 
     # Set should be sorted (by hashes of elements) before returns
-    elif isinstance(o, set):
+    if isinstance(o, set):
         return tuple(sorted([make_hash(e) for e in o]))
 
-    elif not isinstance(o, dict):
+    if not isinstance(o, dict):
         return hash(o)
 
     # We are left with a dictionary
@@ -897,10 +890,10 @@ def make_hash(o):
 def to_bool(val):
     if isinstance(val, (bool, int, float)):
         return bool(val)
-    elif isinstance(val, str):
+    if isinstance(val, str):
         if val.lower() in ['true', '1']:
             return True
-        elif val.lower() in ['false', '0']:
+        if val.lower() in ['false', '0']:
             return False
     raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")
 
@@ -927,7 +920,7 @@ def get_message_dict_from_sns_event(event):
     if is_event_from_sns(event):
         return _unwrap_msg_dict_from_sns_event(event)
 
-    raise ValueError(f"Event is not from SNS")
+    raise ValueError("Event is not from SNS")
 
 
 def is_event_from_sns(event):
@@ -1029,7 +1022,7 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
     sources = [x.lower() for x in sources or ['sns', 'sqs']]
     max_depth = 10  # Unwrapping up to depth of 10, as a safety mechanism against infinite loop
 
-    for i in range(max_depth):
+    for _ in range(max_depth):
         original = deepcopy(messages)
 
         for source in sources:
