@@ -3,6 +3,7 @@ import logging
 import time
 import unittest
 import os
+from copy import deepcopy
 from decimal import Decimal
 
 from unittest.mock import MagicMock, patch, Mock
@@ -59,6 +60,23 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+
+
+    def test_create__raises__if_no_hash_col_configured(self):
+        bad_config = deepcopy(self.TEST_CONFIG)
+        del bad_config['hash_key']
+
+        dynamo_client = DynamoDbClient(config=bad_config)
+
+        row = {self.HASH_KEY: 'cat', self.RANGE_KEY: '123'}
+        self.assertRaises(AssertionError, dynamo_client.create, row, self.table_name)
+
+
+    def test_create__calls_boto_client(self):
+        self.dynamo_mock.put_item.assert_not_called()
+
+        self.dynamo_client.put({self.HASH_KEY: 'cat', self.RANGE_KEY: '123'}, self.table_name)
+        self.dynamo_mock.put_item.assert_called_once()
 
 
     def test_dict_to_dynamo_strict(self):
