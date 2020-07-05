@@ -98,6 +98,17 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
             self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
 
 
+    def test_put__create__same_hash_different_range(self):
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        self.dynamo_client.put(row, self.table_name)
+
+        row[self.RANGE_COL] = '234'
+        self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
+
+        count = self.dynamo_client.get_by_query(keys={self.HASH_COL: 'cat'}, return_count=True)
+        self.assertEqual(count, 2, "The second item was not saved")
+
+
     def test_update__updates(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
         row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}

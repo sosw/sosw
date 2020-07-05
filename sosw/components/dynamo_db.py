@@ -772,16 +772,25 @@ class DynamoDbClient:
         return query
 
 
-    def put(self, row, table_name=None, overwrite_existing=True):
+    def put(self, row: Dict, table_name: str = None, overwrite_existing: bool = True):
         """
-        Adds a row to the database
+        Writes the row to the DynamoDB table.
 
-        :param dict row:                The row to add to the table. key is column name, value is value.
-        :param string table_name:       Name of the dynamo table to add the row to.
-        :param bool overwrite_existing: Overwrite the existing row if True, otherwise will raise an exception if exists.
+        :param row:                 The row to add to the table. key is column name, value is value.
+        :param table_name:          Name of the dynamo table to add the row to.
+        :param overwrite_existing:  Overwrite the existing row if True, otherwise will raise an exception if exists.
+
+        ..  warning::
+
+            ``overwrite_existing`` option requires the config to have a 'hash_key' parameter with a name of a field.
         """
 
         table_name = self._get_validate_table_name(table_name)
+
+        if not overwrite_existing:
+            assert 'hash_key' in self.config, \
+                "Missing 'hash_key' parameter in the dynamo_db config. You must provide it in order to use the " \
+                "'create' method, or 'overwrite_existing=False' option."
 
         put_query = self.build_put_query(row, table_name, overwrite_existing)
         logger.debug(f"Put to DB: {put_query}")
@@ -793,7 +802,16 @@ class DynamoDbClient:
         self.stats['dynamo_put_queries'] += 1
 
 
-    def create(self, row, table_name=None):
+    def create(self, row: Dict, table_name: str = None):
+        """
+        Uses the mechanism of the ``put`` method, but first validates that the item with same hash & [range] key[s]
+        does not exist in the table. Otherwise raises: ``ConditionalCheckFailedException``
+
+        ..  warning:: This method requires the config to have a 'hash_key' parameter with a name of a field.
+
+        :param row:
+        :param table_name:
+        """
         self.put(row, table_name, overwrite_existing=False)
 
 
