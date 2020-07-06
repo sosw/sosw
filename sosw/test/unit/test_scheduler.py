@@ -844,3 +844,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
 
+
+    def test_sleeptime_for_dynamo(self):
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 10}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.07)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 25}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.01)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 50}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0)
