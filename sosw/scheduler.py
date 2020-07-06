@@ -642,9 +642,9 @@ class Scheduler(Essential):
                 for raw_task in data:
                     logger.debug(f"Pushing task to DynamoDB: {raw_task}")
                     task = json.loads(raw_task)
-                    labourer = self.task_client.get_labourer(task['labourer_id'])
-                    self.task_client.create_task(labourer=labourer, **task)
-                    self.meta_handler.post(task_id=task[_('task_id')], action='created', labourer=labourer)
+                    labourer = self.task_client.get_labourer(task[_('labourer_id')])
+                    new_task = self.task_client.create_task(labourer=labourer, **task)
+                    self.meta_handler.post(task_id=new_task[_('task_id')], action='created', labourer=labourer)
                     time.sleep(self._sleeptime_for_dynamo)
 
             else:
