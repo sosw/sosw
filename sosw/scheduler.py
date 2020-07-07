@@ -663,14 +663,22 @@ class Scheduler(Essential):
 
 
     @property
-    def _sleeptime_for_dynamo(self):
+    def _sleeptime_for_dynamo(self) -> float:
         """
         Pull DynamoDB write capacity dynamically and configure speed of writing.
 
         Calculates based on the assumption that a single write action consumes a full WCU.
         It also assumes that the duration of processing the task itself takes some time and decreases sleep accordingly.
+        This duration is theoretically configurable in ``config['task_operational_overhead_for_ddb']``, but after
+        several versions this should probably be removed from config.
+
+        For on-demand billing of the DynamoDB table returns zero.
         """
-        write_throughput = 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        try:
+            write_throughput = 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        except ZeroDivisionError:
+            return 0
+
         operational_overhead = self.config['task_operational_overhead_for_ddb']
         return max(write_throughput - operational_overhead, 0)
 
