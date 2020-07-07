@@ -1,11 +1,13 @@
+import attrdict
 import datetime
-
 import logging
-import unittest
 import os
-from unittest.mock import patch
+import unittest
 
+from sosw.app import global_vars
+from sosw.managers.meta_handler import MetaHandler
 from sosw.worker_assistant import WorkerAssistant
+from unittest.mock import patch
 
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -27,6 +29,7 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         Clean the classic autotest table.
         """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
+        global_vars.lambda_context = attrdict.AttrDict({v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()})
 
 
     def setUp(self):

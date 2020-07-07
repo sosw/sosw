@@ -92,7 +92,7 @@ class Orchestrator(Essential):
 
             for task in tasks_to_process:
                 self.task_client.invoke_task(task=task, labourer=labourer)
-                self.meta_handler.post(task_id=task[_('task_id')], action='invoked')
+                self.meta_handler.post(task_id=task[_('task_id')], labourer_id=task[_('labourer_id')], action='invoked')
 
 
     def get_desired_invocation_number_for_labourer(self, labourer: Labourer) -> int:

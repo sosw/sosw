@@ -95,6 +95,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.sns_client = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.task_client.get_labourer.return_value = self.LABOURER
+        self.scheduler.get_db_field_name = lambda key: key
         self.scheduler.siblings_client = MagicMock()
         self.scheduler.meta_handler = MagicMock(signature=MetaHandler)
 
@@ -831,10 +832,17 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'lambda_name':  self.LABOURER.id,
             'some_payload': 'foo',
         }
-
         print(json.dumps(SAMPLE_SIMPLE_JOB))
-        r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
-        print(r)
+
+        self.scheduler.task_client.create_task.return_value = {'task_id': 123,
+                                                               'labourer_id': SAMPLE_SIMPLE_JOB['lambda_name'],
+                                                               **SAMPLE_SIMPLE_JOB}
+
+        with patch('sosw.scheduler.Scheduler._sleeptime_for_dynamo', new_callable=PropertyMock) as mock_sleeptime:
+            mock_sleeptime.return_value = 0.0001
+
+            r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
+            print(r)
 
         self.scheduler.task_client.create_task.assert_called_once()
 
@@ -844,3 +852,14 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
 
+
+    def test_sleeptime_for_dynamo(self):
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 10}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.07)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 25}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.01)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 50}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0)
