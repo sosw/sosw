@@ -261,6 +261,11 @@ class DynamoDbClient:
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
 
+                    if val is None and key_type not in val_dict:
+                        real_type = list(val_dict.keys())[0]
+                        raise ValueError(f"'{key}' is expected to be of type '{key_type}' in row_mapper, "
+                                         f"but real value is of type '{real_type}'")
+
                     # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
                     if key_type == 'N':
