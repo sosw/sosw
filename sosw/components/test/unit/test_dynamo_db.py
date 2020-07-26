@@ -201,6 +201,19 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertDictEqual(res, expected)
 
 
+    def test_dynamo_to_dict__mapping_doesnt_match__raises(self):
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'},
+            'other_col': {'N': '111'}  # In the row_mapper, other_col is of type 'S'
+        }
+
+        with self.assertRaises(ValueError) as e:
+            dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
+
+        self.assertEqual("'other_col' is expected to be of type 'S' in row_mapper, but real value is of type 'N'",
+                         str(e.exception))
+
+
     def test_get_by_query__validates_comparison(self):
         self.assertRaises(AssertionError, self.dynamo_client.get_by_query, keys={'k': '1'},
                           comparisons={'k': 'unsupported'})
