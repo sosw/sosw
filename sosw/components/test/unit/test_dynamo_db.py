@@ -202,6 +202,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_dynamo_to_dict__mapping_doesnt_match__raises(self):
+        # If the value type in the DB doesn't match the expected type in row_mapper - raise ValueError
+
         dynamo_row = {
             'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'},
             'other_col': {'N': '111'}  # In the row_mapper, other_col is of type 'S'
