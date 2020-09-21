@@ -157,6 +157,8 @@ class SnsManager():
             if self.message_attributes:
                 extra_args['MessageAttributes'] = self.message_attributes
 
+            logger.info(f"MessageAttributes: {self.message_attributes}")
+
             self.client.publish(
                     TopicArn=self.recipient,
                     Subject=self.subject,
@@ -178,6 +180,42 @@ class SnsManager():
         if not self.message_attributes == message_attributes:
             logger.info("Change of MessageAttributes detected. We commit (send) the current queue.")
             self.set_message_attributes(message_attributes)
+
+
+    @staticmethod
+    def parse_message_attribute_type(attribute):
+        """
+        Amazon SNS compares policy attributes only to message attributes that have the following data types:
+        - String
+        - String.Array
+        - Number
+
+        :return: Type of an attribute
+        :rtype: str
+        """
+
+        if isinstance(attribute, str):
+            return 'String'
+
+        if isinstance(attribute, (int, float)):
+            return 'Number'
+
+        if isinstance(attribute, list) and all([isinstance(x, str) for x in attribute]):
+            return 'String.Array'
+
+        raise ValueError(f"Unsupported message_attribute value was passed: {attribute}")
+
+
+    def parse_message_attributtes_dict(self, message_attributtes):
+        output = {}
+
+        for key, value in message_attributtes.items():
+            output[key] = {
+                'DataType': self.separse_message_attribute_type(value),
+                'StringValue': value
+            }
+
+        return output
 
 
     def send_message(self, message, subject=None, message_attributes=None, forse_commit=False):
