@@ -30,7 +30,6 @@ __all__ = ['SnsManager']
 __author__ = "Nikolay Grishchenko"
 
 import boto3
-import csv
 import json
 import logging
 import os
@@ -128,7 +127,7 @@ class SnsManager():
 
         assert isinstance(message_attributes, dict), f"Invalid format of MessageAttributes: {message_attributes}. " \
             f"MessageAttributes must be a dict"
-        assert len(message_attributes) <= 5, f"A filter policy can have a maximum of 5 attribute names."
+        assert len(message_attributes) <= 5, f"Filter policy can have a maximum of 5 attribute names."
 
         self.set_client_attr('message_attributes', value=message_attributes)
 
@@ -154,8 +153,11 @@ class SnsManager():
         if message:
             extra_args = {}
 
+            # Add MessageAttributes to the message if they are defined
             if self.message_attributes:
-                extra_args['MessageAttributes'] = self.message_attributes
+                extra_args['MessageAttributes'] = {
+                    key: self.get_message_attribute(value) for key, value in self.message_attributes.items()
+                }
 
             logger.info(f"MessageAttributes: {self.message_attributes}")
 
@@ -178,44 +180,36 @@ class SnsManager():
         """
 
         if not self.message_attributes == message_attributes:
-            logger.info("Change of MessageAttributes detected. We commit (send) the current queue.")
+            logger.info("Attribute message_attributes was changed. We set a new one and commit the current queue.")
             self.set_message_attributes(message_attributes)
 
 
     @staticmethod
-    def parse_message_attribute_type(attribute):
+    def get_message_attribute(attribute):
         """
         Amazon SNS compares policy attributes only to message attributes that have the following data types:
         - String
         - String.Array
         - Number
 
-        :return: Type of an attribute
-        :rtype: str
+        :return: Type and value of an attribute
+        :rtype: dict
         """
 
+        if isinstance(attribute, bytes):
+            return {'DataType': 'Binary', 'BinaryValue': attribute}
+
         if isinstance(attribute, str):
-            return 'String'
+            return {'DataType': 'String', 'StringValue': attribute}
 
         if isinstance(attribute, (int, float)):
-            return 'Number'
+            return {'DataType': 'Number', 'StringValue': str(attribute)}
 
-        if isinstance(attribute, list) and all([isinstance(x, str) for x in attribute]):
-            return 'String.Array'
+        if hasattr(attribute, '__iter__'):
+            return {'DataType': 'String.Array', 'StringValue': json.dumps(attribute)}
 
-        raise ValueError(f"Unsupported message_attribute value was passed: {attribute}")
-
-
-    def parse_message_attributtes_dict(self, message_attributtes):
-        output = {}
-
-        for key, value in message_attributtes.items():
-            output[key] = {
-                'DataType': self.separse_message_attribute_type(value),
-                'StringValue': value
-            }
-
-        return output
+        raise TypeError(f"Unsupported message_attribute value was passed. Must be one of bytes, str, int, float, or "
+                        f"iterable. Got {type(attribute)}")
 
 
     def send_message(self, message, subject=None, message_attributes=None, forse_commit=False):
