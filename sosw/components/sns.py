@@ -206,8 +206,8 @@ class SnsManager():
         if hasattr(attribute, '__iter__'):
             return {'DataType': 'String.Array', 'StringValue': json.dumps(attribute)}
 
-        raise TypeError(f"Unsupported message_attribute value was passed. Must be one of bytes, str, int, float, or "
-                        f"iterable. Got {type(attribute)}")
+        raise TypeError(f"Unsupported message_attribute value was passed. Must be one of str, int, float, or iterable. "
+                        f"Got {type(attribute)}")
 
 
     def send_message(self, message, subject=None, message_attributes=None, forse_commit=False):
