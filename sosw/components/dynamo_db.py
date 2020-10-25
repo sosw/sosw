@@ -664,7 +664,7 @@ class DynamoDbClient:
 
 
     def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
-                                  strict=None, fetch_all_fields=None):
+                                  strict=None, max_items=None ,fetch_all_fields=None):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -683,6 +683,7 @@ class DynamoDbClient:
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
         :param bool strict: DEPRECATED.
+        :param int max_items: Limit the number of items to fetch
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
         :return: List of items from the table
@@ -742,8 +743,12 @@ class DynamoDbClient:
             if get_unprocessed_keys(latest_result):
                 raise Exception(f"batch_get_items action failed for table {table_name}, keys_list {keys_list}")
 
+            # If the amount of items equal or exceed max_items
+            if len(all_items) >= max_items:
+                break
+
         result = []
-        for item in all_items:
+        for item in all_items[:max_items]:
             result.append(self.dynamo_to_dict(item, fetch_all_fields=fetch_all_fields))
 
         return result
