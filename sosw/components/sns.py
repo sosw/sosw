@@ -106,6 +106,7 @@ class SnsManager():
     def set_recipient(self, arn):
         assert isinstance(arn, str), f"Invalid format of ARN: {arn}. Recipient must be string ARN of SNS Topic"
         assert arn.lower().startswith('arn:aws:'), f"Invalid format of ARN: {arn}. Recipient must be ARN of SNS Topic"
+
         self.set_client_attr('recipient', value=arn)
 
 
@@ -195,9 +196,6 @@ class SnsManager():
         :return: Type and value of an attribute
         :rtype: dict
         """
-
-        if isinstance(attribute, bytes):
-            return {'DataType': 'Binary', 'BinaryValue': attribute}
 
         if isinstance(attribute, str):
             return {'DataType': 'String', 'StringValue': attribute}

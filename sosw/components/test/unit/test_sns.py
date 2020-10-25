@@ -1,4 +1,5 @@
 import boto3
+import json
 import logging
 import shutil
 import unittest
@@ -122,6 +123,16 @@ class sns_TestCase(unittest.TestCase):
             self.sns.create_subscription('', 'protocol', 'endpoint')
 
         self.assertEqual(str(exc.exception), "You must send valid topic ARN, Protocol and Endpoint to add a subscription")
+
+
+    def test_get_message_attribute_validate_output(self):
+        self.assertEqual(self.sns.get_message_attribute(10), {'DataType': 'Number', 'StringValue': '10'})
+        self.assertEqual(self.sns.get_message_attribute(10.99), {'DataType': 'Number', 'StringValue': '10.99'})
+        self.assertEqual(self.sns.get_message_attribute('Test'), {'DataType': 'String', 'StringValue': 'Test'})
+        self.assertEqual(
+            self.sns.get_message_attribute(['Test1', 'Test2', 'Test3']),
+            {'DataType': 'String.Array', 'StringValue': json.dumps(['Test1', 'Test2', 'Test3'])}
+        )
 
 
 if __name__ == '__main__':
