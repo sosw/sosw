@@ -135,5 +135,19 @@ class sns_TestCase(unittest.TestCase):
         )
 
 
+    def test_commit_on_change_message_attributes(self):
+        self.sns.send_message("test message")
+        self.assertEqual(len(self.sns.queue), 1, "There is 1 message in the queue.")
+        self.sns.send_message("test message", message_attributes={'price': 100})
+        self.assertEqual(len(self.sns.queue), 1, "On change message_attributes, old message should be committed, "
+                                                 "new one queued.")
+        self.sns.send_message("test message", message_attributes={'price': 100})
+        self.assertEqual(len(self.sns.queue), 2, "On sending message with exactly same message_attributes, it should "
+                                                 "be queued.")
+        self.sns.send_message("test message", message_attributes={'price': 100, 'cancellation': True})
+        self.assertEqual(len(self.sns.queue), 1, "On sending message with different message_attributes, old messages "
+                                                 "should be committed. New one should be queued.")
+
+
 if __name__ == '__main__':
     unittest.main()
