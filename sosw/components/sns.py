@@ -106,6 +106,7 @@ class SnsManager():
     def set_recipient(self, arn):
         assert isinstance(arn, str), f"Invalid format of ARN: {arn}. Recipient must be string ARN of SNS Topic"
         assert arn.lower().startswith('arn:aws:'), f"Invalid format of ARN: {arn}. Recipient must be ARN of SNS Topic"
+
         self.set_client_attr('recipient', value=arn)
 
 
@@ -159,7 +160,7 @@ class SnsManager():
                     key: self.get_message_attribute(value) for key, value in self.message_attributes.items()
                 }
 
-            logger.info(f"MessageAttributes: {self.message_attributes}")
+            logger.info('MessageAttributes: {}'.format(self.message_attributes))
 
             self.client.publish(
                     TopicArn=self.recipient,
@@ -196,9 +197,6 @@ class SnsManager():
         :rtype: dict
         """
 
-        if isinstance(attribute, bytes):
-            return {'DataType': 'Binary', 'BinaryValue': attribute}
-
         if isinstance(attribute, str):
             return {'DataType': 'String', 'StringValue': attribute}
 
@@ -208,11 +206,11 @@ class SnsManager():
         if hasattr(attribute, '__iter__'):
             return {'DataType': 'String.Array', 'StringValue': json.dumps(attribute)}
 
-        raise TypeError(f"Unsupported message_attribute value was passed. Must be one of bytes, str, int, float, or "
-                        f"iterable. Got {type(attribute)}")
+        raise TypeError('Unsupported message_attribute value was passed. Must be one of str, int, float, or iterable. '
+                        'Got {}'.format(type(attribute)))
 
 
-    def send_message(self, message, subject=None, message_attributes=None, forse_commit=False):
+    def send_message(self, message, subject=None, forse_commit=False, message_attributes=None):
         """
         If the subject is not yet set (for example during __init__() of the class) - then require subject to be set.
         Otherwize we accept None subject and simply append messages to queue.
@@ -220,8 +218,8 @@ class SnsManager():
 
         :param str message: Message to be send in body of SNS message. Queued.
         :param str subject: Optional. Custom subject for message.
-        :param dict message_attributes: Optional. Message attributes for SNS subscription filter policies
         :param bool forse_commit: Commit the queue immediately if True, by default False
+        :param dict message_attributes: Optional. Message attributes for SNS subscription filter policies
         """
 
         if not any([self.subject, subject]):
