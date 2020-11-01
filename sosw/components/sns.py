@@ -128,7 +128,6 @@ class SnsManager():
 
         assert isinstance(message_attributes, dict), f"Invalid format of MessageAttributes: {message_attributes}. " \
             f"MessageAttributes must be a dict"
-        assert len(message_attributes) <= 5, f"Filter policy can have a maximum of 5 attribute names."
 
         self.set_client_attr('message_attributes', value=message_attributes)
 
