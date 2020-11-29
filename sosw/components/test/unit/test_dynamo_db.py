@@ -404,5 +404,40 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 0)
 
 
+    def test_on_demand_provisioned_throughput__get_capacity(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {'TableName': 'autotest_OnDemandTable'}
+
+        result = self.dynamo_client.get_capacity(table_name='autotest_OnDemandTable')
+        self.assertIsNone(result)
+
+
+    def test_on_demand_provisioned_throughput__get_table_indexes(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {
+            'Table': {
+                'TableName':              'autotest_OnDemandTable',
+                'LocalSecondaryIndexes':  [],
+
+                'GlobalSecondaryIndexes': [
+                    {
+                        'IndexName':  'IndexA',
+                        'KeySchema':  [
+                            {
+                                'AttributeName': 'string',
+                                'KeyType':       'HASH',
+                            },
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL',
+                        }
+                    }
+                ]
+            }
+        }
+
+        result = self.dynamo_client.get_table_indexes(table_name='autotest_OnDemandTable')
+        self.assertIsNone(result['Table']['IndexA']['ProvisionedThroughput']['read'])
+
 if __name__ == '__main__':
     unittest.main()

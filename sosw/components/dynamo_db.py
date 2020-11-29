@@ -104,7 +104,11 @@ class DynamoDbClient:
 
 
     def identify_dynamo_capacity(self, table_name=None):
-        """Identify and store the table capacity for a given table on the object
+        """
+        Identify and store the table capacity for a given table on the object.
+
+        In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the values for both ``read`` and ``write``
+        are set to ``0``.
 
         Arguments:
             table_name {str} -- short name of the dynamo db table to analyze
@@ -118,13 +122,16 @@ class DynamoDbClient:
 
         # Fetch the actual configuration of the dynamodb table directly for
         table_description = self._describe_table(table_name)
-        # Hash to the capacity
-        table_capacity = table_description["Table"]["ProvisionedThroughput"]
 
-        self._table_capacity[table_name] = {
-            'read': int(table_capacity["ReadCapacityUnits"]),
-            'write': int(table_capacity["WriteCapacityUnits"]),
-        }
+        # Hash to the capacity
+        try:
+            table_capacity = table_description["Table"]["ProvisionedThroughput"]
+            self._table_capacity[table_name] = {
+                'read': int(table_capacity["ReadCapacityUnits"]),
+                'write': int(table_capacity["WriteCapacityUnits"]),
+            }
+        except KeyError:
+            pass
 
 
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
@@ -185,6 +192,11 @@ class DynamoDbClient:
                'index_2_name': ...
            }
 
+        ..  note::
+
+            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the values in provisioned_throughput
+            are set to ``0``.
+
         """
 
         indexes = {}
@@ -211,22 +223,25 @@ class DynamoDbClient:
                 elif key['KeyType'] == 'RANGE':
                     range_key = key['AttributeName']
 
-            # Get write & read capacity.
-            # global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
-            write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
-                             table_description['ProvisionedThroughput']['WriteCapacityUnits']
-            read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
-                            table_description['ProvisionedThroughput']['ReadCapacityUnits']
-
             indexes[name] = {
                 'projection_type': projection_type,
                 'hash_key': hash_key,
-                'range_key': range_key,
-                'provisioned_throughput': {
-                    'write_capacity': write_capacity,
-                    'read_capacity': read_capacity
-                }
             }
+
+            if range_key:
+                indexes[name]['range_key'] = range_key
+
+            # Get write & read capacity.
+            # global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
+            if index.get('ProvisionedThroughput') or table_description.get('ProvisionedThroughput'):
+                write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
+                                 table_description['ProvisionedThroughput']['WriteCapacityUnits']
+                read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
+                                table_description['ProvisionedThroughput']['ReadCapacityUnits']
+                indexes[name]['provisioned_throughput']: {
+                    'write_capacity': write_capacity,
+                    'read_capacity':  read_capacity
+                }
 
         return indexes
 
@@ -994,6 +1009,7 @@ class DynamoDbClient:
         """
         return self.stats
 
+
     def get_capacity(self, table_name=None):
         """Fetches capacity for data tables
 
@@ -1001,30 +1017,38 @@ class DynamoDbClient:
             table_name {str} -- DynamoDB (default: {None})
 
         Returns:
-            dict -- read/write capacity for the table requested
+            dict -- read/write capacity for the table requested or None for ON_DEMAND (PAY_PER_REQUEST) tables
         """
 
         if table_name is None:
             logging.debug(self.config)
             table_name = self.config['table_name']
 
-        logging.debug(f"DynamoDB table name identified as {table_name}")
+        logging.debug("DynamoDB table name identified as %s in get_capacity", table_name)
+        if table_name not in self._table_descriptions:
+            self.identify_dynamo_capacity(table_name=table_name)
 
         if table_name in self._table_capacity.keys():
             return self._table_capacity[table_name]
-        else:
-            self.identify_dynamo_capacity(table_name=table_name)
-            return self._table_capacity[table_name]
 
 
-    def sleep_db(self, last_action_time: datetime.datetime, action: str):
+    def sleep_db(self, last_action_time: datetime.datetime, action: str, table_name = None):
         """
         Sleeps between calls to dynamodb (if it needs to).
         Uses the table's capacity to decide how long it needs to sleep.
+        No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
 
         :param last_action_time: Last time when we did this action (read/write) to this dynamo table
         :param action: "read" or "write"
         """
+
+        if table_name is None:
+            logging.debug(self.config)
+            table_name = self.config['table_name']
+
+        # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
+        if not self.get_capacity(table_name=table_name):
+            return
 
         capacity = self.get_capacity()[action]  # Capacity per second
         time_between_actions = 1 / capacity
