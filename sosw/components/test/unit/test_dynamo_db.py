@@ -368,10 +368,14 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_sleep_db__get_capacity_called(self):
-        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        # self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        self.dynamo_client.dynamo_client = MagicMock()
+        # self.dynamo_client.identify_dynamo_capacity = MagicMock()
+        # identify_dynamo_capacity
 
         self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
-        self.dynamo_client.get_capacity.assert_called_once()
+        self.dynamo_client.dynamo_client.describe_table.assert_called_once()
+        # self.dynamo_client.get_capacity.assert_called()
 
 
     def test_sleep_db__wrong_action(self):
@@ -424,7 +428,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                         'IndexName':  'IndexA',
                         'KeySchema':  [
                             {
-                                'AttributeName': 'string',
+                                'AttributeName': 'SomeAttr',
                                 'KeyType':       'HASH',
                             },
                         ],
@@ -437,7 +441,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         }
 
         result = self.dynamo_client.get_table_indexes(table_name='autotest_OnDemandTable')
-        self.assertIsNone(result['Table']['IndexA']['ProvisionedThroughput']['read'])
+        self.assertIsNone(result['IndexA'].get('ProvisionedThroughput'))
 
 if __name__ == '__main__':
     unittest.main()
