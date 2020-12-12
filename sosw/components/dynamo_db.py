@@ -243,7 +243,7 @@ class DynamoDbClient:
                                  table_description['ProvisionedThroughput']['WriteCapacityUnits']
                 read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
                                 table_description['ProvisionedThroughput']['ReadCapacityUnits']
-                indexes[name]['provisioned_throughput']: {
+                indexes[name]['provisioned_throughput'] = {
                     'write_capacity': write_capacity,
                     'read_capacity':  read_capacity
                 }
