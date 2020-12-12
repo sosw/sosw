@@ -150,9 +150,9 @@ class DynamoDbClient:
             return self._table_descriptions[table_name]
         else:
             table_description = self.dynamo_client.describe_table(TableName=table_name)
+            self._table_descriptions[table_name] = table_description
             logger.debug("Description for table %s received from API and cached: %s ", table_name,
                          self._table_descriptions[table_name])
-            self._table_descriptions[table_name] = table_description
             return self._table_descriptions[table_name]
 
 
