@@ -26,7 +26,6 @@
     SOFTWARE.
 """
 
-
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
@@ -75,6 +74,8 @@ class DynamoDbClient:
         }
 
     """
+
+
     def __init__(self, config):
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
@@ -127,7 +128,7 @@ class DynamoDbClient:
         try:
             table_capacity = table_description["Table"]["ProvisionedThroughput"]
             self._table_capacity[table_name] = {
-                'read': int(table_capacity["ReadCapacityUnits"]),
+                'read':  int(table_capacity["ReadCapacityUnits"]),
                 'write': int(table_capacity["WriteCapacityUnits"]),
             }
         except KeyError:
@@ -229,7 +230,7 @@ class DynamoDbClient:
 
             indexes[name] = {
                 'projection_type': projection_type,
-                'hash_key': hash_key,
+                'hash_key':        hash_key,
             }
 
             if range_key:
@@ -489,7 +490,8 @@ class DynamoDbClient:
 
         cond_expr = " AND ".join(cond_expr_parts)
 
-        select = ('ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
+        select = (
+            'ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
 
         logger.debug(cond_expr, filter_values)
         query_args = {
@@ -577,8 +579,10 @@ class DynamoDbClient:
                 f"Unsupported expression for Filtering: {expression}"
             key = words[0]
             result_expr = f"{key} between :st_between_{key} and :en_between_{key}"
-            result_values = self.dict_to_dynamo({f"st_between_{key}": words[2],
-                                                 f"en_between_{key}": words[4]}, add_prefix=':', strict=False)
+            result_values = self.dict_to_dynamo({
+                                                    f"st_between_{key}": words[2],
+                                                    f"en_between_{key}": words[4]
+                                                }, add_prefix=':', strict=False)
         else:
             raise ValueError(f"Unsupported expression for Filtering: {expression}")
 
@@ -723,10 +727,12 @@ class DynamoDbClient:
         # Convert given keys to dynamo syntax
         query_keys = [self.dict_to_dynamo(item) for item in keys_list]
 
+
         # Check if we skipped something - if we did, try again.
         def get_unprocessed_keys(db_result):
             return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
                    and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+
 
         all_items = []
 
@@ -901,9 +907,9 @@ class DynamoDbClient:
             update_expr_parts.append(remove_expression)
 
         update_item_query = {
-            'Key':                       keys,  # Ex. {'key_name':   'key_value', ...}
-            'TableName':                 table_name,
-            'UpdateExpression':          " ".join(update_expr_parts)  # Ex. "SET #attr_name = :attr_name ..."
+            'Key':              keys,  # Ex. {'key_name':   'key_value', ...}
+            'TableName':        table_name,
+            'UpdateExpression': " ".join(update_expr_parts)  # Ex. "SET #attr_name = :attr_name ..."
         }
 
         if expression_attributes:
@@ -1037,7 +1043,7 @@ class DynamoDbClient:
             return self._table_capacity[table_name]
 
 
-    def sleep_db(self, last_action_time: datetime.datetime, action: str, table_name = None):
+    def sleep_db(self, last_action_time: datetime.datetime, action: str, table_name=None):
         """
         Sleeps between calls to dynamodb (if it needs to).
         Uses the table's capacity to decide how long it needs to sleep.
