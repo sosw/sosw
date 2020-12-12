@@ -108,8 +108,7 @@ class DynamoDbClient:
         """
         Identify and store the table capacity for a given table on the object.
 
-        In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the values for both ``read`` and ``write``
-        are set to ``0``.
+        In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the ProvisionedThroughput is missing.
 
         Arguments:
             table_name {str} -- short name of the dynamo db table to analyze
@@ -117,9 +116,9 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logging.info("Got `table_name` from config: %s", table_name)
+            logging.debug("Got `table_name` from config: %s", table_name)
 
-        logging.info("DynamoDB table name identified as %s", table_name)
+        logging.debug("DynamoDB table name identified as %s", table_name)
 
         # Fetch the actual configuration of the dynamodb table directly for
         table_description = self._describe_table(table_name)
@@ -199,9 +198,7 @@ class DynamoDbClient:
 
         ..  note::
 
-            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the values in provisioned_throughput
-            are set to ``0``.
-
+            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the provisioned_throughput is missing.
         """
 
         indexes = {}
