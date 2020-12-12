@@ -116,13 +116,12 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logging.info("Got `table_name` from config: {table_name}")
+            logging.info("Got `table_name` from config: %s", table_name)
 
-        logging.info(f"DynamoDB table name identified as {table_name}")
+        logging.info("DynamoDB table name identified as %s", table_name)
 
         # Fetch the actual configuration of the dynamodb table directly for
         table_description = self._describe_table(table_name)
-        print(f"descriptin in Indentify: {table_description}")
 
         # Hash to the capacity
         try:
@@ -146,13 +145,15 @@ class DynamoDbClient:
         table_name = self._get_validate_table_name(table_name)
 
         if self._table_descriptions and table_name in self._table_descriptions:
-            print(f"description from _describe table: {self._table_descriptions[table_name]}")
+            logger.debug("Description taken from cache for table %s: %s ", table_name,
+                         self._table_descriptions[table_name])
             return self._table_descriptions[table_name]
         else:
             table_description = self.dynamo_client.describe_table(TableName=table_name)
-            print(table_description   )
+            logger.debug("Description for table %s received from API and cached: %s ", table_name,
+                         self._table_descriptions[table_name])
             self._table_descriptions[table_name] = table_description
-            return table_description
+            return self._table_descriptions[table_name]
 
 
     def get_table_keys(self, table_name: Optional[str] = None) -> Tuple[str, Optional[str]]:
@@ -1027,14 +1028,12 @@ class DynamoDbClient:
             logging.debug(self.config)
             table_name = self.config['table_name']
 
-        print("Table requested in get_cap: ", table_name)
-        print("DynamoDB table name identified as %s in get_capacity", table_name)
         if table_name not in self._table_descriptions:
-            print(f"Not in _table_descriptions: {table_name}")
+            logger.debug("Getting description from API because not cached yet: %s", table_name)
             self.identify_dynamo_capacity(table_name=table_name)
 
         if table_name in self._table_capacity.keys():
-            print("found in cache")
+            logger.debug("Found capacity in the cache for table %s: %s", table_name, self._table_capacity[table_name])
             return self._table_capacity[table_name]
 
 
@@ -1052,10 +1051,8 @@ class DynamoDbClient:
             logging.debug(self.config)
             table_name = self.config['table_name']
 
-        print("CALLING get_cap")
         # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
         if not self.get_capacity(table_name=table_name):
-            print("get cap returned None       s")
             return
 
         capacity = self.get_capacity()[action]  # Capacity per second
