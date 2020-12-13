@@ -30,7 +30,6 @@ __all__ = ['SnsManager']
 __author__ = "Nikolay Grishchenko"
 
 import boto3
-import csv
 import json
 import logging
 import os
@@ -71,6 +70,7 @@ class SnsManager():
 
         self.queue = []
         self.separator = "\n\n#####\n\n"
+        self.message_attributes = None
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
         if self.test:
@@ -106,6 +106,7 @@ class SnsManager():
     def set_recipient(self, arn):
         assert isinstance(arn, str), f"Invalid format of ARN: {arn}. Recipient must be string ARN of SNS Topic"
         assert arn.lower().startswith('arn:aws:'), f"Invalid format of ARN: {arn}. Recipient must be ARN of SNS Topic"
+
         self.set_client_attr('recipient', value=arn)
 
 
@@ -120,6 +121,15 @@ class SnsManager():
 
         assert isinstance(separator, str), f"Invalid format of separator: {separator}. Separator must be string."
         setattr(self, 'separator', separator)
+
+
+    def set_message_attributes(self, message_attributes):
+        """ Validate attribute value and set new value """
+
+        assert isinstance(message_attributes, dict), f"Invalid format of MessageAttributes: {message_attributes}. " \
+            f"MessageAttributes must be a dict"
+
+        self.set_client_attr('message_attributes', value=message_attributes)
 
 
     def commit(self):
@@ -141,15 +151,65 @@ class SnsManager():
         message = self.separator.join(self.queue)
 
         if message:
+            extra_args = {}
+
+            # Add MessageAttributes to the message if they are defined
+            if self.message_attributes:
+                extra_args['MessageAttributes'] = {
+                    key: self.get_message_attribute(value) for key, value in self.message_attributes.items()
+                }
+
+            logger.info('MessageAttributes: {}'.format(self.message_attributes))
+
             self.client.publish(
                     TopicArn=self.recipient,
                     Subject=self.subject,
-                    Message=message)
+                    Message=message,
+                    **extra_args
+            )
 
         self.queue = []
+        self.message_attributes = None
 
 
-    def send_message(self, message, subject=None, forse_commit=False):
+    def compare_message_attributtes(self, message_attributes):
+        """
+        Compare MessageAttributes. If new object was received - set new value to the attribute
+
+        :param dict message_attributes: Message attributes for SNS subscription filter policies
+        """
+
+        if not self.message_attributes == message_attributes:
+            logger.info("Attribute message_attributes was changed. We set a new one and commit the current queue.")
+            self.set_message_attributes(message_attributes)
+
+
+    @staticmethod
+    def get_message_attribute(attribute):
+        """
+        Amazon SNS compares policy attributes only to message attributes that have the following data types:
+        - String
+        - String.Array
+        - Number
+
+        :return: Type and value of an attribute
+        :rtype: dict
+        """
+
+        if isinstance(attribute, str):
+            return {'DataType': 'String', 'StringValue': attribute}
+
+        if isinstance(attribute, (int, float)):
+            return {'DataType': 'Number', 'StringValue': str(attribute)}
+
+        if hasattr(attribute, '__iter__'):
+            return {'DataType': 'String.Array', 'StringValue': json.dumps(attribute)}
+
+        raise TypeError('Unsupported message_attribute value was passed. Must be one of str, int, float, or iterable. '
+                        'Got {}'.format(type(attribute)))
+
+
+    def send_message(self, message, subject=None, forse_commit=False, message_attributes=None):
         """
         If the subject is not yet set (for example during __init__() of the class) - then require subject to be set.
         Otherwize we accept None subject and simply append messages to queue.
@@ -157,6 +217,8 @@ class SnsManager():
 
         :param str message: Message to be send in body of SNS message. Queued.
         :param str subject: Optional. Custom subject for message.
+        :param bool forse_commit: Commit the queue immediately if True, by default False
+        :param dict message_attributes: Optional. Message attributes for SNS subscription filter policies
         """
 
         if not any([self.subject, subject]):
@@ -166,9 +228,9 @@ class SnsManager():
         if all([self.subject, subject]) and not self.subject == subject:
             logger.info("Change of subject detected. We commit (send) the current queue.")
             self.set_subject(subject)  # This will also commit existing messages automatically.
-            self.queue = [message]
-        else:
-            self.queue.append(message)
+
+        self.compare_message_attributtes(message_attributes)  # This will also commit existing messages automatically.
+        self.queue.append(message)
 
         if forse_commit:
             if subject and not self.subject:

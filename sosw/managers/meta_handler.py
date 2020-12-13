@@ -55,6 +55,7 @@ class MetaHandler:
         'write_meta_to_ddb': True,
         'dynamo_db_config': {
             'table_name': 'sosw_tasks_meta',
+            'hash_key': 'task_id',
             'row_mapper': {
                 'task_id': 'S',
                 'created_at': 'N',
@@ -104,8 +105,15 @@ class MetaHandler:
     def post(self, task_id: str, action: str, **kwargs):
         """
         Write row with meta data to sosw_tasks_meta DynamoDB Table if configured.
-        As long as collecting the meta data is optional, the ``MetaHandler`` will either save it
+        As long as collecting the meta data is optional, the MetaHandler will either save it
         to DynamoDB or just log.
+
+        MetaHandler does not restrict the fields and actions you can post from your Worker Lambdas with the exception of
+        the following built-in fields. These ones are always taken from the current ``lambda_context`` automatically.
+
+         * ``'author'``
+         * ``'invocation_id'``
+         * ``'log_stream_name'``
         """
 
         row = {

@@ -3,6 +3,7 @@ import logging
 import time
 import unittest
 import os
+from copy import deepcopy
 from decimal import Decimal
 
 from unittest.mock import MagicMock, patch, Mock
@@ -59,6 +60,23 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+
+
+    def test_create__raises__if_no_hash_col_configured(self):
+        bad_config = deepcopy(self.TEST_CONFIG)
+        del bad_config['hash_key']
+
+        dynamo_client = DynamoDbClient(config=bad_config)
+
+        row = {self.HASH_KEY: 'cat', self.RANGE_KEY: '123'}
+        self.assertRaises(AssertionError, dynamo_client.create, row, self.table_name)
+
+
+    def test_create__calls_boto_client(self):
+        self.dynamo_mock.put_item.assert_not_called()
+
+        self.dynamo_client.put({self.HASH_KEY: 'cat', self.RANGE_KEY: '123'}, self.table_name)
+        self.dynamo_mock.put_item.assert_called_once()
 
 
     def test_dict_to_dynamo_strict(self):
@@ -181,6 +199,21 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             'hash_col': 'aaa', 'range_col': 123, 'other_col': {"how many": 300}
         }
         self.assertDictEqual(res, expected)
+
+
+    def test_dynamo_to_dict__mapping_doesnt_match__raises(self):
+        # If the value type in the DB doesn't match the expected type in row_mapper - raise ValueError
+
+        dynamo_row = {
+            'hash_col':   {'S': 'aaa'}, 'range_col': {'N': '123'},
+            'other_col': {'N': '111'}  # In the row_mapper, other_col is of type 'S'
+        }
+
+        with self.assertRaises(ValueError) as e:
+            dict_row = self.dynamo_client.dynamo_to_dict(dynamo_row)
+
+        self.assertEqual("'other_col' is expected to be of type 'S' in row_mapper, but real value is of type 'N'",
+                         str(e.exception))
 
 
     def test_get_by_query__validates_comparison(self):
@@ -335,10 +368,10 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_sleep_db__get_capacity_called(self):
-        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        self.dynamo_client.dynamo_client = MagicMock()
 
-        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
-        self.dynamo_client.get_capacity.assert_called_once()
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write', table_name='autotest_new')
+        self.dynamo_client.dynamo_client.describe_table.assert_called_once()
 
 
     def test_sleep_db__wrong_action(self):
@@ -370,6 +403,54 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         # Sleep function should not be called
         self.assertEqual(mock_sleep.call_count, 0)
 
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__returns_none_for_on_demand(self, mock_sleep):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {'TableName': 'autotest_OnDemand'}
+
+        # Check that went to sleep
+        time_between_ms = 10
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=time_between_ms)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write', table_name='autotest_OnDemand')
+
+        self.assertEqual(mock_sleep.call_count, 0, "Should not have called time.sleep")
+
+
+    def test_on_demand_provisioned_throughput__get_capacity(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {'TableName': 'autotest_OnDemand'}
+
+        result = self.dynamo_client.get_capacity(table_name='autotest_OnDemand')
+        self.assertIsNone(result)
+
+
+    def test_on_demand_provisioned_throughput__get_table_indexes(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {
+            'Table': {
+                'TableName':              'autotest_OnDemandTable',
+                'LocalSecondaryIndexes':  [],
+
+                'GlobalSecondaryIndexes': [
+                    {
+                        'IndexName':  'IndexA',
+                        'KeySchema':  [
+                            {
+                                'AttributeName': 'SomeAttr',
+                                'KeyType':       'HASH',
+                            },
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL',
+                        }
+                    }
+                ]
+            }
+        }
+
+        result = self.dynamo_client.get_table_indexes(table_name='autotest_OnDemandTable')
+        self.assertIsNone(result['IndexA'].get('ProvisionedThroughput'))
 
 if __name__ == '__main__':
     unittest.main()

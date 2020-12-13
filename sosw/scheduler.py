@@ -103,7 +103,8 @@ class Scheduler(Essential):
                 # ('store', {}),
                 # ('product', {}),
             ],
-        }
+        },
+        'task_operational_overhead_for_ddb': 0.03,
     }
 
     # these clients will be initialized by Processor constructor
@@ -638,23 +639,23 @@ class Scheduler(Essential):
                     logger.info(f"No rows in file: {file_name}")
                     break
 
-                for task in data:
-                    logger.debug(f"Pushing task to DynamoDB: {task}")
-                    t = json.loads(task)
-                    labourer = self.task_client.get_labourer(t['labourer_id'])
-                    self.task_client.create_task(labourer=labourer, **t)
-                    self.meta_handler.post(task_id=task[_('task_id')], action='created')
+                for raw_task in data:
+                    logger.debug(f"Pushing task to DynamoDB: {raw_task}")
+                    task = json.loads(raw_task)
+                    labourer = self.task_client.get_labourer(task[_('labourer_id')])
+                    new_task = self.task_client.create_task(labourer=labourer, **task)
+                    self.meta_handler.post(task_id=new_task[_('task_id')], action='created',
+                                           labourer=task[_('labourer_id')])
                     time.sleep(self._sleeptime_for_dynamo)
 
             else:
                 # Spawning another sibling to continue the processing
                 logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
+                payload = dict(file_name=file_name)
                 try:
-                    payload = dict(file_name=file_name)
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
-
-                except Exception as err:
+                except Exception:
                     logger.exception(
                             f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
@@ -663,15 +664,24 @@ class Scheduler(Essential):
 
 
     @property
-    def _sleeptime_for_dynamo(self):
+    def _sleeptime_for_dynamo(self) -> float:
         """
-        Pull DynamoDB write capcity dynamically to throttle at appropriate levels
+        Pull DynamoDB write capacity dynamically and configure speed of writing.
 
-        Calculates based on the assumption that a single write action consumes a full WCU
-        Therefore multiple capacity units are calculated as a fraction of the
+        Calculates based on the assumption that a single write action consumes a full WCU.
+        It also assumes that the duration of processing the task itself takes some time and decreases sleep accordingly.
+        This duration is theoretically configurable in ``config['task_operational_overhead_for_ddb']``, but after
+        several versions this should probably be removed from config.
+
+        For on-demand billing of the DynamoDB table returns zero.
         """
-        logging.debug(dir(self.task_client.dynamo_db_client))
-        return 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        try:
+            write_throughput = 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        except ZeroDivisionError:
+            return 0
+
+        operational_overhead = self.config['task_operational_overhead_for_ddb']
+        return max(write_throughput - operational_overhead, 0)
 
 
     @staticmethod

@@ -325,6 +325,8 @@ class TaskManager(Processor):
         self.dynamo_db_client.put(new_task)
         logger.debug(f"Created a task: {new_task}")
 
+        return new_task
+
 
     def construct_payload_for_task(self, **kwargs) -> str:
         """

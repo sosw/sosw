@@ -908,13 +908,12 @@ def _unwrap_msg_dict_from_sns_event(event) -> Dict:
         return json.loads(event['Message'])
 
 
-def get_message_dict_from_sns_event(event):
+def get_message_dict_from_sns_event(event: Dict) -> Dict:
     """
     Extract SNS event message and return it loaded as a dict.
 
-    :param dict event: Lambda SNS event (payload). Must be a JSON document.
-    :rtype dict
-    :return: The SNS message, converted to dict
+    :param event:   Lambda SNS event (payload). Must be a JSON document.
+    :return:        The SNS message, converted to dict
     """
 
     if is_event_from_sns(event):

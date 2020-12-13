@@ -141,6 +141,7 @@ class WorkerAssistant(Essential):
             keys={_('task_id'): task_id},
             attributes_to_update=fields_to_update,
         )
+        self.meta_handler.post(task_id=task_id, action='marked_as_completed')
 
 
     def mark_task_as_failed(self, task_id: str, stats: Dict = None, result: Dict = None):
@@ -164,6 +165,7 @@ class WorkerAssistant(Essential):
             update_kwargs['attributes_to_update'] = fields_to_update
 
         self.dynamo_db_client.update(**update_kwargs)
+        self.meta_handler.post(task_id=task_id, action='marked_as_failed')
 
 
     def get_db_field_name(self, field: str) -> str:
