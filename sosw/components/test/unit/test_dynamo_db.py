@@ -368,10 +368,10 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     def test_sleep_db__get_capacity_called(self):
-        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
+        self.dynamo_client.dynamo_client = MagicMock()
 
-        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
-        self.dynamo_client.get_capacity.assert_called_once()
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write', table_name='autotest_new')
+        self.dynamo_client.dynamo_client.describe_table.assert_called_once()
 
 
     def test_sleep_db__wrong_action(self):
@@ -403,6 +403,54 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         # Sleep function should not be called
         self.assertEqual(mock_sleep.call_count, 0)
 
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__returns_none_for_on_demand(self, mock_sleep):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {'TableName': 'autotest_OnDemand'}
+
+        # Check that went to sleep
+        time_between_ms = 10
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=time_between_ms)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write', table_name='autotest_OnDemand')
+
+        self.assertEqual(mock_sleep.call_count, 0, "Should not have called time.sleep")
+
+
+    def test_on_demand_provisioned_throughput__get_capacity(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {'TableName': 'autotest_OnDemand'}
+
+        result = self.dynamo_client.get_capacity(table_name='autotest_OnDemand')
+        self.assertIsNone(result)
+
+
+    def test_on_demand_provisioned_throughput__get_table_indexes(self):
+        self.dynamo_client.dynamo_client = MagicMock()
+        self.dynamo_client.dynamo_client.describe_table.return_value = {
+            'Table': {
+                'TableName':              'autotest_OnDemandTable',
+                'LocalSecondaryIndexes':  [],
+
+                'GlobalSecondaryIndexes': [
+                    {
+                        'IndexName':  'IndexA',
+                        'KeySchema':  [
+                            {
+                                'AttributeName': 'SomeAttr',
+                                'KeyType':       'HASH',
+                            },
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL',
+                        }
+                    }
+                ]
+            }
+        }
+
+        result = self.dynamo_client.get_table_indexes(table_name='autotest_OnDemandTable')
+        self.assertIsNone(result['IndexA'].get('ProvisionedThroughput'))
 
 if __name__ == '__main__':
     unittest.main()

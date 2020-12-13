@@ -21,6 +21,17 @@ Basics
 * Richard wins against Winnie.
 
 
+Building the docs
+------------------
+
+You can locally build the docs and use the built in python web server to view the html version directly from localhost
+in your preferred browser.
+
+..  code-block:: bash
+
+    sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+
+
 Common Sense Boosters
 ---------------------
 
