@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,10 @@
 """
 
 import logging
+import time
+
+from typing import Tuple
+from functools import wraps
 
 
 def logging_wrapper(level: int = None):
@@ -75,3 +79,47 @@ def logging_wrapper(level: int = None):
             return result
         return wrapper
     return decorator
+
+
+def retry(exception_to_check: (Exception, Tuple[Exception]) = Exception, tries: int = 4, delay: int = 3,
+          backoff: int = 2):
+    """
+    Retry calling the decorated function using an exponential backoff.
+    Receive amount of retries and time in seconds of a delay between each retry.
+    Based on: http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
+
+    :param exception_to_check: The exception to check or a tuple of exceptions.
+    :param tries: Number of tries
+    :param delay: Delay between retries in seconds
+    :param backoff: backoff multiplier e.g. value of 2 will double the delay
+        each retry
+    """
+
+    assert tries > 0, "Tries must be 1 or greater"
+    assert delay >= 0, "Delay must be greater than 0"
+    assert backoff >= 1, "Backoff must be greater than 1"
+
+
+    def decorator_retry(func):
+        @wraps(func)
+        def func_retry(*args, **kwargs):
+            mutable_tries, mutable_delay = tries, delay
+
+            while mutable_tries > 1:
+                try:
+                    return func(*args, **kwargs)
+                except exception_to_check as e:
+                    msg = f"{str(e)}, Retrying in {mutable_delay} seconds..."
+                    if logging:
+                        logging.warning(msg)
+                    else:
+                        print(msg)
+                    time.sleep(mutable_delay)
+                    mutable_tries -= 1
+                    mutable_delay *= backoff
+
+            return func(*args, **kwargs)
+
+        return func_retry
+
+    return decorator_retry

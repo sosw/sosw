@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
     SOFTWARE.
 """
 
-
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
 
 import boto3
+import datetime
 import logging
 import json
 import os
@@ -74,6 +74,8 @@ class DynamoDbClient:
         }
 
     """
+
+
     def __init__(self, config):
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
@@ -84,10 +86,8 @@ class DynamoDbClient:
 
         self.config = config
 
-        if not str(config.get('table_name')).startswith('autotest_mock_'):
-            self.dynamo_client = boto3.client('dynamodb')
-        else:
-            logger.info(f"Initialized DynamoClient without boto3 client for table {config.get('table_name')}")
+        # create a dynamodb client
+        self.dynamo_client = boto3.client('dynamodb', region_name=config.get('region_name'))
 
         # storage for table description(s)
         self._table_descriptions: Optional[Dict[str, Dict]] = {}
@@ -105,7 +105,10 @@ class DynamoDbClient:
 
 
     def identify_dynamo_capacity(self, table_name=None):
-        """Identify and store the table capacity for a given table on the object
+        """
+        Identify and store the table capacity for a given table on the object.
+
+        In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the ProvisionedThroughput is missing.
 
         Arguments:
             table_name {str} -- short name of the dynamo db table to analyze
@@ -113,19 +116,22 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logging.debug("Got `table_name` from config: {table_name}")
+            logging.debug("Got `table_name` from config: %s", table_name)
 
-        logging.debug(f"DynamoDB table name identified as {table_name}")
+        logging.debug("DynamoDB table name identified as %s", table_name)
 
         # Fetch the actual configuration of the dynamodb table directly for
         table_description = self._describe_table(table_name)
-        # Hash to the capacity
-        table_capacity = table_description["Table"]["ProvisionedThroughput"]
 
-        self._table_capacity[table_name] = {
-            'read': int(table_capacity["ReadCapacityUnits"]),
-            'write': int(table_capacity["WriteCapacityUnits"]),
-        }
+        # Hash to the capacity
+        try:
+            table_capacity = table_description["Table"]["ProvisionedThroughput"]
+            self._table_capacity[table_name] = {
+                'read':  int(table_capacity["ReadCapacityUnits"]),
+                'write': int(table_capacity["WriteCapacityUnits"]),
+            }
+        except KeyError:
+            pass
 
 
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
@@ -139,11 +145,15 @@ class DynamoDbClient:
         table_name = self._get_validate_table_name(table_name)
 
         if self._table_descriptions and table_name in self._table_descriptions:
+            logger.debug("Description taken from cache for table %s: %s ", table_name,
+                         self._table_descriptions[table_name])
             return self._table_descriptions[table_name]
         else:
             table_description = self.dynamo_client.describe_table(TableName=table_name)
             self._table_descriptions[table_name] = table_description
-            return table_description
+            logger.debug("Description for table %s received from API and cached: %s ", table_name,
+                         self._table_descriptions[table_name])
+            return self._table_descriptions[table_name]
 
 
     def get_table_keys(self, table_name: Optional[str] = None) -> Tuple[str, Optional[str]]:
@@ -186,6 +196,9 @@ class DynamoDbClient:
                'index_2_name': ...
            }
 
+        ..  note::
+
+            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the provisioned_throughput is missing.
         """
 
         indexes = {}
@@ -212,22 +225,25 @@ class DynamoDbClient:
                 elif key['KeyType'] == 'RANGE':
                     range_key = key['AttributeName']
 
-            # Get write & read capacity.
-            # global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
-            write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
-                             table_description['ProvisionedThroughput']['WriteCapacityUnits']
-            read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
-                            table_description['ProvisionedThroughput']['ReadCapacityUnits']
-
             indexes[name] = {
                 'projection_type': projection_type,
-                'hash_key': hash_key,
-                'range_key': range_key,
-                'provisioned_throughput': {
-                    'write_capacity': write_capacity,
-                    'read_capacity': read_capacity
-                }
+                'hash_key':        hash_key,
             }
+
+            if range_key:
+                indexes[name]['range_key'] = range_key
+
+            # Get write & read capacity.
+            # global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
+            if index.get('ProvisionedThroughput') or table_description.get('ProvisionedThroughput'):
+                write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
+                                 table_description['ProvisionedThroughput']['WriteCapacityUnits']
+                read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
+                                table_description['ProvisionedThroughput']['ReadCapacityUnits']
+                indexes[name]['provisioned_throughput'] = {
+                    'write_capacity': write_capacity,
+                    'read_capacity':  read_capacity
+                }
 
         return indexes
 
@@ -261,6 +277,11 @@ class DynamoDbClient:
                 val_dict = dynamo_row.get(key)  # Ex: {'N': "1234"} or {'S': "myvalue"}
                 if val_dict:
                     val = val_dict.get(key_type)  # Ex: 1234 or "myvalue"
+
+                    if val is None and key_type not in val_dict:
+                        real_type = list(val_dict.keys())[0]
+                        raise ValueError(f"'{key}' is expected to be of type '{key_type}' in row_mapper, "
+                                         f"but real value is of type '{real_type}'")
 
                     # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
@@ -384,7 +405,8 @@ class DynamoDbClient:
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
-                     desc: bool = False, fetch_all_fields: bool = None) -> Union[List[Dict], int]:
+                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None) \
+            -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -416,6 +438,12 @@ class DynamoDbClient:
                              To reverse the order set the argument `desc = True`.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
+        :param list expr_attrs_names: List of attributes names, in case if an attribute name begins with a number or
+            contains a space, a special character, or a reserved word, you must use an expression attribute name to
+            replace that attribute's name in the expression.
+            Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
+            `ExpressionAttributeNames`:
+            {'#session': 'session', '#key': 'key'}
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
@@ -432,6 +460,10 @@ class DynamoDbClient:
         cond_expr_parts = []
 
         for key_attr_name in keys:
+            # Check if key attribute name is in `expr_attrs_names`, and create a prefix
+            # We add this prefix in case need to use `ExpressionAttributeNames`
+            expr_attr_prefix = '#' if expr_attrs_names and key_attr_name in expr_attrs_names else ''
+
             # Find comparison for key. The formatting of conditions could be different, so a little spaghetti.
             if key_attr_name.startswith('st_between_'):  # This is just a marker to construct a custom expression later
                 compr = 'between'
@@ -443,18 +475,20 @@ class DynamoDbClient:
                 compr = '='
 
             if compr == 'begins_with':
-                cond_expr_parts.append(f"begins_with ({key_attr_name}, :{key_attr_name})")
+                cond_expr_parts.append(f"begins_with ({expr_attr_prefix}{key_attr_name}, :{key_attr_name})")
 
             elif compr == 'between':
                 key = key_attr_name[11:]
-                cond_expr_parts.append(f"{key} between :st_between_{key} and :en_between_{key}")
+                expr_attr_prefix = '#' if expr_attrs_names and key in expr_attrs_names else ''
+                cond_expr_parts.append(f"{expr_attr_prefix}{key} between :st_between_{key} and :en_between_{key}")
             else:
                 assert compr in ('=', '<', '<=', '>', '>='), f"Comparison not valid: {compr} for {key_attr_name}"
-                cond_expr_parts.append(f"{key_attr_name} {compr} :{key_attr_name}")
+                cond_expr_parts.append(f"{expr_attr_prefix}{key_attr_name} {compr} :{key_attr_name}")
 
         cond_expr = " AND ".join(cond_expr_parts)
 
-        select = ('ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
+        select = (
+            'ALL_ATTRIBUTES' if index_name is None else 'ALL_PROJECTED_ATTRIBUTES') if not return_count else 'COUNT'
 
         logger.debug(cond_expr, filter_values)
         query_args = {
@@ -463,6 +497,11 @@ class DynamoDbClient:
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
             'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
         }
+
+        # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
+        # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
+        if expr_attrs_names:
+            query_args['ExpressionAttributeNames'] = {f'#{el}': el for el in expr_attrs_names}
 
         # In case we have a filter expression, we parse it and add variables (values) to the ExpressionAttributeValues
         # Expression is also transformed to use these variables.
@@ -537,15 +576,17 @@ class DynamoDbClient:
                 f"Unsupported expression for Filtering: {expression}"
             key = words[0]
             result_expr = f"{key} between :st_between_{key} and :en_between_{key}"
-            result_values = self.dict_to_dynamo({f"st_between_{key}": words[2],
-                                                 f"en_between_{key}": words[4]}, add_prefix=':', strict=False)
+            result_values = self.dict_to_dynamo({
+                                                    f"st_between_{key}": words[2],
+                                                    f"en_between_{key}": words[4]
+                                                }, add_prefix=':', strict=False)
         else:
             raise ValueError(f"Unsupported expression for Filtering: {expression}")
 
         return result_expr, result_values
 
 
-    def get_by_scan(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -554,6 +595,9 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
+               If not specified also in the config, will scan the table itself without any index.
+
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If True, will get all attributes. Default is False.
@@ -566,7 +610,7 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
 
         result = []
         for page in response_iterator:
@@ -576,7 +620,7 @@ class DynamoDbClient:
         return result
 
 
-    def get_by_scan_generator(self, attrs=None, table_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -586,6 +630,9 @@ class DynamoDbClient:
 
         :param dict attrs: Attribute names and values of the items we get. Can be empty to get the whole table.
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
+        :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
+               If not specified also in the config, will scan the table itself without any index.
+
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
             If false, will get all attributes. Default is True.
@@ -598,13 +645,13 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
             yield [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None):
+    def _build_scan_iterator(self, attrs=None, table_name=None, index_name=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -628,10 +675,16 @@ class DynamoDbClient:
         if filter_values:
             query_args['ExpressionAttributeValues'] = filter_values
 
+        index_name = index_name or self.config.get('index_name')
+
+        if index_name:
+            query_args['IndexName'] = index_name
+
         logger.debug(f"Scanning dynamo: {query_args}")
 
         paginator = self.dynamo_client.get_paginator('scan')
         response_iterator = paginator.paginate(**query_args)
+
         return response_iterator
 
 
@@ -671,10 +724,12 @@ class DynamoDbClient:
         # Convert given keys to dynamo syntax
         query_keys = [self.dict_to_dynamo(item) for item in keys_list]
 
+
         # Check if we skipped something - if we did, try again.
         def get_unprocessed_keys(db_result):
             return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
                    and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+
 
         all_items = []
 
@@ -744,16 +799,25 @@ class DynamoDbClient:
         return query
 
 
-    def put(self, row, table_name=None, overwrite_existing=True):
+    def put(self, row: Dict, table_name: str = None, overwrite_existing: bool = True):
         """
-        Adds a row to the database
+        Writes the row to the DynamoDB table.
 
-        :param dict row:                The row to add to the table. key is column name, value is value.
-        :param string table_name:       Name of the dynamo table to add the row to.
-        :param bool overwrite_existing: Overwrite the existing row if True, otherwise will raise an exception if exists.
+        :param row:                 The row to add to the table. key is column name, value is value.
+        :param table_name:          Name of the dynamo table to add the row to.
+        :param overwrite_existing:  Overwrite the existing row if True, otherwise will raise an exception if exists.
+
+        ..  warning::
+
+            ``overwrite_existing`` option requires the config to have a 'hash_key' parameter with a name of a field.
         """
 
         table_name = self._get_validate_table_name(table_name)
+
+        if not overwrite_existing:
+            assert 'hash_key' in self.config, \
+                "Missing 'hash_key' parameter in the dynamo_db config. You must provide it in order to use the " \
+                "'create' method, or 'overwrite_existing=False' option."
 
         put_query = self.build_put_query(row, table_name, overwrite_existing)
         logger.debug(f"Put to DB: {put_query}")
@@ -765,17 +829,26 @@ class DynamoDbClient:
         self.stats['dynamo_put_queries'] += 1
 
 
-    def create(self, row, table_name=None):
+    def create(self, row: Dict, table_name: str = None):
+        """
+        Uses the mechanism of the ``put`` method, but first validates that the item with same hash & [range] key[s]
+        does not exist in the table. Otherwise raises: ``ConditionalCheckFailedException``
+
+        ..  warning:: This method requires the config to have a 'hash_key' parameter with a name of a field.
+
+        :param row:
+        :param table_name:
+        """
         self.put(row, table_name, overwrite_existing=False)
 
 
     # @benchmark
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
-               condition_expression: Optional[str] = None):
+               condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
         """
         Updates an item in DynamoDB. Will create a new item if doesn't exist.
-        If you want to make sure it exists, use ``patch`` method
+        IMPORTANT - If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
@@ -789,27 +862,28 @@ class DynamoDbClient:
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
             Example: {'some_counter': '3'}
+        :param list attributes_to_remove: Will remove these attributes from the record
         :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
         """
 
         table_name = self._get_validate_table_name(table_name)
 
-        if not attributes_to_update and not attributes_to_increment:
+        if not attributes_to_update and not attributes_to_increment and not attributes_to_remove:
             raise ValueError(f"In dynamodb.update, please specify either attributes_to_update "
-                             f"or attributes_to_increment")
+                             f"or attributes_to_increment or attributes_to_remove")
 
         expression_attributes = {}
-        update_expr_parts = []
+        update_set_val_expr_parts = []
         attribute_values = {}
         if attributes_to_update:
             for col in attributes_to_update:
-                update_expr_parts.append(f"#{col} = :{col}")
+                update_set_val_expr_parts.append(f"#{col} = :{col}")
                 expression_attributes[f"#{col}"] = col
 
         if attributes_to_increment:
             for col in attributes_to_increment:
-                update_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
+                update_set_val_expr_parts.append(f"#{col} = if_not_exists(#{col}, :zero) + :{col}")
                 expression_attributes[f"#{col}"] = col
                 attribute_values.update({'zero': '0'})
 
@@ -819,20 +893,33 @@ class DynamoDbClient:
         attribute_values.update(attributes_to_increment or {})
         attribute_values = self.dict_to_dynamo(attribute_values.copy(), add_prefix=":", strict=False)
 
-        update_expr = "SET " + ", ".join(update_expr_parts)
+        update_expr_parts = []
+
+        if update_set_val_expr_parts:
+            set_expression = "SET " + ", ".join(update_set_val_expr_parts)
+            update_expr_parts.append(set_expression)
+
+        if attributes_to_remove:
+            remove_expression = "REMOVE " + ", ".join(attributes_to_remove)
+            update_expr_parts.append(remove_expression)
 
         update_item_query = {
-            'ExpressionAttributeNames':  expression_attributes,  # Ex. {'#attr_name': 'attr_name', ...}
-            'ExpressionAttributeValues': attribute_values,  # Ex. {':attr_name': 'some_value', ...}
-            'Key':                       keys,  # Ex. {'key_name':   'key_value', ...}
-            'TableName':                 table_name,
-            'UpdateExpression':          update_expr  # Ex. "SET #attr_name = :attr_name AND ..."
+            'Key':              keys,  # Ex. {'key_name':   'key_value', ...}
+            'TableName':        table_name,
+            'UpdateExpression': " ".join(update_expr_parts)  # Ex. "SET #attr_name = :attr_name ..."
         }
+
+        if expression_attributes:
+            update_item_query['ExpressionAttributeNames'] = expression_attributes  # Ex. {'#attr_name': 'attr_name', ..}
+        if attribute_values:
+            update_item_query['ExpressionAttributeValues'] = attribute_values  # Ex. {':attr_name': 'some_value', ...}
 
         if condition_expression:
             expr, values = self._parse_filter_expression(condition_expression)
             update_item_query['ConditionExpression'] = expr
-            update_item_query['ExpressionAttributeValues'].update(values)
+            if values:
+                update_item_query['ExpressionAttributeValues'] = update_item_query.get('ExpressionAttributeValues', {})
+                update_item_query['ExpressionAttributeValues'].update(values)
 
         logger.debug(f"Updating an item, query: {update_item_query}")
         response = self.dynamo_client.update_item(**update_item_query)
@@ -841,14 +928,18 @@ class DynamoDbClient:
 
 
     def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
-              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None):
+              attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+              attributes_to_remove: Optional[List[str]] = None):
         """
         Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
         """
 
         hash_key = self.config['hash_key']
         condition_expression = f'attribute_exists {hash_key}'
-        self.update(keys, attributes_to_update, attributes_to_increment, table_name, condition_expression)
+        self.update(keys=keys, attributes_to_update=attributes_to_update,
+                    attributes_to_increment=attributes_to_increment, table_name=table_name,
+                    condition_expression=condition_expression,
+                    attributes_to_remove=attributes_to_remove)
 
 
     def delete(self, keys: Dict, table_name: Optional[str] = None):
@@ -925,6 +1016,7 @@ class DynamoDbClient:
         """
         return self.stats
 
+
     def get_capacity(self, table_name=None):
         """Fetches capacity for data tables
 
@@ -932,20 +1024,50 @@ class DynamoDbClient:
             table_name {str} -- DynamoDB (default: {None})
 
         Returns:
-            dict -- read/write capacity for the table requested
+            dict -- read/write capacity for the table requested or None for ON_DEMAND (PAY_PER_REQUEST) tables
         """
 
         if table_name is None:
             logging.debug(self.config)
             table_name = self.config['table_name']
 
-        logging.debug(f"DynamoDB table name identified as {table_name}")
+        if table_name not in self._table_descriptions:
+            logger.debug("Getting description from API because not cached yet: %s", table_name)
+            self.identify_dynamo_capacity(table_name=table_name)
 
         if table_name in self._table_capacity.keys():
+            logger.debug("Found capacity in the cache for table %s: %s", table_name, self._table_capacity[table_name])
             return self._table_capacity[table_name]
-        else:
-            self.identify_dynamo_capacity(table_name=table_name)
-            return self._table_capacity[table_name]
+
+
+    def sleep_db(self, last_action_time: datetime.datetime, action: str, table_name=None):
+        """
+        Sleeps between calls to dynamodb (if it needs to).
+        Uses the table's capacity to decide how long it needs to sleep.
+        No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
+
+        :param last_action_time: Last time when we did this action (read/write) to this dynamo table
+        :param action: "read" or "write"
+        """
+
+        if table_name is None:
+            logging.debug(self.config)
+            table_name = self.config['table_name']
+
+        # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
+        if not self.get_capacity(table_name=table_name):
+            return
+
+        capacity = self.get_capacity()[action]  # Capacity per second
+        time_between_actions = 1 / capacity
+
+        time_elapsed = datetime.datetime.now().timestamp() - last_action_time.timestamp()
+
+        time_to_sleep = time_between_actions - time_elapsed
+
+        if time_to_sleep > 0:
+            logging.debug(f"Sleeping {time_to_sleep} sec")
+            time.sleep(time_to_sleep)
 
 
     def reset_stats(self):

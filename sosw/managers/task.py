@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,6 @@ __version__ = "1.0"
 import boto3
 import json
 import logging
-import os
 import time
 import uuid
 
@@ -46,7 +45,6 @@ from sosw.app import Processor
 from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
-# from sosw.managers.ecology import EcologyManager
 from sosw.labourer import Labourer
 
 
@@ -327,6 +325,8 @@ class TaskManager(Processor):
         self.dynamo_db_client.put(new_task)
         logger.debug(f"Created a task: {new_task}")
 
+        return new_task
+
 
     def construct_payload_for_task(self, **kwargs) -> str:
         """
@@ -405,7 +405,7 @@ class TaskManager(Processor):
                 call_payload = json.loads(call_payload)
             except JSONDecodeError as err:
                 logger.exception(f"Failed to decode payload: {call_payload}. Probably invalid task.")
-                # TODO should panic, but not die here. Just skip the task.
+                self.stats['invalid_tasks_skipped'] += 1
 
         call_payload.update(task)
 
@@ -487,7 +487,7 @@ class TaskManager(Processor):
     def get_task_by_id(self, task_id: str) -> Dict:
         """ Fetches the full data of the Task. """
 
-        tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id})
+        tasks = self.dynamo_db_client.get_by_query({self.get_db_field_name('task_id'): task_id}, fetch_all_fields=True)
         assert len(tasks) in [0, 1], "Fetched more than 1 task by primary key(). Something broke your DB " \
                                      "schema."
         return tasks[0] if tasks else {}
@@ -630,6 +630,7 @@ class TaskManager(Processor):
                 },
                 index_name=self.config['dynamo_db_config']['index_greenfield'],
                 filter_expression=f"attribute_not_exists {_('completed_at')}",
+                fetch_all_fields=True
         )
 
 
@@ -684,43 +685,39 @@ class TaskManager(Processor):
         return tasks
 
 
-    def retry_tasks(self, labourer: Labourer, tasks: List[Dict]):
+    def retry_task(self, task: Dict, labourer_id: str, greenfield: int):
         """
-        Move tasks to tasks table, in beginning of the queue (with greenfield of a task that will be invoked next)
-        All tasks must belong to the same labourer.
+        Move task to tasks table, in beginning of the queue (with greenfield of a task that will be invoked next).
+        This method is called by Scavenger.
         """
 
         _ = self.get_db_field_name
 
-        for task in tasks:
-            assert task[_('labourer_id')] == labourer.id, f"Task labourer_id must be {labourer.id}, " \
-                f"bad value: {task[_('labourer_id')]}"
+        assert task[_('labourer_id')] == labourer_id, f"Task labourer_id must be {labourer_id}, " \
+            f"bad value: {task[_('labourer_id')]}"
 
-        lowest_greenfield = self.get_oldest_greenfield_for_labourer(labourer)
+        del task['desired_launch_time']
+        task[_('greenfield')] = greenfield
 
-        for task in tasks:
-            del task['desired_launch_time']
-            lowest_greenfield = lowest_greenfield - 1
-            task[_('greenfield')] = lowest_greenfield
-            task = self._jsonify_payload_of_task(task)
+        task = self._jsonify_payload_of_task(task)
 
-            delete_keys = {_('labourer_id'): labourer.id, _('task_id'): task[_('task_id')]}
+        delete_keys = {_('labourer_id'): labourer_id, _('task_id'): task[_('task_id')]}
 
-            # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table
-            # https://github.com/boto/boto3/issues/1791: It's available for 1.9.54+
-            if parse_version(str(boto3.__version__)) >= parse_version('1.9.54'):
-                put_query = self.dynamo_db_client.make_put_transaction_item(task)
-                delete_query = self.dynamo_db_client.make_delete_transaction_item(
-                        delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
-                self.dynamo_db_client.transact_write(put_query, delete_query)
+        # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table
+        # https://github.com/boto/boto3/issues/1791: It's available for 1.9.54+
+        if parse_version(str(boto3.__version__)) >= parse_version('1.9.54'):
+            put_query = self.dynamo_db_client.make_put_transaction_item(task)
+            delete_query = self.dynamo_db_client.make_delete_transaction_item(
+                    delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+            self.dynamo_db_client.transact_write(put_query, delete_query)
 
-            else:
-                logger.info("Looks like you are running an ancient copy of boto3 still in old Environment of Lambda."
-                            "Salut to AWS from March 2019.")
-                self.dynamo_db_client.put(task)
-                self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+        else:
+            logger.info("Looks like you are running an ancient copy of boto3 still in old Environment of Lambda."
+                        "Salut to AWS from March 2019.")
+            self.dynamo_db_client.put(task)
+            self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
 
-            self.stats['due_for_retry_tasks'] += 1
+        self.stats['due_for_retry_tasks'] += 1
 
 
     @benchmark

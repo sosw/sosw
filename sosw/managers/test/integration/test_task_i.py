@@ -84,9 +84,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         MAP = {
             'available': {
-                self.RANGE_KEY[0]: lambda x: str(worker_id),
-                _('greenfield'):   lambda x: round(1000 + random.randrange(0, 100000, 1000)),
-                _('attempts'):     lambda x: 0,
+                self.RANGE_KEY[0]:          lambda x: str(worker_id),
+                _('greenfield'):            lambda x: round(1000 + random.randrange(0, 100000, 1000)),
+                _('attempts'):              lambda x: 0,
+                _('result_uploaded_files'): lambda x: [{'bucket': 'cnvm',
+                                                        's3_key': 'key',
+                                                        'description': 'description'
+                                                        }],
+                _('stat_time_register_clients'):                 lambda x: 0.00440446899847
             },
             'invoked':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
@@ -129,6 +134,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # raise ValueError(f"Unsupported `status`: {status}. Should be one of: 'available', 'invoked'.")
 
         workers = [self.LABOURER.id] if not mutiple_labourers else range(42, 45)
+        output = []
+
         for worker_id in workers:
 
             for i in range(count_tasks):
@@ -140,8 +147,11 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
                     row[field] = getter(row)
 
                 print(f"Putting {row} to {table}")
+                output.append(row)
                 self.dynamo_client.put(row, table_name=table)
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+
+        return output
 
 
     def test_get_next_for_labourer(self):
@@ -351,7 +361,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertIn(tasks[0], result_tasks)
         self.assertIn(tasks[1], result_tasks)
 
-
+    @unittest.skip("This funciton moved to Scavenger")
     def test_retry_tasks(self):
         _ = self.manager.get_db_field_name
 
@@ -422,6 +432,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
 
 
+    @unittest.skip("This funciton moved to Scavenger")
     @patch.object(boto3, '__version__', return_value='1.9.53')
     def test_retry_tasks__old_boto(self, n):
         self.test_retry_tasks()
@@ -485,6 +496,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertLessEqual(self.manager.get_average_labourer_duration(some_labourer), 900)
         self.assertGreaterEqual(self.manager.get_average_labourer_duration(some_labourer), 10)
 
-        # Benchmarking
-        # print(self.manager.get_stats())
-        # self.assertTrue(False)
+
+    def test_get_task_by_id__check_return_task_with_all_attrs(self):
+        tasks = self.setup_tasks()
+        time.sleep(0.3)
+        result = self.manager.get_task_by_id(tasks[0]['task_id'])
+        self.assertEqual(result, tasks[0])

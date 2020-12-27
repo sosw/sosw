@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -57,18 +57,24 @@ __all__ = ['validate_account_to_dashed',
            'trim_arn_to_name',
            'trim_arn_to_account',
            'make_hash',
-           'to_bool'
+           'to_bool',
+           'get_message_dict_from_sns_event',
+           'is_event_from_sns',
+           'unwrap_event_recursively',
+           'is_event_from_sqs',
            ]
 
-import re
-import collections
-import uuid
 import datetime
-from datetime import timezone
+import json
+import re
+import uuid
 
-from collections import defaultdict, Hashable
+from collections import abc, defaultdict
 from copy import deepcopy
+from datetime import timezone
 from typing import Iterable, Callable, Dict, Mapping, List, Optional
+
+from sosw.components.exceptions import EventNotFromSourceException
 
 
 def validate_account_to_dashed(account):
@@ -83,10 +89,9 @@ def validate_account_to_dashed(account):
     account = str(account).strip()
     if re.match("[0-9]{3}-[0-9]{3}-[0-9]{4}", account):
         return account
-    elif re.match("^[0-9]{10}$", account):
+    if re.match("^[0-9]{10}$", account):
         return '-'.join([str(account)[0:3], str(account)[3:6], str(account)[6:]])
-    else:
-        raise ValueError("Invalid account format provided: {}".format(account))
+    raise ValueError("Invalid account format provided: {}".format(account))
 
 
 def validate_account_to_int(account):
@@ -100,8 +105,7 @@ def validate_account_to_int(account):
     account = str(account).strip().replace('-', '')
     if re.match("^[0-9]{10}$", account):
         return int(account)
-    else:
-        raise ValueError("Invalid account format provided: {}".format(account))
+    raise ValueError("Invalid account format provided: {}".format(account))
 
 
 def validate_list_of_numbers_from_csv(data):
@@ -115,19 +119,18 @@ def validate_list_of_numbers_from_csv(data):
 
     if isinstance(data, str):
         return [int(x.strip()) for x in data.split(',') if x.strip().isnumeric()]
-    else:
-        if isinstance(data, (int, float)):
-            return [data]
-        result = []
-        try:
-            for x in data:
-                if isinstance(x, (int, float)):
-                    result.append(int(x))
-                elif isinstance(x, str) and x.strip().isnumeric():
-                    result.append(int(x.strip()))
-        except TypeError:
-            pass
-        return result
+    if isinstance(data, (int, float)):
+        return [data]
+    result = []
+    try:
+        for x in data:
+            if isinstance(x, (int, float)):
+                result.append(int(x))
+            elif isinstance(x, str) and x.strip().isnumeric():
+                result.append(int(x.strip()))
+    except TypeError:
+        pass
+    return result
 
 
 def validate_uuid4(uuid_string):
@@ -142,7 +145,7 @@ def validate_uuid4(uuid_string):
     """
 
     try:
-        val = uuid.UUID(uuid_string, version=4)
+        _ = uuid.UUID(uuid_string, version=4)
     except ValueError:
         # If it's a value error, then the string
         # is not a valid hex code for a UUID.
@@ -196,9 +199,8 @@ def rstrip_all(input, patterns):
     if not r == rabbit:
         # Go recursive in case we stripped smth in this iteration.
         return rstrip_all(r, patterns)
-    else:
-        # If nothing left to change, return the rabbit.
-        return rabbit
+    # If nothing left to change, return the rabbit.
+    return rabbit
 
 
 def get_one_or_none_from_dict(input, name, vtype=None):
@@ -241,8 +243,7 @@ def get_one_or_none_from_dict(input, name, vtype=None):
     if isinstance(results, (list, tuple, set)):
         if len(results) > 1:
             raise ValueError("More than one {}s found in input.".format(name))
-        else:
-            return convert(results[0], vtype)
+        return convert(results[0], vtype)
     elif results:
         raise ValueError("Some not-iterable '{}s' found in input: {}".format(name, str(type(result))))
 
@@ -264,8 +265,7 @@ def get_one_from_dict(input, name, vtype=None):
     result = get_one_or_none_from_dict(input, name, vtype)
     if result:
         return result
-    else:
-        raise ValueError("Did not find any value {} in the input {}".format(name, input))
+    raise ValueError("Did not find any value {} in the input {}".format(name, input))
 
 
 def get_list_of_multiple_or_one_or_empty_from_dict(input, name, vtype=None):
@@ -467,7 +467,7 @@ def recursive_matches_soft(src, key, val, **kwargs):
         return any(recursive_matches_soft(element, key, val, **kwargs) for element in src)
 
     # We should try to dig deeper.
-    elif len(path_elements) > 1:
+    if len(path_elements) > 1:
         try:
             if recursive_matches_soft(src[path_elements[0]], '.'.join(path_elements[1:]), val, **kwargs):
                 return True
@@ -515,9 +515,9 @@ def recursive_matches_strict(src, key, val, **kwargs):
     # if src is iterable: iterate
     if isinstance(src, (list, tuple)):
         return any(recursive_matches_strict(x, key, val, **kwargs) for x in src)
-    elif len(path_elements) > 1:
+    if len(path_elements) > 1:
         return recursive_matches_strict(src[path_elements[0]], '.'.join(path_elements[1:]), val, **kwargs)
-    elif len(path_elements) == 1:
+    if len(path_elements) == 1:
         try:
             if kwargs.get('exclude_key') and src[kwargs['exclude_key']] == kwargs['exclude_val']:
                 # logging.debug("Skipping element because it matches exclude parameters.")
@@ -604,11 +604,11 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
 def dunder_to_dict(data: dict, separator=None):
     """
     Converts the flat dict with keys using dunder notation for nesting elements to regular nested dictionary.
-    
+
     E.g.:
 
     .. code-block:: python
-    
+
        data = {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
        result = dunder_to_dict(data)
 
@@ -630,7 +630,7 @@ def dunder_to_dict(data: dict, separator=None):
         separator = '__'
     else:
         if not isinstance(separator, str):
-            raise TypeError(f"Separator must be a string.")
+            raise TypeError("Separator must be a string.")
 
     result = defaultdict(dict)
 
@@ -676,9 +676,8 @@ def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
 
     if len(keys) == 0:
         return value
-    else:
-        assert isinstance(keys[0], Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
-        return {keys[0]: nested_dict_from_keys(keys[1:], value)}
+    assert isinstance(keys[0], abc.Hashable), f"Keys of dictionary must be hashable for nestify. Got: {type(keys[0])}"
+    return {keys[0]: nested_dict_from_keys(keys[1:], value)}
 
 
 def convert_string_to_words(string):
@@ -693,7 +692,7 @@ def convert_string_to_words(string):
     if not isinstance(string, str):
         raise TypeError(f"Input must be string, got {type(string)}")
 
-    return re.sub('\s+', ',', string.lower().strip())
+    return re.sub(r'\s+', ',', string.lower().strip())
 
 
 def construct_dates_from_event(event: dict) -> tuple:
@@ -717,10 +716,10 @@ def construct_dates_from_event(event: dict) -> tuple:
     days_back = event.get('days_back')
 
     if st_date and days_back:
-        raise AttributeError(f"construct_dates_from_event() doesn't allow st_date and days_back simultaneously")
+        raise AttributeError("construct_dates_from_event() doesn't allow st_date and days_back simultaneously")
 
     if not st_date and not days_back:
-        raise AttributeError(f"construct_dates_from_event() expects either st_date or days_back")
+        raise AttributeError("construct_dates_from_event() expects either st_date or days_back")
 
     if days_back:
         st_date = en_date - datetime.timedelta(days=int(days_back))
@@ -791,19 +790,29 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     new = deepcopy(d)
 
     for k, v in u.items():
-        if isinstance(v, collections.Mapping) and isinstance(d.get(k), (collections.Mapping, type(None))):
+        if isinstance(v, abc.Mapping) and isinstance(d.get(k), (abc.Mapping, type(None))):
             new[k] = recursive_update(d.get(k, {}), v)
 
         elif isinstance(v, (set, list, tuple)):
             if isinstance(d.get(k), (set, list, tuple)):
                 # Merge lists of uniques. I really want this helper to eat anything and return what it should. :)
-                nv = list(set(d[k])) + list(v)
+                nv = list(d[k]) + list(v)
                 try:
-                    # The types of values in list could be unhashable, so it is not that easy filter uniques.
                     new[k] = list(set(nv))
+                # The types of values in list could be unhashable, so it is not that easy filter uniques.
+                # In case the elements are dictionaries try JSONification and unuque by strings.
                 except TypeError:
-                    # In this case we just merge lists as is.
-                    new[k] = nv
+                    new[k] = None
+
+                # If types are not hashable we still try to deal with them as if Dictionaries.
+                # In this case we filter unique ones by JSON values and them unfold them back and reconstruct Dicts.
+                if not new[k]:
+                    try:
+                        jsons = set(json.dumps(sorted(x.items())) for x in nv)
+                        new[k] = [dict(json.loads(x)) for x in jsons]
+                    except (TypeError, AttributeError):
+                        # If not all values of iterable are hashable and not Dictionaries we just merge them as is.
+                        new[k] = nv
             else:
                 new[k] = v
         else:
@@ -863,10 +872,10 @@ def make_hash(o):
         return tuple([make_hash(e) for e in o])
 
     # Set should be sorted (by hashes of elements) before returns
-    elif isinstance(o, set):
+    if isinstance(o, set):
         return tuple(sorted([make_hash(e) for e in o]))
 
-    elif not isinstance(o, dict):
+    if not isinstance(o, dict):
         return hash(o)
 
     # We are left with a dictionary
@@ -881,9 +890,154 @@ def make_hash(o):
 def to_bool(val):
     if isinstance(val, (bool, int, float)):
         return bool(val)
-    elif isinstance(val, str):
+    if isinstance(val, str):
         if val.lower() in ['true', '1']:
             return True
-        elif val.lower() in ['false', '0']:
+        if val.lower() in ['false', '0']:
             return False
     raise Exception(f"Can't convert unexpected value to bool: {val}, type: {type(val)}")
+
+
+def _unwrap_msg_dict_from_sns_event(event) -> Dict:
+    if 'Records' in event and len(event['Records']) > 1:
+        raise ValueError(f"SNS event is not expected to have more than one record. Event: {event}")
+
+    try:
+        return json.loads(event['Records'][0]['Sns']['Message'])
+    except:
+        return json.loads(event['Message'])
+
+
+def get_message_dict_from_sns_event(event: Dict) -> Dict:
+    """
+    Extract SNS event message and return it loaded as a dict.
+
+    :param event:   Lambda SNS event (payload). Must be a JSON document.
+    :return:        The SNS message, converted to dict
+    """
+
+    if is_event_from_sns(event):
+        return _unwrap_msg_dict_from_sns_event(event)
+
+    raise ValueError("Event is not from SNS")
+
+
+def is_event_from_sns(event):
+    """
+    Check if the lambda invocation was by SNS.
+
+    :param dict event: Lambda Event (payload)
+    :rtype: bool
+    """
+
+    try:
+        return bool(event['Records'][0]['Sns']['Message'])
+    except:
+        pass
+
+    try:
+        return bool('Message' in event and 'TopicArn' in event and ':sns:' in event['TopicArn'])
+    except:
+        pass
+
+    return False
+
+
+def _unwrap_message_dicts_from_sqs_event(event) -> List[Dict]:
+    sqs_messages = []
+
+    for record in event['Records']:
+        d = json.loads(record['body'])
+        sqs_messages.append(d)
+
+    return sqs_messages
+
+
+def is_event_from_sqs(event) -> bool:
+    try:
+        return event['Records'][0]['eventSource'] == 'aws:sqs'
+    except:
+        pass
+
+    return False
+
+
+unwrap_checker_methods = {
+    # Methods with input: event, output: bool
+    'sns': is_event_from_sns,
+    'sqs': is_event_from_sqs,
+}
+
+unwrap_extractor_methods = {
+    # Methods with input: event, output: Dict / List[Dict]
+    'sns': _unwrap_msg_dict_from_sns_event,
+    'sqs': _unwrap_message_dicts_from_sqs_event,
+}
+
+
+def _unwrap_event_messages(event: Dict, source: str) -> List[Dict]:
+    """
+    *source* can be sns / sqs
+    Unwrap list of messages from *source*, if the event is from this source.
+    Will unwrap a single layer (unlike ``unwrap_event_recursively`` - which is recursive).
+    If the event is not from this source, will raiseEventNotFromSourceException
+
+    .. code-block:: python
+
+        unwrapped_sns_messages = _unwrap_event_messages(event, source='sns'):
+
+    :param event:
+    :param source: 'sns' or 'sqs'
+    :return: List of events/messages unwrapped from the *source*
+    :raises: EventNotFromSourceException
+    """
+
+    checker_method = unwrap_checker_methods[source]
+    extractor_method = unwrap_extractor_methods[source]
+
+    if checker_method(event):  # is_event_from_sns/sqs
+        unwrapped = extractor_method(event)  # _unwrap_msg_dicts_from_sns/sqs_event
+        return unwrapped if isinstance(unwrapped, list) else [unwrapped]
+
+    raise EventNotFromSourceException(f"Event is not from {source}, can't unwrap it")
+
+
+def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -> List[Dict]:
+    """
+    Recursively unwraps lambda event from SQS and/or SNS event skeletons.
+    Supported sources: 'sqs', 'sns'.
+    Will unwrap recursively until the event is not wrapped anymore, or up to depth of 10
+
+    .. code-block:: python
+
+        unwrapped_messages = unwrap_event_recursively(event, sources=['sns', 'sqs']):
+
+    :param event: Lambda event
+    :param sources: List of strings describing what the event might be wrapped by. If empty, will unwrapped from all.
+    :return: List of dictionaries - unwrapped messages from the event
+    """
+
+    messages = [event]
+    sources = [x.lower() for x in sources or ['sns', 'sqs']]
+    max_depth = 10  # Unwrapping up to depth of 10, as a safety mechanism against infinite loop
+
+    for _ in range(max_depth):
+        original = deepcopy(messages)
+
+        for source in sources:
+            converted_messages = []
+
+            for msg in messages:
+                try:
+                    unwrapped = _unwrap_event_messages(msg, source=source)
+                except EventNotFromSourceException:
+                    unwrapped = [msg]
+
+                converted_messages.extend(unwrapped)
+
+            messages = converted_messages
+
+        if original == messages:
+            break
+
+    return messages

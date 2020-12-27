@@ -31,10 +31,14 @@ class WorkerAssistant_UnitTestCase(unittest.TestCase):
         event = {
             'action':  'mark_task_as_completed',
             'task_id': '123',
+            'stats': '{"s_key": "value"}',
+            'result': '{"r_key": "value"}'
         }
+
         self.worker_assistant.mark_task_as_completed = Mock(return_value=None)
         self.worker_assistant(event)
-        self.worker_assistant.mark_task_as_completed.assert_called_once_with(task_id='123')
+        self.worker_assistant.mark_task_as_completed.assert_called_once_with(task_id='123', stats={"s_key": "value"},
+                                                                             result={"r_key": "value"})
 
 
     def test_call__mark_task_as_closed__no_task_id__raises(self):

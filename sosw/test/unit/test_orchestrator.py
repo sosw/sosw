@@ -1,6 +1,7 @@
 import boto3
 import os
 import unittest
+import uuid
 
 from copy import deepcopy
 from unittest import mock
@@ -8,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 from sosw.orchestrator import Orchestrator
 from sosw.labourer import Labourer
+from sosw.managers.meta_handler import MetaHandler
+from sosw.managers.task import TaskManager
 from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
 
 
@@ -19,15 +22,23 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG
 
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+    SAMPLE_TASK_ID = str(uuid.uuid4())
+    SAMPLE_TASK = {
+        'labourer_id': 'some_function',
+        'task_id': SAMPLE_TASK_ID,
+            'a': 'foo',
+        }
 
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
-
+        self.get_config_patch.return_value = {}
         self.custom_config = deepcopy(self.TEST_CONFIG)
-        with patch('boto3.client'):
-            self.orchestrator = Orchestrator(self.custom_config)
 
+        with patch('boto3.client'):
+            self.orchestrator = Orchestrator(custom_config=self.custom_config)
+
+        self.orchestrator.meta_handler = MagicMock(signature=MetaHandler)
 
 
     def tearDown(self):
@@ -112,7 +123,7 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.orchestrator.get_desired_invocation_number_for_labourer(some_labourer), expected)
 
 
-    def test_invoke_for_labourer(self):
+    def test_invoke_for_labourer__calls__get_desired_invocation_number_for_labourer(self):
         TEST_COUNT = 3
         some_labourer = self.orchestrator.task_client.register_labourers()[0]
 
@@ -123,10 +134,26 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.orchestrator.get_desired_invocation_number_for_labourer.assert_called_once()
 
 
+    def test_invoke_for_labourer__calls_invoke_tasks__and__meta_handler(self):
+        some_labourer = self.orchestrator.task_client.register_labourers()[0]
+
+        self.orchestrator.get_desired_invocation_number_for_labourer = MagicMock(return_value=1)
+        self.orchestrator.task_client.get_next_for_labourer = MagicMock(return_value=[self.SAMPLE_TASK])
+        self.orchestrator.task_client.invoke_task = MagicMock(signature=TaskManager.get_next_for_labourer)
+
+        self.orchestrator.invoke_for_labourer(some_labourer)
+
+        self.orchestrator.task_client.invoke_task.assert_called_once()
+        self.orchestrator.meta_handler.post.assert_called_once()
+
+
     def test_invoke_for_labourer__desired_zero(self):
         self.orchestrator.get_desired_invocation_number_for_labourer = MagicMock(return_value=0)
+        self.orchestrator.task_client.get_next_for_labourer = MagicMock()
         self.orchestrator.task_client.invoke_task = MagicMock()
 
         self.orchestrator.invoke_for_labourer(self.LABOURER)
 
+        self.orchestrator.task_client.get_next_for_labourer.assert_not_called()
         self.orchestrator.task_client.invoke_task.assert_not_called()
+        self.orchestrator.meta_handler.post.assert_not_called()

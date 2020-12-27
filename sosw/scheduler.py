@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2021  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,8 @@ from collections import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
-from sosw.app import Processor, LambdaGlobals
+from sosw.essential import Essential
+from sosw.app import LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
 from sosw.managers.task import TaskManager
@@ -65,7 +66,7 @@ class InvalidJob(ValueError):
     pass
 
 
-class Scheduler(Processor):
+class Scheduler(Essential):
     """
     Scheduler is converting business jobs to one or multiple Worker tasks.
 
@@ -105,7 +106,8 @@ class Scheduler(Processor):
                     # ('product', {}),
                 ]
             }
-        }
+        },
+        'task_operational_overhead_for_ddb': 0.03,
     }
 
     # these clients will be initialized by Processor constructor
@@ -125,7 +127,7 @@ class Scheduler(Processor):
         self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
         assert not any(x.endswith('s') for x in self.chunkable_attrs), \
             f"We do not currently support attributes that end with 's'. " \
-                f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def __call__(self, event):
@@ -325,22 +327,42 @@ class Scheduler(Processor):
         period = job.pop('period', None)
         isolate = job.pop('isolate_days', None)
 
-        PERIOD_KEYS = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days',
-                       'last_week']
+        period_patterns = ['last_[0-9]+_days', '[0-9]+_days_back', 'yesterday', 'today', 'previous_[0-9]+_days',
+                           'last_week']
+
+        # Adding custom methods for creating date list found in config of child classes
+        custom_period_patterns = self.config.get('custom_period_patterns')
+        if custom_period_patterns:
+            if isinstance(custom_period_patterns, (list, tuple)):
+                for method in custom_period_patterns:
+                    if isinstance(method, str):
+                        period_patterns.append(method)
+                    else:
+                        raise TypeError(f"Pattern '{method}' expected to be str, got {type(method)}")
+            else:
+                raise TypeError(f"'custom_period_patterns' expected to be (list, tuple), "
+                                f"got {type(custom_period_patterns)}")
 
         if period:
 
             date_list = []
-            for pattern in PERIOD_KEYS:
+            for pattern in period_patterns:
                 if re.match(pattern, period):
                     # Call the appropriate method with given value from job.
                     logger.debug(f"Found period '{period}' for job {job}")
                     method_name = pattern.replace('[0-9]+', 'x', 1)
-                    date_list = getattr(self, method_name)(period)
+                    try:
+                        date_list = getattr(self, method_name)(period)
+
+                    except TypeError:
+                        # For methods without parameter
+                        date_list = getattr(self, method_name)()
+
                     break
             else:
-                raise ValueError(f"Unsupported period requested: {period}. Valid options are: "
-                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', 'last_week'")
+                raise ValueError(f"Unsupported period requested: {period}. Valid (basic) options are: "
+                                 f"'last_X_days', 'X_days_back', 'yesterday', 'today', 'previous_[0-9]+_days', "
+                                 f"'last_week'")
 
             if isolate:
                 assert len(date_list) > 0, f"The chunking period: {period} did not generate date_list. Bad."
@@ -415,7 +437,7 @@ class Scheduler(Processor):
         # If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.
         MAX_BATCH = 1000000  # This is not configurable!
         batch_size = int(job.get(f'max_{plural(attr)}_per_batch',
-                             skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
+                                 skeleton.get(f'max_{plural(attr)}_per_batch', MAX_BATCH)))
 
 
         def push_list_chunks():
@@ -448,7 +470,7 @@ class Scheduler(Processor):
                 # not related to current `attr`
                 job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr]}
                 logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
-                            f"leaving job_skeleton: {job_skeleton}")
+                             f"leaving job_skeleton: {job_skeleton}")
 
                 task_skeleton = {**deepcopy(skeleton), **job_skeleton}
 
@@ -485,7 +507,8 @@ class Scheduler(Processor):
                                     logger.debug(f"Appending task to data for {name} from {val}")
                                     data.append(task)
                                 else:
-                                    raise InvalidJob(f"Unsupported type of val: {subdata} for attribute {possible_attr}")
+                                    raise InvalidJob(
+                                        f"Unsupported type of val: {subdata} for attribute {possible_attr}")
 
                 # If current vals are not dictionaries, we just validate that they are flat supported values
                 else:
@@ -621,6 +644,7 @@ class Scheduler(Processor):
 
         """
 
+        _ = self.get_db_field_name
         file_name = self.get_and_lock_queue_file()
 
         if not file_name:
@@ -631,45 +655,55 @@ class Scheduler(Processor):
             logger.info(f"Processing a file: {file_name}")
             while self.sufficient_execution_time_left:
                 logger.debug(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
-                            f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
+                             f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
                     logger.info(f"No rows in file: {file_name}")
                     break
 
-                for task in data:
-                    logger.debug(f"Pushing task to DynamoDB: {task}")
-                    t = json.loads(task)
-                    labourer = self.task_client.get_labourer(t['labourer_id'])
-                    self.task_client.create_task(labourer=labourer, **t)
+                for raw_task in data:
+                    logger.debug(f"Pushing task to DynamoDB: {raw_task}")
+                    task = json.loads(raw_task)
+                    labourer = self.task_client.get_labourer(task[_('labourer_id')])
+                    new_task = self.task_client.create_task(labourer=labourer, **task)
+                    self.meta_handler.post(task_id=new_task[_('task_id')], action='created',
+                                           labourer=task[_('labourer_id')])
                     time.sleep(self._sleeptime_for_dynamo)
 
             else:
                 # Spawning another sibling to continue the processing
                 logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
+                payload = dict(file_name=file_name)
                 try:
-                    payload = dict(file_name=file_name)
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
-
-                except Exception as err:
+                except Exception:
                     logger.exception(
-                        f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                            f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
 
 
     @property
-    def _sleeptime_for_dynamo(self):
+    def _sleeptime_for_dynamo(self) -> float:
         """
-        Pull DynamoDB write capcity dynamically to throttle at appropriate levels
+        Pull DynamoDB write capacity dynamically and configure speed of writing.
 
-        Calculates based on the assumption that a single write action consumes a full WCU
-        Therefore multiple capacity units are calculated as a fraction of the
+        Calculates based on the assumption that a single write action consumes a full WCU.
+        It also assumes that the duration of processing the task itself takes some time and decreases sleep accordingly.
+        This duration is theoretically configurable in ``config['task_operational_overhead_for_ddb']``, but after
+        several versions this should probably be removed from config.
+
+        For on-demand billing of the DynamoDB table returns zero.
         """
-        logging.debug(dir(self.task_client.dynamo_db_client))
-        return 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        try:
+            write_throughput = 1 / self.task_client.dynamo_db_client.get_capacity()['write']
+        except ZeroDivisionError:
+            return 0
+
+        operational_overhead = self.config['task_operational_overhead_for_ddb']
+        return max(write_throughput - operational_overhead, 0)
 
 
     @staticmethod
@@ -820,6 +854,11 @@ class Scheduler(Processor):
         Concurrent processes should not touch it.
         """
         return f"{self.config['s3_prefix'].strip('/')}/locked_{self._queue_file_name}"
+
+
+    def get_db_field_name(self, key: str) -> str:
+        """ Could be useful if you overwrite field names with your own ones (e.g. for tests). """
+        return self.task_client.get_db_field_name(key)
 
 
 global_vars = LambdaGlobals()

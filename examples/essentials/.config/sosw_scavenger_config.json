@@ -1,9 +1,5 @@
 {
   "task_config": {
-    "labourers": {
-      "sosw_sandbox": {
-        "arn": "arn:aws:lambda:us-west-2:000000000000:function:sosw_sandbox"
-      }
-    }
+
   }
 }

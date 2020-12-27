@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from sosw.scheduler import Scheduler, InvalidJob, global_vars
 from sosw.labourer import Labourer
 from sosw.components.helpers import chunks
+from sosw.managers.meta_handler import MetaHandler
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
 
@@ -73,8 +74,9 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
-
+        self.get_config_patch.return_value = {}
         self.custom_config = deepcopy(self.TEST_CONFIG)
+
         self.custom_config['siblings_config'] = {
             'auto_spawning': True
         }
@@ -87,13 +89,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         with patch('boto3.client'):
-            self.scheduler = module.Scheduler(self.custom_config)
+            self.scheduler = module.Scheduler(custom_config=self.custom_config)
 
         self.scheduler.s3_client = MagicMock()
         self.scheduler.sns_client = MagicMock()
         self.scheduler.task_client = MagicMock()
         self.scheduler.task_client.get_labourer.return_value = self.LABOURER
+        self.scheduler.get_db_field_name = lambda key: key
         self.scheduler.siblings_client = MagicMock()
+        self.scheduler.meta_handler = MagicMock(signature=MetaHandler)
 
         self.scheduler.st_time = time.time()
 
@@ -476,6 +480,26 @@ class Scheduler_UnitTestCase(unittest.TestCase):
                 self.assertEqual(self.scheduler.last_week(test), expected)
 
 
+    def test_custom_period_patterns(self):
+
+        class ChildScheduler(module.Scheduler):
+
+            def __init__(self, custom_config):
+                super().__init__(custom_config=custom_config)
+
+            def get_june_days(self):
+                return ['2020-06-24', '2020-06-23', '2020-06-22']
+
+        with patch('boto3.client'):
+            custom_config = deepcopy(self.TEST_CONFIG)
+            custom_config['custom_period_patterns'] = ['get_june_days']
+            child = ChildScheduler(custom_config=custom_config)
+
+            r = child.chunk_dates(job={'period': 'get_june_days'})
+
+            self.assertEqual(r, [{'date_list': ['2020-06-24', '2020-06-23', '2020-06-22']}])
+
+
     ### Tests of chunk_job ###
     def test_chunk_job__not_chunkable_config(self):
         self.scheduler.chunkable_attrs = []
@@ -850,10 +874,17 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             'lambda_name':  self.LABOURER.id,
             'some_payload': 'foo',
         }
-
         print(json.dumps(SAMPLE_SIMPLE_JOB))
-        r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
-        print(r)
+
+        self.scheduler.task_client.create_task.return_value = {'task_id': 123,
+                                                               'labourer_id': SAMPLE_SIMPLE_JOB['lambda_name'],
+                                                               **SAMPLE_SIMPLE_JOB}
+
+        with patch('sosw.scheduler.Scheduler._sleeptime_for_dynamo', new_callable=PropertyMock) as mock_sleeptime:
+            mock_sleeptime.return_value = 0.0001
+
+            r = self.scheduler(json.dumps(SAMPLE_SIMPLE_JOB))
+            print(r)
 
         self.scheduler.task_client.create_task.assert_called_once()
 
@@ -862,6 +893,18 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
+
+
+    def test_sleeptime_for_dynamo(self):
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 10}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.07)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 25}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0.01)
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 50}
+        self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0)
 
 
     def test_apply_job_schema(self):

@@ -19,9 +19,10 @@ setup(name='sosw',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
           'Topic :: Software Development'
       ],
-      packages=find_packages(exclude=['docs', 'test', 'examples']),
+      packages=find_packages(exclude=['docs', 'test', 'examples', "*.test", "*.test.*"]),
       install_requires=[
           'boto3>=1.9'
       ],

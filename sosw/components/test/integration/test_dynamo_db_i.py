@@ -53,6 +53,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.table_name = 'autotest_dynamo_db'
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
+        self.dynamo_boto3_client = boto3.client('dynamodb')
+
 
     def tearDown(self):
         clean_dynamo_table(self.table_name, self.KEYS)
@@ -62,9 +64,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True,
                'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
 
-        client = boto3.client('dynamodb')
-
-        client.delete_item(TableName=self.table_name,
+        self.dynamo_boto3_client.delete_item(TableName=self.table_name,
                            Key={
                                self.HASH_COL:  {'S': str(row[self.HASH_COL])},
                                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])},
@@ -72,7 +72,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(row, self.table_name)
 
-        result = client.scan(TableName=self.table_name,
+        result = self.dynamo_boto3_client.scan(TableName=self.table_name,
                              FilterExpression="hash_col = :hash_col AND range_col = :range_col",
                              ExpressionAttributeValues={
                                  ':hash_col':  {'S': row[self.HASH_COL]},
@@ -98,6 +98,17 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
             self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
 
 
+    def test_put__create__same_hash_different_range(self):
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        self.dynamo_client.put(row, self.table_name)
+
+        row[self.RANGE_COL] = '234'
+        self.dynamo_client.put(row, self.table_name, overwrite_existing=False)
+
+        count = self.dynamo_client.get_by_query(keys={self.HASH_COL: 'cat'}, return_count=True)
+        self.assertEqual(count, 2, "The second item was not saved")
+
+
     def test_update__updates(self):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
         row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
@@ -105,10 +116,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.put(row, self.table_name)
 
-        client = boto3.client('dynamodb')
-
         # First check that the row we are trying to update is PUT correctly.
-        initial_row = client.get_item(
+        initial_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -124,7 +133,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.update(keys, attributes_to_update, table_name=self.table_name)
 
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -149,9 +158,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
-        client = boto3.client('dynamodb')
-
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -174,9 +181,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
-        client = boto3.client('dynamodb')
-
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -199,9 +204,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
-        client = boto3.client('dynamodb')
-
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -230,9 +233,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         # Should pass
         self.dynamo_client.update(keys, {}, attributes_to_increment={'some_counter': '3'},
                                   condition_expression='some_col = no', table_name=self.table_name)
-
-        client = boto3.client('dynamodb')
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -256,9 +257,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.put(row, self.table_name)
         # Should pass because the row exists now
         self.dynamo_client.patch(keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
-
-        client = boto3.client('dynamodb')
-        updated_row = client.get_item(
+        updated_row = self.dynamo_boto3_client.get_item(
                 Key={
                     self.HASH_COL:  {'S': row[self.HASH_COL]},
                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
@@ -473,6 +472,22 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.assertEqual(result, 3)
 
 
+    def test_get_by_query__expr_attr(self):
+        rows = [
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 122},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 123}
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, table_name=self.table_name)
+
+        result = self.dynamo_client.get_by_query({self.HASH_COL: 'cat1', self.RANGE_COL: 121},
+                                                 table_name=self.table_name, expr_attrs_names=[self.HASH_COL])
+
+        self.assertEqual(result[0], rows[0])
+
+
     def test_get_by_query__reverse(self):
         rows = [
             {self.HASH_COL: 'cat1', self.RANGE_COL: 121, 'some_col': 'test1'},
@@ -522,6 +537,32 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         for r in rows[1:]:
             assert r in result, f"row not in result from dynamo scan: {r}"
+
+
+    def test_get_by_scan__with_index_name(self):
+        rows = [
+            {self.HASH_COL: 'cat0', self.RANGE_COL: 123, 'other_col': 'abc123'},
+            {self.HASH_COL: 'cat1', self.RANGE_COL: 122, 'some_col': 'test2'},
+        ]
+
+        for x in rows:
+            self.dynamo_client.put(x, self.table_name)
+
+        result = self.dynamo_client.get_by_scan(table_name=self.table_name, index_name='autotest_index')
+
+        self.assertEqual(len(result), 1)
+
+        result = result[0]
+        expected_row = rows[0]
+
+        for key in expected_row:
+            self.assertEqual(expected_row[key], result[key])
+        for key in result:
+            self.assertEqual(expected_row[key], result[key])
+
+        no_index_name_result = self.dynamo_client.get_by_scan(table_name=self.table_name)
+
+        self.assertEqual(len(no_index_name_result), 2)
 
 
     def test_batch_get_items(self):
@@ -603,6 +644,74 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         # Batch get items
         results = self.dynamo_client.batch_get_items_one_table(keys_list=query_keys[query_from:query_till])
         self.assertEqual(expected_items, len(results))
+
+
+    def test_update__remove_attrs__with_update(self):
+        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+        attributes_to_update = {'some_col': 'yes', 'new_col':  'yup'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.update(keys, attributes_to_update, table_name=self.table_name,
+                                  attributes_to_remove=['other_col'])
+
+        updated_row = self.dynamo_boto3_client.get_item(
+                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
+                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_col'], 'yes'), "Updated field not really updated"
+        self.assertEqual(updated_row['new_col'], 'yup'), "New field was not created"
+        self.assertNotIn('other_col', updated_row)
+
+
+    def test_update__remove_attrs__without_update(self):
+        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.update(keys, attributes_to_update={}, table_name=self.table_name,
+                                  attributes_to_remove=['other_col'])
+
+        updated_row = self.dynamo_boto3_client.get_item(
+                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
+                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_col'], 'no'), "Field was not supposed to be updated"
+        self.assertNotIn('other_col', updated_row)
+
+
+    def test_patch__remove_attrs__without_update(self):
+        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+
+        self.dynamo_client.put(row, self.table_name)
+
+        self.dynamo_client.patch(keys, attributes_to_update={}, table_name=self.table_name,
+                                 attributes_to_remove=['other_col'])
+
+        updated_row = self.dynamo_boto3_client.get_item(
+                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
+                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+                TableName=self.table_name,
+        )['Item']
+
+        updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
+
+        self.assertIsNotNone(updated_row)
+        self.assertEqual(updated_row['some_col'], 'no'), "Field was not supposed to be updated"
+        self.assertNotIn('other_col', updated_row)
 
 
 if __name__ == '__main__':

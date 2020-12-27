@@ -1,4 +1,5 @@
 import boto3
+import json
 import logging
 import shutil
 import unittest
@@ -105,8 +106,47 @@ class sns_TestCase(unittest.TestCase):
         self.assertRaises(AssertionError, self.sns.set_recipient, 'just_new_recipient_not_full_arn')
 
 
-    # def test_true(self):
-    #     self.assertTrue(False, "Break the test not to deploy")
+    def test_create_topic_invalid_name(self):
+        with self.assertRaises(RuntimeError) as exc:
+            self.sns.create_topic('')
+
+        self.assertEqual(str(exc.exception), "You passed invalid topic name")
+
+    def test_create_topic_return_value(self):
+        self.sns.client = MagicMock()
+        self.sns.client.create_topic = MagicMock(return_value={'TopicArn': 'test_arn'})
+        self.assertEqual(self.sns.create_topic('topic_name'), 'test_arn')
+
+
+    def test_create_subscription_invalid_params(self):
+        with self.assertRaises(RuntimeError) as exc:
+            self.sns.create_subscription('', 'protocol', 'endpoint')
+
+        self.assertEqual(str(exc.exception), "You must send valid topic ARN, Protocol and Endpoint to add a subscription")
+
+
+    def test_get_message_attribute_validate_output(self):
+        self.assertEqual(self.sns.get_message_attribute(10), {'DataType': 'Number', 'StringValue': '10'})
+        self.assertEqual(self.sns.get_message_attribute(10.99), {'DataType': 'Number', 'StringValue': '10.99'})
+        self.assertEqual(self.sns.get_message_attribute('Test'), {'DataType': 'String', 'StringValue': 'Test'})
+        self.assertEqual(
+            self.sns.get_message_attribute(['Test1', 'Test2', 'Test3']),
+            {'DataType': 'String.Array', 'StringValue': json.dumps(['Test1', 'Test2', 'Test3'])}
+        )
+
+
+    def test_commit_on_change_message_attributes(self):
+        self.sns.send_message("test message")
+        self.assertEqual(len(self.sns.queue), 1, "There is 1 message in the queue.")
+        self.sns.send_message("test message", message_attributes={'price': 100})
+        self.assertEqual(len(self.sns.queue), 1, "On change message_attributes, old message should be committed, "
+                                                 "new one queued.")
+        self.sns.send_message("test message", message_attributes={'price': 100})
+        self.assertEqual(len(self.sns.queue), 2, "On sending message with exactly same message_attributes, it should "
+                                                 "be queued.")
+        self.sns.send_message("test message", message_attributes={'price': 100, 'cancellation': True})
+        self.assertEqual(len(self.sns.queue), 1, "On sending message with different message_attributes, old messages "
+                                                 "should be committed. New one should be queued.")
 
 
 if __name__ == '__main__':

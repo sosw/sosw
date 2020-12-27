@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,9 @@ __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.0"
 
 import logging
-import time
 from typing import Dict
 
-from sosw.app import Processor
+from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
 
@@ -43,7 +42,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-class Scavenger(Processor):
+class Scavenger(Essential):
     """
     Scavenger main class performes the following operations:
 
@@ -86,7 +85,7 @@ class Scavenger(Processor):
 
 
     def process_expired_task(self, labourer: Labourer, task: Dict):
-        logger.info(f"Called Scavenger.process_expired_task with labourer={labourer}, task={task}")
+        logger.debug(f"Called Scavenger.process_expired_task with labourer={labourer}, task={task}")
         _ = self.get_db_field_name
 
         if self.should_retry_task(labourer, task):
@@ -95,6 +94,8 @@ class Scavenger(Processor):
             logger.info(f"Closing dead task {task}")
             self.sns_client.send_message(f"Closing dead task: {task[_('task_id')]} ", subject='``sosw`` Dead Task')
             self.task_client.archive_task(task[_('task_id')])
+            self.meta_handler.post(task_id=task[_('task_id')], labourer_id=task[_('labourer_id')],
+                                   action='archived_dead')
             self.stats['closed_dead_tasks'] += 1
 
 
@@ -109,10 +110,13 @@ class Scavenger(Processor):
         Put the task to a Dynamo table `sosw_retry_tasks`, with the wanted delay: labourer.max_runtime * attempts.
         Delete it from `sosw_tasks` table.
         """
+        _ = self.get_db_field_name
 
         logger.debug(f"Called Scavenger.move_task_to_retry_table with labourer={labourer}, task={task}")
         wanted_delay = self.calculate_delay_for_task_retry(labourer, task)
         self.task_client.move_task_to_retry_table(task, wanted_delay)
+        self.meta_handler.post(task_id=task['task_id'], labourer_id=task[_('labourer_id')],
+                               action='scheduled_for_retry')
 
 
     def calculate_delay_for_task_retry(self, labourer: Labourer, task: Dict) -> int:
@@ -125,13 +129,21 @@ class Scavenger(Processor):
     def retry_tasks(self, labourer: Labourer):
         """
         Read from dynamo table `sosw_retry_tasks`, get tasks with retry_time <= now, and put them to `sosw_tasks` in the
-        beginning of the queue.
+        beginning of the queue (with greenfield of a task that will be invoked next).
         """
+        _ = self.get_db_field_name
 
         logger.debug(f"Running Scavenger.retry_tasks")
         tasks_to_retry = self.task_client.get_tasks_to_retry_for_labourer(labourer=labourer,
                                                                           limit=self.config.get('retry_tasks_limit'))
-        self.task_client.retry_tasks(labourer=labourer, tasks=tasks_to_retry)
+
+        lowest_greenfield = self.task_client.get_oldest_greenfield_for_labourer(labourer)
+
+        for task in tasks_to_retry:
+            lowest_greenfield = lowest_greenfield - 1
+            self.task_client.retry_task(task=task, labourer_id=labourer.id, greenfield=lowest_greenfield)
+            self.meta_handler.post(task_id=task[_('task_id')], labourer_id=task[_('labourer_id')],
+                                   action='ready_for_retry')
 
 
     def archive_tasks(self, labourer: Labourer):
@@ -148,6 +160,7 @@ class Scavenger(Processor):
         for task in tasks:
             logger.info(f"Archiving completed_task: {task}")
             self.task_client.archive_task(task[_('task_id')])
+            self.meta_handler.post(task_id=task[_('task_id')], labourer_id=task[_('labourer_id')], action='archived')
 
 
     def get_db_field_name(self, key: str) -> str:

@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -232,7 +232,8 @@ class DynamoConfig:
                     'config_value': 'S'
                 },
                 'required_fields': ['env', 'config_name', 'config_value'],
-                'table_name':      'config' if not self.test else 'autotest_config'
+                'table_name':      'config' if not self.test else 'autotest_config',
+                # 'region': TODO IMPLEMENT AS AN OPTIONAL PARAMETER FOR app.Processor
             }
         }
 

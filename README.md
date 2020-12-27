@@ -1,7 +1,7 @@
 <img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/logo/sosw_black.png">
 
 # Serverless Orchestrator of Serverless Workers
-[![Build Status](https://travis-ci.org/sosw/sosw.svg?branch=master)](https://travis-ci.org/sosw/sosw)
+[![Build Status](https://travis-ci.com/sosw/sosw.svg?branch=master)](https://travis-ci.com/sosw/sosw)
 [![Documentation Status](https://readthedocs.org/projects/sosw/badge/?version=latest)](https://docs.sosw.app/en/latest/?badge=latest)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs)](https://pypi.org/project/sosw/)
 [![PyPI - Licence](https://img.shields.io/pypi/l/sosw?color=blue)](https://github.com/sosw/sosw/blob/master/LICENSE)
@@ -9,22 +9,19 @@
 **sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
 
 ---
- Please pronounce **sosw** correctly: _/ˈsɔː səʊ/_
-
----
 
 ## Documentation
-[https://docs.sosw.app](https://docs.sosw.app/en/latest/)
+[https://docs.sosw.app](https://docs.sosw.app/en/master/)
 
 ## Essential Workflows
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
-- Python 3.6, 3.7
+- Python 3.6, 3.7, 3.8
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
-See the [Installation Guidelines](https://docs.sosw.app/en/latest/installation.html) in the Documentation.
+See the [Installation Guidelines](https://docs.sosw.app/en/master/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
@@ -45,20 +42,28 @@ $ pipenv sync --dev
 
 Running unit tests:
 ```bash
-$ pytest ./sosw/test/suite_3_6_unit.py
+$ pytest ./sosw/test/suite_unit.py
 ```
 
 ### Contribution Guidelines
+
+The latest [Contribution Guidelines](https://docs.sosw.app/en/master/contribution/index.html) with examples are in the documentation.
 
 #### Release cycle
 - We follow both [Semantic Versioning](https://semver.org/) pattern
   and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where comply
 - Master branch commits (merges) are automatically packaged and published to PyPI.
 - Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro)
-- Make your pull requests to the latest staging branch (with highest number)
-- Latest documentation is compiled from branch `docme`.
-  It should be up to date with latest **staging** branch, not the master.
-  Make PRs with documentation change directly to `docme`.
+- Make your pull requests to the closest staging branch (with smallest after release number of either current or next Minor)
+- Make sure your branch is up to date with the branch you are making a PR to
+
+Example:
+  - Latest released version in PyPI `0.7.31`
+  - Closest staging Minor branch in sosw/sosw `0_7_33`
+  - Latest Minor staging branch in sosw/sosw `0_7_35`
+  - Closest Next Minor branch in sosw/sosw `0_9_1`
+
+Your PR should be to either `0_7_33` or `0_9_1` depending on the importance of changes. 
 
 #### Code formatting
 Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
@@ -77,20 +82,14 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 7. Read the Documentation Convention.
 
 #### More
-See more guidelines for contribution [in the docs](https://docs.sosw.app/en/latest/contribution/index.html).
+See more guidelines for contribution [in the docs](https://docs.sosw.app/en/master/contribution/index.html).
 
 ### Building the docs
-Sphinx is used for building documentation. To build HTML documentation locally, use:
+Sphinx is used for building documentation.
+You can build HTML documentation locally then use the built in Python web server to view the html version directly from `localhost` in your preferred browser.
 
 ```bash
-$ sphinx-build -ab html ./docs ./sosw-rtd
-```
-
-You can then use the built in Python web server to view the html version directly from `localhost` in your preferred browser.
-
-```bash
-$ cd sosw-rtd
-$ python -m http.server
+$ sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
 ```
 
 ## Copyright
@@ -100,7 +99,7 @@ This document has been placed in the public domain.
     sosw - Serverless Orchestrator of Serverless Workers
     
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>:
+    Copyright (C) 2020  sosw core contributors <info@sosw.app>:
         Nikolay Grishchenko
         Sophie Fogel
         Gil Halperin
