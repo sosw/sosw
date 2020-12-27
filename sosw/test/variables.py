@@ -100,6 +100,13 @@ TEST_SCHEDULER_CONFIG = {
             ('store', {}),
             ('product', {}),
         ]
+    },
+    'job_schema_variants': {
+        'default': {
+            'chunkable_attrs': [
+                ('b', {}),
+            ]
+        }
     }
 }
 

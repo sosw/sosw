@@ -570,6 +570,15 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.assertEqual(val['stores']['store_training'], 'some_string')
 
 
+    def test_get_isolate_attributes_from_job(self):
+
+        GOOD = {'isolate_sections': True, 'isolate_Ss': False, 'max_stores_cool_per_batch': 42}
+        BAD = {'sections': True, 'foo': {'baz': 17}}
+
+        result = self.scheduler.get_isolate_attributes_from_job(data={**GOOD, **BAD})
+        self.assertDictEqual(result, GOOD)
+
+
     def test_chunk_job(self):
 
         pl = deepcopy(self.PAYLOAD)
@@ -616,7 +625,7 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         Here we have a tricky case:
 
         `section_weddings` has 3 different `stores`. In `store_music` we have 5 `products`.
-        With max_products_per_batch we should have:
+        For example with max_products_per_batch = 2, we should have:
 
         - store_1
         - store_2
@@ -626,11 +635,17 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         """
         pl = deepcopy(self.PAYLOAD)
         pl['sections']['section_weddings']['stores']['store_music']['max_products_per_batch'] = 2
+        # pl['sections']['section_funerals']['isolate_stores'] = True
+        # pl['isolate_sections'] = True
+        # pl['isolate_stores'] = True
 
         response = self.scheduler.chunk_job(job=pl)
 
         NUMBER_TASKS_EXPECTED = [
             ('sections', 'section_weddings', 5),
+            ('sections', 'section_funerals', 1),
+            ('sections', 'section_conversions', 1),
+            ('sections', 'section_gifts', 1),
         ]
 
         # for row in response:
@@ -643,6 +658,33 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(batches,
                          list(chunks(pl['sections']['section_weddings']['stores']['store_music']['products'], 2)))
+        # self.assertEqual(1, 2)
+
+
+    def test_chunk_job__root_level_isolate(self):
+        """
+        Tests that `isolate_ATTRs` in the root of the Payload will be respected for chunking in all the nested
+        elements of the Job recursively.
+
+        In the test payload the 'stores' is the second level of nesting attribute. But we pass it in the root of job.
+        """
+        pl = deepcopy(self.PAYLOAD)
+        pl['isolate_stores'] = True
+
+        response = self.scheduler.chunk_job(job=pl)
+
+        NUMBER_TASKS_EXPECTED = [
+            ('sections', 'section_funerals', 2),
+            ('sections', 'section_weddings', 3),
+            ('sections', 'section_conversions', 3),
+            ('sections', 'section_gifts', 1),
+        ]
+
+        # for row in response:
+        #     pprint.pprint(row)
+        #     print('\n')
+
+        self.check_number_of_tasks(NUMBER_TASKS_EXPECTED, response)
 
 
     ### Tests of other methods ###
@@ -863,3 +905,62 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 10, 'write': 50}
         self.assertEqual(round(self.scheduler._sleeptime_for_dynamo, 2), 0)
+
+
+    def test_apply_job_schema(self):
+        self.scheduler.config['job_schema_variants']['sample_schema_name'] = {
+            'chunkable_attrs': [
+                ('a', {}),
+            ]
+        }
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            'job_schema_name': 'sample_schema_name'
+            },
+        })
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
+
+
+    def test_apply_job_schema__default(self):
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')
+
+
+    def test_apply_job_schema__default_preserved(self):
+        """
+        First test checks a specific job schema name.
+        Second test checks if after calling the scheduler again we overwrite the config and use the default
+        specific job schema.
+
+        """
+
+        self.scheduler.config['job_schema_variants']['sample_schema_name'] = {
+            'chunkable_attrs': [
+                ('a', {}),
+            ]
+        }
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            'job_schema_name': 'sample_schema_name'
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'a')
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')
