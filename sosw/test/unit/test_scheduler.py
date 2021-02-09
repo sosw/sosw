@@ -964,3 +964,42 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         })
 
         self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')
+
+
+    def test_apply_job_schema__chunkable_attrs_reinitialized(self):
+        """
+        Check that the job schema variant was applied and
+        that its job schema chunkable_attrs have been reinitialized to self.chunkable_attrs.
+
+        """
+
+        self.scheduler.config['job_schema_variants']['sample_schema_name'] = {
+            'chunkable_attrs': [
+                ('a', {}),
+                ('b', {}),
+                ('c', {}),
+            ]
+        }
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            'job_schema_name': 'sample_schema_name'
+            },
+        })
+
+        expected_chunkable_attrs = ['a', 'b', 'c']
+
+        for index, value in enumerate(expected_chunkable_attrs):
+            self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][index][0], value)
+
+        self.assertEqual(self.scheduler.chunkable_attrs, expected_chunkable_attrs)
+
+        self.scheduler({'job': {
+            'lambda_name': 'test_lambda',
+            },
+        })
+
+        self.assertEqual(self.scheduler.config['job_schema']['chunkable_attrs'][0][0], 'b')
+        self.assertEqual(self.scheduler.chunkable_attrs, ['b'])
