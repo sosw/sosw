@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2020  sosw core contributors <info@sosw.app>
+    Copyright (C) 2021  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -97,12 +97,15 @@ class Scheduler(Essential):
         'queue_bucket':    'autotest-bucket',
         'shutdown_period': 60,
         'rows_to_process': 50,
-        'job_schema':      {
-            'chunkable_attrs': [
-                # ('section', {}),
-                # ('store', {}),
-                # ('product', {}),
-            ],
+        'job_schema':      {},
+        'job_schema_variants': {
+            'default': {
+                'chunkable_attrs': [
+                    # ('section', {}),
+                    # ('store', {}),
+                    # ('product', {}),
+                ]
+            }
         },
         'task_operational_overhead_for_ddb': 0.03,
     }
@@ -121,10 +124,7 @@ class Scheduler(Essential):
 
         self.set_queue_file()
 
-        self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
-        assert not any(x.endswith('s') for x in self.chunkable_attrs), \
-            f"We do not currently support attributes that end with 's'. " \
-            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
+        self.initialize_from_job_schema()
 
 
     def __call__(self, event):
@@ -135,6 +135,7 @@ class Scheduler(Essential):
         """
 
         job = self.extract_job_from_payload(event)
+        self.apply_job_schema(name=job.get('job_schema_name'))
 
         # If called as sibling
         if 'file_name' in job:
@@ -147,6 +148,27 @@ class Scheduler(Essential):
         self.process_file()
 
         super().__call__(event)
+
+
+    def apply_job_schema(self, name: str = None):
+        """ Apply a job_schema from job_schema_variants by the name or apply the default one."""
+
+        new_job_schema = self.config['job_schema_variants'][name or 'default']
+
+        # Update job schema if there are any changes
+        if self.config['job_schema'] != new_job_schema:
+            self.config['job_schema'] = self.config['job_schema_variants'][name or 'default']
+            self.initialize_from_job_schema()
+
+
+    def initialize_from_job_schema(self):
+        """Initialize attributes that are mapped to the `job_schema` in self.config"""
+
+        # Initalize chunkable attrs
+        self.chunkable_attrs = list([x[0] for x in self.config['job_schema']['chunkable_attrs']])
+        assert not any(x.endswith('s') for x in self.chunkable_attrs), \
+            f"We do not currently support attributes that end with 's'. " \
+            f"In the config you should use singular form of attribute. Received from config: {self.chunkable_attrs}"
 
 
     def parse_job_to_file(self, job: Dict):
@@ -435,7 +457,7 @@ class Scheduler(Essential):
 
         logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
-        if self.needs_chunking(plural(attr), job):
+        if self.needs_chunking(plural(attr), {**job, **skeleton}):
 
             # Force batches to isolate if we shall be dealing with flat data.
             # But we still respect the `max_PARAM_per_batch` if it is provided in job.
@@ -455,7 +477,7 @@ class Scheduler(Essential):
 
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
-                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr, f"isolate_{plural(attr)}"]}
+                job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr]}
                 logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
                              f"leaving job_skeleton: {job_skeleton}")
 
@@ -558,6 +580,15 @@ class Scheduler(Essential):
                 pass
 
 
+    @staticmethod
+    def get_isolate_attributes_from_job(data: dict) -> Dict:
+        """
+        Get a dictionary with settings for isolation from data.
+        """
+
+        return {k: v for k, v in data.items() if re.match('isolate_[\w]*|max_[\w]*_per_batch', k)}
+
+
     def needs_chunking(self, attr: str, data: Dict) -> bool:
         """
         Recursively analyses the data and identifies if the current level of data should be chunked.
@@ -569,6 +600,8 @@ class Scheduler(Essential):
 
         attrs = single_or_plural(attr)
         isolate_attrs = [f"isolate_{a}" for a in attrs] + [f"max_{a}_per_batch" for a in attrs]
+
+        root_isolate_attrs = self.get_isolate_attributes_from_job(data)
 
         if any(data[x] for x in isolate_attrs if x in data):
             logger.debug(f"needs_chunking(): Got requirement to isolate {attr} in the current scope: {data}")
@@ -587,11 +620,9 @@ class Scheduler(Essential):
                 for val in current_vals:
 
                     for name, subdata in val.items():
-                        logger.debug(f"needs_chunking(): Analysing {next_attr} in {subdata}")
-                        if not subdata:
-                            continue
                         logger.debug(f"needs_chunking(): Going recursive for {next_attr} in {subdata}")
-                        if self.needs_chunking(next_attr, subdata):
+                        if isinstance(subdata, dict) and self.needs_chunking(next_attr,
+                                                                             {**subdata, **root_isolate_attrs}):
                             logger.debug(f"needs_chunking(): Returning True for {next_attr} from {subdata}")
                             return True
 
