@@ -36,9 +36,19 @@ __all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_pr
 __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.7.1"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger(child=True)
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
 import json
-import logging
 import os
 
 from sosw.components.helpers import chunks
@@ -143,13 +153,13 @@ class SSMConfig:
         can_paginate = getattr(ssm_client, 'can_paginate')(f)
 
         if can_paginate:
-            logging.debug(f"'SSM.{f}()' can natively paginate")
+            logger.debug("'SSM.%s()' can natively paginate", f)
             paginator = ssm_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
             return list(response)
 
         else:
-            logging.debug(f"'SSM.{f}()' can not natively paginate")
+            logger.debug("'SSM.%s()' can not natively paginate", f)
             response_list = []
             response = func(**kwargs)
             response_list.append(response)
@@ -182,13 +192,13 @@ class SSMConfig:
                                                                           'Values': [prefix]
                                                                       }])
 
-        logging.debug(f"SSM.describe_parameters(prefix={prefix}) received response: {describe_params_response}")
+        logger.debug("SSM.describe_parameters(prefix=%s) received response: %s", prefix, describe_params_response)
         params = [param for obj in describe_params_response for param in obj['Parameters']]
 
         names = [param['Name'] for param in params]
         if not names:
-            logging.warning(
-                    f"No credentials found in SSM ParameterStore with prefix {prefix} for Environment: {env_tag}")
+            logger.warning(
+                    "No credentials found in SSM ParameterStore with prefix %s for Environment: %s", prefix, env_tag)
             return dict()
 
         # This is supposed to work fine if you ask multiple keys even if some are not encrypted.
@@ -199,7 +209,7 @@ class SSMConfig:
         for chunk_of_names in chunks(names, 10):
             get_params_response = self.call_boto_with_pagination('get_parameters', Names=chunk_of_names,
                                                                  WithDecryption=decryption_required)
-            logging.debug(f"SSM.get_parameters(names={chunk_of_names}) received response: {get_params_response}")
+            logger.debug(f"SSM.get_parameters(names=%s) received response: %s", chunk_of_names, get_params_response)
 
             # Update keys and values from this page of response to result. Removes the prefix away for keys.
             params = [param for obj in get_params_response for param in obj['Parameters']]
@@ -365,7 +375,7 @@ class ConfigSource:
 
             if not self.default_source:
                 self.default_source = getattr(self, f"{source.lower()}_config")
-                logging.info(f"Initialized default_source = {source.lower()}_config")
+                logger.info("Initialized default_source = %s_config", source.lower())
 
 
     def get_config(self, name):

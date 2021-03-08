@@ -30,9 +30,19 @@ __all__ = ['DynamoDbClient', 'clean_dynamo_table']
 __author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
 __version__ = "1.6"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger(child=True)
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
 import datetime
-import logging
 import json
 import os
 import time
@@ -44,10 +54,6 @@ from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 from .benchmark import benchmark
 from .helpers import chunks, to_bool
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class DynamoDbClient:
@@ -116,9 +122,9 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logging.debug("Got `table_name` from config: %s", table_name)
+            logger.debug("Got `table_name` from config: %s", table_name)
 
-        logging.debug("DynamoDB table name identified as %s", table_name)
+        logger.debug("DynamoDB table name identified as %s", table_name)
 
         # Fetch the actual configuration of the dynamodb table directly for
         table_description = self._describe_table(table_name)
@@ -266,8 +272,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logging.warning(f"dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
-                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
         result = {}
 
@@ -296,7 +302,7 @@ class DynamoDbClient:
                             try:
                                 result[key] = json.loads(val)
                             except ValueError:
-                                logger.warning(f"A JSON-looking string failed to parse: {val}")
+                                logger.warning("A JSON-looking string failed to parse: %s", val)
                                 result[key] = val
                         else:
                             result[key] = val
@@ -321,7 +327,7 @@ class DynamoDbClient:
                             try:
                                 result[key] = json.loads(val)
                             except ValueError:
-                                logger.warning(f"A JSON-looking string failed to parse: {val}")
+                                logger.warning("A JSON-looking string failed to parse: %s", val)
                                 result[key] = val
                         else:
                             result[key] = val
@@ -391,14 +397,14 @@ class DynamoDbClient:
                     result[key_with_prefix] = self.type_serializer.serialize(val)
             else:
                 if key not in self.config.get('required_fields', []):
-                    logger.warning(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
-                                   f"syntax. This is not a required field, so we continue, but please investigate "
-                                   f"row: {row_dict}")
+                    logger.warning("Field %s is missing from row_mapper, so we can't convert it to DynamoDB "
+                                   "syntax. This is not a required field, so we continue, but please investigate "
+                                   "row: %s", key, row_dict)
                 else:
                     raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
                                      f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
 
-        logger.debug(f"dict_to_dynamo result: {result}")
+        logger.debug("dict_to_dynamo result: %s", result)
         return result
 
 
@@ -450,8 +456,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -521,7 +527,7 @@ class DynamoDbClient:
         if desc:
             query_args['ScanIndexForward'] = False
 
-        logger.debug(f"Querying dynamo: {query_args}")
+        logger.debug("Querying dynamo: %s", query_args)
 
         paginator = self.dynamo_client.get_paginator('query')
         response_iterator = paginator.paginate(**query_args)
@@ -606,8 +612,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
@@ -641,8 +647,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logging.warning(f"get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
@@ -680,7 +686,7 @@ class DynamoDbClient:
         if index_name:
             query_args['IndexName'] = index_name
 
-        logger.debug(f"Scanning dynamo: {query_args}")
+        logger.debug("Scanning dynamo: %s", query_args)
 
         paginator = self.dynamo_client.get_paginator('scan')
         response_iterator = paginator.paginate(**query_args)
@@ -715,8 +721,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logging.warning(f"batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
-                            f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -743,23 +749,23 @@ class DynamoDbClient:
                 }
             }
 
-            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            logger.debug("batch_get_item query: %s", batch_get_item_query)
             latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-            logger.debug(f"latest_result: {latest_result}")
+            logger.debug("latest_result: %s", latest_result)
             unprocessed_keys = get_unprocessed_keys(latest_result)
             all_items += latest_result['Responses'][table_name]
-            logger.debug(f"batch_get_items_one_table response: {latest_result}")
+            logger.debug("batch_get_items_one_table response: %s", latest_result)
 
             if unprocessed_keys:
                 # Retry several times
                 retry_num = 0
                 wait_time = retry_wait_base_time
                 while unprocessed_keys and retry_num < max_retries:
-                    logger.warning(f"batch_get_item action did NOT finish successfully.")
+                    logger.warning("batch_get_item action did NOT finish successfully.")
                     time.sleep(wait_time)
                     batch_get_item_query['RequestItems'][table_name]['Keys'] = unprocessed_keys
                     latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-                    logger.debug(f"latest_result: {latest_result}")
+                    logger.debug("latest_result: %s", latest_result)
                     all_items += latest_result['Responses'][table_name]
                     retry_num += 1
                     wait_time *= 2
@@ -820,11 +826,11 @@ class DynamoDbClient:
                 "'create' method, or 'overwrite_existing=False' option."
 
         put_query = self.build_put_query(row, table_name, overwrite_existing)
-        logger.debug(f"Put to DB: {put_query}")
+        logger.debug("Put to DB: %s", put_query)
 
         dynamo_response = self.dynamo_client.put_item(**put_query)
 
-        logger.debug(f"Response from dynamo {dynamo_response}")
+        logger.debug("Response from dynamo %s", dynamo_response)
 
         self.stats['dynamo_put_queries'] += 1
 
@@ -921,9 +927,9 @@ class DynamoDbClient:
                 update_item_query['ExpressionAttributeValues'] = update_item_query.get('ExpressionAttributeValues', {})
                 update_item_query['ExpressionAttributeValues'].update(values)
 
-        logger.debug(f"Updating an item, query: {update_item_query}")
+        logger.debug("Updating an item, query: %s", update_item_query)
         response = self.dynamo_client.update_item(**update_item_query)
-        logger.debug(f"Update result: {response}")
+        logger.debug("Update result: %s", response)
         self.stats['dynamo_update_queries'] += 1
 
 
@@ -987,12 +993,12 @@ class DynamoDbClient:
                                                 f"{type(t[action])}"
 
         for t_chunk in chunks(transactions, 10):
-            logger.debug(f"Transactions: \n{pprint.pformat(t_chunk)}")
+            logger.debug("Transactions: %s", t_chunk)
 
             response = self.dynamo_client.transact_write_items(TransactItems=t_chunk)
 
             self.stats['dynamo_transact_write_operations'] += 1
-            logger.debug(f"Response from transact_write_items: {response}")
+            logger.debug("Response from transact_write_items: %s", response)
 
 
     def _get_validate_table_name(self, table_name=None):
@@ -1028,7 +1034,7 @@ class DynamoDbClient:
         """
 
         if table_name is None:
-            logging.debug(self.config)
+            logger.debug(self.config)
             table_name = self.config['table_name']
 
         if table_name not in self._table_descriptions:
@@ -1051,7 +1057,7 @@ class DynamoDbClient:
         """
 
         if table_name is None:
-            logging.debug(self.config)
+            logger.debug(self.config)
             table_name = self.config['table_name']
 
         # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
@@ -1066,7 +1072,7 @@ class DynamoDbClient:
         time_to_sleep = time_between_actions - time_elapsed
 
         if time_to_sleep > 0:
-            logging.debug(f"Sleeping {time_to_sleep} sec")
+            logger.debug("Sleeping %s sec", time_to_sleep)
             time.sleep(time_to_sleep)
 
 
@@ -1123,6 +1129,6 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
             )
 
             stats['deleted'] += 1
-        logger.debug(f"clean_dynamo_table() of '{table_name}': {stats}")
+        logger.debug("clean_dynamo_table() of %s: %s", table_name, stats)
 
-    logger.info(f"clean_dynamo_table() of '{table_name}': {stats}")
+    logger.info(f"clean_dynamo_table() of %s: %s", table_name, stats)

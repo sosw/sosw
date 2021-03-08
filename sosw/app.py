@@ -29,8 +29,18 @@
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
-import logging
 import os
 
 from collections import defaultdict
@@ -40,9 +50,6 @@ from typing import Dict
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
-
-
-logger = logging.getLogger()
 
 
 class Processor:

@@ -34,12 +34,16 @@ should inherit from). This one is just a set of settings and common methods for 
 __all__ = ['Labourer']
 __author__ = "Nikolay Grishchenko"
 
-import logging
-import time
+try:
+    from aws_lambda_powertools import Logger
 
+    logger = Logger()
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
 
 class Labourer:
