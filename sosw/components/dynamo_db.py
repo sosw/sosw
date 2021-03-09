@@ -203,9 +203,9 @@ class DynamoDbClient:
 
         indexes = {}
 
-        table_description = self._describe_table(table_name)
-        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes', [])
-        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes', [])
+        table_description = self._describe_table(table_name)['Table']
+        local_secondary_indexes = table_description.get('LocalSecondaryIndexes', [])
+        global_secondary_indexes = table_description.get('GlobalSecondaryIndexes', [])
 
         for index in local_secondary_indexes + global_secondary_indexes:
 
