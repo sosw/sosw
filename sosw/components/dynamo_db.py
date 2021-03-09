@@ -27,7 +27,7 @@
 """
 
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
-__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin, Bulgakov Mark"
+__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin, Mark Bulgakov"
 __version__ = "1.7"
 
 import boto3
