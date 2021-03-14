@@ -27,8 +27,8 @@
 """
 
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
-__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
-__version__ = "1.6"
+__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin, Mark Bulgakov"
+__version__ = "1.7"
 
 import boto3
 import datetime
@@ -203,9 +203,9 @@ class DynamoDbClient:
 
         indexes = {}
 
-        table_description = self._describe_table(table_name)
-        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes', [])
-        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes', [])
+        table_description = self._describe_table(table_name)['Table']
+        local_secondary_indexes = table_description.get('LocalSecondaryIndexes', [])
+        global_secondary_indexes = table_description.get('GlobalSecondaryIndexes', [])
 
         for index in local_secondary_indexes + global_secondary_indexes:
 
@@ -1059,6 +1059,11 @@ class DynamoDbClient:
             return
 
         capacity = self.get_capacity()[action]  # Capacity per second
+
+        # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
+        if capacity == 0:
+            return
+
         time_between_actions = 1 / capacity
 
         time_elapsed = datetime.datetime.now().timestamp() - last_action_time.timestamp()
