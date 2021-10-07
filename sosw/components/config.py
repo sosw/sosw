@@ -44,6 +44,7 @@ import os
 from sosw.components.helpers import chunks
 from sosw.components.dynamo_db import DynamoDbClient
 
+
 class SecretsManagerConfig:
 
     secretsmanager_client = None
@@ -457,6 +458,9 @@ class ConfigSource:
 
     def get_secrets_by_prefix(self, prefix):
         return self.secrets_manager_class.get_secrets_credentials_by_prefix(prefix)
+
+    def get_secrets_by_name(self, name):
+        return self.secrets_manager_class.get_secrets_credentials_by_name(name)
 
 
 test = True if os.environ.get('STAGE') == 'test' else False
