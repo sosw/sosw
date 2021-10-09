@@ -45,7 +45,7 @@ from sosw.components.helpers import chunks
 from sosw.components.dynamo_db import DynamoDbClient
 
 
-class SecretsManagerConfig:
+class SecretsManager:
 
     secretsmanager_client = None
 
@@ -454,7 +454,7 @@ class ConfigSource:
                 self.default_source = getattr(self, f"{source.lower()}_config")
                 logging.info(f"Initialized default_source = {source.lower()}_config")
 
-        self.secrets_manager_class = SecretsManagerConfig()
+        self.secrets_manager_class = SecretsManager()
 
     def get_config(self, name):
         return self.default_source.get_config(name)
