@@ -49,6 +49,7 @@ class SecretsManagerConfig:
 
     secretsmanager_client = None
 
+
     def __init__(self, test=False, **kwargs):
 
         self.test = test
@@ -56,12 +57,14 @@ class SecretsManagerConfig:
         if not self.test:
             self.test = True if os.environ.get('STAGE') == 'test' or os.environ.get('autotest') == 'True' else False
 
+
     def _get_secretsmanager_client(self):
 
         if self.secretsmanager_client is None:
             self.secretsmanager_client = boto3.client('secretsmanager')
 
         return self.secretsmanager_client
+
 
     def call_boto_secrets_with_pagination(self, f, **kwargs):
         """
@@ -79,22 +82,23 @@ class SecretsManagerConfig:
         can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
 
         if can_paginate:
-            logging.debug(f"'SecretsManager.{f}()' can natively paginate")
+            logging.debug('SecretsManager.{%} can natively paginate', f)
             paginator = secretsmanager_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
-            return list(response)
+            return response
 
         else:
-            logging.debug(f"'SecretsManager.{f}()' can not natively paginate")
+            logging.debug('SecretsManager.{%} can not natively paginate', f)
             response_list = []
             response = func(**kwargs)
-            response_list.append(response)
+            response_list.extend(response)
             while 'NextToken' in response:
                 kwargs['NextToken'] = response['NextToken']
-                response_list.append(func(**kwargs))
+                response_list.extend(func(**kwargs))
             return response_list
 
-    def get_secrets_credentials_by_prefix(self, prefix):
+
+    def get_secrets_credentials_by_prefix(self, tag):
         """
         Retrieve the credentials with given `prefix` from AWS SecretsManager and return as a dictionary..
 
@@ -105,7 +109,7 @@ class SecretsManagerConfig:
 
         secrets_dict = {}
         secret_response = self.call_boto_secrets_with_pagination('list_secrets',
-                                                                 Filters=[{'Key': 'tag-value', 'Values': [prefix]}])
+                                                                 Filters=[{'Key': 'tag-value', 'Values': [tag]}])
         for item in secret_response['SecretList']:
             secret_value = self.call_boto_secrets_with_pagination('get_secret_value', SecretId=item['ARN'])
             secrets_dict[item['Name']] = secret_value['SecretString']
@@ -114,6 +118,13 @@ class SecretsManagerConfig:
 
 
     def get_secrets_credentials_by_name(self, name):
+        """
+        Retrieve the credentials with given `name` from AWS SecretsManager and return as a dictionary..
+
+        :param str name:  name secret to extract
+        :rtype:             dict
+        :return:            Some credentials
+        """
 
         secret_response = self.call_boto_secrets_with_pagination('list_secrets',
                                                                  Filters=[{'Key': 'name', 'Values': [name]}])
@@ -443,7 +454,7 @@ class ConfigSource:
                 self.default_source = getattr(self, f"{source.lower()}_config")
                 logging.info(f"Initialized default_source = {source.lower()}_config")
 
-        self.secrets_manager_class = SecretsManager()
+        self.secrets_manager_class = SecretsManagerConfig()
 
     def get_config(self, name):
         return self.default_source.get_config(name)
