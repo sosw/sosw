@@ -98,11 +98,11 @@ class SecretsManager:
             return response_list
 
 
-    def get_secrets_credentials_by_prefix(self, tag):
+    def get_secrets_credentials_by_tag(self, tag):
         """
-        Retrieve the credentials with given `prefix` from AWS SecretsManager and return as a dictionary..
+        Retrieve the credentials with given `tag` from AWS SecretsManager and return as a dictionary..
 
-        :param str prefix:  prefix of records to extract
+        :param str tag:  tag of secrets to extract
         :rtype:             dict
         :return:            Some credentials
         """
@@ -119,7 +119,7 @@ class SecretsManager:
 
     def get_secrets_credentials_by_name(self, name):
         """
-        Retrieve the credentials with given `name` from AWS SecretsManager and return as a dictionary..
+        Retrieve the credentials with given name from AWS SecretsManager and return as a dictionary..
 
         :param str name:  name secret to extract
         :rtype:             dict
@@ -468,13 +468,14 @@ class ConfigSource:
         return self.default_source.get_credentials_by_prefix(prefix)
 
     def get_secrets_by_prefix(self, prefix):
-        return self.secrets_manager_class.get_secrets_credentials_by_prefix(prefix)
+        return self.secrets_manager_class.get_secrets_credentials_by_tag(tag)
 
     def get_secrets_by_name(self, name):
         return self.secrets_manager_class.get_secrets_credentials_by_name(name)
 
 
 test = True if os.environ.get('STAGE') == 'test' else False
+
 
 __config_source = ConfigSource(test=test)
 
