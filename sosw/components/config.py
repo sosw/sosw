@@ -73,7 +73,8 @@ class SecretsManager:
         :param str f:           SecretsManager function to invoke.
         :param object kwargs:   Keyword arguments for the function to invoke.
         :rtype list
-        :return:                List of paginated responses.
+        :return:                If the function can be the paginate the response will return as paginate iterator.
+                                Else it will return as a list
         """
 
         secretsmanager_client = self._get_secretsmanager_client()
@@ -119,7 +120,7 @@ class SecretsManager:
         filters = [{'Key': 'name', 'Values': [value]}] if filter_type == 'name' else \
             [{'Key': 'tag-value', 'Values': [value]}]
 
-        secretsmanager_client = boto3.client('secretsmanager')
+        secretsmanager_client = self._get_secretsmanager_client()
 
         secret_response = self.call_boto_secrets_with_pagination('list_secrets', Filters=filters)
         secrets = [secret for secret in secret_response for secret in secret['SecretList']]

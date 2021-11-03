@@ -81,6 +81,7 @@ class SecretsManagerIntegrationTestCase(unittest.TestCase):
     def setUp(self):
 
         self.secretsmanager_obj = SecretsManager()
+        time.sleep(10)
 
 
     def tearDown(self):
@@ -88,7 +89,6 @@ class SecretsManagerIntegrationTestCase(unittest.TestCase):
 
 
     def test_get_secrets_credentials_by_name(self):
-        time.sleep(10)
         for test in self.TEST_SECRETS:
             by_name = {'type': 'name', 'value': test['Name']}
             result = self.secretsmanager_obj.get_secrets_credentials(**by_name)
