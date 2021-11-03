@@ -471,11 +471,9 @@ class ConfigSource:
     def get_credentials_by_prefix(self, prefix):
         return self.default_source.get_credentials_by_prefix(prefix)
 
-    def get_secrets_by_prefix(self, prefix):
-        return self.secrets_manager_class.get_secrets_credentials_by_tag(tag)
+    def get_secrets_credentials(self, **kwargs):
+        return self.secrets_manager_class.get_secrets_credentials(**kwargs)
 
-    def get_secrets_by_name(self, name):
-        return self.secrets_manager_class.get_secrets_credentials_by_name(name)
 
 
 test = True if os.environ.get('STAGE') == 'test' else False
