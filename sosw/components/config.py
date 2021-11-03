@@ -82,55 +82,59 @@ class SecretsManager:
         can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
 
         if can_paginate:
+            print('can paginate')
             logging.debug('SecretsManager.{%} can natively paginate', f)
             paginator = secretsmanager_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
             return response
 
         else:
+            print('can not paginate')
             logging.debug('SecretsManager.{%} can not natively paginate', f)
             response_list = []
             response = func(**kwargs)
-            response_list.extend(response)
+            response_list.append(response)
             while 'NextToken' in response:
                 kwargs['NextToken'] = response['NextToken']
-                response_list.extend(func(**kwargs))
+                response_list.append(func(**kwargs))
             return response_list
 
 
-    def get_secrets_credentials_by_tag(self, tag):
+    def get_secrets_credentials(self, **kwargs):
         """
-        Retrieve the credentials with given `tag` from AWS SecretsManager and return as a dictionary..
-
-        :param str tag:  tag of secrets to extract
+        Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.
+        :param  kwargs:  {type: tag/name, value: value_name}
         :rtype:             dict
         :return:            Some credentials
         """
 
-        secrets_dict = {}
-        secret_response = self.call_boto_secrets_with_pagination('list_secrets',
-                                                                 Filters=[{'Key': 'tag-value', 'Values': [tag]}])
-        for item in secret_response['SecretList']:
-            secret_value = self.call_boto_secrets_with_pagination('get_secret_value', SecretId=item['ARN'])
-            secrets_dict[item['Name']] = secret_value['SecretString']
+        filters, secrets_dict = [], {}
+        filter_type, value = kwargs.get('type'), kwargs.get('value')
+        valid_types = ['tag', 'name']
+
+        if not filter_type or filter_type not in valid_types:
+            raise KeyError('Error no type Tag/Name provided')
+
+        if not value:
+            raise KeyError('Error no value provided')
+
+        filters = [{'Key': 'name', 'Values': [value]}] if filter_type == 'name' else \
+            [{'Key': 'tag-value', 'Values': [value]}]
+
+        secretsmanager_client = boto3.client('secretsmanager')
+
+        secret_response = self.call_boto_secrets_with_pagination('list_secrets', Filters=filters)
+        secrets = [secret for secret in secret_response for secret in secret['SecretList']]
+
+        if secrets:
+            for secret in secrets:
+                secret_value = secretsmanager_client.get_secret_value(SecretId=secret['ARN'])
+                secrets_dict[secret['Name']] = secret_value['SecretString']
+        else:
+            logging.warning('No credentials found in SecretsManager for %s with %s', filter_type, value)
+            return secrets_dict
 
         return secrets_dict
-
-
-    def get_secrets_credentials_by_name(self, name):
-        """
-        Retrieve the credentials with given name from AWS SecretsManager and return as a dictionary..
-
-        :param str name:  name secret to extract
-        :rtype:             dict
-        :return:            Some credentials
-        """
-
-        secret_response = self.call_boto_secrets_with_pagination('list_secrets',
-                                                                 Filters=[{'Key': 'name', 'Values': [name]}])
-
-        return self.call_boto_secrets_with_pagination('get_secret_value',
-                                                      SecretId=secret_response['SecretList'][0]['ARN'])
 
 class SSMConfig:
     """
