@@ -45,6 +45,96 @@ from sosw.components.helpers import chunks
 from sosw.components.dynamo_db import DynamoDbClient
 
 
+class SecretsManager:
+
+    secretsmanager_client = None
+
+
+    def __init__(self, test=False, **kwargs):
+
+        self.test = test
+
+        if not self.test:
+            self.test = True if os.environ.get('STAGE') == 'test' or os.environ.get('autotest') == 'True' else False
+
+
+    def _get_secretsmanager_client(self):
+
+        if self.secretsmanager_client is None:
+            self.secretsmanager_client = boto3.client('secretsmanager')
+
+        return self.secretsmanager_client
+
+
+    def call_boto_secrets_with_pagination(self, f, **kwargs):
+        """
+        Invoke SecretsManager functions with the ability to paginate results.
+
+        :param str f:           SecretsManager function to invoke.
+        :param object kwargs:   Keyword arguments for the function to invoke.
+        :rtype list
+        :return:                If the function can be the paginate the response will return as paginate iterator.
+                                Else it will return as a list
+        """
+
+        secretsmanager_client = self._get_secretsmanager_client()
+
+        func = getattr(secretsmanager_client, f)
+        can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
+
+        if can_paginate:
+            logging.debug('SecretsManager.{%} can natively paginate', f)
+            paginator = secretsmanager_client.get_paginator(f)
+            response = paginator.paginate(**kwargs)
+            return response
+
+        else:
+            logging.debug('SecretsManager.{%} can not natively paginate', f)
+            response_list = []
+            response = func(**kwargs)
+            response_list.append(response)
+            while 'NextToken' in response:
+                kwargs['NextToken'] = response['NextToken']
+                response_list.append(func(**kwargs))
+            return response_list
+
+
+    def get_secrets_credentials(self, **kwargs):
+        """
+        Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.
+        :param  kwargs:  {type: tag/name, value: value_name}
+        :rtype:             dict
+        :return:            Some credentials
+        """
+
+        filters, secrets_dict = [], {}
+        filter_type, value = kwargs.get('type'), kwargs.get('value')
+        valid_types = ['tag', 'name']
+
+        if not filter_type or filter_type not in valid_types:
+            raise KeyError('Error no type Tag/Name provided')
+
+        if not value:
+            raise KeyError('Error no value provided')
+
+        filters = [{'Key': 'name', 'Values': [value]}] if filter_type == 'name' else \
+            [{'Key': 'tag-value', 'Values': [value]}]
+
+        secretsmanager_client = self._get_secretsmanager_client()
+
+        secret_response = self.call_boto_secrets_with_pagination('list_secrets', Filters=filters)
+        secrets = [secret for secret in secret_response for secret in secret['SecretList']]
+
+        if secrets:
+            for secret in secrets:
+                secret_value = secretsmanager_client.get_secret_value(SecretId=secret['ARN'])
+                secrets_dict[secret['Name']] = secret_value['SecretString']
+        else:
+            logging.warning('No credentials found in SecretsManager for %s with %s', filter_type, value)
+            return secrets_dict
+
+        return secrets_dict
+
 class SSMConfig:
     """
     Methods to access some configurations and/or credentials stored in AWS SSM ParameterStore.
@@ -367,6 +457,7 @@ class ConfigSource:
                 self.default_source = getattr(self, f"{source.lower()}_config")
                 logging.info(f"Initialized default_source = {source.lower()}_config")
 
+        self.secrets_manager_class = SecretsManager()
 
     def get_config(self, name):
         return self.default_source.get_config(name)
@@ -379,8 +470,13 @@ class ConfigSource:
     def get_credentials_by_prefix(self, prefix):
         return self.default_source.get_credentials_by_prefix(prefix)
 
+    def get_secrets_credentials(self, **kwargs):
+        return self.secrets_manager_class.get_secrets_credentials(**kwargs)
+
+
 
 test = True if os.environ.get('STAGE') == 'test' else False
+
 
 __config_source = ConfigSource(test=test)
 
