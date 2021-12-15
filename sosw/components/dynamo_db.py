@@ -497,8 +497,12 @@ class DynamoDbClient:
             'Select':                    select,
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
             'KeyConditionExpression':    cond_expr,  # Ex: "key1_name = :key1_name AND ..."
-            'ConsistentRead':            consistent_read if not None else False
         }
+
+        if consistent_read is not None:
+            logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
+            query_args['ConsistentRead'] = consistent_read
+
 
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
         # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
@@ -637,7 +641,7 @@ class DynamoDbClient:
         :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
                If not specified also in the config, will scan the table itself without any index.
         :param bool consistent_read: If True , then the operation uses strongly consistent reads;
-            otherwise, the operation uses eventually consistent reads. Default is False
+               otherwise, the operation uses eventually consistent reads. Default uses this settings of boto3 (False).
 
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
@@ -675,8 +679,12 @@ class DynamoDbClient:
         query_args = {
             'TableName': table_name,
             'Select':    'ALL_ATTRIBUTES',
-            'ConsistentRead': consistent_read if not None else False
         }
+
+        if consistent_read is not None:
+            logger.debug("Forcing ConsistentRead in query args of _build_scan_iterator to: %s", consistent_read)
+            query_args['ConsistentRead'] = consistent_read
+
         if cond_expr:
             query_args['FilterExpression'] = cond_expr
         if filter_values:
@@ -748,17 +756,20 @@ class DynamoDbClient:
                 'RequestItems': {
                     table_name: {
                         'Keys': query_keys_chunk,
-                        'ConsistentRead': consistent_read
                     }
                 }
             }
 
-            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            if consistent_read is not None:
+                logger.debug("Forcing ConsistentRead in batch_get_item_query to %s", consistent_read)
+                batch_get_item_query['RequestItems'][table_name]['ConsistentRead'] = consistent_read
+
+            logger.debug("batch_get_item query: %s", batch_get_item_query)
             latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-            logger.debug(f"latest_result: {latest_result}")
+            logger.debug("latest_result: %s", latest_result)
             unprocessed_keys = get_unprocessed_keys(latest_result)
             all_items += latest_result['Responses'][table_name]
-            logger.debug(f"batch_get_items_one_table response: {latest_result}")
+            logger.debug("batch_get_items_one_table response: %s", latest_result)
 
             if unprocessed_keys:
                 # Retry several times
