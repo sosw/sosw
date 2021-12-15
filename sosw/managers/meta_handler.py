@@ -134,7 +134,7 @@ class MetaHandler:
         if self.dynamo_db_client:
             self.dynamo_db_client.create(row=row)
         else:
-            logger.info("DynamoDB client/table is not configured for meta_handler. Skip saving task meta data: %", row)
+            logger.info("DynamoDB client/table is not configured for meta_handler. Skip saving task meta data: %s", row)
 
     def _ma(self, field_name):
         # FIXMEONEDAY: implement mappings for the actions names

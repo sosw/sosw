@@ -83,13 +83,13 @@ class SecretsManager:
         can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
 
         if can_paginate:
-            logging.debug('SecretsManager.{%} can natively paginate', f)
+            logging.debug("SecretsManager.%s can natively paginate", f)
             paginator = secretsmanager_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
             return response
 
         else:
-            logging.debug('SecretsManager.{%} can not natively paginate', f)
+            logging.debug("SecretsManager.%s can not natively paginate", f)
             response_list = []
             response = func(**kwargs)
             response_list.append(response)
