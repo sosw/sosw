@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2021  sosw core contributors <info@sosw.app>
+    Copyright (C) 2022  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -83,13 +83,13 @@ class SecretsManager:
         can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
 
         if can_paginate:
-            logging.debug('SecretsManager.{%} can natively paginate', f)
+            logging.debug("SecretsManager.%s can natively paginate", f)
             paginator = secretsmanager_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
             return response
 
         else:
-            logging.debug('SecretsManager.{%} can not natively paginate', f)
+            logging.debug("SecretsManager.%s can not natively paginate", f)
             response_list = []
             response = func(**kwargs)
             response_list.append(response)
