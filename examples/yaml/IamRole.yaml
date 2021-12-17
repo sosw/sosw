@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM Roles for SOSW"
+
+Parameters:
+
+  SoswBucketName:
+    Description: "S3 bucket used for storing Lambda packages."
+    Type: String
+    Default: 'sosw-s3'
+
+Resources:
+
+   CodebuildSoswDocsBuilderRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                - "codebuild.amazonaws.com"
+              Action:
+              - "sts:AssumeRole"
+          Path: "/"
+          Policies:
+            - PolicyName: "CodebuildSoswDocsBuilderPolicy"
+              PolicyDocument:
+                  Version: 2012-10-17
+                  Statement:
+                    - Effect: Allow
+                      Action: 's3:*'
+                      Resource:
+                          - !Sub 'arn:aws:s3:::test-s3-for-sosw/*'
+                          - !Sub 'arn:aws:s3:::test-s3-for-sosw'
+                    - Effect: Allow
+                      Action: "logs:CreateLogGroup"
+                      Resource: "*"
+                    - Effect: Allow
+                      Action:
+                        - "logs:CreateLogStream"
+                        - "logs:PutLogEvents"
+                      Resource:
+                        - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/SoswDocsBuilder"
+                        - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/SoswDocsBuilder:*"
+          ManagedPolicyArns:
+            - "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
+#           - !Sub "arn:aws:iam::${AWS::AccountId}:policy/Default-Lambda-VPC"
+          RoleName: "CodebuildSoswDocsBuilderRole"
+
+Outputs:
+  CodebuildSoswDocsBuilderRole:
+    Description: "Codebuild docs builder role name"
+    Value: !Ref CodebuildSoswDocsBuilderRole
+    Export:
+      Name: "iam-role-sosw-docs-builder"

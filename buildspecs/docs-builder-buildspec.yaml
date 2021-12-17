@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+
+  build:
+    commands:
+      # Building the documentation in container. See more info in the file itself.
+      - pip install sphinx
+
+  post_build:
+    commands:
+      # Linking the root files responsible for authorization to the root of the bucket.
+      # Uploading them as (secondary) artifacts is overcomplicated
+      - |
+        echo "Sphinx docs"
+        sphinx-build -ab html ./docs ./sosw-rtd
+
+
+artifacts:
+  files:
+    - '**/*'

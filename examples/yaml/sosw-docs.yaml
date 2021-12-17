@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Deploy all docs resources"
+
+Resources:
+  IAMRoles:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ""
+
+  CodeBuilds:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ""
+    DependsOn: IAMRoles

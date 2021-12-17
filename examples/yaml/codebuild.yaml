@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Codebuild for SOSW documentation"
+
+Resources:
+
+  CodeBuildSoswDocsBuilder:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Description: "Codebuild for SOSW documentation"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        Type: "LINUX_CONTAINER"
+      Name: "SoswDocsBuilder"
+      QueuedTimeoutInMinutes: 180
+      TimeoutInMinutes: 180
+      ServiceRole: !ImportValue "iam-role-sosw-docs-builder"
+      Triggers:
+         Webhook: true
+         FilterGroups:
+           -
+             - Type: EVENT
+               Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED, PULL_REQUEST_REOPENED
+      Source:
+        BuildSpec: arn:aws:s3:::tts-lcd-pipeline-artifacts/buildspecs/buildspec_pylint.yaml
+        Type: GITHUB
+        Location: https://github.com/bimpression/tts_ops
