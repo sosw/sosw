@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "CloudWatch ScheduledEvents for Orchestrator and Scavenger"
 
+
 Resources:
   ScheduledRuleSoswEssentials:
     Type: "AWS::Events::Rule"
