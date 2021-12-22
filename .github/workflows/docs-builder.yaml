@@ -9,7 +9,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v1
-docs_requirements
+
     - name: Install packages
       run: sudo apt-get install python3-sphinx; pip install -r configs/requirements.txt
 
