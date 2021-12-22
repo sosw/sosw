@@ -16,7 +16,7 @@ jobs:
       run:  sudo apt-get install python3-sphinx; pwd; ls; pip install boto3 sphinx-sitemap sphinx_rtd_theme; sphinx-build -ab html ./docs ./sosw-rtd
 
     - name: Set aws creds
-      run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; $ aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; $ aws configure set default.region us-west-2
+      run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; aws configure set default.region us-west-2
 
     - name: Sync sosw docs
       run: cd sosw-rtd; aws s3 sync . s3://test-saggi
