@@ -14,3 +14,6 @@ jobs:
 
     - name: Build sosw docs
       run:  sudo apt-get install python3-sphinx; pwd; ls; pip install boto3 sphinx-sitemap sphinx_rtd_theme; sphinx-build -ab html ./docs ./sosw-rtd
+
+    - name: Sync sosw docs
+      run: cd sosw-rtd; aws s3 sync . s3://test-saggi
