@@ -13,4 +13,4 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build sosw docs
-      run:  sudo apt-get install python3-sphinx; pwd; ls; pip install boto3 sphinx-sitemap; sphinx-build -ab html ./docs ./sosw-rtd
+      run:  sudo apt-get install python3-sphinx; pwd; ls; pip install boto3 sphinx-sitemap sphinx_rtd_theme; sphinx-build -ab html ./docs ./sosw-rtd
