@@ -9,9 +9,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v1
-
+docs_requirements
     - name: Install packages
-      run: sudo apt-get install python3-sphinx; pip install -r configs/docs_requirements.txt
+      run: sudo apt-get install python3-sphinx; pip install -r configs/requirements.txt
 
     - name: Build docs
       run: sphinx-build -ab html ./docs ./sosw-rtd
