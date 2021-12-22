@@ -11,7 +11,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Install packages
-      run: sudo apt-get install python3-sphinx; pip install -r configs/docs-builder-requirements.txt
+      run: sudo apt-get install python3-sphinx; pip install -r configs/docs_requirements.txt
 
     - name: Build docs
       run: sphinx-build -ab html ./docs ./sosw-rtd
