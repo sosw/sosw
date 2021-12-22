@@ -10,5 +10,5 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v1
 
-    - name: Call sosw_docs_builder ApiGateway
-      run: curl -X POST  https://sn4n6wyvj1.execute-api.us-west-2.amazonaws.com/dev
+    - name: Build sosw docs
+      run: sudo apt-get install python3-sphinx; pwd; ls; sphinx-build -ab html ./docs ./sosw-rtd
