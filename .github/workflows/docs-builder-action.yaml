@@ -1,5 +1,8 @@
 name: Docs Builder
-on: push
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   linux:
@@ -10,8 +13,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v1
 
-#    - name: Install packages
-#      run: sudo apt-get install python3-sphinx; pip install -r configs/requirements.txt
     - name: Install packages
       run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv install --dev
 
