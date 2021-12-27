@@ -13,7 +13,7 @@ jobs:
 #    - name: Install packages
 #      run: sudo apt-get install python3-sphinx; pip install -r configs/requirements.txt
     - name: Install packages
-      run: sudo apt-get install python3-sphinx; pip install pipenv
+      run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv install --dev
 
     - name: Build docs
       run: pipenv run sphinx-build -ab html ./docs ./sosw-rtd
