@@ -13,10 +13,10 @@ jobs:
 #    - name: Install packages
 #      run: sudo apt-get install python3-sphinx; pip install -r configs/requirements.txt
     - name: Install packages
-      run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv run
+      run: sudo apt-get install python3-sphinx; pip install pipenv
 
     - name: Build docs
-      run: sphinx-build -ab html ./docs ./sosw-rtd
+      run: pipenv run sphinx-build -ab html ./docs ./sosw-rtd
 
     - name: Configure AWS secrets
       run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; aws configure set default.region us-west-2
