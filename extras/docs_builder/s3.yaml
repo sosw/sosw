@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Creates s3 public bucket, github user and user policy"
+
+Resources:
+  S3SoswDocsBuilder:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sosw-documentation-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  GithubUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: 'github_sosw_user'
+    DependsOn: S3SoswDocsBuilder
+
+  GithubUserPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: VisualEditor0
+          Effect: Allow
+          Action:
+          - s3:PutObject
+          - s3:GetObject
+          - s3:PutObjectAcl
+          - s3:GetObjectAcl
+          - s3:ListBucketMultipartUploads
+          - s3:AbortMultipartUpload
+          - s3:ListBucket
+          - s3:DeleteObject
+          - s3:ListMultipartUploadParts
+          Resource:
+          - !Sub "arn:aws:s3:::sosw-documentation-${AWS::AccountId}"
+          - !Sub "arn:aws:s3:::sosw-documentation-${AWS::AccountId}/*"
+      PolicyName: 's3-sync-permissions'
+      Users:
+        - !Ref GithubUser
+    DependsOn: GithubUser
