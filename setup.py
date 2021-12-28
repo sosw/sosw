@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(name='sosw',
-      version='0.7.41',
+      version='0.7.43',
       description='Serverless Orchestrator of Serverless Workers',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -24,6 +24,6 @@ setup(name='sosw',
       ],
       packages=find_packages(exclude=['docs', 'test', 'examples', "*.test", "*.test.*"]),
       install_requires=[
-          'boto3>=1.9'
+          'boto3>=1.20'
       ],
       zip_safe=False)
