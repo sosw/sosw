@@ -3,11 +3,12 @@ import logging
 import time
 import unittest
 import os
+
 from copy import deepcopy
 from decimal import Decimal
-
 from unittest.mock import MagicMock, patch, Mock
 
+from .helpers_test_variables import PPR_DESCRIBE_TABLE, PT_DESCRIBE_TABLE
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -380,6 +381,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
     @patch.object(time, 'sleep')
     def test_sleep_db__fell_asleep(self, mock_sleep):
+        """ Test for table if BillingMode is PROVISIONED """
         self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
         # Check that went to sleep
         time_between_ms = 100
@@ -391,6 +393,18 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         # Should sleep around 1 / capacity second minus "time_between_ms" minus code execution time
         self.assertGreater(args[0], 1 / self.dynamo_client.get_capacity()['write'] - time_between_ms - 0.02)
         self.assertLess(args[0], 1 / self.dynamo_client.get_capacity()['write'])
+
+    @patch.object(time, 'sleep')
+    def test_sleep_db__fell_asleep(self, mock_sleep):
+        """ Test for table if BillingMode is PAY_PER_REQUEST """
+
+        self.dynamo_client.get_capacity = MagicMock(return_value={'read': 0, 'write': 0})
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write')
+        # Check that didn't go to sleep
+        time_between_ms = 100
+        last_action_time = datetime.datetime.now() - datetime.timedelta(milliseconds=time_between_ms)
+        self.dynamo_client.sleep_db(last_action_time=last_action_time, action='write')
+        self.assertEqual(mock_sleep.call_count, 0)
 
 
     @patch.object(time, 'sleep')
@@ -451,6 +465,63 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
         result = self.dynamo_client.get_table_indexes(table_name='autotest_OnDemandTable')
         self.assertIsNone(result['IndexA'].get('ProvisionedThroughput'))
+
+
+    def test_get_table_indexes__ppr(self):
+        """ Check return value of get_table_indexes function in case table BillingMode is PAY_PER_REQUEST """
+
+        self.dynamo_client._describe_table = Mock(return_value=PPR_DESCRIBE_TABLE)
+        expected_indexes = {
+            'session': {
+                'projection_type': 'ALL',
+                'hash_key': 'session',
+                'provisioned_throughput': {
+                    'write_capacity': 0,
+                    'read_capacity': 0
+                }
+            },
+            'session_id': {
+                'projection_type': 'ALL',
+               'hash_key': 'session_id',
+               'provisioned_throughput': {
+                   'write_capacity': 0,
+                   'read_capacity': 0
+               }
+            },
+        }
+        self.assertEqual(
+            expected_indexes,
+            self.dynamo_client.get_table_indexes('actions')
+        )
+
+
+    def test_get_table_indexes__pt(self):
+        """ Check return value of get_table_indexes function in case table BillingMode is PROVISIONED """
+
+        self.dynamo_client._describe_table = Mock(return_value=PT_DESCRIBE_TABLE)
+        expected_indexes = {
+            'name': {
+                'projection_type': 'ALL',
+                'hash_key': 'name',
+                'provisioned_throughput': {
+                    'write_capacity': 10,
+                    'read_capacity': 100
+                }
+            },
+            'city': {
+                'projection_type': 'ALL',
+                'hash_key': 'city',
+                'provisioned_throughput': {
+                    'write_capacity': 10,
+                    'read_capacity': 100
+                }
+            },
+        }
+        self.assertEqual(
+            expected_indexes,
+            self.dynamo_client.get_table_indexes('partners')
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

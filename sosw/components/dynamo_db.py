@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2021  sosw core contributors <info@sosw.app>
+    Copyright (C) 2022  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,8 @@
 """
 
 __all__ = ['DynamoDbClient', 'clean_dynamo_table']
-__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin"
-__version__ = "1.6"
+__author__ = "Nikolay Grishchenko, Sophie Fogel, Gil Halperin, Mark Bulgakov"
+__version__ = "1.7"
 
 import boto3
 import datetime
@@ -203,9 +203,9 @@ class DynamoDbClient:
 
         indexes = {}
 
-        table_description = self._describe_table(table_name)
-        local_secondary_indexes = table_description['Table'].get('LocalSecondaryIndexes', [])
-        global_secondary_indexes = table_description['Table'].get('GlobalSecondaryIndexes', [])
+        table_description = self._describe_table(table_name)['Table']
+        local_secondary_indexes = table_description.get('LocalSecondaryIndexes', [])
+        global_secondary_indexes = table_description.get('GlobalSecondaryIndexes', [])
 
         for index in local_secondary_indexes + global_secondary_indexes:
 
@@ -401,12 +401,11 @@ class DynamoDbClient:
         logger.debug(f"dict_to_dynamo result: {result}")
         return result
 
-
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
-                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None) \
-            -> Union[List[Dict], int]:
+                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None,
+                     consistent_read: bool = None) -> Union[List[Dict], int]:
         """
         Get an item from a table, by some keys. Can specify an index.
         If an index is not specified, will query the table.
@@ -444,6 +443,8 @@ class DynamoDbClient:
             Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
             `ExpressionAttributeNames`:
             {'#session': 'session', '#key': 'key'}
+        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+            otherwise, the operation uses eventually consistent reads. Default is False
 
         :return: List of items from the table, each item in key-value format
             OR the count if `return_count` is True
@@ -495,8 +496,13 @@ class DynamoDbClient:
             'TableName':                 table_name,
             'Select':                    select,
             'ExpressionAttributeValues': filter_values,  # Ex: {':key1_name': 'key1_value', ...}
-            'KeyConditionExpression':    cond_expr  # Ex: "key1_name = :key1_name AND ..."
+            'KeyConditionExpression':    cond_expr,  # Ex: "key1_name = :key1_name AND ..."
         }
+
+        if consistent_read is not None:
+            logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
+            query_args['ConsistentRead'] = consistent_read
+
 
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
         # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
@@ -585,8 +591,8 @@ class DynamoDbClient:
 
         return result_expr, result_values
 
-
-    def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
+                    consistent_read=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -597,6 +603,8 @@ class DynamoDbClient:
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
         :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
                If not specified also in the config, will scan the table itself without any index.
+        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+            otherwise, the operation uses eventually consistent reads. Default is False
 
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
@@ -610,7 +618,7 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
 
         result = []
         for page in response_iterator:
@@ -619,8 +627,8 @@ class DynamoDbClient:
 
         return result
 
-
-    def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None):
+    def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
+                              consistent_read=None):
         """
         Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
         Careful - don't make queries of too many items, this could run for a long time.
@@ -632,6 +640,8 @@ class DynamoDbClient:
         :param str table_name: Name of the dynamo table. If not specified, will use table_name from the config.
         :param str index_name: Name of the dynamo table index. If not specified, will use index_name from the config.
                If not specified also in the config, will scan the table itself without any index.
+        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+               otherwise, the operation uses eventually consistent reads. Default uses this settings of boto3 (False).
 
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
@@ -645,13 +655,13 @@ class DynamoDbClient:
                             f"Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
-        response_iterator = self._build_scan_iterator(attrs, table_name, index_name)
+        response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
         for page in response_iterator:
             self.stats['dynamo_scan_queries'] += 1
             yield [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
 
 
-    def _build_scan_iterator(self, attrs=None, table_name=None, index_name=None):
+    def _build_scan_iterator(self, attrs=None, table_name=None, index_name=None, consistent_read=None):
         table_name = self._get_validate_table_name(table_name)
 
         filter_values = None
@@ -670,6 +680,11 @@ class DynamoDbClient:
             'TableName': table_name,
             'Select':    'ALL_ATTRIBUTES',
         }
+
+        if consistent_read is not None:
+            logger.debug("Forcing ConsistentRead in query args of _build_scan_iterator to: %s", consistent_read)
+            query_args['ConsistentRead'] = consistent_read
+
         if cond_expr:
             query_args['FilterExpression'] = cond_expr
         if filter_values:
@@ -689,7 +704,7 @@ class DynamoDbClient:
 
 
     def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
-                                  strict=None, fetch_all_fields=None):
+                                  strict=None, fetch_all_fields=None, consistent_read=None):
         """
         Gets a batch of items from a single dynamo table.
         Only accepts keys, can't query by other columns.
@@ -710,6 +725,8 @@ class DynamoDbClient:
         :param bool strict: DEPRECATED.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
+        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+            otherwise, the operation uses eventually consistent reads. Default is False
         :return: List of items from the table
         :rtype: list
         """
@@ -738,17 +755,21 @@ class DynamoDbClient:
             batch_get_item_query = {
                 'RequestItems': {
                     table_name: {
-                        'Keys': query_keys_chunk
+                        'Keys': query_keys_chunk,
                     }
                 }
             }
 
-            logger.debug(f"batch_get_item query: {batch_get_item_query}")
+            if consistent_read is not None:
+                logger.debug("Forcing ConsistentRead in batch_get_item_query to %s", consistent_read)
+                batch_get_item_query['RequestItems'][table_name]['ConsistentRead'] = consistent_read
+
+            logger.debug("batch_get_item query: %s", batch_get_item_query)
             latest_result = self.dynamo_client.batch_get_item(**batch_get_item_query)
-            logger.debug(f"latest_result: {latest_result}")
+            logger.debug("latest_result: %s", latest_result)
             unprocessed_keys = get_unprocessed_keys(latest_result)
             all_items += latest_result['Responses'][table_name]
-            logger.debug(f"batch_get_items_one_table response: {latest_result}")
+            logger.debug("batch_get_items_one_table response: %s", latest_result)
 
             if unprocessed_keys:
                 # Retry several times
@@ -1059,6 +1080,11 @@ class DynamoDbClient:
             return
 
         capacity = self.get_capacity()[action]  # Capacity per second
+
+        # No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.
+        if capacity == 0:
+            return
+
         time_between_actions = 1 / capacity
 
         time_elapsed = datetime.datetime.now().timestamp() - last_action_time.timestamp()
