@@ -1,6 +1,6 @@
 name: Docs Builder
 on:
-  push:
+  pull_request:
     branches:
       - master
 
