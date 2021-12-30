@@ -4,6 +4,7 @@ on:
     branches:
       - master
 
+
 jobs:
   linux:
     name: Linux
