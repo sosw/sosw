@@ -12,7 +12,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
-class TestAWSSigV4RequestGenerator(unittest.TestCase):
+class sigv4_TestCase(unittest.TestCase):
 
     def setUp(self):
         """
