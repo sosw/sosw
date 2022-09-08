@@ -379,7 +379,7 @@ class DynamoDbClient:
             if not strict:
                 val = row_dict.get(key)
                 key_with_prefix = f"{add_prefix}{key}"
-                if isinstance(val, bool):
+                if isinstance(val, bool) or (isinstance(val, str) and val.lower() in ['false', 'true']):
                     result[key_with_prefix] = {'BOOL': to_bool(val)}
                 elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
                     result[key_with_prefix] = {'N': str(val)}
