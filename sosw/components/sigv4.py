@@ -35,14 +35,13 @@ import hashlib
 import logging
 import datetime
 
-from requests.auth import AuthBase
 from urllib.parse import quote, urlparse
 
 
 logger = logging.getLogger()
 
 
-class AWSSigV4RequestGenerator(AuthBase):
+class AWSSigV4RequestGenerator:
     """
     Signature Version 4 (SigV4) is the process to add authentication information to AWS API requests sent by HTTP.
     For security, most requests to AWS must be signed with an access key. The access key consists of an access key
@@ -68,28 +67,23 @@ class AWSSigV4RequestGenerator(AuthBase):
         :param aws_host='search-service.us-east-1.es.amazonaws.com',
         """
 
-        self.aws_service = kwargs.get('aws_service')
-        self.aws_access_key_id = kwargs.get('aws_access_key_id')
-        self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
-        self.aws_session_token = kwargs.get('aws_session_token')
-        self.aws_region = kwargs.get('aws_region')
-        self.aws_host = kwargs.get('aws_host')
-
-        if self.aws_service is None:
+        if not kwargs.get('aws_service'):
             raise KeyError("Service is required")
 
-        if self.aws_access_key_id is None or self.aws_secret_access_key is None:
-            logger.debug("Checking environment for credentials")
-            self.aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
-            self.aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-            self.aws_session_token = os.environ.get('AWS_SESSION_TOKEN') or os.environ.get('AWS_SECURITY_TOKEN')
+        self.__dict__.update(kwargs)
 
-        if self.aws_access_key_id is None or self.aws_secret_access_key is None:
+        if not all(getattr(self, attr, None) for attr in ["aws_access_key_id", "aws_secret_access_key"]):
+            logger.debug("Checking environment for credentials")
+            self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+            self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+            self.aws_session_token = os.getenv('AWS_SESSION_TOKEN') or os.getenv('AWS_SECURITY_TOKEN')
+
+        if any(True for x in (self.aws_access_key_id, self.aws_secret_access_key) if x is None):
             raise KeyError("AWS Access Key ID and Secret Access Key are required")
 
-        if self.aws_region is None:
+        if not getattr(self, 'aws_region', None):
             logger.debug("Checking environment for region")
-            self.aws_region = os.environ.get('AWS_DEFAULT_REGION')
+            self.aws_region = os.getenv('AWS_REGION')
 
         if self.aws_region is None:
             raise KeyError("Region is required")
@@ -234,7 +228,7 @@ class AWSSigV4RequestGenerator(AuthBase):
         """
 
         # We check if we get host from kwargs than hostname of parsed url
-        host = self.aws_host or parsed_url.hostname
+        host = getattr(self, 'aws_host', None) or parsed_url.hostname
         canonical_headers = ('host:' + host + '\n' + 'x-amz-date:' + self.amzdate + '\n')
 
         if self.aws_session_token:
