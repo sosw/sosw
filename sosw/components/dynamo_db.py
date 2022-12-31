@@ -500,8 +500,11 @@ class DynamoDbClient:
         }
 
         if consistent_read is not None:
-            logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
-            query_args['ConsistentRead'] = consistent_read
+            if index_name is None:
+                logger.warning("Need to specify index name, since Strongly Consistent Read is not available on Global Secondary Indexes. Switching to Eventually Consistent Read")
+            else:
+                logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
+                query_args['ConsistentRead'] = consistent_read
 
 
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
