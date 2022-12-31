@@ -501,7 +501,7 @@ class DynamoDbClient:
 
         if consistent_read is not None:
             if index_name is None:
-                logger.warning("Need to specify index name, since Strongly Consistent Read is not available on Global Secondary Indexes. Switching to Eventually Consistent Read")
+                raise ValueError(f"Need to specify index name, since Strongly Consistent Read is not available on Global Secondary Indexes.")
             else:
                 logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
                 query_args['ConsistentRead'] = consistent_read
