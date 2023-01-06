@@ -502,6 +502,14 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         self.assertEqual(result[0], rows[-1])
 
+    def test_get_by_query__strongly_consistent_read(self):
+        keys = {self.HASH_COL: 'cat', 'other_col': 'abc123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'other_col': 'abc123'}
+        self.dynamo_client.put(row, self.table_name)
+
+        with self.assertRaises(ValueError):
+            self.dynamo_client.get_by_query(keys=keys, index_name='autotest_index', consistent_read='true')
+
 
     def test_get_by_scan__all(self):
         rows = [
