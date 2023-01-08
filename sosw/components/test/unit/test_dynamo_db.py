@@ -268,6 +268,11 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                       kwargs['KeyConditionExpression'])
 
 
+    def test_get_by_query__strongly_consistent_read(self):
+        with self.assertRaises(ValueError):
+            self.dynamo_client.get_by_query(keys=keys, index_name='autotest_index', consistent_read='true')
+
+
     def test__parse_filter_expression(self):
         TESTS = {
             'key = 42': ("key = :filter_key", {":filter_key": {'N': '42'}}),
