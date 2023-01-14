@@ -270,7 +270,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
     def test_get_by_query__strongly_consistent_read(self):
         with self.assertRaises(ValueError):
-            self.dynamo_client.get_by_query(keys={'test': 'test'}, index_name='autotest_index', consistent_read='true')
+            self.dynamo_client.get_by_query(keys={'test': 'test'}, index_name='autotest_index', consistent_read=True)
 
 
     def test__parse_filter_expression(self):
