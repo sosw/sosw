@@ -11,7 +11,7 @@
 ---
 
 ## Documentation
-[https://docs.sosw.app](https://docs.sosw.app/en/master/)
+[https://docs.sosw.app](https://docs.sosw.app)
 
 ## Essential Workflows
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
