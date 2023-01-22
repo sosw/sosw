@@ -176,7 +176,7 @@ class Processor:
                                    f"Tried suffixes for class: {client_suffixes}")
 
 
-    def __call__(self, event):
+    def __call__(self, event, cleanup: bool = True):
         """
         Call the Processor.
         You can either call super() at the end of your child function or completely overwrite this function.
@@ -185,8 +185,16 @@ class Processor:
         # Update the stats for number of calls.
         # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
-        self.result = defaultdict(int)
+        if cleanup:
+            self.result = defaultdict(int)
 
+
+    def pre_warming(self):
+        """
+        Clean the result and stats.
+        """
+        self.result = defaultdict(int)
+        self.reset_stats()
 
     @staticmethod
     def get_config(name):

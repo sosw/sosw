@@ -77,7 +77,7 @@ class Worker(Processor):
             self.meta_handler = MetaHandler(custom_config=self.config['meta_handler_config'])
 
 
-    def __call__(self, event: Dict):
+    def __call__(self, event: Dict, cleanup: bool = True):
         """
         You can either call super() at the end of your child function or completely overwrite this function.
         """
@@ -90,7 +90,7 @@ class Worker(Processor):
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
 
-        super().__call__(event)
+        super().__call__(event, cleanup)
 
 
     def mark_task_as_completed(self, task_id: str):
