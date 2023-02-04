@@ -39,14 +39,15 @@ Please find the following elementary example of Worker Lambda.
         dynamo_db_client = None
 
 
-        def __call__(self, event):
+        def __call__(self, event, reset_result=True):
 
             # Example of your Worker logic
             row = event.get('row')
             self.put_to_db(row)
 
-            # Do some basic cleaning and marking `sosw` task as completed.
-            super().__call__(event)
+            # Do some basic cleaning and marking `sosw` task as completed. If you want to use the result after the
+            # function call, just set reset_result to false.
+            super().__call__(event, reset_result)
 
 
         def put_to_db(self, row):
