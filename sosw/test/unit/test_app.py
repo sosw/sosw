@@ -20,6 +20,7 @@ class app_UnitTestCase(unittest.TestCase):
     class Child(Processor):
         def __call__(self, event):
             super().__call__(event)
+            super().pre_warming()
             return event.get('k')
 
 
