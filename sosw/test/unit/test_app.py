@@ -40,6 +40,16 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertTrue(True)
 
 
+    @mock.patch("boto3.client")
+    def test_app_reset(self):
+        processor = Processor(custom_config=self.TEST_CONFIG)
+        processor.__call__(event={'k': 'success'})
+        self.assertEqual(processor.stats['processor_calls'], 1)
+        processor.__pre_call__()
+        self.assertNotIn('processor_calls', processor.stats)
+        self.assertEqual(processor.stats['total_processor_calls'], 1)
+
+
     # Behaviour is deprecated.
     # @mock.patch("boto3.client")
     # def test_app_init__fails_without_custom_config(self, mock_boto_client):

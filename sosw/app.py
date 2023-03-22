@@ -185,7 +185,6 @@ class Processor:
         """
 
         # Update the stats for number of calls.
-        # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
         if reset_result:
             self.result = defaultdict(int)
