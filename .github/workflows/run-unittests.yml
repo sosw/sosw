@@ -4,10 +4,8 @@
 name: Run Unittests
 
 on:
-  push:
-    branches: [ "[0-9]_[0-9]*_[0-9]*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "[0-9]_[0-9]*_[0-9]*"]
 
 jobs:
   build:
