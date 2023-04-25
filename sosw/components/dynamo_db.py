@@ -94,7 +94,6 @@ class DynamoDbClient:
 
         # initialize table store
         self._table_capacity = {}
-        self.identify_dynamo_capacity(table_name=self.config['table_name'])
 
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
@@ -103,7 +102,7 @@ class DynamoDbClient:
         self.type_serializer = TypeSerializer()
         self.type_deserializer = TypeDeserializer()
 
-
+    @property
     def identify_dynamo_capacity(self, table_name=None):
         """
         Identify and store the table capacity for a given table on the object.
