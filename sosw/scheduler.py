@@ -37,7 +37,7 @@ import os
 import re
 import time
 
-from collections import Iterable
+from typing import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
