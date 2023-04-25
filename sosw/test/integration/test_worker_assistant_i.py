@@ -1,4 +1,3 @@
-import attrdict
 import datetime
 import logging
 import os
@@ -29,7 +28,6 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         Clean the classic autotest table.
         """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
-        global_vars.lambda_context = attrdict.AttrDict({v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()})
 
 
     def setUp(self):
