@@ -12,6 +12,7 @@ import time
 import uuid
 
 from collections import defaultdict
+from copy import deepcopy
 from typing import Dict, Optional, List, Tuple
 from sosw.components.dynamo_db import clean_dynamo_table
 
