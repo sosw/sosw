@@ -376,7 +376,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_sleep_db__get_capacity_called(self):
         self.dynamo_client.dynamo_client = MagicMock()
 
-        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write', table_name='autotest_new')
+        self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write',
+                                    table_name=self.dynamo_client.config['table_name'])
         self.dynamo_client.dynamo_client.describe_table.assert_called_once()
 
 
