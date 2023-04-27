@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import os
@@ -6,7 +7,8 @@ import unittest
 from sosw.worker_assistant import WorkerAssistant as Processor
 from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, TEST_WORKER_ASSISTANT_CONFIG
 from sosw.test.helpers_test_dynamo_db import get_autotest_ddb_name, create_test_ddb, drop_test_ddb, get_table_setup, \
-    add_gsi, clean_dynamo_table
+    add_gsi, clean_dynamo_table, autotest_dynamo_db_tasks_setup, autotest_dynamo_db_meta_setup, \
+    autotest_dynamo_db_closed_tasks_setup, AutotestDdbManager, get_autotest_ddb_name_with_custom_suffix
 from unittest.mock import MagicMock, patch
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -18,25 +20,19 @@ os.environ["autotest"] = "True"
 class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
-
-    autotest_dynamo_db_setup = get_table_setup(hash_key=('task_id', 'S'))
-    autotest_dynamo_db_with_index_setup = add_gsi(setup=autotest_dynamo_db_setup, index_name='sosw_tasks_greenfield',
-                                                  hash_key=('labourer_id', 'S'), range_key=('greenfield', 'N'))
-    autotest_dynamo_db_meta_setup = get_table_setup(hash_key=('task_id', 'S'), range_key=('created_at', 'N'))
+    autotest_ddbm = None
 
 
     @classmethod
     def setUpClass(cls) -> None:
         # Creation of Dynamo table
-        logging.info('Setting up table with structure: %s', cls.autotest_dynamo_db_with_index_setup)
-        create_test_ddb(table_structure=cls.autotest_dynamo_db_with_index_setup)
+        cls.autotest_ddbm = AutotestDdbManager()
 
 
     @classmethod
     def tearDownClass(cls) -> None:
 
-        # Deletion of Dynamo table
-        drop_test_ddb(table_name=get_autotest_ddb_name())
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setUp(self):
@@ -50,7 +46,6 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch = self.get_config_patcher.start()
         self.get_config_patch.return_value = {}
 
-        TEST_WORKER_ASSISTANT_CONFIG['dynamo_db_config']['table_name'] = get_autotest_ddb_name()
         self.processor = Processor(custom_config=TEST_WORKER_ASSISTANT_CONFIG)
         self.processor.meta_handler = MagicMock()
 
@@ -59,14 +54,13 @@ class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
         """
         """
 
-        # We have to kill processor first of all, otherwise it keeps connection alive.
-        # If not processor - no problem. :)
+        # We have to kill processor first of all, otherwise it may keep some connections alive.
         try:
             del self.processor
         except:
             pass
 
-        clean_dynamo_table(table_name=get_autotest_ddb_name(), keys=('task_id',))
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
         self.get_config_patcher.stop()
 
 

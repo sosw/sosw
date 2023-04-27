@@ -1,4 +1,5 @@
 from sosw.labourer import Labourer
+from sosw.test.helpers_test_dynamo_db import get_autotest_ddb_name_with_custom_suffix
 
 
 TASKS_TABLE_CONFIG = {
@@ -14,7 +15,7 @@ TASKS_TABLE_CONFIG = {
         'payload':             'S'
     },
     'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
-    'table_name':       'autotest_sosw_tasks',
+    'table_name':       get_autotest_ddb_name_with_custom_suffix('sosw_tasks'),
     'index_greenfield': 'autotest_sosw_tasks_greenfield',
     'field_names':      {
         'task_id':     'task_id',
@@ -24,7 +25,7 @@ TASKS_TABLE_CONFIG = {
 }
 
 META_TABLE_CONFIG = {
-    'table_name':      'autotest_sosw_tasks_meta',
+    'table_name':       get_autotest_ddb_name_with_custom_suffix('sosw_tasks_meta'),
     'row_mapper':      {
         'task_id':         'S',
         'created_at':      'N',
@@ -54,8 +55,8 @@ TEST_SIBLINGS_CLIENT_CONFIG = {
 TEST_TASK_CLIENT_CONFIG = {
     'init_clients':                      [],
     'dynamo_db_config':                  TASKS_TABLE_CONFIG,
-    'sosw_closed_tasks_table':           'autotest_sosw_closed_tasks',
-    'sosw_retry_tasks_table':            'autotest_sosw_retry_tasks',
+    'sosw_closed_tasks_table':           get_autotest_ddb_name_with_custom_suffix('sosw_closed_tasks'),
+    'sosw_retry_tasks_table':            get_autotest_ddb_name_with_custom_suffix('sosw_retry_tasks'),
     'sosw_retry_tasks_greenfield_index': 'labourer_id_greenfield',
     'ecology_config':                    TEST_ECOLOGY_CLIENT_CONFIG,
     'labourers':                         {

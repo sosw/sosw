@@ -6,6 +6,8 @@ __all__ = ['get_autotest_ddb_suffix', 'get_autotest_ddb_name', 'get_autotest_ddb
 
 __author__ = 'Nikolay Grishchenko'
 
+import asyncio
+
 import boto3
 import logging
 import time
@@ -256,7 +258,8 @@ def get_ddb_benchmark():
     return BENCHMARK
 
 
-def get_table_setup(hash_key: Tuple[str, str], range_key: Optional[Tuple[str, str]] = None) -> Dict:
+def get_table_setup(hash_key: Tuple[str, str], range_key: Optional[Tuple[str, str]] = None,
+                    table_name: str = None) -> Dict:
     """
     :param hash_key: tuple with hash key name and type
     :param range_key: tuple with range key name and type
@@ -270,7 +273,7 @@ def get_table_setup(hash_key: Tuple[str, str], range_key: Optional[Tuple[str, st
                 'AttributeType': hash_key[1]
             }
         ],
-        'TableName': None,
+        'TableName': table_name,
         'KeySchema': [
             {
                 'AttributeName': hash_key[0],
@@ -330,8 +333,161 @@ def add_gsi(setup: Dict, index_name: str, hash_key: Tuple[str, str], range_key: 
     return setup
 
 
-### autotest_dynamo_db ###
+class AutotestDdbManager:
+
+    def __init__(self, tables: List[Dict] = None):
+        if not tables:
+            # By default, we create all main tables, but you can specify explicit ones
+            tables = [autotest_dynamo_db_tasks_setup, autotest_dynamo_db_meta_setup,
+                      autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup]
+        self.tables = tables
+        asyncio.run(self.create_ddbs(self.tables))
+
+
+    async def create_ddbs(self, tables):
+        X = await asyncio.gather(
+            *[self.create_test_ddb(structure) for structure in tables]
+        )
+
+
+    async def clean_ddbs(self):
+        X = await asyncio.gather(
+            *[self.clean_ddb(structure) for structure in self.tables]
+        )
+
+
+    async def drop_ddbs(self):
+        X = await asyncio.gather(
+            *[self.drop_test_ddb(structure['TableName']) for structure in self.tables]
+        )
+
+
+    async def clean_ddb(self, table_structure):
+        """ Coroutine to clean a table. """
+        name = table_structure['TableName']
+        keys = [x['AttributeName'] for x in table_structure['KeySchema']]
+        clean_dynamo_table(table_name=name, keys=tuple(keys))
+
+
+    async def create_test_ddb(self, table_structure: Dict = None):
+        """
+        Asyncio coroutine.
+        Creates a table with unique DB name using either sample generic schema or from argument.
+
+        The function may also create Global Secondary Index (GSI) from table_structure.
+        This significantly increases the creation time.
+
+        ..  warning::
+
+            There is a function with same name in the module which runs synchronously.
+            We keep it for backwards compatibility.
+
+        :param Dict table_structure: Should follow the boto3 create_table() request specification.
+        """
+
+        client = boto3.client('dynamodb')
+
+        if not table_structure.get('TableName'):
+            table_structure['TableName'] = get_autotest_ddb_name()
+
+        name = table_structure['TableName']
+
+        assert name.startswith('autotest_'), "Table for testing must start with an autotest prefix"
+
+        logging.info("Creating table: %s", table_structure)
+        # Try to send the request to create a table. If already exists - first drop it and then recreate.
+        for retry in range(2):
+            try:
+                client.create_table(**table_structure)
+                logging.info("Successfully sent request to create table %s", name)
+                break
+
+            except Exception as err:
+                if "Table already exists" in str(err):
+                    for retry2 in range(2):
+                        try:
+                            await self.drop_test_ddb(table_name=name)
+
+                        except Exception as err2:
+                            if "Table is being created" in str(err2):
+                                await asyncio.sleep(retry2)
+
+                            else:
+                                raise Exception(err)
+
+                else:
+                    logging.exception(err, exc_info=True)
+                    raise Exception(err)
+
+        for i in range(34):  # ~10 minutes with exponential backoff
+            response = client.describe_table(TableName=name)
+            if response['Table']['TableStatus'] == 'ACTIVE':
+                logging.info("Successfully created table %s after %s iterations.", name, i)
+                break
+            await asyncio.sleep(i)
+
+        return name
+
+
+    async def drop_test_ddb(self, table_structure: Dict = None):
+        """
+        Asyncio coroutine to drop temporary autotest DynamoDB table.
+        ..  warning::
+
+            There is a function with same name in the module which runs synchronously.
+            We keep it for backwards compatibility.
+        """
+        name = table_structure['TableName'] or get_autotest_ddb_name()
+
+        assert name.startswith('autotest_'), "Table for testing must start with an autotest prefix"
+
+        client = boto3.client('dynamodb')
+
+        for retry in range(3):
+            try:
+                client.delete_table(TableName=name)
+                break
+
+            except Exception as err2:
+                if "Attempt to change a resource which is still in use" in str(err2):
+                    time.sleep(retry)
+                else:
+                    raise Exception(err2)
+
+        for i in range(34):  # ~10 minutes with exponential backoff
+            try:
+                response = client.describe_table(TableName=name)
+                logging.info("Table %s is still %s", name, response['Table']['TableStatus'])
+                await asyncio.sleep(i)
+            except:
+                logging.info("Successfully dropped table %s after %s iterations.", name, i)
+                break
+
+
+### Autotest DynamoDB structures ###
 
 autotest_dynamo_db_setup = get_table_setup(hash_key=('hash_col', 'S'), range_key=('range_col', 'N'))
 autotest_dynamo_db_with_index_setup = add_gsi(setup=autotest_dynamo_db_setup, index_name='autotest_index',
                                               hash_key=('hash_col', 'S'), range_key=('other_col', 'S'))
+
+autotest_dynamo_db_tasks_setup = get_table_setup(hash_key=('task_id', 'S'),
+                                                 table_name=get_autotest_ddb_name() + '_sosw_tasks')
+autotest_dynamo_db_tasks_setup = add_gsi(setup=autotest_dynamo_db_tasks_setup, index_name='sosw_tasks_greenfield',
+                                         hash_key=('labourer_id', 'S'), range_key=('greenfield', 'N'))
+
+autotest_dynamo_db_meta_setup = get_table_setup(hash_key=('task_id', 'S'), range_key=('created_at', 'N'),
+                                                table_name=get_autotest_ddb_name() + '_sosw_tasks_meta')
+
+autotest_dynamo_db_closed_tasks_setup = get_table_setup(hash_key=('task_id', 'S'),
+                                                        table_name=get_autotest_ddb_name() + '_sosw_closed_tasks')
+autotest_dynamo_db_closed_tasks_setup = add_gsi(setup=autotest_dynamo_db_closed_tasks_setup,
+                                                index_name='labourer_task_status_with_time',
+                                                hash_key=('labourer_id_task_status', 'S'),
+                                                range_key=('closed_at', 'N'))
+
+autotest_dynamo_db_retry_tasks_setup = get_table_setup(hash_key=('labourer_id', 'S'), range_key=('task_id', 'S'),
+                                                       table_name=get_autotest_ddb_name() + '_sosw_retry_tasks')
+autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_tasks_setup,
+                                                index_name='labourer_id_greenfield',
+                                                hash_key=('labourer_id', 'S'),
+                                                range_key=('desired_launch_time', 'N'))

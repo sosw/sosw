@@ -23,21 +23,22 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.TEST_CONFIG['init_clients'] = ['S3', ]
 
+        cls.AWS_ACCOUNT = boto3.client('sts').get_caller_identity().get('Account')
+        cls.BUCKET_NAME = f'autotest_{cls.AWS_ACCOUNT}'
         cls.clean_bucket()
 
 
-    @staticmethod
-    def clean_bucket():
+    def clean_bucket(self):
         """ Clean S3 bucket"""
 
         s3 = boto3.resource('s3')
-        bucket = s3.Bucket('autotest-bucket')
+        bucket = s3.Bucket(self.BUCKET_NAME)
         bucket.objects.all().delete()
 
 
     def exists_in_s3(self, key):
         try:
-            self.s3_client.get_object(Bucket='autotest-bucket', Key=key)
+            self.s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)
             return True
         except self.s3_client.exceptions.ClientError:
             return False
@@ -47,7 +48,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.make_local_file('Liat')
 
         self.s3_client.upload_file(Filename=local or self.scheduler.local_queue_file,
-                                   Bucket='autotest-bucket',
+                                   Bucket=self.BUCKET_NAME,
                                    Key=key or self.scheduler.remote_queue_file)
         time.sleep(0.3)
 
