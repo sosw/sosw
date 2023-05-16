@@ -16,7 +16,7 @@ TASKS_TABLE_CONFIG = {
     },
     'required_fields':  ['task_id', 'labourer_id', 'created_at', 'greenfield'],
     'table_name':       get_autotest_ddb_name_with_custom_suffix('sosw_tasks'),
-    'index_greenfield': 'autotest_sosw_tasks_greenfield',
+    'index_greenfield': 'sosw_tasks_greenfield',
     'field_names':      {
         'task_id':     'task_id',
         'labourer_id': 'labourer_id',

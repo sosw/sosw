@@ -1,8 +1,8 @@
 """ A set of helper functions for DynamoDB Integration testing. """
 
-__all__ = ['get_autotest_ddb_suffix', 'get_autotest_ddb_name', 'get_autotest_ddb_name_with_custom_suffix',
-           'get_autotest_ddb_config', 'get_ddb_benchmark', 'clean_dynamo_table', 'create_test_ddb', 'drop_test_ddb',
-           'safe_put_to_ddb', 'get_table_setup', 'add_gsi']
+__all__ = ['AutotestDdbManager', 'get_autotest_ddb_suffix', 'get_autotest_ddb_name',
+           'get_autotest_ddb_name_with_custom_suffix', 'get_autotest_ddb_config', 'get_ddb_benchmark',
+           'clean_dynamo_table', 'create_test_ddb', 'drop_test_ddb', 'safe_put_to_ddb', 'get_table_setup', 'add_gsi']
 
 __author__ = 'Nikolay Grishchenko'
 
@@ -358,7 +358,7 @@ class AutotestDdbManager:
 
     async def drop_ddbs(self):
         X = await asyncio.gather(
-            *[self.drop_test_ddb(structure['TableName']) for structure in self.tables]
+            *[self.drop_test_ddb(structure) for structure in self.tables]
         )
 
 
@@ -470,24 +470,24 @@ autotest_dynamo_db_setup = get_table_setup(hash_key=('hash_col', 'S'), range_key
 autotest_dynamo_db_with_index_setup = add_gsi(setup=autotest_dynamo_db_setup, index_name='autotest_index',
                                               hash_key=('hash_col', 'S'), range_key=('other_col', 'S'))
 
-autotest_dynamo_db_tasks_setup = get_table_setup(hash_key=('task_id', 'S'),
+autotest_dynamo_db_tasks_draft = get_table_setup(hash_key=('task_id', 'S'),
                                                  table_name=get_autotest_ddb_name() + '_sosw_tasks')
-autotest_dynamo_db_tasks_setup = add_gsi(setup=autotest_dynamo_db_tasks_setup, index_name='sosw_tasks_greenfield',
+autotest_dynamo_db_tasks_setup = add_gsi(setup=autotest_dynamo_db_tasks_draft, index_name='sosw_tasks_greenfield',
                                          hash_key=('labourer_id', 'S'), range_key=('greenfield', 'N'))
 
 autotest_dynamo_db_meta_setup = get_table_setup(hash_key=('task_id', 'S'), range_key=('created_at', 'N'),
                                                 table_name=get_autotest_ddb_name() + '_sosw_tasks_meta')
 
-autotest_dynamo_db_closed_tasks_setup = get_table_setup(hash_key=('task_id', 'S'),
+autotest_dynamo_db_closed_tasks_draft = get_table_setup(hash_key=('task_id', 'S'),
                                                         table_name=get_autotest_ddb_name() + '_sosw_closed_tasks')
-autotest_dynamo_db_closed_tasks_setup = add_gsi(setup=autotest_dynamo_db_closed_tasks_setup,
+autotest_dynamo_db_closed_tasks_setup = add_gsi(setup=autotest_dynamo_db_closed_tasks_draft,
                                                 index_name='labourer_task_status_with_time',
                                                 hash_key=('labourer_id_task_status', 'S'),
                                                 range_key=('closed_at', 'N'))
 
-autotest_dynamo_db_retry_tasks_setup = get_table_setup(hash_key=('labourer_id', 'S'), range_key=('task_id', 'S'),
+autotest_dynamo_db_retry_tasks_draft = get_table_setup(hash_key=('labourer_id', 'S'), range_key=('task_id', 'S'),
                                                        table_name=get_autotest_ddb_name() + '_sosw_retry_tasks')
-autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_tasks_setup,
+autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_tasks_draft,
                                                 index_name='labourer_id_greenfield',
                                                 hash_key=('labourer_id', 'S'),
                                                 range_key=('desired_launch_time', 'N'))

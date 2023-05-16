@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 import boto3
 import os
 import random
@@ -11,29 +14,58 @@ from sosw.scheduler import Scheduler, global_vars
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_SCHEDULER_CONFIG
 from sosw.test.helpers_test import line_count
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
 class Scheduler_IntegrationTestCase(unittest.TestCase):
+    AWS_ACCOUNT = None
+    BUCKET_NAME = None
     TEST_CONFIG = TEST_SCHEDULER_CONFIG
+    autotest_ddbm = None
+
 
     @classmethod
     def setUpClass(cls):
         cls.TEST_CONFIG['init_clients'] = ['S3', ]
 
         cls.AWS_ACCOUNT = boto3.client('sts').get_caller_identity().get('Account')
-        cls.BUCKET_NAME = f'autotest_{cls.AWS_ACCOUNT}'
-        cls.clean_bucket()
+        cls.BUCKET_NAME = f'autotest-{cls.AWS_ACCOUNT}'
+        cls.clean_bucket(cls.BUCKET_NAME)
+        tables = [autotest_dynamo_db_tasks_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
 
 
-    def clean_bucket(self):
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.clean_bucket(cls.BUCKET_NAME)
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
+
+
+    @staticmethod
+    def clean_bucket(name):
         """ Clean S3 bucket"""
+        logging.info("Cleaning bucket %s", name)
+        client = boto3.client('s3')
 
-        s3 = boto3.resource('s3')
-        bucket = s3.Bucket(self.BUCKET_NAME)
-        bucket.objects.all().delete()
+        response = client.list_objects_v2(Bucket=name)
+        try:
+            files = [x['Key'] for x in response['Contents']]
+        except KeyError:
+            logging.info("No files to clean")
+            return
+        logging.info("Deleting files: %s", files)
+
+        R = client.delete_objects(
+            Bucket=name,
+            Delete={'Objects': [{'Key': fname} for fname in files]}
+        )
+        time.sleep(6)
+        response = client.list_objects_v2(Bucket=name)
+        print("AFTER CLEANING")
+        print(response)
 
 
     def exists_in_s3(self, key):
@@ -63,7 +95,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
 
         with open(fname or self.scheduler.local_queue_file, 'w') as f:
             for i in range(rows):
-                f.write(f"hello {girl_name} {i} {random.randint(0,99)}\n")
+                f.write(f"hello {girl_name} {i} {random.randint(0, 99)}\n")
 
 
     def setUp(self):
@@ -72,6 +104,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch.return_value = {}
 
         self.custom_config = self.TEST_CONFIG.copy()
+        self.custom_config['queue_bucket'] = self.BUCKET_NAME
         lambda_context = types.SimpleNamespace()
         lambda_context.aws_request_id = 'AWS_REQ_ID'
         lambda_context.invoked_function_arn = 'arn:aws:lambda:us-west-2:000000000000:function:some_function'
@@ -80,13 +113,13 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.custom_lambda_context = global_vars.lambda_context  # This is to access from tests.
 
         self.scheduler = Scheduler(self.custom_config)
-
+        self.scheduler.task_client = MagicMock()
         self.s3_client = boto3.client('s3')
 
 
     def tearDown(self):
         self.patcher.stop()
-        self.clean_bucket()
+        self.clean_bucket(self.BUCKET_NAME)
 
         try:
             os.remove(self.scheduler.local_queue_file)
