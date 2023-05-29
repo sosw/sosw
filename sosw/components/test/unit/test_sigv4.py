@@ -10,6 +10,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
+os.environ["AWS_XRAY_SDK_ENABLED"] = "false"
 
 
 class sigv4_TestCase(unittest.TestCase):
