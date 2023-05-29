@@ -17,7 +17,7 @@
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
-- Python 3.6, 3.7, 3.8
+- Python 3.7 | 3.8 | 3.9 | 3.10
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
@@ -26,7 +26,7 @@ See the [Installation Guidelines](https://docs.sosw.app/en/master/installation.h
 ## Development
 ### Getting Started
 
-Assuming you have Python 3.6 and `pipenv` installed. Create a new virtual environment: 
+Assuming you have Python 3.10 and `pipenv` installed. Create a new virtual environment: 
 
 ```bash
 $ pipenv shell
@@ -99,7 +99,7 @@ This document has been placed in the public domain.
     sosw - Serverless Orchestrator of Serverless Workers
     
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>:
+    Copyright (C) 2023  sosw core contributors <info@sosw.app>:
         Nikolay Grishchenko
         Sophie Fogel
         Gil Halperin
