@@ -343,8 +343,11 @@ class DynamoDbClient:
         :param str add_prefix:  A string prefix to add to the key in the result dict. Useful for queries like update.
         :param bool strict:     If False, will get the type from the value in the dict (this works for numbers and
                                 strings). If True, won't add them if they're not in the required_fields, and if they
-                                are, will raise an error.
+                                are, will raise an error. Uses ``boto3.types.TypeSerializer`` for type conversion,  
+                                but before that automatically guesses that numeric values should become ``N`` type,
+                                boolean types or 'true/false' strings - ``B``, dictionaries - ``M`` recursively.
 
+                
         :return:                DynamoDB Task item
         :rtype:                 dict
         """
