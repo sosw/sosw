@@ -13,7 +13,7 @@ Example
 
 Please find the following elementary example of Worker Lambda.
 
-.. code-block:: python
+..  code-block:: python
 
     import logging
     from sosw import Worker
@@ -39,15 +39,14 @@ Please find the following elementary example of Worker Lambda.
         dynamo_db_client = None
 
 
-        def __call__(self, event, reset_result=True):
+        def __call__(self, event):
 
             # Example of your Worker logic
             row = event.get('row')
             self.put_to_db(row)
 
-            # Do some basic cleaning and marking `sosw` task as completed. If you want to use the result after the
-            # function call, just set reset_result to false.
-            super().__call__(event, reset_result)
+            # Do some basic cleaning and marking `sosw` task as completed. 
+            super().__call__(event)
 
 
         def put_to_db(self, row):
@@ -62,4 +61,7 @@ Please find the following elementary example of Worker Lambda.
 In case you inherit from the ``Worker`` you do not have to implement anything custom
 for the function to be properly orchestrated. Just do not forget to call the ``super().__call__(event)``
 at the end of your execution. It will automatically collect and update the ``stats`` as well as call
-the ``WorkerAssistant`` Lambda function to close the task.
+the ``WorkerAssistant`` Lambda function to close the task. If you want to use the self.result after the function call,
+call the ``super().__call__(event, reset_result=False)``. The default behaviour is to reset ``self.result``
+after each call.
+
