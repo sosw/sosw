@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2023  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -500,6 +500,8 @@ class DynamoDbClient:
         }
 
         if consistent_read is not None:
+            if index_name is not None and consistent_read is True:
+                raise ValueError(f"Strongly Consistent Read is not available on Global Secondary Indexes.")
             logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
             query_args['ConsistentRead'] = consistent_read
 
