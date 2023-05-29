@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2019  sosw core contributors <info@sosw.app>
+    Copyright (C) 2023  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +139,7 @@ class MetaHandler:
         if self.dynamo_db_client:
             self.dynamo_db_client.create(row=row)
         else:
-            logger.info("DynamoDB client/table is not configured for meta_handler. Skip saving task meta data: %", row)
+            logger.info("DynamoDB client/table is not configured for meta_handler. Skip saving task meta data: %s", row)
 
     def _ma(self, field_name):
         # FIXMEONEDAY: implement mappings for the actions names

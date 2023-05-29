@@ -1,0 +1,27 @@
+name: Docs Builder
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Install packages
+      run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv install --dev
+
+    - name: Build docs
+      run: pipenv run sphinx-build -Wab html ./docs ./sosw-rtd
+
+    - name: Configure AWS secrets
+      run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; aws configure set default.region us-west-2
+
+    - name: Synchronise sosw docs
+      run: VERSION=`cat setup.py | grep version | awk -F\' '{print $2}'`; cd sosw-rtd; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}} --acl public-read; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/en/master/ --acl public-read;  aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/en/$VERSION/ --acl public-read
+

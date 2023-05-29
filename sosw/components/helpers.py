@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2021  sosw core contributors <info@sosw.app>
+    Copyright (C) 2023  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -783,6 +783,25 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     """
     Recursively updates the dictionary `d` with another one `u`.
     Values of `u` overwrite in case of type conflict.
+
+    Examples (in comparison with dict.update([other])):
+
+    ..  code-block:: python
+
+            d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
+            u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
+
+            recursive_update(d, u)
+
+            # result:
+
+            {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
+
+            d.update(u)
+
+            # result:
+
+            {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
     List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
     """

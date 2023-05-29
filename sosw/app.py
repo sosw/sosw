@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2021  sosw core contributors <info@sosw.app>
+    Copyright (C) 2023  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -183,16 +183,33 @@ class Processor:
                                    f"Tried suffixes for class: {client_suffixes}")
 
 
-    def __call__(self, event):
+    def __call__(self, event, reset_result: bool = True):
         """
         Call the Processor.
         You can either call super() at the end of your child function or completely overwrite this function.
+
+        :param reset_result: Whether to reset the result after the processor call. Defaults to True.
         """
 
         # Update the stats for number of calls.
-        # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
+        if reset_result:
+            self.result = defaultdict(int)
+
+
+    def __pre_call__(self, recursive: bool = True):
+        """
+        Reset the result of the processor.
+        Cleans statistics other than specified for the lifetime of processor.
+        Makes sense for Processors initialized outside the scope of `lambda_handler`.
+        Call this before actually calling the processor.
+
+        Be careful about circular get_stats() calls from child classes.
+        If required overwrite get_stats() with recursive = False.
+        :param recursive:   Merge stats from self.***_client.
+        """
         self.result = defaultdict(int)
+        self.reset_stats(recursive)
 
 
     @staticmethod
