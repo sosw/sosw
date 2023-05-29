@@ -20,7 +20,7 @@ jobs:
     - name: Patch the RC version number with the current timestamp. Need this to avoid duplication
       if: startsWith(github.ref, 'refs/heads/0_')
       run: >-
-        sed -i -E s/version=\'([0-9].[0-9]+.[0-9]+)/version=\'\1_`date +%s`/ setup.py
+        sed -i -E "s/version='([0-9].[0-9]+.[0-9]+)/version='\1_`date +%s`/" setup.py
 
     - name: Build a binary wheel and a source tarball
       run: >-
