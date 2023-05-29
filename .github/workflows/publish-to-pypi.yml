@@ -17,10 +17,10 @@ jobs:
     - name: Install pypa/build
       run: python3 -m pip install build --user
 
-    - name: Patch the RC version number to current timestamp
-      if: github.ref != 'refs/heads/master'
+    - name: Patch the RC version number with the current timestamp. Need this to avoid duplication
+      if: startsWith(github.ref, 'refs/heads/0_')
       run: >-
-        sed -i -E s/version=\'[0-9].[0-9]+.[0-9]+/version=\'`date +%s`/ setup.py
+        sed -i -E "s/version=\'([0-9].[0-9]+.[0-9]+)/version=\'\1_`date +%s`/" setup.py
 
     - name: Build a binary wheel and a source tarball
       run: >-
@@ -34,8 +34,8 @@ jobs:
         password: ${{ secrets.TEST_PYPI_TOKEN }}
         repository-url: https://test.pypi.org/legacy/
 
-#    - name: Publish distribution 📦 to PyPI
-#      if: startsWith(github.ref, 'refs/heads/master')
-#      uses: pypa/gh-action-pypi-publish@release/v1
-#      with:
-#        password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/heads/master')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_TOKEN }}
