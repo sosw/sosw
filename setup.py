@@ -11,7 +11,7 @@ setup(name='sosw',
       long_description_content_type="text/markdown",
       url='http://github.com/sosw/sosw',
       author='Nikolay Grishchenko',
-      author_email='ngr@sosw.app',
+      author_email='grischenko.n@gmail.com',
       license='MIT',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
@@ -26,5 +26,4 @@ setup(name='sosw',
       packages=find_packages(exclude=['docs', 'test', 'examples', "*.test", "*.test.*"]),
       install_requires=[
           'boto3>=1.20'
-      ],
-      zip_safe=False)
+      ])
