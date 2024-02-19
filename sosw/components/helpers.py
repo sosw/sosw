@@ -62,9 +62,11 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
+            'small_int_from_string',
            ]
 
 import datetime
+import hashlib
 import json
 import re
 import uuid
@@ -1060,3 +1062,34 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
             break
 
     return messages
+
+
+def small_int_from_string(input_string, num_digits = 2):
+    """
+      Generate a small integer based on the input string using its MD5 hash.
+
+      Args:
+          input_string (str): The input string to generate the hash from.
+          num_digits (int, optional): Number of digits to return. Default is 2.
+
+      Returns:
+          int: The generated small integer.
+
+      Raises:
+          ValueError: If num_digits is not a positive integer.
+
+      Example:
+            small_int_from_string("hello world")
+          91
+            small_int_from_string("hello world", num_digits=3)
+          291
+      """
+    if not isinstance(num_digits, int) or num_digits <= 0:
+        raise ValueError("Number of digits must be a positive integer.")
+
+    hash_object = hashlib.md5()
+    hash_object.update(input_string.encode())
+    hex_digest = hash_object.hexdigest()
+    int_value = int(hex_digest, 16)
+    #last_two_digits = int_value % 100
+    return int_value % (10 ** num_digits)

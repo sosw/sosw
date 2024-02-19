@@ -809,6 +809,18 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual([{"hello": "I am Inigo Montoya"}, {"hello2": "I am Inigo Montoya2"}],
                          unwrap_event_recursively(deepcopy(SQS_EVENT_MANY)))
 
+    def test_small_int_from_string(self):
+        assert small_int_from_string("hello world") == 91
+        assert small_int_from_string("hello world", num_digits=3) == 291
+        assert small_int_from_string("openai", num_digits=1) == 5
+        assert small_int_from_string("openai", num_digits=5) == 92205
+
+        try:
+            small_int_from_string("test", num_digits=-1)
+        except ValueError:
+            assert True
+        else:
+            assert False, "Expected ValueError for negative number of digits"
 
 if __name__ == '__main__':
     unittest.main()
