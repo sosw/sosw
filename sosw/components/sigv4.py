@@ -26,7 +26,7 @@
     SOFTWARE.
 """
 
-__all__ = ['AWSSigV4RequestGenerator']
+__all__ = ['AwsSigV4RequestGenerator']
 __author__ = "Ivan Sushkov"
 
 import os
@@ -37,11 +37,10 @@ import datetime
 
 from urllib.parse import quote, urlparse
 
-
 logger = logging.getLogger()
 
 
-class AWSSigV4RequestGenerator:
+class AwsSigV4RequestGenerator:
     """
     Signature Version 4 (SigV4) is the process to add authentication information to AWS API requests sent by HTTP.
     For security, most requests to AWS must be signed with an access key. The access key consists of an access key
@@ -49,22 +48,22 @@ class AWSSigV4RequestGenerator:
 
     How Signature Version 4 works:
 
-    1. Create a canonical request.
-    2. Use the canonical request and additional metadata to create a string for signing.
-    3. Derive a signing key from your AWS secret access key. Then use the signing key, and the string from the previous
-       step, to create a signature.
-    4. Add the resulting signature to the HTTP request in a header
+    #. Create a canonical request.
+    #. Use the canonical request and additional metadata to create a string for signing.
+    #. Derive a signing key from your AWS secret access key. Then use the signing key, and the string from the previous
+    #. Add the resulting signature to the HTTP request in a header.
     """
-
 
     def __init__(self, **kwargs):
         """
-        :param aws_service='es',
-        :param aws_access_key_id='YOUR_KEY_ID',
-        :param aws_secret_access_key='YOUR_SECRET',
-        :param aws_session_token='YOUR_SESSION_TOKEN'
-        :param aws_region='us-east-1',
-        :param aws_host='search-service.us-east-1.es.amazonaws.com',
+        Supported parameters as kwargs:
+        
+        - aws_service='es'
+        - aws_access_key_id='YOUR_KEY_ID'
+        - aws_secret_access_key='YOUR_SECRET'
+        - aws_session_token='YOUR_SESSION_TOKEN'
+        - aws_region='us-east-1'
+        - aws_host='search-service.us-east-1.es.amazonaws.com'
         """
 
         if not kwargs.get('aws_service'):
@@ -93,6 +92,7 @@ class AWSSigV4RequestGenerator:
         """
         Adds the authorization headers required by Amazon's signature
         version 4 signing process to the request.
+
         Adapted from https://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html
         """
 
@@ -189,7 +189,7 @@ class AWSSigV4RequestGenerator:
         """
 
         querystring = dict(map(lambda i: i.split('='), parsed_url.query.split('&'))) if len(
-                parsed_url.query) else dict()
+            parsed_url.query) else dict()
         canonical_querystring = "&".join(map(lambda parsed_url: "=".join(parsed_url), sorted(querystring.items())))
 
         return canonical_querystring
@@ -252,6 +252,6 @@ class AWSSigV4RequestGenerator:
         logger.debug("Signature: %s", signature)
 
         authorization_header = "AWS4-HMAC-SHA256 Credential={}/{}, SignedHeaders={}, Signature={}".format(
-                self.aws_access_key_id, credential_scope, signed_headers, signature)
+            self.aws_access_key_id, credential_scope, signed_headers, signature)
 
         return authorization_header

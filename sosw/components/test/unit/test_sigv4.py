@@ -4,7 +4,7 @@ import datetime
 import unittest
 
 from unittest.mock import Mock, patch
-from sosw.components.sigv4 import AWSSigV4RequestGenerator
+from sosw.components.sigv4 import AwsSigV4RequestGenerator
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -20,7 +20,7 @@ class sigv4_TestCase(unittest.TestCase):
         setUp TestCase.
         """
 
-        self.auth = AWSSigV4RequestGenerator(
+        self.auth = AwsSigV4RequestGenerator(
                 aws_service='es',
                 aws_access_key_id='YOUR_KEY_ID',
                 aws_secret_access_key='YOUR_SECRET',
@@ -102,7 +102,7 @@ class sigv4_TestCase(unittest.TestCase):
         mock_request.method = "POST"
         mock_request.body = 'foo=bar'
 
-        result = AWSSigV4RequestGenerator.get_payload_hash(mock_request)
+        result = AwsSigV4RequestGenerator.get_payload_hash(mock_request)
 
         self.assertEqual(result, expected_result)
 
@@ -115,7 +115,7 @@ class sigv4_TestCase(unittest.TestCase):
         mock_request.method = "POST"
         mock_request.body = None
 
-        result = AWSSigV4RequestGenerator.get_payload_hash(mock_request)
+        result = AwsSigV4RequestGenerator.get_payload_hash(mock_request)
 
         self.assertEqual(result, expected_result)
 
