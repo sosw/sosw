@@ -128,7 +128,7 @@ html_theme = 'sphinx_rtd_theme'
 # documentation.
 html_theme_options = {
     'canonical_url': 'https://docs.sosw.app/en/latest/',
-    'analytics_id': 'UA-133317761-1',  #  Provided by Google in your dashboard
+    'analytics_id': 'G-Z2R1VYR62X',  #  Provided by Google in your dashboard
     'logo_only': True,
     'display_version': True,
 }
