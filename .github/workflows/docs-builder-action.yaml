@@ -1,8 +1,7 @@
 name: Docs Builder
 on:
-  push:
-    branches:
-      - master
+  pull_request:
+    branches: [ "master", "[0-9]_[0-9]*_[0-9]*"]
 
 jobs:
   linux:
@@ -10,8 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+
 
     - name: Install packages
       run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv install --dev
@@ -22,6 +26,6 @@ jobs:
     - name: Configure AWS secrets
       run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; aws configure set default.region us-west-2
 
-    - name: Synchronise sosw docs
-      run: VERSION=`cat setup.py | grep version | awk -F\' '{print $2}'`; cd sosw-rtd; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}} --acl public-read; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/en/master/ --acl public-read;  aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/en/$VERSION/ --acl public-read
+    - name: Synchronise sample docs
+      run: VERSION=`cat setup.py | grep version | awk -F\' '{print $2}'`; cd sosw-rtd; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/junkyard/${{GITHUB_REF_NAME}} --acl public-read
 
