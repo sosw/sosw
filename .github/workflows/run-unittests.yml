@@ -5,6 +5,8 @@ name: Run Unittests
 
 on:
   pull_request:
+    branches:
+      - "**"
 
 jobs:
   build:

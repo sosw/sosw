@@ -2,6 +2,8 @@ name: Docs Builder
 
 on:
   pull_request:
+    branches:
+      - "**"
 
 jobs:
   build:
