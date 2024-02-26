@@ -1,6 +1,6 @@
 name: Docs Builder
 on:
-  pull_request
+  pull_request:
 
 jobs:
   linux:
