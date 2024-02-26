@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -224,7 +224,7 @@ class AwsSigV4RequestGenerator:
         """
         Create the canonical headers and signed headers. Header names
         must be trimmed and lowercase, and sorted in code point order from
-        low to high. Note that there is a trailing \n.
+        low to high. Note that there is a trailing ``\\n``.
         """
 
         # We check if we get host from kwargs than hostname of parsed url
@@ -239,7 +239,7 @@ class AwsSigV4RequestGenerator:
 
     def get_authorization_header(self, canonical_request, signed_headers):
         """
-        Create authorization header and add to request headers
+        Create authorization header and add to request headers.
         """
 
         credential_scope = '/'.join([self.datestamp, self.aws_region, self.aws_service, 'aws4_request'])
