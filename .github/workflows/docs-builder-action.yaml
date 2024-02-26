@@ -1,9 +1,6 @@
 name: Docs Builder
 on:
-  pull_request:
-    branches:
-      - "master"
-      - "0_**_**"]
+  pull_request
 
 jobs:
   linux:
