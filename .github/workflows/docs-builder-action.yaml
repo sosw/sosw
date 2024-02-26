@@ -1,7 +1,9 @@
 name: Docs Builder
 on:
   pull_request:
-    branches: [ "master", "[0-9]_[0-9]*_[0-9]*"]
+    branches:
+      - "master"
+      - "0_**_**"]
 
 jobs:
   linux:
