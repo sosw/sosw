@@ -1064,12 +1064,12 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
     return messages
 
 
-def small_int_from_string(input_string, num_digits = 2):
+def small_int_from_string(input_string, num_digits=2):
     """
       Generate a small integer based on the input string using its MD5 hash.
 
-        :param input_str(str): The input string to generate the hash from.
-        :param num_digits (int, optional): Number of digits to return. Default is 2.
+        :param input_string: The input string to generate the hash from.
+        :param num_digits: Number of digits to return. Default is 2.
 
         Examples:
           .. code-block:: python
