@@ -21,7 +21,7 @@
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
-See the [Installation Guidelines](https://docs.sosw.app/en/master/installation.html) in the Documentation.
+See the [Installation Guidelines](https://docs.sosw.app/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
@@ -47,7 +47,7 @@ $ pytest ./sosw/test/suite_unit.py
 
 ### Contribution Guidelines
 
-The latest [Contribution Guidelines](https://docs.sosw.app/en/master/contribution/index.html) with examples are in the documentation.
+The latest [Contribution Guidelines](https://docs.sosw.app/contribution/index.html) with examples are in the documentation.
 
 #### Release cycle
 
@@ -83,7 +83,7 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), with the following spe
 7. Read the Documentation Convention.
 
 #### More
-See more guidelines for contribution [in the docs](https://docs.sosw.app/en/master/contribution/index.html).
+See more guidelines for contribution [in the docs](https://docs.sosw.app/contribution/index.html).
 
 ### Building the docs
 Sphinx is used for building documentation.

@@ -9,7 +9,7 @@ Serverless Orchestrator of Serverless Workers
     :target: https://travis-ci.com/sosw/sosw
 .. image:: https://img.shields.io/docsrs/docs
     :alt: Documentation Status
-    :target: https://docs.sosw.app/en/latest/?badge=latest
+    :target: https://docs.sosw.app/?badge=latest
 .. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
     :alt: PyPI - Installs / month
     :target: https://pypi.org/project/sosw/
