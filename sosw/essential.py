@@ -30,16 +30,22 @@ __all__ = ['Essential']
 __author__ = "Mark Bulgakov"
 __version__ = "1.0"
 
-import logging
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import os
 
 from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 from sosw.managers.meta_handler import MetaHandler
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Essential(Processor):

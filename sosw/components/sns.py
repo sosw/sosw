@@ -29,14 +29,21 @@
 __all__ = ['SnsManager']
 __author__ = "Nikolay Grishchenko"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
 import json
-import logging
 import os
 from collections import defaultdict
-
-
-logger = logging.getLogger()
 
 
 class SnsManager():
@@ -159,7 +166,7 @@ class SnsManager():
                     key: self.get_message_attribute(value) for key, value in self.message_attributes.items()
                 }
 
-            logger.info('MessageAttributes: {}'.format(self.message_attributes))
+            logger.info("MessageAttributes: %s", self.message_attributes)
 
             self.client.publish(
                     TopicArn=self.recipient,

@@ -30,16 +30,22 @@ __all__ = ['Worker']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import json
-import logging
 
 from sosw.app import Processor
 from sosw.managers.meta_handler import MetaHandler
 from typing import Dict
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Worker(Processor):

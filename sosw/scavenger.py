@@ -30,16 +30,22 @@ __all__ = ['Scavenger']
 __author__ = "Sophie Fogel, Nikolay Grishchenko"
 __version__ = "1.0"
 
-import logging
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 from typing import Dict
 
 from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Scavenger(Essential):
