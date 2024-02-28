@@ -62,6 +62,7 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
+           'small_int_from_string'
            ]
 
 import datetime
