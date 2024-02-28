@@ -50,6 +50,13 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def boto_caller(func):
+    def wrapper(self, *args, **kwargs):
+        _ = self.get_capacity(kwargs.get("table_name"))
+        return func(self, *args, **kwargs)
+    return wrapper
+
+
 class DynamoDbClient:
     """
     Has default methods for different types of DynamoDB tables.
@@ -94,7 +101,6 @@ class DynamoDbClient:
 
         # initialize table store
         self._table_capacity = {}
-        self.identify_dynamo_capacity(table_name=self.config['table_name'])
 
         self.stats = defaultdict(int)
         if not hasattr(self, 'row_mapper'):
@@ -404,6 +410,7 @@ class DynamoDbClient:
         logger.debug(f"dict_to_dynamo result: {result}")
         return result
 
+    @boto_caller
     def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
                      comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
                      filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
@@ -596,6 +603,7 @@ class DynamoDbClient:
 
         return result_expr, result_values
 
+    @boto_caller
     def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
                     consistent_read=None):
         """
@@ -632,6 +640,7 @@ class DynamoDbClient:
 
         return result
 
+    @boto_caller
     def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
                               consistent_read=None):
         """
@@ -825,6 +834,7 @@ class DynamoDbClient:
         return query
 
 
+    @boto_caller
     def put(self, row: Dict, table_name: str = None, overwrite_existing: bool = True):
         """
         Writes the row to the DynamoDB table.
@@ -869,6 +879,7 @@ class DynamoDbClient:
 
 
     # @benchmark
+    @boto_caller
     def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
@@ -968,6 +979,7 @@ class DynamoDbClient:
                     attributes_to_remove=attributes_to_remove)
 
 
+    @boto_caller
     def delete(self, keys: Dict, table_name: Optional[str] = None):
         """
 
@@ -987,6 +999,7 @@ class DynamoDbClient:
         return {'Delete': self.build_delete_query(row, table_name)}
 
 
+    @boto_caller
     def transact_write(self, *transactions: Dict):
         """
         Executes many write transaction. Can execute operations on different tables.

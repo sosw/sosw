@@ -5,8 +5,7 @@ import subprocess
 
 from typing import Dict
 
-
-def extract_call_params(call_args, function) -> Dict:
+def extract_call_params(call_args, function, function_args: list = None) -> Dict:
     """
     Combines a dictionary out of Mock.call_args.
     Helper useful to validate specific call parameters of the Mocked function.
@@ -20,11 +19,13 @@ def extract_call_params(call_args, function) -> Dict:
 
     :param call_args:   call_args of Mock object
     :param function:    Source object that was initially mocked
+    :param function_args: To use this function when testing decorated functions pass function signature as a list
     :rtype:             dict
     """
 
     # Specification of arguments of function
-    function_args = inspect.getfullargspec(function).args
+    if not function_args:
+        function_args = inspect.getfullargspec(function).args
 
     # Mock call_arguments as a tuple
     call_args, call_kwargs = call_args

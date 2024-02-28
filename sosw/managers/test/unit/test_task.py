@@ -301,7 +301,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
             t.return_value = 1000
             self.manager.move_task_to_retry_table(TEST, delay)
 
-        params = extract_call_params(self.manager.dynamo_db_client.put.call_args, dynamo_db.DynamoDbClient.put)
+        params = extract_call_params(self.manager.dynamo_db_client.put.call_args, dynamo_db.DynamoDbClient.put,
+                                     function_args=['row', 'table_name', 'overwrite_existing'])
         # print(params)
 
         desired_time = params['row'].pop('desired_launch_time')
@@ -316,7 +317,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
 
         self.manager.move_task_to_retry_table(TEST, 1)
 
-        params = extract_call_params(self.manager.dynamo_db_client.put.call_args, dynamo_db.DynamoDbClient.put)
+        params = extract_call_params(self.manager.dynamo_db_client.put.call_args, dynamo_db.DynamoDbClient.put,
+                                     function_args=['row', 'table_name', 'overwrite_existing'])
 
         self.assertEqual(json.dumps(TEST['payload']), params['row']['payload'], "Payload was JSON-nified")
 
