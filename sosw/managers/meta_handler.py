@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,17 @@ __all__ = ['MetaHandler']
 __author__ = "Mark Bulgakov, Nikolay Grishchenko"
 __version__ = "1.0"
 
-import logging
-import os
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import time
 
 
@@ -39,10 +48,6 @@ from sosw.app import global_vars
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import recursive_update
 from typing import Dict
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class MetaHandler:

@@ -1,4 +1,3 @@
-import attrdict
 import logging
 import os
 import unittest
@@ -20,16 +19,15 @@ os.environ["autotest"] = "True"
 
 class meta_handler_UnitTestCase(unittest.TestCase):
 
-    TEST_CONTEXT = attrdict.AttrDict({v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()})
-
 
     def setUp(self):
         self.patcher = patch("sosw.app.get_config")
         self.get_config_patch = self.patcher.start()
         self.config = deepcopy(TEST_META_HANDLER_CONFIG)
 
+        mock_context =  type("context", (), {v: k for k, v in MetaHandler.CONTEXT_FIELDS_MAPPINGS.items()})
         with patch('boto3.client'):
-            global_vars.lambda_context = self.TEST_CONTEXT
+            global_vars.lambda_context = mock_context
             self.manager = MetaHandler(custom_config=self.config)
 
         self.manager.dynamo_db_client = MagicMock(spec=dynamo_db.DynamoDbClient)

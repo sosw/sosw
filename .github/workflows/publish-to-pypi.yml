@@ -1,0 +1,44 @@
+name: Publish release to PyPI and RCs to TestPyPI
+on:
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  build-n-publish:
+    name: Build and publish distribution
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Install pypa/build
+      run: python3 -m pip install build --user
+
+    - name: Patch the RC version number with the current timestamp. Need this to avoid duplication
+      if: startsWith(github.ref, 'refs/heads/0_')
+      run: >-
+        sed -i -E "s/version='([0-9].[0-9]+.[0-9]+)/version='\1_`date +%s`/" setup.py
+
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python3 -m build --sdist --wheel --outdir dist/ .
+
+    - name: Publish distribution 📦 to Test PyPI
+      if: startsWith(github.ref, 'refs/heads/0_')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        skip-existing: true
+        password: ${{ secrets.TEST_PYPI_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/heads/master')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_TOKEN }}

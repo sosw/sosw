@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,24 @@ __all__ = ['Scheduler']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import datetime
 import json
-import logging
 import os
 import re
 import time
 
-from collections import Iterable
+from typing import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
@@ -46,10 +56,6 @@ from sosw.app import LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
 from sosw.components.siblings import SiblingsManager
 from sosw.managers.task import TaskManager
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
 
 
 def single_or_plural(attr):
@@ -180,10 +186,10 @@ class Scheduler(Essential):
         """
 
         if os.path.isfile(self.local_queue_file):
-            logger.critical(f"The current Lambda container is already having some unprocessed file. "
-                            f"You probably did not clean it correctly after processing. "
-                            f"Should probably just clean the file now, but during beta version we raise an stop "
-                            f"processing new ones.")
+            logger.critical("The current Lambda container is already having some unprocessed file. "
+                            "You probably did not clean it correctly after processing. "
+                            "Should probably just clean the file now, but during beta version we raise an stop "
+                            "processing new ones.")
             raise RuntimeError(f"The current Lambda container is already having some unprocessed file.")
 
         labourer = self.task_client.get_labourer(labourer_id=job.pop('lambda_name'))
@@ -204,7 +210,7 @@ class Scheduler(Essential):
             for row in data:
                 f.write(f"{json.dumps(row)}\n")
 
-        logger.info(f"Finished step: parse_job_to_file()")
+        logger.info("Finished step: parse_job_to_file()")
 
 
     # def create_tasks(self, labourer: Labourer, data: List):
@@ -358,7 +364,7 @@ class Scheduler(Essential):
             for pattern in period_patterns:
                 if re.match(pattern, period):
                     # Call the appropriate method with given value from job.
-                    logger.debug(f"Found period '{period}' for job {job}")
+                    logger.debug(f"Found period '%s' for job %s", period, job)
                     method_name = pattern.replace('[0-9]+', 'x', 1)
                     try:
                         date_list = getattr(self, method_name)(period)
@@ -385,7 +391,7 @@ class Scheduler(Essential):
                 data.append({**job, **skeleton, 'date_list': date_list})
 
         else:
-            logger.debug(f"No `period` chunking requested in job {job}")
+            logger.debug("No `period` chunking requested in job %s", job)
             data.append({**job, **skeleton})
 
         return data
@@ -412,7 +418,7 @@ class Scheduler(Essential):
         for chunker in CHUNKERS:
             chunked = []  # Container for results of current chunker method.
             for task in data:
-                logging.debug(f"Chunking {task} with {chunker}")
+                logger.debug("Chunking %s with %s", task, chunker)
                 chunked.extend(chunker(job=task))
 
             data = deepcopy(chunked)
@@ -455,7 +461,7 @@ class Scheduler(Essential):
                 data.append({**task_skeleton, **{plural(attr): v}})
 
 
-        logger.debug(f"Testing for chunking {attr} from {job} with skeleton {skeleton}")
+        logger.debug(f"Testing for chunking %s from %s with skeleton %s", attr, job, skeleton)
         # First of all decide whether we need to chunk current job (or a sub-job if called recursively).
         if self.needs_chunking(plural(attr), {**job, **skeleton}):
 
@@ -466,11 +472,11 @@ class Scheduler(Essential):
 
             # Next attribute is either name of attribute according to config, or None if we are already in last level.
             next_attr = self.get_next_chunkable_attr(attr)
-            logger.debug(f"Next attr: {next_attr}")
+            logger.debug("Next attr: %s", next_attr)
 
             # Here and many places further we support both single and plural versions of attribute names.
             for possible_attr in single_or_plural(attr):
-                logger.debug(f"Iterating possible: {possible_attr}")
+                logger.debug("Iterating possible: %s", possible_attr)
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(job, possible_attr)
                 if not current_vals:
                     continue
@@ -478,8 +484,8 @@ class Scheduler(Essential):
                 # This is not the `skeleton` received during the call, but the remaining parts of the `job`,
                 # not related to current `attr`
                 job_skeleton = {k: v for k, v in job.items() if k not in [possible_attr]}
-                logger.debug(f"For {possible_attr} we got current_vals: {current_vals} from {job}, "
-                             f"leaving job_skeleton: {job_skeleton}")
+                logger.debug("For %s we got current_vals: %s from %s, leaving job_skeleton: %s", possible_attr,
+                             current_vals, job, job_skeleton)
 
                 task_skeleton = {**deepcopy(skeleton), **job_skeleton}
 
@@ -488,18 +494,18 @@ class Scheduler(Essential):
                     for val in current_vals:
 
                         if all(x is None for x in val.values()):
-                            logger.debug(f"Value {val} is all a dict of Nones. Need to flatten")
+                            logger.debug("Value %s is all a dict of Nones. Need to flatten", val)
                             vals = self.validate_list_of_vals(val)
                             push_list_chunks()
 
                         else:
-                            logger.debug(f"Real dictionary with values. Can't flatten it to dict: {val}")
+                            logger.debug("Real dictionary with values. Can't flatten it to dict: %s", val)
                             for name, subdata in val.items():
-                                logger.debug(f"SubIterating `{name}` with {subdata}")
+                                logger.debug("SubIterating `%s` with %s", name, subdata)
 
                                 # Merge parts of task
                                 task = {**deepcopy(task_skeleton), **{plural(attr): [name]}}
-                                logger.debug(f"Task sample: {task}")
+                                logger.debug("Task sample:  %s", task)
 
                                 if isinstance(subdata, dict):
                                     if not next_attr:
@@ -507,13 +513,13 @@ class Scheduler(Essential):
                                         task.update(subdata)
                                         data.append(task)
                                     else:
-                                        logger.debug(f"Call recursive for {next_attr} from subdata: {subdata}")
+                                        logger.debug("Call recursive for %s from subdata: %s", next_attr, subdata)
                                         data.extend(self.chunk_job(job=subdata, skeleton=task, attr=next_attr))
 
                                 # If None-s we just add a task. `Name` (which is actually a value in this scenario)
                                 # was already added when creating task skeleton.
                                 elif subdata is None:
-                                    logger.debug(f"Appending task to data for {name} from {val}")
+                                    logger.debug("Appending task to data for %s from %s", name, val)
                                     data.append(task)
                                 else:
                                     raise InvalidJob(
@@ -525,7 +531,7 @@ class Scheduler(Essential):
                     push_list_chunks()
 
         else:
-            logger.debug(f"No need for chunking for attr: {attr} in job: {job}. Current skeleton is: {skeleton}")
+            logger.debug("No need for chunking for attr: %s in job: %s. Current skeleton is: %s", attr, job, skeleton)
             task_skeleton = {**deepcopy(skeleton)}
             for a in single_or_plural(attr):
                 if a in job:
@@ -539,13 +545,13 @@ class Scheduler(Essential):
                             return data
 
                         except InvalidJob:
-                            logger.warning(f"Caught InvalidJob exception.")
+                            logger.warning("Caught InvalidJob exception.")
                             # If a custom payload is not following the chunking convention - just translate it as is.
                             # And return the pop-ed value back to the job.
                             job[a] = attr_value
                         break
             else:
-                logger.error(f"Did not find values for {attr} in job: {job}")
+                logger.error("Did not find values for %s in job: %s", attr, job)
             # Populate the remaining parts of the job back to task.
             task_skeleton.update(job)
             data.append(task_skeleton)
@@ -604,26 +610,26 @@ class Scheduler(Essential):
         root_isolate_attrs = self.get_isolate_attributes_from_job(data)
 
         if any(data[x] for x in isolate_attrs if x in data):
-            logger.debug(f"needs_chunking(): Got requirement to isolate {attr} in the current scope: {data}")
+            logger.debug("needs_chunking(): Got requirement to isolate %s in the current scope: %s", attr, data)
             return True
 
         next_attr = self.get_next_chunkable_attr(attr)
 
-        logger.debug(f"needs_chunking(): Found next attr {next_attr}, for {attr} from {data}")
+        logger.debug("needs_chunking(): Found next attr %s, for %s from %s", next_attr, attr, data)
         # We are not yet lowest level going recursive
         if next_attr:
             for a in attrs:
                 current_vals = get_list_of_multiple_or_one_or_empty_from_dict(data, a)
-                logger.debug(f"needs_chunking(): For {a} got current_vals: {current_vals} from {data}. "
-                             f"Analysing {next_attr}")
+                logger.debug("needs_chunking(): For %s got current_vals: %s from %s. Analysing %s",
+                             a, current_vals, data, next_attr)
 
                 for val in current_vals:
 
                     for name, subdata in val.items():
-                        logger.debug(f"needs_chunking(): Going recursive for {next_attr} in {subdata}")
+                        logger.debug("needs_chunking(): Going recursive for %s in %s", next_attr, subdata)
                         if isinstance(subdata, dict) and self.needs_chunking(next_attr,
                                                                              {**subdata, **root_isolate_attrs}):
-                            logger.debug(f"needs_chunking(): Returning True for {next_attr} from {subdata}")
+                            logger.debug("needs_chunking(): Returning True for %s from %s", next_attr, subdata)
                             return True
 
         return False
@@ -657,21 +663,21 @@ class Scheduler(Essential):
         file_name = self.get_and_lock_queue_file()
 
         if not file_name:
-            logger.info(f"No file in queue.")
+            logger.info("No file in queue.")
             return
 
         else:
-            logger.info(f"Processing a file: {file_name}")
+            logger.info("Processing a file: %s", file_name)
             while self.sufficient_execution_time_left:
                 logger.debug(f"Execution time left: {global_vars.lambda_context.get_remaining_time_in_millis()}ms "
                              f"Working next batch of {self._rows_to_process} tasks from file {file_name}")
                 data = self.pop_rows_from_file(file_name, rows=self._rows_to_process)
                 if not data:
-                    logger.info(f"No rows in file: {file_name}")
+                    logger.info("No rows in file: %s", file_name)
                     break
 
                 for raw_task in data:
-                    logger.debug(f"Pushing task to DynamoDB: {raw_task}")
+                    logger.debug("Pushing task to DynamoDB: %s", raw_task)
                     task = json.loads(raw_task)
                     labourer = self.task_client.get_labourer(task[_('labourer_id')])
                     new_task = self.task_client.create_task(labourer=labourer, **task)
@@ -681,14 +687,14 @@ class Scheduler(Essential):
 
             else:
                 # Spawning another sibling to continue the processing
-                logger.info(f"Ran out of execution time in `process_file`. Spawning sibling.")
+                logger.info("Ran out of execution time in `process_file`. Spawning sibling.")
                 payload = dict(file_name=file_name)
                 try:
                     self.siblings_client.spawn_sibling(global_vars.lambda_context, payload=payload)
                     self.stats['siblings_spawned'] += 1
                 except Exception:
-                    logger.exception(
-                            f"Could not spawn sibling with context: {global_vars.lambda_context}, payload: {payload}")
+                    logger.exception("Could not spawn sibling with context: %s, payload: %s",
+                                     global_vars.lambda_context, payload)
 
             self.upload_and_unlock_queue_file()
             self.clean_tmp()
@@ -788,7 +794,7 @@ class Scheduler(Essential):
                                              Filename=self.local_queue_file)
             except self.s3_client.exceptions.ClientError:
                 self.stats['non_existing_remote_queue'] += 1
-                logger.exception(f"Not found remote file to download")
+                logger.exception("Not found remote file to download")
 
             else:
                 self.s3_client.copy_object(Bucket=self._queue_bucket,
@@ -797,8 +803,8 @@ class Scheduler(Essential):
 
                 self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self.remote_queue_file)
 
-                logger.debug(f"Downloaded a copy of {self.local_queue_file} for processing "
-                             f"and moved the remote one to {self.remote_queue_locked_file}.")
+                logger.debug("Downloaded a copy of %s for processing and moved the remote one to %s.",
+                             self.local_queue_file, self.remote_queue_locked_file)
 
         # If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.
         else:
@@ -822,7 +828,7 @@ class Scheduler(Essential):
         try:
             self.s3_client.delete_object(Bucket=self._queue_bucket, Key=self.remote_queue_locked_file)
         except self.s3_client.exceptions.ClientError:
-            logger.debug(f"No remote locked file to remove: {self.remote_queue_locked_file}. This is probably new.")
+            logger.debug("No remote locked file to remove: %s. This is probably new.", self.remote_queue_locked_file)
 
 
     @property

@@ -13,6 +13,7 @@ from ..components.test.unit.test_dynamo_db import dynamodb_client_UnitTestCase
 from ..components.test.unit.test_helpers import helpers_UnitTestCase
 from sosw.components.test.unit.test_siblings import siblings_TestCase
 from sosw.components.test.unit.test_sns import sns_TestCase
+from sosw.components.test.unit.test_sigv4 import sigv4_TestCase
 
 # Managers
 from ..managers.test.unit.test_task import *
@@ -37,6 +38,7 @@ def suite():
     test_suite.addTest(unittest.makeSuite(helpers_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(siblings_TestCase))
     test_suite.addTest(unittest.makeSuite(sns_TestCase))
+    test_suite.addTest(unittest.makeSuite(sigv4_TestCase))
 
     # Managers
     test_suite.addTest(unittest.makeSuite(ecology_manager_UnitTestCase))
