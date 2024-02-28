@@ -62,7 +62,7 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
-            'small_int_from_string',
+           'small_int_from_string'
            ]
 
 import datetime
@@ -226,10 +226,8 @@ def get_one_or_none_from_dict(input, name, vtype=None):
     if not isinstance(name, str):
         raise ValueError("'name' attribute must be a str. Received: {}".format(type(name)))
 
-
     def convert(obj, t):
         return obj if not t else t(obj)
-
 
     # Best case scenario. :)
     result = input.get(name)
@@ -289,10 +287,8 @@ def get_list_of_multiple_or_one_or_empty_from_dict(input, name, vtype=None):
     if not isinstance(name, str):
         raise ValueError("'name' attribute must be a str. Received: {}".format(type(name)))
 
-
     def convert(obj, t):
         return obj if not t else t(obj)
-
 
     results = input.get(name) or input.get(name.rstrip('s'))
     if not results:
@@ -744,13 +740,11 @@ def validate_list_of_words_from_csv_or_list(data: (str, list)) -> list:
     :return:        List of stripped and split words
     """
 
-
     def split_csv(row):
         if not isinstance(row, str):
             raise TypeError(f"Unsupported type of data for validate_list_of_words_from_csv_or_list(): {data}")
 
         return [x.strip() for x in row.split(',')]
-
 
     result = []
     if isinstance(data, (list, tuple, set)):
@@ -1066,20 +1060,22 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
 
 def small_int_from_string(input_string, num_digits=2):
     """
-      Generate a small integer based on the input string using its MD5 hash.
+    Generate a small integer based on the input string using its MD5 hash.
 
-        :param input_string: The input string to generate the hash from.
-        :param num_digits: Number of digits to return. Default is 2.
+    :param input_string: The input string to generate the hash from.
+    :param num_digits: Number of digits to return. Default is 2.
 
-        Examples:
-          .. code-block:: python
-                small_int_from_string("hello world")
-              91
-                small_int_from_string("hello world", num_digits=3)
-              291
+    Examples:
 
-        :return: The generated small integer.
-        :raises: ValueError: If num_digits is not a positive integer.
+    ..  code-block:: python
+
+        small_int_from_string("hello world")
+        91
+        small_int_from_string("hello world", num_digits=3)
+        291
+
+    :return: The generated small integer.
+    :raises: ValueError: If num_digits is not a positive integer.
 
 
       """
@@ -1090,5 +1086,5 @@ def small_int_from_string(input_string, num_digits=2):
     hash_object.update(input_string.encode())
     hex_digest = hash_object.hexdigest()
     int_value = int(hex_digest, 16)
-    #last_two_digits = int_value % 100
+    # last_two_digits = int_value % 100
     return int_value % (10 ** num_digits)
