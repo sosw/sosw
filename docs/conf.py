@@ -127,7 +127,7 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'canonical_url': 'https://docs.sosw.app/en/latest/',
+    'canonical_url': 'https://docs.sosw.app/',
     'analytics_id': 'G-Z2R1VYR62X',  #  Provided by Google in your dashboard
     'logo_only': True,
     'display_version': True,
