@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2023  sosw core contributors <info@sosw.app>
+    Copyright (C) 2022  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,6 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
-           'small_int_from_string'
            ]
 
 import datetime
@@ -226,8 +225,10 @@ def get_one_or_none_from_dict(input, name, vtype=None):
     if not isinstance(name, str):
         raise ValueError("'name' attribute must be a str. Received: {}".format(type(name)))
 
+
     def convert(obj, t):
         return obj if not t else t(obj)
+
 
     # Best case scenario. :)
     result = input.get(name)
@@ -287,8 +288,10 @@ def get_list_of_multiple_or_one_or_empty_from_dict(input, name, vtype=None):
     if not isinstance(name, str):
         raise ValueError("'name' attribute must be a str. Received: {}".format(type(name)))
 
+
     def convert(obj, t):
         return obj if not t else t(obj)
+
 
     results = input.get(name) or input.get(name.rstrip('s'))
     if not results:
@@ -740,11 +743,13 @@ def validate_list_of_words_from_csv_or_list(data: (str, list)) -> list:
     :return:        List of stripped and split words
     """
 
+
     def split_csv(row):
         if not isinstance(row, str):
             raise TypeError(f"Unsupported type of data for validate_list_of_words_from_csv_or_list(): {data}")
 
         return [x.strip() for x in row.split(',')]
+
 
     result = []
     if isinstance(data, (list, tuple, set)):
@@ -779,25 +784,6 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
     """
     Recursively updates the dictionary `d` with another one `u`.
     Values of `u` overwrite in case of type conflict.
-
-    Examples (in comparison with dict.update([other])):
-
-    ..  code-block:: python
-
-            d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
-            u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
-
-            recursive_update(d, u)
-
-            # result:
-
-            {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
-
-            d.update(u)
-
-            # result:
-
-            {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
     List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
     """
@@ -1057,7 +1043,6 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
 
     return messages
 
-
 def small_int_from_string(input_string, num_digits=2):
     """
     Generate a small integer based on the input string using its MD5 hash.
@@ -1086,5 +1071,5 @@ def small_int_from_string(input_string, num_digits=2):
     hash_object.update(input_string.encode())
     hex_digest = hash_object.hexdigest()
     int_value = int(hex_digest, 16)
-    # last_two_digits = int_value % 100
+
     return int_value % (10 ** num_digits)
