@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "sosw - Latest version"
+
+Parameters:
+  FileName:
+    Description: Custom name of file to use.
+    Type: String
+    Default: sosw-stable.zip
+
+Resources:
+  SoswLayer:
+    Type: "AWS::Lambda::LayerVersion"
+    Description: "sosw, bson, aws_lambda_powertools, aws_xray_sdk, requests"
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+        - python3.9
+        - python3.10
+        - python3.11
+      Content:
+        S3Bucket: !Sub "s3-control-bucket-${AWS::AccountId}"
+# FIXME        S3Bucket: !Sub "sosw-s3-${AWS::AccountId}"
+        S3Key: !Sub "lambda_layers/${FileName}"
+      Description: "sosw"
+      LayerName: "sosw"
+      LicenseInfo: "MIT"
