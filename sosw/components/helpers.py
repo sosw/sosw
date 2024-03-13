@@ -62,7 +62,8 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
-           'small_int_from_string'
+           'small_int_from_string',
+           'pack_meta',
            ]
 
 import datetime
@@ -1094,3 +1095,6 @@ def small_int_from_string(input_string, num_digits=2):
     int_value = int(hex_digest, 16)
 
     return int_value % (10 ** num_digits)
+
+def pack_meta(self, event: dict) -> dict:
+    pass
