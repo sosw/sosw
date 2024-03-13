@@ -810,5 +810,14 @@ class helpers_UnitTestCase(unittest.TestCase):
                          unwrap_event_recursively(deepcopy(SQS_EVENT_MANY)))
 
 
+    def test_small_int_from_string(self):
+        self.assertEqual(small_int_from_string("hello world"), 91)
+        self.assertEqual(small_int_from_string("hello world", 3), 291)
+        self.assertEqual(small_int_from_string("sosw is the best", 1), 0)
+        self.assertEqual(small_int_from_string("sosw is the best", 5), 68280)
+
+        with self.assertRaises(ValueError):
+            small_int_from_string("test", num_digits=-1)
+
 if __name__ == '__main__':
     unittest.main()
