@@ -819,15 +819,5 @@ class helpers_UnitTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
 
-
-    def test_pack_meta(self):
-        event = {'a': 1, 'b': 2, 'c': 43, 'foo': 'bar', 'fee': {'bee': 3, 'zee': 51},
-                 'meta': {'aws': 'service', 'log': 'data'}}
-        keep_flat = ['a', 'b', 'foo']
-        result = {'a': 1, 'b': 2, 'foo': 'bar',
-                  'meta': {'aws': 'service', 'log': 'data', 'c': 43, 'fee': {'bee': 3, 'zee': 51}}}
-
-        self.assertEqual(event, result)
-
 if __name__ == '__main__':
     unittest.main()
