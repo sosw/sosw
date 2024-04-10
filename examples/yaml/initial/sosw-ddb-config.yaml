@@ -15,6 +15,7 @@ Conditions:
 Resources:
   ConfigDdb:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       TableName: !If [ isProd, !Sub "${ConfigTableName}", !Sub "${Stage}-${ConfigTableName}" ]
       BillingMode: PAY_PER_REQUEST
