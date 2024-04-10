@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Configurations storage for microservices
+
+Parameters:
+  ConfigTableName:
+    Type: String
+    Default: config
+  Stage:
+    Type: String
+    Default: dev
+
+Conditions:
+  isProd: !Equals [ !Ref Stage, 'prod' ]
+
+Resources:
+  ConfigDdb:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !If [ isProd, !Sub "${ConfigTableName}", !Sub "${Stage}-${ConfigTableName}" ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: env
+          AttributeType: S
+        - AttributeName: config_name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: env
+          KeyType: HASH
+        - AttributeName: config_name
+          KeyType: RANGE
+      Tags:
+        - Key: Env
+          Value: !Ref Stage
+
+Outputs:
+  ConfigDdbExport:
+    Export:
+      Name: !Sub ${Stage}-ddb-${ConfigTableName}
+    Value: !Ref ConfigDdb
+    Description: Name of the DynamoDB table with custom configurations.

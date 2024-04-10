@@ -1,0 +1,19 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "sosw-dev-ddb-config"
+s3_prefix = "sosw-dev-ddb-config"
+parameter_overrides = "Stage=\"dev\""
+confirm_changeset = false
+resolve_s3 = true
+force-upload = true
+capabilities = "CAPABILITY_IAM"
+
+[prod.deploy.parameters]
+stack_name = "sosw-ddb-config"
+s3_prefix = "sosw-ddb-config"
+parameter_overrides = "Stage=\"prod\""
+confirm_changeset = true
+resolve_s3 = true
+force-upload = true
+capabilities = "CAPABILITY_IAM"
