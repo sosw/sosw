@@ -1069,11 +1069,14 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     Generate a small integer based on the input string using its MD5 hash.
 
     Examples:
+
     ..  code-block:: python
+
         small_int_from_string("hello world")
         91
         small_int_from_string("hello world", num_digits=3)
         291
+
     :return: The generated small integer.
     :raises: ValueError: If num_digits is not a positive integer.
 

@@ -811,13 +811,18 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_small_int_from_string(self):
+
         self.assertEqual(small_int_from_string("hello world"), 91)
+        self.assertEqual(small_int_from_string("Hello I am a String without specifying number of digits"), 27)
         self.assertEqual(small_int_from_string("hello world", 3), 291)
         self.assertEqual(small_int_from_string("sosw is the best", 1), 0)
         self.assertEqual(small_int_from_string("sosw is the best", 5), 68280)
+        self.assertEqual(small_int_from_string("sosw is the best", ), 80)
 
         with self.assertRaises(ValueError):
-            small_int_from_string("test", num_digits=-1)
+            for _ in range(3):
+                small_int_from_string("test", num_digits=-1)
+
 
 if __name__ == '__main__':
     unittest.main()
