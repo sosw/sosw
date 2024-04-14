@@ -820,8 +820,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(small_int_from_string("sosw is the best", ), 80)
 
         with self.assertRaises(ValueError):
-            for _ in range(3):
-                small_int_from_string("test", num_digits=-1)
+            small_int_from_string("test", num_digits=-1)
 
 
 if __name__ == '__main__':

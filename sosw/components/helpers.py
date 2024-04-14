@@ -1067,6 +1067,9 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
 def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     """
     Generate a small integer based on the input string using its MD5 hash.
+    This value is reproducible, so it could be useful for example if you use it
+    for some kind of partitioning or unsorted batching in order to be able to
+    query based on it later on.
 
     Examples:
 
