@@ -6,16 +6,19 @@ SOSW Layer
 
 A Lambda layer is a .zip file archive that contains supplementary code or data.
 Layers usually contain library dependencies, a custom runtime, or configuration files.
-https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html
+
+You can find full documentation `here
+<https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html>`_.
+
 
 The following diagram represents how does Lambda Layer work.
 
-..   figure:: img/lambda-layers-diagram.png
+..   figure:: ../_static/images/lambda-layers-diagram.png
     :alt: Lambda Layer
     :align: center
 
 ------------------
-How to deploy
+How to start
 ------------------
 
 Create ``deploy.sh`` file by using the next code:
