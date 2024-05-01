@@ -88,3 +88,6 @@ Versions
 Lambda creates a new version of your function each time that you publish the function.
 The new version is a copy of the unpublished version of the function.
 The unpublished version is named ``$LATEST``.
+
+You can use `layers_versions_changer.py
+<https://link_to_file.com>`_ to change layer versions in your project.
