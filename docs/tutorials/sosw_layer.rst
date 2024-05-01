@@ -21,9 +21,9 @@ The following diagram represents how does Lambda Layer work.
 How to start
 ------------------
 
-Create ``deploy.sh`` file by using the next code:
+Create ``deploy.sh`` file by using
 `deploy.sh
-<https://link_to_file.com>`_
+<https://link_to_file.com>`_.
 
 ------------------
 How to run
@@ -35,25 +35,25 @@ While in the same folder as your ``deploy.sh`` file just run:
 
     ./deploy.sh [-v branch] [-p profile]
 
+Installs sosw from latest pip version, or from a specific branch if you use -v.
+Use -p in case you have specific profile (not the default one) in your .aws/config with appropriate permissions.
 It will create a folder with all dependencies. You only need to pack it into zip-archive.
 
 ------------------
 What's next?
 ------------------
 
-You simply need to load Layer zip file to your bucket and deploy your
-Layer with AWS SAM or CloudFormation by using one of the following templates.
+You simply need to load layer zip file to your s3 bucket and deploy
+Lambda Layer with CloudFormation or AWS SAM by using one of the following templates.
 
 ------------------
 CloudFormation
 ------------------
 
-To deploy a layer by CloudFormation you will need to create a ``.yaml`` file with the following code
+To deploy a layer by CloudFormation you will need to create a ``.yaml`` file with `sosw-layer.yaml
+<https://link_to_file.com>`_.
 
-`sosw-layer.yaml
-<https://link_to_file.com>`_
-
-And after to create a stack in AWS CloudFormation.
+And after create a stack in AWS CloudFormation.
 To create a stack you run the ``aws cloudformation create-stack`` command.
 You must provide the stack name, the location of a valid template, and any input parameters.
 
