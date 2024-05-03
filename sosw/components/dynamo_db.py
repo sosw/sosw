@@ -390,7 +390,8 @@ class DynamoDbClient:
                 key_with_prefix = f"{add_prefix}{key}"
                 if isinstance(val, bool) or (isinstance(val, str) and val.lower() in ['false', 'true']):
                     result[key_with_prefix] = {'BOOL': to_bool(val)}
-                elif isinstance(val, (int, float)) or (isinstance(val, str) and val.isnumeric()):
+                elif isinstance(val, (int, float)) or (isinstance(val, str)
+                                                       and (val.isnumeric() or val.replace('.', '', 1).isnumeric())):
                     result[key_with_prefix] = {'N': str(val)}
                 elif isinstance(val, str):
                     result[key_with_prefix] = {'S': str(val)}

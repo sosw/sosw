@@ -98,7 +98,7 @@ def validate_account_to_dashed(account):
 
 def validate_account_to_int(account):
     """
-    Validates the the provided string is in valid AdWords account format and converts it to integer format.
+    Validates the provided string is in valid AdWords account format and converts it to integer format.
 
     :param (str, int) account: AdWords Account
     :return:                   Account ID as integer

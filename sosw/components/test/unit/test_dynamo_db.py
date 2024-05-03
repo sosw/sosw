@@ -93,6 +93,13 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         for key in expected.keys():
             self.assertDictEqual(expected[key], dynamo_row[key])
 
+    def test_dict_to_dynamo__numeric_float(self):
+        dict_row = {'float_number': '1672531200.0', 'number_with_comma': '12345,67', 'number_with_two_dots': '123.45.67'}
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
+        expected = {'float_number': {'N': '1672531200.0'}, 'number_with_comma': {'S': '12345,67'},
+                    'number_with_two_dots': {'S': '123.45.67'}}
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
 
     def test_dict_to_dynamo_not_strict(self):
         dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False',
