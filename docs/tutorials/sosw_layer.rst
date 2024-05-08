@@ -22,6 +22,19 @@ that need to be shared or managed independently of your function code.
 Creating a layer can help you simplify the deployment process, improve code reuse,
 and make it easier to manage dependencies across multiple functions.
 
+=============================
+Main Benefits of Using Layers
+=============================
+
+1.  **Fast Mounting for Short Cold Starts:** Lambda layers allow you to include shared code, dependencies,
+or runtime libraries separately from your function code. When a function is invoked, Lambda can mount the layer alongside
+the function's execution environment, significantly reducing cold start times. This fast mounting capability ensures that
+your functions start quickly, providing better responsiveness to user requests and improving overall performance.
+
+2.  **Simplified Maintenance of Shared Libraries:** By encapsulating shared code and dependencies within layers, you can centralize the management
+and maintenance of these components. This simplifies the development process, as you can update, version, and distribute common libraries independently of your function code.
+Additionally, using layers promotes code reuse and helps maintain consistency across multiple functions within your serverless application.
+
 ========================
 SOSW Layer
 ========================
