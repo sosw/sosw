@@ -49,7 +49,7 @@ import os
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
-from lazy_import import lazy_module
+from lazy_import import lazy_module,lazy_callable
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -68,7 +68,7 @@ def get_ddbc(self, prefix: str) -> DynamoDbClient:
     name = f"{prefix}_dynamo_db_client"
     if not getattr(self, name, None):
         """ Lazy import for custom DynamoDbClient. """
-        DynamoDbClient = lazy_module("sosw.components.dynamo_db", ["DynamoDbClient"])
+        DynamoDbClient = lazy_callable("sosw.components.dynamo_db", ["DynamoDbClient"])
         setattr(self, name, DynamoDbClient(self.config[f'{prefix}_dynamo_db_config']))
 
     return getattr(self, name)
