@@ -29,6 +29,8 @@
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
+
+
 try:
     from aws_lambda_powertools import Logger
 
@@ -43,13 +45,33 @@ except ImportError:
 import boto3
 import os
 
+
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
+from lazy_import import lazy_module
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
+
+DynamoDbClient: boto3.client = None
+
+
+def get_ddbc(self, prefix: str) -> DynamoDbClient:
+    """ Lazy init of custom DDB clients. """
+    names = list([x.split('_dynamo_db_config')[0] for x in
+                  filter(lambda x: x.endswith('_dynamo_db_config'), self.config)])
+    if prefix not in names:
+        raise ValueError(f"get_ddbc() method supports only prefixes: {names}")
+
+    name = f"{prefix}_dynamo_db_client"
+    if not getattr(self, name, None):
+        """ Lazy import for custom DynamoDbClient. """
+        DynamoDbClient = lazy_module("sosw.components.dynamo_db", ["DynamoDbClient"])
+        setattr(self, name, DynamoDbClient(self.config[f'{prefix}_dynamo_db_config']))
+
+    return getattr(self, name)
 
 
 class Processor:
