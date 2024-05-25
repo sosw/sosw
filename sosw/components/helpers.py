@@ -349,6 +349,8 @@ def validate_datetime_from_something(d):
                 * float - Epoch or Epoch milliseconds
                 * str (YYYY-MM-DD)
                 * str (YYYY-MM-DD HH:MM:SS)
+                * str(epoch time seconds as string)
+                * str(epoch time seconds (float) as string)
     :return: Transformed `d`
     :rtype: datetime.datetime
     :raises: ValueError
@@ -361,7 +363,8 @@ def validate_datetime_from_something(d):
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
         else datetime.datetime.fromtimestamp(x / 1000, tz=timezone.utc)),
         (str, lambda x: datetime.datetime.strptime(d, '%Y-%m-%d')
-        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))
+        if len(d) == 10 else (datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S')
+        if len(d) >= 19 else datetime.datetime.fromtimestamp(float(d)))),
     ]
 
     for mutator in mutators:

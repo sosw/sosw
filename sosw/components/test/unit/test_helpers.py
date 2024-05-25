@@ -285,10 +285,18 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(validate_datetime_from_something(1000), datetime.datetime.fromtimestamp(1000),
                          "Failed from epoch time")
 
+        self.assertEqual(validate_datetime_from_something('1000'), datetime.datetime.fromtimestamp(1000),
+                         "Failed from epoch time as string")
+
         t = 1000.123456
         self.assertEqual(validate_datetime_from_something(t),
                          datetime.datetime.fromtimestamp(t),
                          "Failed with epoch in milliseconds")
+
+        t = '1000.123456'
+        self.assertEqual(validate_datetime_from_something(t),
+                         datetime.datetime.fromtimestamp(float(t)),
+                         "Failed with epoch as string in milliseconds")
 
         self.assertEqual(validate_datetime_from_something(1000.0), datetime.datetime.fromtimestamp(1000),
                          "Failed from epoch time in float")
