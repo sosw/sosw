@@ -275,38 +275,26 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_validate_datetime_from_something(self):
-        self.assertEqual(validate_datetime_from_something(datetime.datetime(9999, 12, 30, 23, 59, 59)),
-                         datetime.datetime(9999, 12, 30, 23, 59, 59),
-                         "Failed with big, but valid datetime to datetime")
 
-        self.assertEqual(validate_datetime_from_something(datetime.date(2018, 7, 5)), datetime.datetime(2018, 7, 5),
-                         "Failed transforming date to datetime")
+        TESTS = [
+            (datetime.datetime(9999, 12, 30, 23, 59, 59), datetime.datetime(9999, 12, 30, 23, 59, 59)),
+            (datetime.date(2018, 7, 5), datetime.datetime(2018, 7, 5)),
+            (1000, datetime.datetime.fromtimestamp(1000)),
+            ('1000', datetime.datetime.fromtimestamp(1000)),
+            (1000.1, datetime.datetime.fromtimestamp(1000.1)),
+            (1000.0, datetime.datetime.fromtimestamp(1000)),
+            (1717496525014.6298, datetime.datetime.fromtimestamp(1717496525.0146298)),
+            ('1000.1', datetime.datetime.fromtimestamp(1000.1)),
+            ('1234567890', datetime.datetime.fromtimestamp(1234567890)),
+            ('1234567890.123456789000', datetime.datetime.fromtimestamp(1234567890.123456789000)),
+            ('2018-01-01', datetime.datetime(2018, 1, 1)),
+            ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+            ('2018-01-01 10:01:03 hello_world', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+        ]
 
-        self.assertEqual(validate_datetime_from_something(1000), datetime.datetime.fromtimestamp(1000),
-                         "Failed from epoch time")
-
-        self.assertEqual(validate_datetime_from_something('1000'), datetime.datetime.fromtimestamp(1000),
-                         "Failed from epoch time as string")
-
-        t = 1000.123456
-        self.assertEqual(validate_datetime_from_something(t),
-                         datetime.datetime.fromtimestamp(t),
-                         "Failed with epoch in milliseconds")
-
-        t = '1000.123456'
-        self.assertEqual(validate_datetime_from_something(t),
-                         datetime.datetime.fromtimestamp(float(t)),
-                         "Failed with epoch as string in milliseconds")
-
-        self.assertEqual(validate_datetime_from_something(1000.0), datetime.datetime.fromtimestamp(1000),
-                         "Failed from epoch time in float")
-
-        self.assertEqual(validate_datetime_from_something('2018-01-01'), datetime.datetime(2018, 1, 1),
-                         "Failed from string YYYY-DD-MM")
-
-        self.assertEqual(validate_datetime_from_something('2018-01-01 10:01:03'),
-                         datetime.datetime(2018, 1, 1, 10, 1, 3),
-                         "Failed from string YYYY-DD-MM HH:MM:SS")
+        for variant, expected_result in TESTS:
+            self.assertEqual(validate_datetime_from_something(variant), expected_result)
 
         self.assertRaises(ValueError, validate_datetime_from_something, 'somebadstring')
         self.assertRaises(ValueError, validate_datetime_from_something, 253402300800000)
