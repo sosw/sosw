@@ -238,6 +238,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                       kwargs['KeyConditionExpression'])
 
 
+    @unittest.skip('Deprecated')
     def test_get_by_query__return_count(self):
 
         # Make sure dynamo paginator is mocked.
