@@ -1,13 +1,12 @@
-import boto3
-import csv
+import asyncio
 import logging
 import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.config import SSMConfig, DynamoConfig, ConfigSource
-
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_config_setup, get_autotest_ddb_name_with_custom_suffix
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -42,8 +41,16 @@ class DynamoConfigTestCase(unittest.TestCase):
             'config_value': 'S'
         },
         'required_fields': ['env', 'config_name', 'config_value'],
-        'table_name':      'autotest_config_component'
+        'table_name':      get_autotest_ddb_name_with_custom_suffix('config'),
     }
+
+    autotest_ddbm: AutotestDdbManager = None
+
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tables = [autotest_dynamo_db_config_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
 
 
     def setUp(self):
@@ -53,7 +60,12 @@ class DynamoConfigTestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        clean_dynamo_table('autotest_config_component', keys=('env', 'config_name'))
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     @unittest.skip("TODO need normal patching")

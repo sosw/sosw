@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 import logging
 import os
@@ -9,7 +10,6 @@ import uuid
 from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
 
-
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
 os.environ["STAGE"] = "test"
@@ -20,11 +20,15 @@ from sosw.labourer import Labourer
 from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import first_or_none
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup, \
+    autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup, safe_put_to_ddb
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+
+    autotest_ddbm: AutotestDdbManager = None
 
 
     @classmethod
@@ -33,6 +37,10 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         Clean the classic autotest table.
         """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
+
+        tables = [autotest_dynamo_db_tasks_setup, autotest_dynamo_db_closed_tasks_setup,
+                  autotest_dynamo_db_retry_tasks_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
 
 
     def setUp(self):
@@ -53,7 +61,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
         self.retry_tasks_table = self.config['sosw_retry_tasks_table']
 
-        self.clean_task_tables()
+        # self.autotest_ddbm.clean_ddbs()
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
@@ -64,13 +72,12 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
-        self.clean_task_tables()
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
-    def clean_task_tables(self):
-        clean_dynamo_table(self.table_name, (self.HASH_KEY[0],))
-        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setup_tasks(self, status='available', mutiple_labourers=False, count_tasks=3):
@@ -84,14 +91,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         MAP = {
             'available': {
-                self.RANGE_KEY[0]:          lambda x: str(worker_id),
-                _('greenfield'):            lambda x: round(1000 + random.randrange(0, 100000, 1000)),
-                _('attempts'):              lambda x: 0,
-                _('result_uploaded_files'): lambda x: [{'bucket': 'cnvm',
-                                                        's3_key': 'key',
-                                                        'description': 'description'
-                                                        }],
-                _('stat_time_register_clients'):                 lambda x: 0.00440446899847
+                self.RANGE_KEY[0]:               lambda x: str(worker_id),
+                _('greenfield'):                 lambda x: round(10000 + random.randrange(0, 100000, 1000)),
+                _('attempts'):                   lambda x: 0,
+                _('result_uploaded_files'):      lambda x: [{'bucket':      'cnvm',
+                                                             's3_key':      'key',
+                                                             'description': 'description'
+                                                             }],
+                _('stat_time_register_clients'): lambda x: 0.00440446899847
             },
             'invoked':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
@@ -148,15 +155,13 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
                 print(f"Putting {row} to {table}")
                 output.append(row)
-                self.dynamo_client.put(row, table_name=table)
-                time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+                safe_put_to_ddb(row, self.dynamo_client, table_name=table)
 
         return output
 
 
     def test_get_next_for_labourer(self):
         self.setup_tasks()
-        # time.sleep(5)
 
         result = self.manager.get_next_for_labourer(self.LABOURER, only_ids=True)
         # print(result)
@@ -224,7 +229,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             mock_time.return_value = self.NOW_TIME
             self.manager.mark_task_invoked(self.LABOURER, row)
 
-        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, fetch_all_fields=True)
+        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"},
+                                                 fetch_all_fields=True)
         # print(f"The new updated value of task is: {result}")
 
         # Rounded -2 we check that the greenfield was updated
@@ -237,7 +243,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.setup_tasks(status='invoked')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -247,7 +252,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='available')
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_running_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -256,7 +260,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -361,6 +364,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.assertIn(tasks[0], result_tasks)
         self.assertIn(tasks[1], result_tasks)
 
+
     @unittest.skip("This funciton moved to Scavenger")
     def test_retry_tasks(self):
         _ = self.manager.get_db_field_name
@@ -432,7 +436,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
 
 
-    @unittest.skip("This funciton moved to Scavenger")
+    @unittest.skip("This function moved to Scavenger")
     @patch.object(boto3, '__version__', return_value='1.9.53')
     def test_retry_tasks__old_boto(self, n):
         self.test_retry_tasks()
@@ -452,8 +456,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             if gf > max_gf:
                 max_gf = gf
             row = {'labourer_id': f"{labourer.id}", 'task_id': f"task-{i}", 'greenfield': gf}
-            self.dynamo_client.put(row)
-            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+            safe_put_to_ddb(row, self.dynamo_client)
 
         result = self.manager.get_oldest_greenfield_for_labourer(labourer)
         self.assertEqual(min_gf, result)
@@ -469,8 +472,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         for i in range(num_of_tasks):
             row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': i}
-            self.dynamo_client.put(row)
-            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+            safe_put_to_ddb(row, self.dynamo_client)
 
         queue_len = self.manager.get_length_of_queue_for_labourer(labourer)
 
@@ -499,6 +501,5 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def test_get_task_by_id__check_return_task_with_all_attrs(self):
         tasks = self.setup_tasks()
-        time.sleep(0.3)
         result = self.manager.get_task_by_id(tasks[0]['task_id'])
         self.assertEqual(result, tasks[0])

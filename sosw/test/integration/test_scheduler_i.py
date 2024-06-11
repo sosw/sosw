@@ -32,7 +32,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         cls.TEST_CONFIG['init_clients'] = ['S3', ]
 
         cls.AWS_ACCOUNT = boto3.client('sts').get_caller_identity().get('Account')
-        cls.BUCKET_NAME = f'autotest-{cls.AWS_ACCOUNT}'
+        cls.BUCKET_NAME = f'autotest-sosw-s3-{cls.AWS_ACCOUNT}'
         cls.clean_bucket(cls.BUCKET_NAME)
         tables = [autotest_dynamo_db_tasks_setup]
         cls.autotest_ddbm = AutotestDdbManager(tables)
@@ -130,6 +130,8 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
         except Exception:
             pass
+
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     def test_get_and_lock_queue_file(self):
