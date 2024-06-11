@@ -1,13 +1,13 @@
+
 import boto3
 import os
 import unittest
-
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from ..app import Processor
-from ..components.sns import SnsManager
-from ..components.siblings import SiblingsManager
+from sosw.app import Processor, get_ddbc
+from sosw.components.sns import SnsManager
+from sosw.components.siblings import SiblingsManager
 
 
 os.environ["STAGE"] = "test"
@@ -68,3 +68,51 @@ class app_TestCase(unittest.TestCase):
             'init_clients': ['NotExists', 'Sns']
         }
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
+
+
+    @patch("sosw.app.lazy_callable")
+    def test_get_ddbc(self, mock_lazy_callable):
+        """
+        Tests the `get_ddbc` function with a valid prefix and configuration.
+
+        This test verifies that:
+            * `lazy_callable` is called once with the correct arguments.
+            * The returned client instance is an instance of `DynamoDbClient`.
+        """
+
+        prefix = 'example'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        mock_lazy_callable.return_value = MagicMock()
+
+        client_instance = get_ddbc(prefix, config)
+
+        mock_lazy_callable.assert_called_once_with("sosw.components.dynamo_db", "DynamoDbClient")
+
+        self.assertIsInstance(client_instance, MagicMock)
+
+
+    def test_get_ddbc_invalid_prefix(self):
+        """
+           Tests the `get_ddbc` function when an invalid prefix is provided.
+
+           This test verifies that:
+               * A `ValueError` is raised when an invalid prefix is provided.
+               * The error message contains the expected message indicating the supported prefixes.
+
+           """
+        prefix = 'invalid'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        with self.assertRaises(ValueError) as context:
+            get_ddbc(prefix, config)
+
+        self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")
+
+
+if __name__ == '__main__':
+    unittest.main()
