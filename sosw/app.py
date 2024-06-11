@@ -49,7 +49,7 @@ import os
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
-from lazy_import import lazy_module,lazy_callable
+from lazy_import import lazy_callable
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -58,7 +58,7 @@ from sosw.components.helpers import *
 DynamoDbClient: boto3.client = None
 
 
-def get_ddbc(self, prefix: str) -> DynamoDbClient:
+def get_ddbc(prefix: str, config: Dict[str, Dict]) -> DynamoDbClient:
     """
     Lazy DynamoDB client initialization supporting multiple DDB clients configured to work with different tables
     and row_mappers. This method is useful for scenarios where you need to validate schemas, transform DynamoDB
@@ -68,25 +68,26 @@ def get_ddbc(self, prefix: str) -> DynamoDbClient:
     given prefix has already been initialized; if not, it performs a lazy import of the DynamoDbClient class from
     the specified module, initializes it with the configuration, and sets it as an attribute of the instance.
 
-    :param self: The instance of the class that contains the configuration and attributes for the DynamoDB clients.
-    :type self: object
     :param prefix: The prefix for the DynamoDB client configuration and naming.
     :type prefix: str
+    :param config: Dictionary containing configuration settings for DynamoDB clients.
+    :type config: Dict[str, Dict]
     :return: The initialized DynamoDB client for the specified prefix.
     :rtype: DynamoDbClient
     :raises ValueError: If the provided prefix is not supported by the available configurations.
     """
-    names = [x.split('_dynamo_db_config')[0] for x in filter(lambda x: x.endswith('_dynamo_db_config'), self.config)]
+    names = [x.split('_dynamo_db_config')[0] for x in filter(lambda x: x.endswith('_dynamo_db_config'), config)]
     if prefix not in names:
         raise ValueError(f"get_ddbc() method supports only prefixes: {names}")
 
     name = f"{prefix}_dynamo_db_client"
-    if not getattr(self, name, None):
+    if not globals().get(name, None):
         """ Lazy import for custom DynamoDbClient. """
         DynamoDbClient = lazy_callable("sosw.components.dynamo_db", "DynamoDbClient")
-        setattr(self, name, DynamoDbClient(self.config[f'{prefix}_dynamo_db_config']))
+        globals()[name] = DynamoDbClient(config[f'{prefix}_dynamo_db_config'])()
 
-    return getattr(self, name)
+    return globals()[name]
+
 
 
 class Processor:
