@@ -204,7 +204,7 @@ class DynamoDbClient:
 
         ..  note::
 
-            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the provisioned_throughput is missing.
+            In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the provisioned_throughput is set to 0.
         """
 
         indexes = {}
