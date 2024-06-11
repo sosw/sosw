@@ -60,22 +60,21 @@ DynamoDbClient: boto3.client = None
 
 def get_ddbc(prefix: str, config: Dict[str, Dict]) -> DynamoDbClient:
     """
-    Lazy DynamoDB client initialization supporting multiple DDB clients configured to work with different tables
-    and row_mappers. This method is useful for scenarios where you need to validate schemas, transform DynamoDB
-    syntax to dict, and more, instead of using the raw boto3.client.
+     Lazy DynamoDB client initialization supporting multiple DDB clients configured to work with different tables
+     and row_mappers. This method is useful for scenarios where you need to validate schemas, transform DynamoDB
+     syntax to dict, and more, instead of using the raw boto3.client.
 
-    The method initializes custom DynamoDB clients based on the provided prefix. It checks if a client with the
-    given prefix has already been initialized; if not, it performs a lazy import of the DynamoDbClient class from
-    the specified module, initializes it with the configuration, and sets it as an attribute of the instance.
+     The method initializes custom DynamoDB clients based on the provided prefix. It checks if a client with the
+     given prefix has already been initialized; if not, it performs a lazy import of the DynamoDbClient class from
+     the specified module, initializes it with the configuration, and sets it as an attribute of the instance.
 
-    :param prefix: The prefix for the DynamoDB client configuration and naming.
-    :type prefix: str
-    :param config: Dictionary containing configuration settings for DynamoDB clients.
-    :type config: Dict[str, Dict]
-    :return: The initialized DynamoDB client for the specified prefix.
-    :rtype: DynamoDbClient
-    :raises ValueError: If the provided prefix is not supported by the available configurations.
-    """
+     :param str prefix: The prefix for the DynamoDB client configuration and naming.
+     :param Dict[str, Dict] config: Dictionary containing configuration settings for DynamoDB clients.
+     :return: The initialized DynamoDB client for the specified prefix.
+     :rtype: DynamoDbClient
+     :raises ValueError: If the provided prefix is not supported by the available configurations.
+     """
+
     names = [x.split('_dynamo_db_config')[0] for x in filter(lambda x: x.endswith('_dynamo_db_config'), config)]
     if prefix not in names:
         raise ValueError(f"get_ddbc() method supports only prefixes: {names}")
