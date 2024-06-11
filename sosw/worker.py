@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,16 +30,22 @@ __all__ = ['Worker']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import json
-import logging
 
 from sosw.app import Processor
 from sosw.managers.meta_handler import MetaHandler
 from typing import Dict
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Worker(Processor):
@@ -77,9 +83,10 @@ class Worker(Processor):
             self.meta_handler = MetaHandler(custom_config=self.config['meta_handler_config'])
 
 
-    def __call__(self, event: Dict):
+    def __call__(self, event: Dict, reset_result: bool = True):
         """
         You can either call super() at the end of your child function or completely overwrite this function.
+        :param reset_result: Whether to reset the result after the processor call. Defaults to True.
         """
 
         # Mark the task as completed in DynamoDB if the event had task_id.
@@ -90,7 +97,7 @@ class Worker(Processor):
             logger.exception(f"Failed to call WorkerAssistant for event {event}")
             pass
 
-        super().__call__(event)
+        super().__call__(event, reset_result)
 
 
     def mark_task_as_completed(self, task_id: str):

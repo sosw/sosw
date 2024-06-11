@@ -7,9 +7,9 @@ Serverless Orchestrator of Serverless Workers
 ..  image:: https://travis-ci.com/sosw/sosw.svg?branch=master
     :alt: Travis - Build
     :target: https://travis-ci.com/sosw/sosw
-.. image:: https://readthedocs.org/projects/sosw/badge/?version=latest
-    :alt: Read the Docs - Build
-    :target: https://docs.sosw.app/en/latest/?badge=latest
+.. image:: https://img.shields.io/docsrs/docs
+    :alt: Documentation Status
+    :target: https://docs.sosw.app/?badge=latest
 .. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
     :alt: PyPI - Installs / month
     :target: https://pypi.org/project/sosw/
@@ -17,8 +17,11 @@ Serverless Orchestrator of Serverless Workers
     :alt: PyPI - License
     :target: https://github.com/sosw/sosw/blob/master/LICENSE
 
-**`sosw`** - a set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
-Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
+**`sosw`**:
+ - Framework to simplify the design of AWS Lambda functions in Python
+ - Set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
+
+Essential components of **`sosw`** orchestration are implemented as AWS Lambda functions themselves.
 
 
 .. note::
@@ -124,6 +127,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _the example: https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/master/examples/yaml/initial/sosw-dev-shared-dynamodb.yaml
 .. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
 .. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html

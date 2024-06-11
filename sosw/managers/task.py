@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,15 +30,24 @@ __all__ = ['TaskManager']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
 import json
-import logging
 import time
 import uuid
 
 from copy import deepcopy
 from json.decoder import JSONDecodeError
-from pkg_resources import parse_version
 from typing import Dict, List, Optional, Union
 
 from sosw.app import Processor
@@ -46,10 +55,6 @@ from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import first_or_none
 from sosw.labourer import Labourer
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class TaskManager(Processor):
@@ -704,18 +709,10 @@ class TaskManager(Processor):
         delete_keys = {_('labourer_id'): labourer_id, _('task_id'): task[_('task_id')]}
 
         # If boto supports DynamoDB transaction, use them to add task to tasks_table and delete from retry_table
-        # https://github.com/boto/boto3/issues/1791: It's available for 1.9.54+
-        if parse_version(str(boto3.__version__)) >= parse_version('1.9.54'):
-            put_query = self.dynamo_db_client.make_put_transaction_item(task)
-            delete_query = self.dynamo_db_client.make_delete_transaction_item(
-                    delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
-            self.dynamo_db_client.transact_write(put_query, delete_query)
-
-        else:
-            logger.info("Looks like you are running an ancient copy of boto3 still in old Environment of Lambda."
-                        "Salut to AWS from March 2019.")
-            self.dynamo_db_client.put(task)
-            self.dynamo_db_client.delete(keys=delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+        put_query = self.dynamo_db_client.make_put_transaction_item(task)
+        delete_query = self.dynamo_db_client.make_delete_transaction_item(
+                delete_keys, table_name=self.config.get('sosw_retry_tasks_table'))
+        self.dynamo_db_client.transact_write(put_query, delete_query)
 
         self.stats['due_for_retry_tasks'] += 1
 
