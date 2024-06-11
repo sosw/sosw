@@ -73,12 +73,12 @@ class app_TestCase(unittest.TestCase):
     @patch("sosw.app.lazy_callable")
     def test_get_ddbc(self, mock_lazy_callable):
         """
-        Tests the `get_ddbc` function with a valid prefix and configuration.
+         Tests the `get_ddbc` function with a valid prefix and configuration.
 
-        This test verifies that:
-            * `lazy_callable` is called once with the correct arguments.
-            * The returned client instance is an instance of `DynamoDbClient`.
-        """
+         This test verifies that:
+             * `lazy_callable` is called once with the correct arguments.
+             * The returned client instance is an instance of `DynamoDbClient`.
+         """
 
         prefix = 'example'
         config = {
@@ -101,8 +101,8 @@ class app_TestCase(unittest.TestCase):
            This test verifies that:
                * A `ValueError` is raised when an invalid prefix is provided.
                * The error message contains the expected message indicating the supported prefixes.
-
            """
+
         prefix = 'invalid'
         config = {
             'example_dynamo_db_config': {'table_name': 'example_table'},
