@@ -49,11 +49,11 @@ import os
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
-from lazy_import import lazy_callable
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
+from sosw.components.dynamo_db import DynamoDbClient
 
 DynamoDbClient: boto3.client = None
 
@@ -82,8 +82,9 @@ def get_ddbc(prefix: str, config: Dict[str, Dict]) -> DynamoDbClient:
     name = f"{prefix}_dynamo_db_client"
     if not globals().get(name, None):
         """ Lazy import for custom DynamoDbClient. """
-        DynamoDbClient = lazy_callable("sosw.components.dynamo_db", "DynamoDbClient")
-        globals()[name] = DynamoDbClient(config[f'{prefix}_dynamo_db_config'])()
+
+        # DynamoDbClient = "sosw.components.dynamo_db", "DynamoDbClient"
+        globals()[name] = DynamoDbClient(config[f'{prefix}_dynamo_db_config'])
 
     return globals()[name]
 
