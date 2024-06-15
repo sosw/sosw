@@ -98,7 +98,7 @@ def validate_account_to_dashed(account):
 
 def validate_account_to_int(account):
     """
-    Validates the the provided string is in valid AdWords account format and converts it to integer format.
+    Validates the provided string is in valid AdWords account format and converts it to integer format.
 
     :param (str, int) account: AdWords Account
     :return:                   Account ID as integer
@@ -349,6 +349,8 @@ def validate_datetime_from_something(d):
                 * float - Epoch or Epoch milliseconds
                 * str (YYYY-MM-DD)
                 * str (YYYY-MM-DD HH:MM:SS)
+                * str(epoch time seconds as string)
+                * str(epoch time seconds (float) as string)
     :return: Transformed `d`
     :rtype: datetime.datetime
     :raises: ValueError
@@ -359,9 +361,10 @@ def validate_datetime_from_something(d):
         (datetime.date, lambda x: datetime.datetime.combine(x, datetime.datetime.min.time())),
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
-        else datetime.datetime.fromtimestamp(x / 1000, tz=timezone.utc)),
-        (str, lambda x: datetime.datetime.strptime(d, '%Y-%m-%d')
-        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))
+        else datetime.datetime.fromtimestamp(x / 1000)),
+        (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
+        (datetime.datetime.strptime(d, '%Y-%m-%d')
+        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
     ]
 
     for mutator in mutators:
