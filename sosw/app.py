@@ -90,7 +90,7 @@ class Processor:
 
     def init_config(self, custom_config: Dict = None):
         """
-        By default tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        By default, tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
@@ -262,7 +262,7 @@ class Processor:
         Return statistics of operations performed by current instance of the Class.
 
         Statistics of custom clients existing in the Processor is also aggregated by default.
-        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_client).
+        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_db_client).
         Clients must also have their own get_stats() methods implemented.
 
         Be careful about circular get_stats() calls from child classes.
@@ -286,7 +286,7 @@ class Processor:
                 except Exception:
                     logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
-        return self.stats
+        return dict(self.stats)
 
 
     def reset_stats(self, recursive: bool = True):

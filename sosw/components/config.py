@@ -30,6 +30,13 @@ Use `Config` class to get the correct methods we use for each action.
 Using SSMConfig or DynamoConfig directly is discouraged.
 Especially SSMConfig, because SSM throttles and has limits we reached in the past.
 Using these methods requires the Role to have permissions to access SSM and/or Dynamo for requested resources.
+
+
+Once the DynamoConfig or SSMConfig is initialized and the Lambda has permissions to access it, the Processor
+will look for the record: `YOUR_FUNCTION_config`, and recursively update the `DEFAULT_CONFIG` with it.
+
+You can also use the functions: `get_credentials_by_prefix` and `update_config` to get | put specific parameters.
+Both these method can be directly imported from this module and they will automatically switch to SSM or DDB config.
 """
 
 __all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix']
@@ -57,7 +64,6 @@ from sosw.test.helpers_test_dynamo_db import get_autotest_ddb_name_with_custom_s
 
 
 class SecretsManager:
-
     secretsmanager_client = None
 
 
@@ -146,6 +152,7 @@ class SecretsManager:
 
         return secrets_dict
 
+
 class SSMConfig:
     """
     Methods to access some configurations and/or credentials stored in AWS SSM ParameterStore.
@@ -185,13 +192,13 @@ class SSMConfig:
 
         try:
             response = ssm_client.get_parameters(
-                    Names=[name],
-                    WithDecryption=True
+                Names=[name],
+                WithDecryption=True
             )
         except Exception:
             response = ssm_client.get_parameters(
-                    Names=[name],
-                    WithDecryption=False
+                Names=[name],
+                WithDecryption=False
             )
 
         try:
@@ -220,11 +227,11 @@ class SSMConfig:
 
         ssm_client = self._get_ssm_client()
         ssm_client.put_parameter(
-                Name=name,
-                Description=description,
-                Value=val,
-                Type=param_type,
-                Overwrite=True
+            Name=name,
+            Description=description,
+            Value=val,
+            Type=param_type,
+            Overwrite=True
         )
 
 
@@ -289,7 +296,7 @@ class SSMConfig:
         names = [param['Name'] for param in params]
         if not names:
             logger.warning(
-                    "No credentials found in SSM ParameterStore with prefix %s for Environment: %s", prefix, env_tag)
+                "No credentials found in SSM ParameterStore with prefix %s for Environment: %s", prefix, env_tag)
             return dict()
 
         # This is supposed to work fine if you ask multiple keys even if some are not encrypted.
@@ -313,11 +320,21 @@ class SSMConfig:
 
 class DynamoConfig:
     """
-    Methods to get/update config from/to DynamoDB.
+    This is a manager to operate with custom configurations for Lambdas stored in a specific DynamoDB table (config).
+    It tries to find the table `config` in the same region where the Lambda runs with the following structure:
+
+    ..  code-block: python
+
+        'env':          'S',
+        'config_name':  'S',
+        'config_value': 'S',
+
+    If the table exists and the Lambda has permissions to access it, the class will look for the record:
+    `YOUR_FUNCTION_config`, and recursively update the `DEFAULT_CONFIG` with it.
     """
 
-    dynamo_client = None
-
+    dynamo_client: DynamoDbClient = None
+    no_ddb_access: bool = None
 
     def __init__(self, **kwargs):
 
@@ -345,29 +362,33 @@ class DynamoConfig:
         """
         Retrieve the Config from DynamoDB 'config' table and return as a JSON parsed dictionary.
         If not in JSON format, returns a string.
+
         :param str name:    Name of config to extract
-        :param str env:     Environment the variable belongs to: 'production' or 'dev'
+        :param str env:     Environment name, usually: 'production' or 'dev'
         :rtype:             dict|string
         :return:            Configuration
         """
 
-        dynamo_client = self._get_dynamo_client()
-        if os.environ.get('STAGE') == 'test' or os.environ.get('autotest') == 'True':
-            dynamo_client.config['table_name'] = 'autotest_config'
+        if dynamo_client := self._get_dynamo_client():
 
-        items = dynamo_client.get_by_query(keys={'env': env, 'config_name': name})
-        item = items[0] if items else None
-        config_value = item.get('config_value') if item else None
-
-        try:
-            return json.loads(config_value)
-        except Exception:
-            return config_value if config_value is not None else {}
+            items = dynamo_client.get_by_query(keys={'env': env, 'config_name': name})
+            item = items[0] if items else None
+            config_value = item.get('config_value') if item else None
+            logger.debug("Got config value from DDB: %s", config_value)
+            try:
+                return json.loads(config_value)
+            except (json.JSONDecodeError, TypeError) as err:
+                return config_value if config_value is not None else {}
+        else:
+            logger.info("Tried to get DynamoConfig, but failed.")
+        return {}
 
 
     def update_config(self, name, val, **kwargs):
         """
-        Update a field in DynamoDB 'config' table with a new value.
+        Update a field in DynamoDB 'config' table with a new value. May be used to store some not sensitive tokens.
+
+        ..  warning: For sensitive credentials use SecretsManager!
 
         :param  str     name:   Field name to address.
         :param  object  val:    Field value to update.
@@ -389,31 +410,34 @@ class DynamoConfig:
         if self.test or prefix.startswith('autotest_'):
             env = "dev"
 
-        dynamo_client = self._get_dynamo_client()
-        items = dynamo_client.get_by_query(keys={'env': env, 'config_name': prefix},
-                                           comparisons={'config_name': 'begins_with'})
-
         res = {}
-        for row in items:
-            try:
-                row['config_value'] = json.loads(row['config_value'])
-            except Exception:
-                pass
-            config_name = row['config_name'].replace(prefix, '')
-            res[config_name] = row['config_value']
+        if dynamo_client := self._get_dynamo_client():
+            items = dynamo_client.get_by_query(keys={'env': env, 'config_name': prefix},
+                                               comparisons={'config_name': 'begins_with'})
+            for row in items:
+                try:
+                    row['config_value'] = json.loads(row['config_value'])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+                config_name = row['config_name'].replace(prefix, '')
+                res[config_name] = row['config_value']
 
         return res
 
 
     def _get_dynamo_client(self):
-        if self.dynamo_client is None:
+        if self.dynamo_client is None and not self.no_ddb_access:
             dynamo_config = self.config.get('dynamo_client_config')
 
             # FIXME Consider deprecating this. Used only for safety, but hardcoding is bad.
             if self.test:
                 dynamo_config['table_name'] = get_autotest_ddb_name_with_custom_suffix('config')
 
-            self.dynamo_client = DynamoDbClient(dynamo_config)
+            try:
+                self.dynamo_client = DynamoDbClient(dynamo_config)
+            except Exception as err:
+                logger.warning("Failed to initialize DynamoDB client for ConfigSource: %s", err)
+                self.no_ddb_access = True
 
         return self.dynamo_client
 
@@ -471,6 +495,7 @@ class ConfigSource:
 
         self.secrets_manager_class = SecretsManager()
 
+
     def get_config(self, name):
         return self.default_source.get_config(name)
 
@@ -482,13 +507,12 @@ class ConfigSource:
     def get_credentials_by_prefix(self, prefix):
         return self.default_source.get_credentials_by_prefix(prefix)
 
+
     def get_secrets_credentials(self, **kwargs):
         return self.secrets_manager_class.get_secrets_credentials(**kwargs)
 
 
-
 test = True if os.environ.get('STAGE') == 'test' else False
-
 
 __config_source = ConfigSource(test=test)
 
