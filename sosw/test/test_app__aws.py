@@ -5,7 +5,7 @@ import unittest
 from copy import deepcopy
 from unittest.mock import patch, MagicMock
 
-from sosw.app import Processor, get_ddbc
+from sosw.app import Processor
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
 
@@ -69,14 +69,13 @@ class app_TestCase(unittest.TestCase):
         }
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
 
-
-    @patch("sosw.app.lazy_callable")
-    def test_get_ddbc(self, mock_lazy_callable):
+    @patch("sosw.app.DynamoDbClient")
+    def test_get_ddbc(self, mock_dynamodb_client):
         """
-         Tests the `get_ddbc` function with a valid prefix and configuration.
+         Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
 
          This test verifies that:
-             * `lazy_callable` is called once with the correct arguments.
+             * `mock_dynamodb_client` is called once with the correct arguments.
              * The returned client instance is an instance of `DynamoDbClient`.
          """
 
@@ -85,18 +84,23 @@ class app_TestCase(unittest.TestCase):
             'example_dynamo_db_config': {'table_name': 'example_table'},
         }
 
-        mock_lazy_callable.return_value = MagicMock()
+        processor = Processor(custom_config=config)
 
-        client_instance = get_ddbc(prefix, config)
+        # Mocking the return value of DynamoDbClient initialization
+        mock_dynamodb_client.return_value = MagicMock()
 
-        mock_lazy_callable.assert_called_once_with("sosw.components.dynamo_db", "DynamoDbClient")
+        # Call the method
+        client_instance = processor.get_ddbc(prefix)
 
+        # Assert that DynamoDbClient is called with the correct arguments
+        mock_dynamodb_client.assert_called_once_with(config['example_dynamo_db_config'])
+
+        # Assert that the return value is an instance of MagicMock
         self.assertIsInstance(client_instance, MagicMock)
-
 
     def test_get_ddbc_invalid_prefix(self):
         """
-           Tests the `get_ddbc` function when an invalid prefix is provided.
+           Tests the `get_ddbc` method of Processor class when an invalid prefix is provided.
 
            This test verifies that:
                * A `ValueError` is raised when an invalid prefix is provided.
@@ -108,8 +112,10 @@ class app_TestCase(unittest.TestCase):
             'example_dynamo_db_config': {'table_name': 'example_table'},
         }
 
+        processor = Processor(custom_config=config)
+
         with self.assertRaises(ValueError) as context:
-            get_ddbc(prefix, config)
+            processor.get_ddbc(prefix)
 
         self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")
 
