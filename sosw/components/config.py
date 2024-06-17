@@ -39,9 +39,9 @@ You can also use the functions: `get_credentials_by_prefix` and `update_config` 
 Both these method can be directly imported from this module and they will automatically switch to SSM or DDB config.
 """
 
-__all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix']
+__all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix', 'get_secrets_credentials']
 __author__ = "Sophie Fogel, Nikolay Grishchenko"
-__version__ = "1.7.1"
+__version__ = "1.7.3"
 
 try:
     from aws_lambda_powertools import Logger
@@ -116,12 +116,11 @@ class SecretsManager:
             return response_list
 
 
-    def get_secrets_credentials(self, **kwargs):
+    def get_secrets_credentials(self, **kwargs) -> dict:
         """
         Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.
-        :param  kwargs:  {type: tag/name, value: value_name}
-        :rtype:             dict
-        :return:            Some credentials
+
+        :param  kwargs: {type: tag/name, value: value_name}
         """
 
         filters, secrets_dict = [], {}
@@ -235,14 +234,12 @@ class SSMConfig:
         )
 
 
-    def call_boto_with_pagination(self, f, **kwargs):
+    def call_boto_with_pagination(self, f, **kwargs) -> list:
         """
         Invoke SSM functions with the ability to paginate results.
 
         :param str f:           SSM function to invoke.
         :param object kwargs:   Keyword arguments for the function to invoke.
-        :rtype list
-        :return:                List of paginated responses.
         """
 
         ssm_client = self._get_ssm_client()
@@ -335,6 +332,7 @@ class DynamoConfig:
 
     dynamo_client: DynamoDbClient = None
     no_ddb_access: bool = None
+
 
     def __init__(self, **kwargs):
 
@@ -457,7 +455,7 @@ class ConfigSource:
     SUPPORTED_SOURCES = ('Dynamo', 'SSM')
 
 
-    def __init__(self, test=False, sources=None, config=None):
+    def __init__(self, test=False, sources=None, config=None, **kwargs):
 
         self.test = test or True if os.environ.get('STAGE') == 'test' else False
 
@@ -484,7 +482,7 @@ class ConfigSource:
             cfg = self.config.get(f"{source.lower()}_config", {})
 
             # Config Client class
-            cls = globals()[f"{source}Config"](config=cfg, test=self.test)
+            cls = globals()[f"{source}Config"](config=cfg, test=self.test, **kwargs)
 
             # Set instance of Config Client as attribute of current ConfigSource object.
             setattr(self, f"{source.lower()}_config", cls)
@@ -496,16 +494,16 @@ class ConfigSource:
         self.secrets_manager_class = SecretsManager()
 
 
-    def get_config(self, name):
-        return self.default_source.get_config(name)
+    def get_config(self, name, **kwargs):
+        return self.default_source.get_config(name, **kwargs)
 
 
     def update_config(self, name, val, **kwargs):
         return self.default_source.update_config(name, val, **kwargs)
 
 
-    def get_credentials_by_prefix(self, prefix):
-        return self.default_source.get_credentials_by_prefix(prefix)
+    def get_credentials_by_prefix(self, prefix, **kwargs):
+        return self.default_source.get_credentials_by_prefix(prefix, **kwargs)
 
 
     def get_secrets_credentials(self, **kwargs):
@@ -519,3 +517,4 @@ __config_source = ConfigSource(test=test)
 get_config = __config_source.get_config
 update_config = __config_source.update_config
 get_credentials_by_prefix = __config_source.get_credentials_by_prefix
+get_secrets_credentials = __config_source.get_secrets_credentials

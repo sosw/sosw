@@ -69,7 +69,7 @@ class Processor:
     def __init__(self, custom_config=None, **kwargs):
         """
         Initialize the Processor.
-        Updates the default config with parameters from SSM, then from provided custom config (usually from event).
+        Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.
         """
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
