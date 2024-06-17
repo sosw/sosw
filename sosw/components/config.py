@@ -25,18 +25,49 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-Config manager component. Has methods for getting configuration for lambdas.
-Use `Config` class to get the correct methods we use for each action.
-Using SSMConfig or DynamoConfig directly is discouraged.
-Especially SSMConfig, because SSM throttles and has limits we reached in the past.
-Using these methods requires the Role to have permissions to access SSM and/or Dynamo for requested resources.
+Config manager component. Has methods for getting configuration for Lambdas.
 
+The default is ``DynamoConfig``. It is automatically called from the ``app.Processor.__init__`` and if your Lambda
+has permissions to access  the ``config`` table, the Processor will look for the record: ``YOUR_FUNCTION_NAME_config``,
+and recursively  update the ``DEFAULT_CONFIG`` with it.
 
-Once the DynamoConfig or SSMConfig is initialized and the Lambda has permissions to access it, the Processor
-will look for the record: `YOUR_FUNCTION_config`, and recursively update the `DEFAULT_CONFIG` with it.
+You can also import and use the following functions.
+They can be directly imported from this module and will be automatically switched to DDB / SSM / Secrets manager.
 
-You can also use the functions: `get_credentials_by_prefix` and `update_config` to get | put specific parameters.
-Both these method can be directly imported from this module and they will automatically switch to SSM or DDB config.
+- get_config_
+- get_credentials_by_prefix_
+- get_secrets_credentials_
+- update_config_
+
+..  warning::
+
+    Using these methods requires the Role to have relevant permissions to access DynamoDB / SSM Parameter Store /
+    AWS Secrets.
+
+Usage example `(pseudo code)`:
+
+..  code-block:: python
+
+    from SOME_DB_DRIVER import connect
+    from sosw.components.config import get_secrets_credentials, get_config, update_config
+    from sosw.app import Processor as SoswProcessor
+
+    class Processor(SoswProcessor):
+
+        def work_with_db(self):
+
+            db_settings = get_credentials_by_prefix('db_')
+            db_password = get_secrets_credentials(type='name', value='db_password')['db_password']
+
+            connection = connect(**db_settings, password=db_password)
+
+            last_processed_row = get_config('last_row')
+
+            db_result = connection.query(f"SOME QUERY LIMIT last_processed_row, 10;")
+            self.do_something(db_result)
+
+            update_config('last_row', last_processed_row + 10)
+
 """
 
 __all__ = ['ConfigSource', 'get_config', 'update_config', 'get_credentials_by_prefix', 'get_secrets_credentials']
@@ -83,15 +114,16 @@ class SecretsManager:
         return self.secretsmanager_client
 
 
-    def call_boto_secrets_with_pagination(self, f, **kwargs):
+    def call_boto_secrets_with_pagination(self, f: str, **kwargs) -> list:
         """
         Invoke SecretsManager functions with the ability to paginate results.
 
-        :param str f:           SecretsManager function to invoke.
-        :param object kwargs:   Keyword arguments for the function to invoke.
-        :rtype list
-        :return:                If the function can be the paginate the response will return as paginate iterator.
-                                Else it will return as a list
+        ..  _get_secrets_credentials:
+
+        :param f:   SecretsManager function to invoke.
+
+        :return:    If the function can be the paginate the response will return as paginate iterator.
+                    Else it will return as a list
         """
 
         secretsmanager_client = self._get_secretsmanager_client()
@@ -118,9 +150,18 @@ class SecretsManager:
 
     def get_secrets_credentials(self, **kwargs) -> dict:
         """
+
         Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.
 
-        :param  kwargs: {type: tag/name, value: value_name}
+        Must provide ``type`` and ``value`` to search. Type is either ``'tag'`` or ``'name'``. ``value`` is a string.
+
+        Usage example:
+
+        ..  code-block:: python
+
+            my_secret =  get_secrets_credentials(type='name', value='my_secret_name')
+
+            my_secrets_by_tag = get_secrets_credentials(type='tag', value='project_a_credentials')
         """
 
         filters, secrets_dict = [], {}
@@ -317,17 +358,19 @@ class SSMConfig:
 
 class DynamoConfig:
     """
-    This is a manager to operate with custom configurations for Lambdas stored in a specific DynamoDB table (config).
-    It tries to find the table `config` in the same region where the Lambda runs with the following structure:
+    This is a manager to operate with custom configurations for Lambdas stored in the ``config`` DynamoDB table.
+    It tries to find the table ``config`` in the same region where the Lambda runs with the following structure:
 
-    ..  code-block: python
+    ..  code-block:: python
 
         'env':          'S',
         'config_name':  'S',
         'config_value': 'S',
 
     If the table exists and the Lambda has permissions to access it, the class will look for the record:
-    `YOUR_FUNCTION_config`, and recursively update the `DEFAULT_CONFIG` with it.
+    ``YOUR_FUNCTION_config``, and recursively update the ``DEFAULT_CONFIG`` with it.
+
+    .. _get_config:
     """
 
     dynamo_client: DynamoDbClient = None
@@ -358,13 +401,20 @@ class DynamoConfig:
 
     def get_config(self, name, env="production"):
         """
-        Retrieve the Config from DynamoDB 'config' table and return as a JSON parsed dictionary.
+        Retrieve the Config from DynamoDB ``config`` table and return as a JSON parsed dictionary.
         If not in JSON format, returns a string.
+
+        ..  note::
+
+            In case the environment is ``test`` the table name will be automatically changed to ``autotest_config``.
+            This might be relevant only for complex integration tests.
 
         :param str name:    Name of config to extract
         :param str env:     Environment name, usually: 'production' or 'dev'
         :rtype:             dict|string
         :return:            Configuration
+
+        ..  _update_config:
         """
 
         if dynamo_client := self._get_dynamo_client():
@@ -384,9 +434,11 @@ class DynamoConfig:
 
     def update_config(self, name, val, **kwargs):
         """
-        Update a field in DynamoDB 'config' table with a new value. May be used to store some not sensitive tokens.
+        Update a field in the DynamoDB ``config`` table with a new value. May be used to store not sensitive tokens.
 
         ..  warning: For sensitive credentials use SecretsManager!
+
+        ..  _get_credentials_by_prefix:
 
         :param  str     name:   Field name to address.
         :param  object  val:    Field value to update.
@@ -401,7 +453,27 @@ class DynamoConfig:
         dynamo_client.update(keys={'env': env, 'config_name': name}, attributes_to_update={'config_value': val})
 
 
-    def get_credentials_by_prefix(self, prefix, env="production"):
+    def get_credentials_by_prefix(self, prefix: str, env: str = 'production') -> dict:
+        """
+        Fetches multiple records from the ``config`` table. Filters rows that start with the prefix and returns them
+        as a dict with this prefix trimmed.
+
+        ..  warning: For sensitive credentials use SecretsManager!
+
+        Example in ``config`` DDB:
+
+        ..  code-block:: python
+
+            {'env': 'production', 'config_name': 'project_a_db_username', 'config_value': 'john'}
+            {'env': 'production', 'config_name': 'project_a_db_port', 'config_value': '27019'}
+            {'env': 'production', 'config_name': 'another_db_username', 'config_value': 'silver'}
+
+
+            credentials = get_credentials_by_prefix('project_a_db')
+
+            # {'username': 'john', 'port': '27019'}
+        """
+
 
         prefix = prefix if prefix.endswith('_') else prefix + '_'
 

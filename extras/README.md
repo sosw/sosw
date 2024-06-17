@@ -14,7 +14,7 @@ Make sure that you:
 - Create a PR to master from this branch.
 
 ## Docs build
-- Make sure that the secrets for `.github/workflows` are up to date.
+- Make sure that the secrets for `.github/workflows` are up-to-date.
 - Make sure that you have the docs hosted in some reliable location.
 - Make sure that DNS points to that location.
 - RTFM the guidelines of how to publish `sosw` docs and follow recommendations.
