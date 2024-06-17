@@ -1,13 +1,13 @@
-
 import boto3
 import os
 import unittest
+
 from copy import deepcopy
 from unittest.mock import patch, MagicMock
 
-from sosw.app import Processor
-from sosw.components.sns import SnsManager
-from sosw.components.siblings import SiblingsManager
+from ..app import Processor
+from ..components.sns import SnsManager
+from ..components.siblings import SiblingsManager
 
 
 os.environ["STAGE"] = "test"
@@ -69,6 +69,7 @@ class app_TestCase(unittest.TestCase):
         }
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
 
+
     @patch("sosw.app.DynamoDbClient")
     def test_get_ddbc(self, mock_dynamodb_client):
         """
@@ -98,6 +99,7 @@ class app_TestCase(unittest.TestCase):
         # Assert that the return value is an instance of MagicMock
         self.assertIsInstance(client_instance, MagicMock)
 
+
     def test_get_ddbc_invalid_prefix(self):
         """
            Tests the `get_ddbc` method of Processor class when an invalid prefix is provided.
@@ -118,7 +120,3 @@ class app_TestCase(unittest.TestCase):
             processor.get_ddbc(prefix)
 
         self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")
-
-
-if __name__ == '__main__':
-    unittest.main()
