@@ -87,16 +87,10 @@ class app_TestCase(unittest.TestCase):
 
         processor = Processor(custom_config=config)
 
-        # Mocking the return value of DynamoDbClient initialization
         mock_dynamodb_client.return_value = MagicMock()
-
-        # Call the method
         client_instance = processor.get_ddbc(prefix)
 
-        # Assert that DynamoDbClient is called with the correct arguments
         mock_dynamodb_client.assert_called_once_with(config['example_dynamo_db_config'])
-
-        # Assert that the return value is an instance of MagicMock
         self.assertIsInstance(client_instance, MagicMock)
 
 
