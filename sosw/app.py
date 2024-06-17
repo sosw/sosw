@@ -29,8 +29,6 @@
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
-
-
 try:
     from aws_lambda_powertools import Logger
 
@@ -49,17 +47,10 @@ import os
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
-
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient
-
-
-
-
-
-
 
 
 class Processor:
@@ -74,7 +65,7 @@ class Processor:
     aws_account = None
     aws_region = os.getenv('AWS_REGION', None)
     lambda_context = None
-    DynamoDbClient: boto3.client = None
+
 
     def __init__(self, custom_config=None, **kwargs):
         """
@@ -96,6 +87,7 @@ class Processor:
         self.result = defaultdict(int)
 
         self.register_clients(self.config.get('init_clients', []))
+
 
     def init_config(self, custom_config: Dict = None):
         """
@@ -265,6 +257,7 @@ class Processor:
         """
         return self.aws_region
 
+
     @benchmark
     def get_ddbc(self, prefix: str) -> DynamoDbClient:
         """
@@ -273,7 +266,7 @@ class Processor:
          syntax to dict, and more, instead of using the raw boto3.client.
 
          The method initializes custom DynamoDB clients based on the provided prefix. It checks if a client with the
-         given prefix has already been initialized; if not, it performs a lazy import of the DynamoDbClient class from
+         given prefix has already been initialized; if not, it performs a lazy initialization of the DynamoDbClient class from
          the specified module, initializes it with the configuration, and sets it as an attribute of the instance.
 
          :param str prefix: The prefix for the DynamoDB client configuration and naming.
@@ -291,6 +284,7 @@ class Processor:
             setattr(self, name, DynamoDbClient(self.config[f'{prefix}_dynamo_db_config']))
 
         return getattr(self, name)
+
 
     def get_stats(self, recursive: bool = True):
         """
