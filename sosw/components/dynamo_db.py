@@ -260,8 +260,8 @@ class DynamoDbClient:
         We currently support only String or Numeric values. Latest ones are converted to int or float.
         Takes settings from row_mapper.
 
-        e.g.:               {'key1': {'N': '3'}, 'key2': {'S': 'value2'}}
-        will convert to:    {'key1': 3, 'key2': 'value2'}
+        e.g.:               ``{'key1': {'N': '3'}, 'key2': {'S': 'value2'}}``
+        will convert to:    ``{'key1': 3, 'key2': 'value2'}``
 
         :param dict dynamo_row:       DynamoDB row item
         :param bool strict:           DEPRECATED.
@@ -342,8 +342,8 @@ class DynamoDbClient:
         """
         Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.
 
-        e.g.                {'key1': 'value1', 'key2': 'value2'}
-        will convert to:    {'key1': {'Type1': 'value1'}, 'key2': {'Type2': 'value2'}}
+        e.g.                ``{'key1': 'value1', 'key2': 'value2'}``
+        will convert to:    ``{'key1': {'Type1': 'value1'}, 'key2': {'Type2': 'value2'}}``
 
         :param dict row_dict:   A row we want to convert to dynamo syntax.
         :param str add_prefix:  A string prefix to add to the key in the result dict. Useful for queries like update.
@@ -426,38 +426,39 @@ class DynamoDbClient:
         :param dict keys: Keys and values of the items we get.
             You must specify the hash key, and can optionally also add the range key.
             Example, in a table where the hash key is 'hk' and the range key is 'rk':
-            * {'hk': 'cat', 'rk': '123'}
-            * {'hk': 'cat'}
+            * ``{'hk': 'cat', 'rk': '123'}``
+            * ``{'hk': 'cat'}``
 
         Optional
 
         :param str table_name:  Name of the dynamo table. If not specified, will use table_name from the config.
         :param str index_name:  Name of the secondary index in the table. If not specified, will query the table itself.
         :param dict comparisons: Type of comparison for each key. If a key is not mentioned, comparison type will be =.
-            Valid values: `=`, `<`, `<=`, `>`, `>=`, `begins_with`.
+            Valid values: ``=``, ``<``, ``<=``, ``>``, ``>=``, ``begins_with``.
             Comparisons only work for the range key.
-            Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
+            Example: if ``keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='}`` -> will get items where
+            ``rk <= 100``
 
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
-            e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+            e.g. ``'key <= 42', 'name = marta', 'foo between 10 and 20'``, etc.
         :param bool strict: DEPRECATED.
         :param bool return_count: If True, will return the number of items in the result instead of the items themselves
-        :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
-                             To reverse the order set the argument `desc = True`.
+        :param bool desc:    By default (False) the values will be sorted ascending by the SortKey.
+                             To reverse the order set the argument ``desc = True``.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
         :param list expr_attrs_names: List of attributes names, in case if an attribute name begins with a number or
             contains a space, a special character, or a reserved word, you must use an expression attribute name to
             replace that attribute's name in the expression.
             Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
-            `ExpressionAttributeNames`:
-            {'#session': 'session', '#key': 'key'}
+            ``ExpressionAttributeNames``:
+            ``{'#session': 'session', '#key': 'key'}``
         :param bool consistent_read: If True , then the operation uses strongly consistent reads;
             otherwise, the operation uses eventually consistent reads. Default is False
 
         :return: List of items from the table, each item in key-value format
-            OR the count if `return_count` is True
+            OR the count if ``return_count`` is True
         """
 
         if strict is not None:
@@ -865,7 +866,7 @@ class DynamoDbClient:
     def create(self, row: Dict, table_name: str = None):
         """
         Uses the mechanism of the ``put`` method, but first validates that the item with same hash & [range] key[s]
-        does not exist in the table. Otherwise raises: ``ConditionalCheckFailedException``
+        does not exist in the table. Otherwise, raises: ``ConditionalCheckFailedException``
 
         ..  warning:: This method requires the config to have a 'hash_key' parameter with a name of a field.
 
@@ -880,21 +881,21 @@ class DynamoDbClient:
                attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
                condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
         """
-        Updates an item in DynamoDB. Will create a new item if doesn't exist.
+        Updates an item in DynamoDB. Will create a new item if it doesn't exist.
         IMPORTANT - If you want to make sure it exists, use ``patch`` method
 
         :param dict keys:
             Keys and values of the row we update.
             Example, in a table where the hash key is 'hk' and the range key is 'rk':
-            {'hk': 'cat', 'rk': '123'}
+            ``{'hk': 'cat', 'rk': '123'}``
         :param dict attributes_to_update:
             Dict of the attributes to be updated.
             Can contain both existing attributes and new attributes.
             Will update existing, and create new attributes.
-            Example: {'col_name': 'some_value'}
+            Example: ``{'col_name': 'some_value'}``
         :param dict attributes_to_increment:
             Attribute names to increment, and the value to increment by. If the attribute doesn't exist, will create it.
-            Example: {'some_counter': '3'}
+            Example: ``{'some_counter': '3'}``
         :param list attributes_to_remove: Will remove these attributes from the record
         :param str condition_expression: Condition Expression that must be fulfilled on the object to update.
         :param str table_name: Name of the table
@@ -1122,7 +1123,7 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
     :param str table_name: name of the table
     :param tuple keys: the keys of the table
     :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
-        e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
+        e.g. ``'key <= 42', 'name = marta', 'foo between 10 and 20'``, etc.
 
     .. warning:: There are some reserved words that woud not work with
                  Filter Expression in case they are attribute names. Fix this one day.
