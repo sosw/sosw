@@ -76,7 +76,7 @@ class Processor:
 
         if global_vars.lambda_context:
             self.aws_account = trim_arn_to_account(getattr(global_vars.lambda_context, 'invoked_function_arn', None))
-            logger.debug("Setting self.aws_account from Lambda context to: %s", self.aws_account)
+            logger.info("Setting self.aws_account from Lambda context to: %s", self.aws_account)
 
         self.init_config(custom_config=custom_config)
         logger.info("Final %s processor config", self.__class__.__name__)
@@ -231,17 +231,15 @@ class Processor:
         """
         Get current AWS Account to construct different ARNs.
 
-        We dont' have this parameter in Environmental variables, only can parse from Context.
-        Context is not global and is supposed to be passed by your `lambda_handler` during initialization.
+        We don't have this parameter in Environmental variables, only can parse from Context. It is stored
+        in ``global_vars`` and is supposed to be passed by your `lambda_handler` during initialization.
 
-        As a fallback we have an autodetection mechanism, but it is pretty heavy (~0.3 seconds).
-        So it is not called by default. This method should be used only if you really need it.
-
-        It is highly recommended to pass the `context` during initialization.
+        As a fallback for cases when we use ``Processor`` not in the Lambda environment, we have a lazy autodetection
+        mechanism using STS, but it is pretty heavy (~0.3 seconds).
 
         Some things to note:
          - We store this value in class variable for fast access
-         - If not yet set on the first call we initialise it.
+         - It uses Lazy initialization.
          - We first try from context and only if not provided - use the autodetection.
         """
 
@@ -446,8 +444,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
 
     if global_vars is None:
-        logging.error("Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
-                      "initialised in your Lambda function at the root level. Some functionality will break soon.")
+        logger.error("Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
+                     "initialised in your Lambda function at the root level. Some functionality will break soon.")
         global_vars = LambdaGlobals()
 
 
