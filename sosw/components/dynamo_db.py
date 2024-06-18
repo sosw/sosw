@@ -66,7 +66,7 @@ class DynamoDbClient:
     Config should have a mapping for the field types and required fields.
     Config example:
 
-    .. code-block:: python
+    ..  code-block:: python
 
         {
             'row_mapper':     {
@@ -122,7 +122,7 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logger.debug("Got `table_name` from config: %s", table_name)
+            logger.debug("Got ``table_name`` from config: %s", table_name)
 
         logger.debug("DynamoDB table name identified as %s", table_name)
 
@@ -272,8 +272,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("dynamo_to_dict ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
         result = {}
 
@@ -289,7 +289,7 @@ class DynamoDbClient:
                         raise ValueError(f"'{key}' is expected to be of type '{key_type}' in row_mapper, "
                                          f"but real value is of type '{real_type}'")
 
-                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # type_deserializer.deserialize() parses 'N' to ``Decimal`` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
                     if key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
@@ -314,7 +314,7 @@ class DynamoDbClient:
             for key, val_dict in dynamo_row.items():
                 for val_type, val in val_dict.items():
 
-                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # type_deserializer.deserialize() parses 'N' to ``Decimal`` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
                     if val_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
@@ -334,7 +334,7 @@ class DynamoDbClient:
                     else:
                         result[key] = self.type_deserializer.deserialize(val_dict)
 
-        assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
+        assert all(True for x in self.config['required_fields'] if result.get(x)), "Some ``required_fields`` are missing"
         return result
 
 
@@ -411,40 +411,44 @@ class DynamoDbClient:
         logger.debug("dict_to_dynamo result: %s", result)
         return result
 
-    def get_by_query(self, keys: Dict, table_name: Optional[str] = None, index_name: Optional[str] = None,
-                     comparisons: Optional[Dict] = None, max_items: Optional[int] = None,
-                     filter_expression: Optional[str] = None, strict: bool = None, return_count: bool = False,
-                     desc: bool = False, fetch_all_fields: bool = None, expr_attrs_names: list = None,
-                     consistent_read: bool = None) -> Union[List[Dict], int]:
-        """
-        Get an item from a table, by some keys. Can specify an index.
-        If an index is not specified, will query the table.
-        IMPORTANT: You must specify the rows you expect to be converted in row mapper in config, otherwise you won't
-        get them in the result.
-        If you want to get items from dynamo by non-key attributes, this method is not for you.
 
-        :param dict keys: Keys and values of the items we get.
-            You must specify the hash key, and can optionally also add the range key.
-            Example, in a table where the hash key is 'hk' and the range key is 'rk':
-            * {'hk': 'cat', 'rk': '123'}
-            * {'hk': 'cat'}
+    def _query_constructor(self, keys: Dict,
+                           table_name: Optional[str] = None,
+                           *,
+                           index_name: Optional[str] = None,
+                           comparisons: Optional[Dict] = None,
+                           max_items: Optional[int] = None,
+                           filter_expression: Optional[str] = None,
+                           strict: bool = None,
+                           return_count: bool = False,
+                           desc: bool = False,
+                           fetch_all_fields: bool = None,
+                           expr_attrs_names: list = None,
+                           consistent_read: bool = None) -> dict:
+        """
+        ..  _query_constructor:
+
+        Constructs a query to retrieve items from a DynamoDB table based on specified parameters.
+        Can specify an index. If an index is not specified, will query the table.
+
+        :param dict keys:   Keys and values to use in query.
+                            You must specify the hash key, and can optionally also add the range key.
 
         Optional
 
         :param str table_name:  Name of the dynamo table. If not specified, will use table_name from the config.
         :param str index_name:  Name of the secondary index in the table. If not specified, will query the table itself.
         :param dict comparisons: Type of comparison for each key. If a key is not mentioned, comparison type will be =.
-            Valid values: `=`, `<`, `<=`, `>`, `>=`, `begins_with`.
+            Valid values: ``=``, ``<``, ``<=``, ``>``, ``>=``, ``begins_with``.
             Comparisons only work for the range key.
-            Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
+            Example: if ``keys={'hk': 'cat', 'rk': 100}`` and ``comparisons={'rk': '<='}`` -> will get items where
+            ``rk <= 100``
 
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
-            e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
-        :param bool strict: DEPRECATED.
-        :param bool return_count: If True, will return the number of items in the result instead of the items themselves
-        :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
-                             To reverse the order set the argument `desc = True`.
+            e.g. ``'key <= 42', 'name = marta', 'foo between 10 and 20'``, etc.
+        :param bool desc:    By default, (False) the values will be sorted ascending by the SortKey.
+                             To reverse the order set the argument ``desc=True``.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
         :param list expr_attrs_names: List of attributes names, in case if an attribute name begins with a number or
@@ -452,17 +456,16 @@ class DynamoDbClient:
             replace that attribute's name in the expression.
             Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
             `ExpressionAttributeNames`:
-            {'#session': 'session', '#key': 'key'}
-        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+            ``{'#session': 'session', '#key': 'key'}``
+        :param bool consistent_read: If True, then the operation uses strongly consistent reads;
             otherwise, the operation uses eventually consistent reads. Default is False
 
-        :return: List of items from the table, each item in key-value format
-            OR the count if `return_count` is True
+        :return: Query parameters for boto3 Dynamo DB query
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -534,27 +537,39 @@ class DynamoDbClient:
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
             if return_count:
-                raise Exception(f"DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together")
+                raise Exception(f"DynamoDbCLient.get_by_query does not support ``max_items`` and ``return_count`` together")
 
         if desc:
             query_args['ScanIndexForward'] = False
 
         logger.debug("Querying dynamo: %s", query_args)
 
+        return query_args
+
+
+    def get_by_query(self, keys: Dict, **kwargs) -> List[Dict]:
+        """
+        Executes a query to the DynamoDB database using the provided keys and additional parameters.
+
+        For signature description see: query_constructor_
+        """
+
+        query_args = self._query_constructor(keys=keys, **kwargs)
+
         paginator = self.dynamo_client.get_paginator('query')
         response_iterator = paginator.paginate(**query_args)
         result = []
 
-        if return_count:
+        if kwargs.get('return_count'):
             return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
-            result += [self.dynamo_to_dict(x, fetch_all_fields=fetch_all_fields) for x in page['Items']]
+            result += [self.dynamo_to_dict(x, fetch_all_fields=kwargs.get('fetch_all_fields')) for x in page['Items']]
             self.stats['dynamo_get_queries'] += 1
-            if max_items and len(result) >= max_items:
+            if kwargs.get('max_items') and len(result) >= kwargs.get('max_items'):
                 break
 
-        return result[:max_items] if max_items else result
+        return result[:kwargs.get('max_items')] if kwargs.get('max_items') else result
 
 
     def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
@@ -562,7 +577,7 @@ class DynamoDbClient:
         Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
         https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
 
-        Supported: regular comparators, between, attribute_[not_]exists
+        Supported: regular comparators, between, attribute_[not\_]exists
 
         :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
         """
@@ -588,7 +603,7 @@ class DynamoDbClient:
             result_expr = f"{key} {operator} :filter_{key}"
             result_values = self.dict_to_dynamo({f"filter_{key}": words[-1]}, add_prefix=':', strict=False)
 
-        # This must be `between` statement.
+        # This must be ``between`` statement.
         elif len(words) == 5:
             assert (words[1].lower(), words[3].lower()) == ('between', 'and'), \
                 f"Unsupported expression for Filtering: {expression}"
@@ -626,8 +641,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -663,8 +678,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -724,14 +739,14 @@ class DynamoDbClient:
         :param list keys_list: A list of the keys of the items we want to get. Gets the items that match the given keys.
                                If some key doesn't exist - it just skips it and gets the others.
                                e.g. [{'hash_col': '1, 'range_col': 2}, {'hash_col': 3}]
-                               - will get a row where `hash_col` is 1 and `range_col` is 2, and also all rows where
-                               `hash_col` is 3.
+                               - will get a row where ``hash_col`` is 1 and ``range_col`` is 2, and also all rows where
+                               ``hash_col`` is 3.
 
         Optional
 
         :param str table_name:
         :param int max_retries: If failed to get some items, retry this many times. Waiting between retries is
-                                multiplied by 2 after each retry, so `retries` shouldn't be a big number.
+                                multiplied by 2 after each retry, so ``retries`` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
         :param bool strict: DEPRECATED.
@@ -744,8 +759,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("batch_get_items_one_table ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -1000,7 +1015,7 @@ class DynamoDbClient:
         Will split transactions to chunks - because transact_write_items accepts up to 10 actions.
         WARNING: If you're expecting a transaction on more than 10 operations - AWS DynamoDB doesn't support it.
 
-        .. code-block:: python
+        ..  code-block:: python
 
             dynamo_db_client = DynamoDbClient(config)
             t1 = dynamo_db_client.make_put_transaction_item(row, table_name='table1')
@@ -1124,8 +1139,10 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
     :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
         e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
 
-    .. warning:: There are some reserved words that woud not work with
-                 Filter Expression in case they are attribute names. Fix this one day.
+    ..  warning::
+
+        There are some reserved words that would not work with
+        Filter Expression in case they are attribute names. Fix this one day.
 
     """
 
