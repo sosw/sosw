@@ -66,7 +66,7 @@ class DynamoDbClient:
     Config should have a mapping for the field types and required fields.
     Config example:
 
-    .. code-block:: python
+    ..  code-block:: python
 
         {
             'row_mapper':     {
@@ -122,7 +122,7 @@ class DynamoDbClient:
         # Use the config value if not provided
         if table_name is None:
             table_name = self.config['table_name']
-            logger.debug("Got `table_name` from config: %s", table_name)
+            logger.debug("Got ``table_name`` from config: %s", table_name)
 
         logger.debug("DynamoDB table name identified as %s", table_name)
 
@@ -272,8 +272,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("dynamo_to_dict `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("dynamo_to_dict ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
         result = {}
 
@@ -289,7 +289,7 @@ class DynamoDbClient:
                         raise ValueError(f"'{key}' is expected to be of type '{key_type}' in row_mapper, "
                                          f"but real value is of type '{real_type}'")
 
-                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # type_deserializer.deserialize() parses 'N' to ``Decimal`` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
                     if key_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
@@ -314,7 +314,7 @@ class DynamoDbClient:
             for key, val_dict in dynamo_row.items():
                 for val_type, val in val_dict.items():
 
-                    # type_deserializer.deserialize() parses 'N' to `Decimal` type but it cant be parsed to a datetime
+                    # type_deserializer.deserialize() parses 'N' to ``Decimal`` type but it cant be parsed to a datetime
                     # so we cast it to either an integer or a float.
                     if val_type == 'N':
                         result[key] = float(val) if '.' in val else int(val)
@@ -334,7 +334,7 @@ class DynamoDbClient:
                     else:
                         result[key] = self.type_deserializer.deserialize(val_dict)
 
-        assert all(True for x in self.config['required_fields'] if result.get(x)), "Some `required_fields` are missing"
+        assert all(True for x in self.config['required_fields'] if result.get(x)), "Some ``required_fields`` are missing"
         return result
 
 
@@ -464,8 +464,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -537,7 +537,7 @@ class DynamoDbClient:
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
             if return_count:
-                raise Exception(f"DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together")
+                raise Exception(f"DynamoDbCLient.get_by_query does not support ``max_items`` and ``return_count`` together")
 
         if desc:
             query_args['ScanIndexForward'] = False
@@ -603,7 +603,7 @@ class DynamoDbClient:
             result_expr = f"{key} {operator} :filter_{key}"
             result_values = self.dict_to_dynamo({f"filter_{key}": words[-1]}, add_prefix=':', strict=False)
 
-        # This must be `between` statement.
+        # This must be ``between`` statement.
         elif len(words) == 5:
             assert (words[1].lower(), words[3].lower()) == ('between', 'and'), \
                 f"Unsupported expression for Filtering: {expression}"
@@ -641,8 +641,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -678,8 +678,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -739,14 +739,14 @@ class DynamoDbClient:
         :param list keys_list: A list of the keys of the items we want to get. Gets the items that match the given keys.
                                If some key doesn't exist - it just skips it and gets the others.
                                e.g. [{'hash_col': '1, 'range_col': 2}, {'hash_col': 3}]
-                               - will get a row where `hash_col` is 1 and `range_col` is 2, and also all rows where
-                               `hash_col` is 3.
+                               - will get a row where ``hash_col`` is 1 and ``range_col`` is 2, and also all rows where
+                               ``hash_col`` is 3.
 
         Optional
 
         :param str table_name:
         :param int max_retries: If failed to get some items, retry this many times. Waiting between retries is
-                                multiplied by 2 after each retry, so `retries` shouldn't be a big number.
+                                multiplied by 2 after each retry, so ``retries`` shouldn't be a big number.
                                 Default is 1.
         :param int retry_wait_base_time: Wait this much time after first retry. Will wait twice longer in each retry.
         :param bool strict: DEPRECATED.
@@ -759,8 +759,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("batch_get_items_one_table `strict` variable is deprecated in sosw 0.7.13+. "
-                           "Please replace it's usage with `fetch_all_fields` (and reverse the boolean value)")
+            logger.warning("batch_get_items_one_table ``strict`` variable is deprecated in sosw 0.7.13+. "
+                           "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
         fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
@@ -1015,7 +1015,7 @@ class DynamoDbClient:
         Will split transactions to chunks - because transact_write_items accepts up to 10 actions.
         WARNING: If you're expecting a transaction on more than 10 operations - AWS DynamoDB doesn't support it.
 
-        .. code-block:: python
+        ..  code-block:: python
 
             dynamo_db_client = DynamoDbClient(config)
             t1 = dynamo_db_client.make_put_transaction_item(row, table_name='table1')
@@ -1139,8 +1139,10 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
     :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
         e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
 
-    .. warning:: There are some reserved words that woud not work with
-                 Filter Expression in case they are attribute names. Fix this one day.
+    ..  warning::
+
+        There are some reserved words that would not work with
+        Filter Expression in case they are attribute names. Fix this one day.
 
     """
 
