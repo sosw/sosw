@@ -553,6 +553,8 @@ class DynamoDbClient:
 
         logger.debug("Querying dynamo: %s", query_args)
 
+        return query_args
+
 
     def get_by_query(self, keys: Dict, **kwargs) -> list[dict]:
         """

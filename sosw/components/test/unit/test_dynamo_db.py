@@ -234,8 +234,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_get_by_query__between(self):
         keys = {'hash_col': 'cat', 'st_between_range_col': '3', 'en_between_range_col': '6'}
 
-        self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
-
         self.dynamo_client.get_by_query(keys=keys)
         # print(f"Call_args for paginate: {self.paginator_mock.paginate.call_args}")
 
