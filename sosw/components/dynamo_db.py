@@ -568,8 +568,8 @@ class DynamoDbClient:
         response_iterator = paginator.paginate(**query_args)
         result = []
 
-        # if return_count:
-        #     return sum([page['Count'] for page in response_iterator])
+        if kwargs.get('return_count'):
+            return sum([page['Count'] for page in response_iterator])
 
         for page in response_iterator:
             result += [self.dynamo_to_dict(x, fetch_all_fields=kwargs.get('fetch_all_fields')) for x in page['Items']]
