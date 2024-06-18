@@ -411,6 +411,7 @@ class DynamoDbClient:
         logger.debug("dict_to_dynamo result: %s", result)
         return result
 
+
     def _query_constructor(self, keys: Dict,
                            table_name: Optional[str] = None,
                            *,
@@ -424,39 +425,30 @@ class DynamoDbClient:
                            fetch_all_fields: bool = None,
                            expr_attrs_names: list = None,
                            consistent_read: bool = None) -> dict:
-
         """
+        ..  _query_constructor:
+
         Constructs a query to retrieve items from a DynamoDB table based on specified parameters.
+        Can specify an index. If an index is not specified, will query the table.
 
-        Get an item from a table, by some keys. Can specify an index.
-        If an index is not specified, will query the table.
-        IMPORTANT: You must specify the rows you expect to be converted in row mapper in config, otherwise you won't
-        get them in the result.
-        If you want to get items from dynamo by non-key attributes, this method is not for you.
-
-
-        :param dict keys: Keys and values of the items we get.
-            You must specify the hash key, and can optionally also add the range key.
-            Example, in a table where the hash key is 'hk' and the range key is 'rk':
-            * {'hk': 'cat', 'rk': '123'}
-            * {'hk': 'cat'}
+        :param dict keys:   Keys and values to use in query.
+                            You must specify the hash key, and can optionally also add the range key.
 
         Optional
 
         :param str table_name:  Name of the dynamo table. If not specified, will use table_name from the config.
         :param str index_name:  Name of the secondary index in the table. If not specified, will query the table itself.
         :param dict comparisons: Type of comparison for each key. If a key is not mentioned, comparison type will be =.
-            Valid values: `=`, `<`, `<=`, `>`, `>=`, `begins_with`.
+            Valid values: ``=``, ``<``, ``<=``, ``>``, ``>=``, ``begins_with``.
             Comparisons only work for the range key.
-            Example: if keys={'hk': 'cat', 'rk': 100} and comparisons={'rk': '<='} -> will get items where rk <= 100
+            Example: if ``keys={'hk': 'cat', 'rk': 100}`` and ``comparisons={'rk': '<='}`` -> will get items where
+            ``rk <= 100``
 
         :param int max_items:   Limit the number of items to fetch.
         :param str filter_expression:  Supports regular comparisons and `between`. Input must be a regular human string
-            e.g. 'key <= 42', 'name = marta', 'foo between 10 and 20', etc.
-        :param bool strict: DEPRECATED.
-        :param bool return_count: If True, will return the number of items in the result instead of the items themselves
-        :param bool desc:    By default (False) the the values will be sorted ascending by the SortKey.
-                             To reverse the order set the argument `desc = True`.
+            e.g. ``'key <= 42', 'name = marta', 'foo between 10 and 20'``, etc.
+        :param bool desc:    By default, (False) the values will be sorted ascending by the SortKey.
+                             To reverse the order set the argument ``desc=True``.
         :param bool fetch_all_fields: If False, will only get the attributes specified in the row mapper.
                                       If True, will get all attributes. Default is False.
         :param list expr_attrs_names: List of attributes names, in case if an attribute name begins with a number or
@@ -464,12 +456,11 @@ class DynamoDbClient:
             replace that attribute's name in the expression.
             Example, if the list ['session', 'key'] is received, then a new dict will be assigned to
             `ExpressionAttributeNames`:
-            {'#session': 'session', '#key': 'key'}
-        :param bool consistent_read: If True , then the operation uses strongly consistent reads;
+            ``{'#session': 'session', '#key': 'key'}``
+        :param bool consistent_read: If True, then the operation uses strongly consistent reads;
             otherwise, the operation uses eventually consistent reads. Default is False
 
-        :return: List of items from the table, each item in key-value format
-            OR the count if `return_count` is True
+        :return: Query parameters for boto3 Dynamo DB query
         """
 
         if strict is not None:
@@ -559,7 +550,8 @@ class DynamoDbClient:
     def get_by_query(self, keys: Dict, **kwargs) -> List[Dict]:
         """
         Executes a query to the DynamoDB database using the provided keys and additional parameters.
-        See def query_constructor
+
+        For signature description see: query_constructor_
         """
 
         query_args = self._query_constructor(keys=keys, **kwargs)
@@ -585,7 +577,7 @@ class DynamoDbClient:
         Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
         https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
 
-        Supported: regular comparators, between, attribute_[not_]exists
+        Supported: regular comparators, between, attribute_[not\_]exists
 
         :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
         """
