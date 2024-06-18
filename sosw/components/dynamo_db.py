@@ -556,7 +556,7 @@ class DynamoDbClient:
         return query_args
 
 
-    def get_by_query(self, keys: Dict, **kwargs) -> list[dict]:
+    def get_by_query(self, keys: Dict, **kwargs) -> List[Dict]:
         """
         Executes a query to the DynamoDB database using the provided keys and additional parameters.
         See def query_constructor
