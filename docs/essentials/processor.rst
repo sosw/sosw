@@ -5,5 +5,7 @@ Processor
 
 Core class for other components to inherit.
 
-.. automodule:: sosw.app
-   :members:
+..  automodule:: sosw.app
+    :members:
+    :private-members:
+

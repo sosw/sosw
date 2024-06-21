@@ -1,14 +1,18 @@
+import asyncio
 import boto3
 import os
 import unittest
 
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from ..app import Processor
-from ..components.sns import SnsManager
+from ..components.dynamo_db import DynamoDbClient
 from ..components.siblings import SiblingsManager
+from ..components.sns import SnsManager
 
+
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_setup, get_autotest_ddb_name
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
@@ -19,6 +23,19 @@ class app_TestCase(unittest.TestCase):
         'test':            True,
         'siblings_config': {'test': True},
     }
+
+    autotest_ddbm: AutotestDdbManager = None
+
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tables = [autotest_dynamo_db_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setUp(self):
@@ -68,3 +85,34 @@ class app_TestCase(unittest.TestCase):
             'init_clients': ['NotExists', 'Sns']
         }
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
+
+
+    def test_get_ddbc_initialization(self):
+        """
+         Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
+
+         This test verifies that:
+             * `mock_dynamodb_client` is called once with the correct arguments.
+             * The returned client instance is an instance of `DynamoDbClient`.
+         """
+
+        prefix = 'example'
+        config = {
+            'example_dynamo_db_config': {'table_name': get_autotest_ddb_name()},
+        }
+
+        processor = Processor(custom_config=config)
+        self.assertIsNone(getattr(processor, 'example_dynamo_db_client', None))
+
+        client_instance = processor.get_ddbc(prefix)
+
+        self.assertIsInstance(client_instance, DynamoDbClient)
+        self.assertIsInstance(getattr(processor, 'example_dynamo_db_client', None), DynamoDbClient)
+
+        for i in range(3):
+            new_client_instance = processor.get_ddbc(prefix)
+            self.assertEqual(new_client_instance, client_instance)
+
+        self.assertEqual(processor.get_stats()['calls_get_ddbc'], 4)
+
+
