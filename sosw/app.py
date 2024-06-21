@@ -63,6 +63,7 @@ class Processor:
 
     aws_account = None
     aws_region = os.getenv('AWS_REGION', None)
+    ddb_names = None
     lambda_context = None
 
 
@@ -271,12 +272,12 @@ class Processor:
         syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.
 
         :param str prefix: The prefix for the DynamoDB client configuration and naming.
-        :return: The initialized DynamoDB client for the specified prefix.
-        :rtype: DynamoDbClient
         :raises ValueError: If the provided prefix is not supported by the available configuration.
         """
-        self.ddb_names = list([x.split('_dynamo_db_config')[0] for x in
-                               filter(lambda x: x.endswith('_dynamo_db_config'), self.config)])
+        if not self.ddb_names:
+            self.ddb_names = list([x.split('_dynamo_db_config')[0] for x in
+                                   filter(lambda x: x.endswith('_dynamo_db_config'), self.config)])
+
         if prefix not in self.ddb_names:
             raise ValueError(f"get_ddbc() method supports only prefixes: {self.ddb_names}")
 
