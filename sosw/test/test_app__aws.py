@@ -87,7 +87,7 @@ class app_TestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, Processor, custom_config=custom_config)
 
 
-    def test_get_ddbc(self):
+    def test_get_ddbc_initialization(self):
         """
          Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
 

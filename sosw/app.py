@@ -57,6 +57,23 @@ class Processor:
     Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
     You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
     `Worker` class in case you are running functions under `sosw` orchestration.
+
+
+    ``get_ddbc(prefix: str) -> DynamoDbClient:``
+
+    Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.
+
+    This method initializes custom DynamoDB clients based on the provided prefix. If a client with the
+    specified prefix has already been initialized, it returns the existing client. If not, it looks in the
+    Processor config for a prefixed dynamodb config (e.g. for prefix ``project_a`` -> ``project_a_dynamo_db_config``).
+    The dynamo_db client will be initialized as ``self.project_a_dynamo_db_client``.
+
+    This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB
+    syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.
+
+    :param str prefix:  The prefix for the DynamoDB client configuration and naming.
+    :raises ValueError: If the provided prefix is not supported by the available configuration.
+
     """
 
     DEFAULT_CONFIG = {}
@@ -91,7 +108,7 @@ class Processor:
 
     def init_config(self, custom_config: Dict = None):
         """
-        By default, tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        By default, tries to initialize config from ``DEFAULT_CONFIG`` or as an empty dictionary.
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
@@ -271,7 +288,7 @@ class Processor:
         This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB
         syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.
 
-        :param str prefix: The prefix for the DynamoDB client configuration and naming.
+        :param str prefix:  The prefix for the DynamoDB client configuration and naming.
         :raises ValueError: If the provided prefix is not supported by the available configuration.
         """
         if not self.ddb_names:
