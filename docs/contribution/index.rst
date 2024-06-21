@@ -40,7 +40,8 @@ Your PR should be to either ``0_7_33`` or ``0_9_1`` depending on the importance 
 Code formatting
 ---------------
 
-Follow the PEP8_ but both classes and functions are padded with 2 empty lines.
+- follow the PEP8_ with the following details:
+- both classes and functions are padded with 2 empty lines
 
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 

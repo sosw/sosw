@@ -17,8 +17,11 @@ Serverless Orchestrator of Serverless Workers
     :alt: PyPI - License
     :target: https://github.com/sosw/sosw/blob/master/LICENSE
 
-**`sosw`** - a set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
-Essential components of **`sosw`** are implemented as AWS Lambda functions themselves.
+**`sosw`**:
+ - Framework to simplify the design of AWS Lambda functions in Python
+ - Set of tools for orchestrating **asynchronous** invocations of AWS Lambda functions.
+
+Essential components of **`sosw`** orchestration are implemented as AWS Lambda functions themselves.
 
 
 .. note::

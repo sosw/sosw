@@ -62,9 +62,11 @@ __all__ = ['validate_account_to_dashed',
            'is_event_from_sns',
            'unwrap_event_recursively',
            'is_event_from_sqs',
+           'small_int_from_string',
            ]
 
 import datetime
+import hashlib
 import json
 import re
 import uuid
@@ -96,7 +98,7 @@ def validate_account_to_dashed(account):
 
 def validate_account_to_int(account):
     """
-    Validates the the provided string is in valid AdWords account format and converts it to integer format.
+    Validates the provided string is in valid AdWords account format and converts it to integer format.
 
     :param (str, int) account: AdWords Account
     :return:                   Account ID as integer
@@ -347,6 +349,8 @@ def validate_datetime_from_something(d):
                 * float - Epoch or Epoch milliseconds
                 * str (YYYY-MM-DD)
                 * str (YYYY-MM-DD HH:MM:SS)
+                * str(epoch time seconds as string)
+                * str(epoch time seconds (float) as string)
     :return: Transformed `d`
     :rtype: datetime.datetime
     :raises: ValueError
@@ -357,9 +361,10 @@ def validate_datetime_from_something(d):
         (datetime.date, lambda x: datetime.datetime.combine(x, datetime.datetime.min.time())),
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
-        else datetime.datetime.fromtimestamp(x / 1000, tz=timezone.utc)),
-        (str, lambda x: datetime.datetime.strptime(d, '%Y-%m-%d')
-        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))
+        else datetime.datetime.fromtimestamp(x / 1000)),
+        (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
+        (datetime.datetime.strptime(d, '%Y-%m-%d')
+        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
     ]
 
     for mutator in mutators:
@@ -1060,3 +1065,34 @@ def unwrap_event_recursively(event: Dict, sources: Optional[List[str]] = None) -
             break
 
     return messages
+
+
+def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
+    """
+    Generate a small integer based on the input string using its MD5 hash.
+    This value is reproducible, so it could be useful for example if you use it
+    for some kind of partitioning or unsorted batching in order to be able to
+    query based on it later on.
+
+    Examples:
+
+    ..  code-block:: python
+
+        small_int_from_string("hello world")
+        91
+        small_int_from_string("hello world", num_digits=3)
+        291
+
+    :return: The generated small integer.
+    :raises: ValueError: If num_digits is not a positive integer.
+
+      """
+    if not isinstance(num_digits, int) or num_digits <= 0:
+        raise ValueError("Number of digits must be a positive integer.")
+
+    hash_object = hashlib.md5()
+    hash_object.update(input_string.encode())
+    hex_digest = hash_object.hexdigest()
+    int_value = int(hex_digest, 16)
+
+    return int_value % (10 ** num_digits)

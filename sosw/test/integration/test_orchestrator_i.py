@@ -1,6 +1,5 @@
-import boto3
+import asyncio
 import os
-import random
 import unittest
 
 from unittest.mock import MagicMock, patch
@@ -8,16 +7,27 @@ from unittest.mock import MagicMock, patch
 from sosw.orchestrator import Orchestrator
 from sosw.labourer import Labourer
 from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG, TEST_TASK_CLIENT_CONFIG
-from sosw.test.helpers_test import line_count
-
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
-class Scheduler_IntegrationTestCase(unittest.TestCase):
+class Orchestrator_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_ORCHESTRATOR_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
+
+    autotest_ddbm: AutotestDdbManager = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tables = [autotest_dynamo_db_tasks_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setUp(self):
@@ -26,6 +36,8 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         self.get_config_patch.return_value = {}
 
         self.custom_config = self.TEST_CONFIG.copy()
+        self.custom_config['init_clients'] = ['S3', ]
+
         self.orchestrator = Orchestrator(self.custom_config)
         self.orchestrator.task_client.ecology_client = MagicMock()
         self.orchestrator.task_client.ecology_client.get_labourer_status.return_value = 4

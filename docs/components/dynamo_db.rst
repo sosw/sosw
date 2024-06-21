@@ -3,5 +3,6 @@
 DynamoDB Client
 ---------------
 
-.. automodule:: sosw.components.dynamo_db
-   :members:
+..  automodule:: sosw.components.dynamo_db
+    :members:
+    :private-members:

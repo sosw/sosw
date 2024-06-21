@@ -69,18 +69,18 @@ class Processor:
     def __init__(self, custom_config=None, **kwargs):
         """
         Initialize the Processor.
-        Updates the default config with parameters from SSM, then from provided custom config (usually from event).
+        Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.
         """
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        self.lambda_context = kwargs.pop('context', None)
-        if self.lambda_context:
-            logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
-            self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
+        if global_vars.lambda_context:
+            self.aws_account = trim_arn_to_account(getattr(global_vars.lambda_context, 'invoked_function_arn', None))
+            logger.info("Setting self.aws_account from Lambda context to: %s", self.aws_account)
 
         self.init_config(custom_config=custom_config)
-        logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
+        logger.info("Final %s processor config", self.__class__.__name__)
+        logger.info(self.config)
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
@@ -90,11 +90,13 @@ class Processor:
 
     def init_config(self, custom_config: Dict = None):
         """
-        By default tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        By default, tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
-        Overwrite this method if custom logic of recursive updates in configs is required
+        Overwrite this method if custom logic of recursive updates in configs is required.
+
+        ..  note:: Read more about :ref:`Config_Sourse`
 
         :param Dict custom_config: dict with custom configurations
         """
@@ -229,17 +231,15 @@ class Processor:
         """
         Get current AWS Account to construct different ARNs.
 
-        We dont' have this parameter in Environmental variables, only can parse from Context.
-        Context is not global and is supposed to be passed by your `lambda_handler` during initialization.
+        We don't have this parameter in Environmental variables, only can parse from Context. It is stored
+        in ``global_vars`` and is supposed to be passed by your `lambda_handler` during initialization.
 
-        As a fallback we have an autodetection mechanism, but it is pretty heavy (~0.3 seconds).
-        So it is not called by default. This method should be used only if you really need it.
-
-        It is highly recommended to pass the `context` during initialization.
+        As a fallback for cases when we use ``Processor`` not in the Lambda environment, we have a lazy autodetection
+        mechanism using STS, but it is pretty heavy (~0.3 seconds).
 
         Some things to note:
          - We store this value in class variable for fast access
-         - If not yet set on the first call we initialise it.
+         - It uses Lazy initialization.
          - We first try from context and only if not provided - use the autodetection.
         """
 
@@ -292,7 +292,7 @@ class Processor:
         Return statistics of operations performed by current instance of the Class.
 
         Statistics of custom clients existing in the Processor is also aggregated by default.
-        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_client).
+        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_db_client).
         Clients must also have their own get_stats() methods implemented.
 
         Be careful about circular get_stats() calls from child classes.
@@ -316,7 +316,7 @@ class Processor:
                 except Exception:
                     logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
-        return self.stats
+        return dict(self.stats)
 
 
     def reset_stats(self, recursive: bool = True):
@@ -474,8 +474,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
 
     if global_vars is None:
-        logging.error(f"Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
-                      f"initialised in your Lambda function at the root level. Some functionality will break soon.")
+        logger.error("Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
+                     "initialised in your Lambda function at the root level. Some functionality will break soon.")
         global_vars = LambdaGlobals()
 
 
@@ -491,9 +491,10 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         if event.get('logging_level'):
             logger.setLevel(event.get('logging_level'))
 
-        logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
-                    f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
-                    f"event: {event}, context: {context}")
+        logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
+                    os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
+                    __name__, context)
+        logger.info(event)
 
         test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
@@ -504,11 +505,12 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         result = global_vars.processor(event)
 
-        logger.info(f"stats: {global_vars.processor.get_stats()}")
-        global_vars.processor.reset_stats()
-        logger.info(f"result: {result}")
+        logger.info(global_vars.processor.get_stats())
 
+        global_vars.processor.reset_stats()
         global_vars.processor.reset_stats(recursive=True)
+
+        logger.info(result)
 
         return result
 

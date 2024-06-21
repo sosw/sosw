@@ -64,6 +64,8 @@ class task_manager_UnitTestCase(unittest.TestCase):
         self.assertEqual(self.manager.get_db_field_name('some_name'), 'some_name', "Default column name failed")
 
 
+    # Need to patch time in order to avoid accidental failures.
+    @patch('time.time', MagicMock(return_value=455533200.0))
     def test_mark_task_invoked__calls_dynamo(self):
         self.manager.get_labourers = MagicMock(return_value=[self.labourer])
         self.manager.register_labourers()
@@ -94,36 +96,6 @@ class task_manager_UnitTestCase(unittest.TestCase):
         gf = call_kwargs['attributes_to_update']['greenfield']
         self.assertEqual(round(gf, -2), round(time.time() + delta, -2)), "Greenfield was not updated"
 
-
-    # @unittest.skip("This behavior is deprecated")
-    # def test_mark_task_invoked__greenfield_counts_attempts(self):
-    #     self.manager.dynamo_db_client = MagicMock()
-    #
-    #     greenfield = round(time.time() - random.randint(0, 1000))
-    #     delta = self.manager.config['greenfield_invocation_delta']
-    #
-    #     task = {
-    #         self.HASH_KEY[0]:  "task_id_42_256",  # Task ID
-    #         self.RANGE_KEY[0]: 42,  # Worker ID
-    #         'greenfield':      greenfield,
-    #         'attempts':        3
-    #     }
-    #
-    #     # Do the actual tested job
-    #     self.manager.mark_task_invoked(task)
-    #
-    #     # Check the dynamo_client was called with correct payload to update
-    #     self.manager.dynamo_db_client.update.assert_called_once()
-    #
-    #     call_args, call_kwargs = self.manager.dynamo_db_client.update.call_args
-    #
-    #     self.assertEqual(call_args[0],
-    #                      {self.HASH_KEY[0]: "task_id_42_256", self.RANGE_KEY[0]: 42}), "The key of task is missing"
-    #     self.assertEqual(call_kwargs['attributes_to_increment'], {'attempts': 1}), "Attempts counter not increased"
-    #
-    #     gf = call_kwargs['attributes_to_update']['greenfield']
-    #     self.assertEqual(round(gf, -2), round(time.time() + delta * 4, -2),
-    #                      "Greenfield was increased with respect to number of attempts")
 
     def test_invoke_task__validates_task(self):
         self.assertRaises(AttributeError, self.manager.invoke_task, labourer=self.labourer), "Missing task and task_id"

@@ -312,33 +312,35 @@ Resources:
           Value: 'sandbox'
 
 
-  # Configuration Tables
-  SoswConfigDynamoTable:
-    Type: "AWS::DynamoDB::Table"
-    Properties:
-      TableName: "config"
-      AttributeDefinitions:
-        -
-          AttributeName: 'env'
-          AttributeType: 'S'
-        -
-          AttributeName: 'config_name'
-          AttributeType: 'S'
-      KeySchema:
-        -
-          AttributeName: 'env'
-          KeyType: "HASH"
-        -
-          AttributeName: 'config_name'
-          KeyType: "RANGE"
-      ProvisionedThroughput:
-        ReadCapacityUnits: 3
-        WriteCapacityUnits: 1
-
-      Tags:
-        -
-          Key: 'Environment'
-          Value: 'sandbox'
+#  Configuration Table
+# MOVED TO A SEPARATE STACK examples/sam/sosw-ddb-config
+#  SoswConfigDynamoTable:
+#    Type: "AWS::DynamoDB::Table"
+#    DeletionPolicy: Retain
+#    Properties:
+#      TableName: "config"
+#      AttributeDefinitions:
+#        -
+#          AttributeName: 'env'
+#          AttributeType: 'S'
+#        -
+#          AttributeName: 'config_name'
+#          AttributeType: 'S'
+#      KeySchema:
+#        -
+#          AttributeName: 'env'
+#          KeyType: "HASH"
+#        -
+#          AttributeName: 'config_name'
+#          KeyType: "RANGE"
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 3
+#        WriteCapacityUnits: 1
+#
+#      Tags:
+#        -
+#          Key: 'Environment'
+#          Value: 'sandbox'
 
 ## This is a custom policy the Lambdas should use to be able to READ config.
 ## Unfortunately there is now way to create resource-based permissions in DynamoDB.
@@ -433,11 +435,11 @@ Outputs:
     Export:
       Name: "sosw-ddb-tasks"
 
-  SoswConfigDynamoTableName:
-    Description: "Sosw Config Table"
-    Value: !Ref SoswConfigDynamoTable
-    Export:
-      Name: "sosw-ddb-config"
+#  SoswConfigDynamoTableName:
+#    Description: "Sosw Config Table"
+#    Value: !Ref SoswConfigDynamoTable
+#    Export:
+#      Name: "sosw-ddb-config"
 
   SoswClosedTasksDynamoTableName:
       Description: "Sosw Tasks archived table"

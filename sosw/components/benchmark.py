@@ -36,10 +36,20 @@ import time
 def benchmark(fn):
     """
     Decorator that should be used on class methods that you want to benchmark.
-    It will aggregate to `self.stats` of the class timing of decorated functions.
+    It will aggregate to `self.stats` of the Processor class timing of decorated functions.
 
     | `fn` - pointer to class function. Class is not yet initialized.
     | `self` - pointer to class instance. Passed during the call of decorated method.
+
+    Usage example:
+
+    ..  code-block:: python
+
+        class Processor(SoswProcessor):
+
+            @benchmark
+            def make_query_to_db(self):
+                ...
     """
 
 
