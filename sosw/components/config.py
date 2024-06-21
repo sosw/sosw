@@ -132,13 +132,13 @@ class SecretsManager:
         can_paginate = getattr(secretsmanager_client, 'can_paginate')(f)
 
         if can_paginate:
-            logging.debug("SecretsManager.%s can natively paginate", f)
+            logger.debug("SecretsManager.%s can natively paginate", f)
             paginator = secretsmanager_client.get_paginator(f)
             response = paginator.paginate(**kwargs)
             return response
 
         else:
-            logging.debug("SecretsManager.%s can not natively paginate", f)
+            logger.debug("SecretsManager.%s can not natively paginate", f)
             response_list = []
             response = func(**kwargs)
             response_list.append(response)
@@ -187,7 +187,7 @@ class SecretsManager:
                 secret_value = secretsmanager_client.get_secret_value(SecretId=secret['ARN'])
                 secrets_dict[secret['Name']] = secret_value['SecretString']
         else:
-            logging.warning('No credentials found in SecretsManager for %s with %s', filter_type, value)
+            logger.warning('No credentials found in SecretsManager for %s with %s', filter_type, value)
             return secrets_dict
 
         return secrets_dict
