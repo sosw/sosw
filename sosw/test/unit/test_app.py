@@ -215,3 +215,50 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIn('SoswWorkerErrors', kwargs['TopicArn'])
         self.assertEqual(kwargs['Subject'], 'Some Function died')
         self.assertEqual(kwargs['Message'], 'Unknown Failure')
+
+
+    @patch("boto3.client")
+    @patch("sosw.app.DynamoDbClient")
+    def test_get_ddbc(self, mock_dynamodb_client, _):
+        """
+         Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
+
+         This test verifies that:
+             * `mock_dynamodb_client` is called once with the correct arguments.
+             * The returned client instance is an instance of `DynamoDbClient`.
+         """
+
+        prefix = 'example'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        # mock_dynamodb_client.return_value = MagicMock()
+
+        processor = Processor(custom_config=config)
+        client_instance = processor.get_ddbc(prefix)
+
+        mock_dynamodb_client.assert_called_once_with(config['example_dynamo_db_config'])
+        self.assertIsInstance(client_instance, MagicMock)
+
+
+    def test_get_ddbc_invalid_prefix(self):
+        """
+           Tests the `get_ddbc` method of Processor class when an invalid prefix is provided.
+
+           This test verifies that:
+               * A `ValueError` is raised when an invalid prefix is provided.
+               * The error message contains the expected message indicating the supported prefixes.
+           """
+
+        prefix = 'invalid'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        processor = Processor(custom_config=config)
+
+        with self.assertRaises(ValueError) as context:
+            processor.get_ddbc(prefix)
+
+            self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")
