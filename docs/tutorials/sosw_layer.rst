@@ -183,12 +183,14 @@ improving efficiency and ensuring consistency in your deployment process.
 Check that you changed the next line in your ``template.yaml`` from :
 
 ..   code-block:: yaml
+
           Layers:
         - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:1"
 
 to
 
 ..   code-block:: yaml
+
           Layers:
         - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:SOSW_LAYER_PLACEHOLDER"
 
