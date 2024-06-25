@@ -194,6 +194,5 @@ to
           Layers:
         - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:SOSW_LAYER_PLACEHOLDER"
 
-
 **Note:** Ensure to update the layer version in your CloudFormation templates when necessary, especially when introducing changes or fixes to your layer code.
 This ensures that your functions utilize the latest enhancements and improvements provided by the updated layer versions.
