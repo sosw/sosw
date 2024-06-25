@@ -180,5 +180,18 @@ This script intelligently replaces placeholders in your templates with the actua
 automatically use the latest layer versions without manual intervention. This streamlines the management of layer versions across your serverless applications,
 improving efficiency and ensuring consistency in your deployment process.
 
+Check that you changed the next line in your ``template.yaml`` from :
+
+..   code-block:: yaml
+          Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:1"
+
+to
+
+..   code-block:: yaml
+          Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:SOSW_LAYER_PLACEHOLDER"
+
+
 **Note:** Ensure to update the layer version in your CloudFormation templates when necessary, especially when introducing changes or fixes to your layer code.
 This ensures that your functions utilize the latest enhancements and improvements provided by the updated layer versions.
