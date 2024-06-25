@@ -53,7 +53,7 @@ How to start
 
 Create ``deploy.sh`` file by using
 `deploy.sh
-<https://link_to_file.com>`_.
+<https://github.com/sosw/sosw-examples/blob/master/layers/deploy.sh>`_.
 
 ------------------
 How to run
@@ -84,7 +84,7 @@ CloudFormation
 ------------------
 
 To deploy a layer by CloudFormation you will need to create a ``.yaml`` file with `sosw-layer.yaml
-<https://link_to_file.com>`_.
+<https://github.com/sosw/sosw-examples/blob/master/layers/sosw/sosw.yaml>`_.
 
 And after create a stack in AWS CloudFormation.
 To create a stack you run the ``aws cloudformation create-stack`` command.
@@ -107,10 +107,10 @@ To deploy layer with AWS SAM you will simply need to create two files ``samconfi
 which are represented below.
 
 `samconfig.toml
-<https://link_to_file.com>`_
+<https://github.com/sosw/sosw-examples/blob/master/layers/sosw/samconfig.toml>`_
 
 `template.yaml
-<https://link_to_file.com>`_
+<https://github.com/sosw/sosw-examples/blob/master/layers/sosw/template.yaml>`_
 
 After you create these files you can run them just by entering ``sam build && sam deploy`` in your console.
 
@@ -175,7 +175,7 @@ Every layer version is identified by a unique Amazon Resource Name (ARN).
 When adding a layer to the function, you must specify the exact layer version you want to use.
 
 You can use `layers_versions_changer.py
-<https://link_to_file.com>`_ to automate the process of updating layer versions across all CloudFormation and SAM templates in your project.
+<https://github.com/sosw/sosw-examples/blob/master/helpers/sosw_layers_version_changer/layers_versions_changer.py>`_ to automate the process of updating layer versions across all CloudFormation and SAM templates in your project.
 This script intelligently replaces placeholders in your templates with the actual layer version, ensuring that functions within your project
 automatically use the latest layer versions without manual intervention. This streamlines the management of layer versions across your serverless applications,
 improving efficiency and ensuring consistency in your deployment process.
