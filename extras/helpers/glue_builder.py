@@ -1,6 +1,8 @@
 import logging
 
 import boto3
+from sosw.app import Processor as SoswProcessor
+
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -12,36 +14,64 @@ logger = logging.getLogger()
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('boto3').setLevel(logging.WARNING)
 
-session = boto3.Session(region_name='us-east-1')
-glue_client = session.client('glue')
 
-def list_databases() -> list:
-    databases =[]
+class GlueBuilder(SoswProcessor):
+    DEFAULT_CONFIG = {
+        'init_clients': ['glue', 'dynamodb'],
+    }
 
-    paginator = glue_client.get_paginator('get_databases')
-    for page in paginator.paginate():
-        for database in page['DatabaseList']:
-            databases.append(database['Name'])
-            logger.debug(f"Found database: {database['Name']}")
-
-    return databases
+    glue_client: boto3.client = None
+    dynamodb_client: boto3.client = None
 
 
-def list_tables(database: str) -> list:
-    tables = []
+    def list_glue_databases(self) -> list:
+        databases =[]
 
-    table_paginator = glue_client.get_paginator('get_tables')
-    for table_page in table_paginator.paginate(DatabaseName=database):
-        for table in table_page['TableList']:
-            tables.append(table['Name'])
-            logger.debug("Found table: %s in database: %s", table['Name'], database)
+        paginator = self.glue_client.get_paginator('get_databases')
+        for page in paginator.paginate():
+            for database in page['DatabaseList']:
+                databases.append(database['Name'])
+                logger.debug("Found database: %s", database['Name'])
 
-    logger.info("Completed getting all tables from AWS Glue")
-    return tables
+        return databases
+
+
+    def list_glue_tables(self, database: str) -> list:
+        tables = []
+
+        table_paginator = self.glue_client.get_paginator('get_tables')
+        for table_page in table_paginator.paginate(DatabaseName=database):
+            for table in table_page['TableList']:
+                tables.append(table['Name'])
+                logger.debug("Found table: %s in database: %s", table['Name'], database)
+
+        logger.info("Completed getting all tables from AWS Glue")
+        return tables
+
+    def create_crawlers_for_ddbs(self):
+        pass
+
+
+    def get_ddb_tables(self) -> list:
+        result = []
+        response = self.dynamodb_client.list_tables()
+        if 'TableNames' in response:
+            result.extend(response['TableNames'])
+
+        while pagination_token := response.get('LastEvaluatedTableName'):
+            logger.debug("Paginating from token: %s", pagination_token)
+            response = self.dynamodb_client.list_tables(ExclusiveStartTableName=pagination_token)
+            if 'TableNames' in response:
+                result.extend(response['TableNames'])
+        logger.info("Found ddb tables: %s", result)
+        return result
 
 
 if __name__ == '__main__':
     logger.info("Application started")
-    if dbs := list_databases():
+    glue_builder = GlueBuilder()
+    glue_builder.get_ddb_tables()
+
+    if dbs := glue_builder.list_glue_databases():
         for db in dbs:
-            tables = list_tables(db)
+            tables = glue_builder.list_glue_tables(db)
