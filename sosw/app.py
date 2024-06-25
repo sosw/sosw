@@ -93,8 +93,9 @@ class Processor:
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
         if global_vars.lambda_context:
-            self.aws_account = trim_arn_to_account(getattr(global_vars.lambda_context, 'invoked_function_arn', None))
-            logger.info("Setting self.aws_account from Lambda context to: %s", self.aws_account)
+            if invoked_function_arn := getattr(global_vars.lambda_context, 'invoked_function_arn', None):
+                self.aws_account = trim_arn_to_account(invoked_function_arn)
+                logger.info("Setting self.aws_account from Lambda context to: %s", self.aws_account)
 
         self.init_config(custom_config=custom_config)
         logger.info("Final %s processor config", self.__class__.__name__)
