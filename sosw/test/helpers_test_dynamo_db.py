@@ -23,14 +23,14 @@ TEST_DB_SUFFIX = None
 KEYS_OF_TABLES = defaultdict(dict)
 
 DDB_CLIENT_CONFIG = {
-    'row_mapper': {
-        'hash_col': 'S',
+    'row_mapper':      {
+        'hash_col':  'S',
         'range_col': 'M',
         'other_col': 'S',
     },
-    'table_name': None,
+    'table_name':      None,
     'required_fields': ['hash_col', 'range_col'],
-    'key_fields': ['hash_col', 'range_col']
+    'key_fields':      ['hash_col', 'range_col']
 }
 
 BENCHMARK = defaultdict(float)
@@ -273,14 +273,14 @@ def get_table_setup(hash_key: Tuple[str, str], range_key: Optional[Tuple[str, st
                 'AttributeType': hash_key[1]
             }
         ],
-        'TableName': table_name,
-        'KeySchema': [
+        'TableName':            table_name,
+        'KeySchema':            [
             {
                 'AttributeName': hash_key[0],
-                'KeyType': 'HASH'
+                'KeyType':       'HASH'
             },
         ],
-        'BillingMode': 'PAY_PER_REQUEST',
+        'BillingMode':          'PAY_PER_REQUEST',
     }
 
     if range_key:
@@ -316,8 +316,8 @@ def add_gsi(setup: Dict, index_name: str, hash_key: Tuple[str, str], range_key: 
         setup['GlobalSecondaryIndexes'] = []
 
     gsi_setup = {
-        'IndexName': index_name,
-        'KeySchema': [
+        'IndexName':  index_name,
+        'KeySchema':  [
             {'AttributeName': hash_key[0], 'KeyType': 'HASH'},
         ],
         'Projection': {
@@ -470,6 +470,9 @@ autotest_dynamo_db_setup = get_table_setup(hash_key=('hash_col', 'S'), range_key
 autotest_dynamo_db_with_index_setup = add_gsi(setup=autotest_dynamo_db_setup, index_name='autotest_index',
                                               hash_key=('hash_col', 'S'), range_key=('other_col', 'S'))
 
+autotest_dynamo_db_config_setup = get_table_setup(hash_key=('env', 'S'), range_key=('config_name', 'S'),
+                                                  table_name=get_autotest_ddb_name_with_custom_suffix('config'))
+
 autotest_dynamo_db_tasks_draft = get_table_setup(hash_key=('task_id', 'S'),
                                                  table_name=get_autotest_ddb_name() + '_sosw_tasks')
 autotest_dynamo_db_tasks_setup = add_gsi(setup=autotest_dynamo_db_tasks_draft, index_name='sosw_tasks_greenfield',
@@ -488,9 +491,9 @@ autotest_dynamo_db_closed_tasks_setup = add_gsi(setup=autotest_dynamo_db_closed_
 autotest_dynamo_db_retry_tasks_draft = get_table_setup(hash_key=('labourer_id', 'S'), range_key=('task_id', 'S'),
                                                        table_name=get_autotest_ddb_name() + '_sosw_retry_tasks')
 autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_tasks_draft,
-                                                index_name='labourer_id_greenfield',
-                                                hash_key=('labourer_id', 'S'),
-                                                range_key=('desired_launch_time', 'N'))
+                                               index_name='labourer_id_greenfield',
+                                               hash_key=('labourer_id', 'S'),
+                                               range_key=('desired_launch_time', 'N'))
 
 autotest_dynamo_db_config_setup = get_table_setup(hash_key=('env', 'S'), range_key=('config_name', 'S'),
                                                   table_name=get_autotest_ddb_name() + '_config')

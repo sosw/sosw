@@ -131,6 +131,8 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         except Exception:
             pass
 
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
+
 
     def test_get_and_lock_queue_file(self):
         self.put_file(only_remote=True)

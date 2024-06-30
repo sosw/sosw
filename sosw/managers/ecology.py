@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,20 @@ __all__ = ['EcologyManager', 'ECO_STATUSES']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
 import datetime
 import json
-import logging
 import operator
 import os
 import random
@@ -50,9 +60,6 @@ from sosw.components.benchmark import benchmark
 from sosw.components.helpers import make_hash
 from sosw.managers.task import TaskManager
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 ECO_STATUSES = (
     (0, 'Bad'),

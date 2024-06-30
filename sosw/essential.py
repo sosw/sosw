@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,16 +30,22 @@ __all__ = ['Essential']
 __author__ = "Mark Bulgakov"
 __version__ = "1.0"
 
-import logging
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import os
 
 from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 from sosw.managers.meta_handler import MetaHandler
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Essential(Processor):

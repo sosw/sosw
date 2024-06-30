@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -34,12 +34,16 @@ should inherit from). This one is just a set of settings and common methods for 
 __all__ = ['Labourer']
 __author__ = "Nikolay Grishchenko"
 
-import logging
-import time
+try:
+    from aws_lambda_powertools import Logger
 
+    logger = Logger()
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
 
 class Labourer:

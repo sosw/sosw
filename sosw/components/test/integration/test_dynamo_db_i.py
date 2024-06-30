@@ -12,8 +12,10 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.dynamo_db import DynamoDbClient
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_with_index_setup, \
+    get_autotest_ddb_name, safe_put_to_ddb, get_table_setup, get_autotest_ddb_name_with_custom_suffix
+
 from sosw.components.helpers import chunks
-from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_setup, get_autotest_ddb_name, safe_put_to_ddb
 
 
 class DynamodbClientIntegrationTestCase(unittest.TestCase):
@@ -34,24 +36,16 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         },
         'required_fields': ['lambda_name'],
         'table_name':      get_autotest_ddb_name(),
-        'hash_key': 'hash_col'
+        'hash_key':        'hash_col'
     }
 
     autotest_ddbm: AutotestDdbManager = None
 
+
     @classmethod
     def setUpClass(cls) -> None:
-        tables = [autotest_dynamo_db_setup]
+        tables = [autotest_dynamo_db_with_index_setup]
         cls.autotest_ddbm = AutotestDdbManager(tables)
-
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        asyncio.run(cls.autotest_ddbm.drop_ddbs())
-
-
-    def tearDown(self):
-        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     def setUp(self):
@@ -70,33 +64,40 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_boto3_client = boto3.client('dynamodb')
 
 
+    def tearDown(self):
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def test_put(self):
         row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_bool': True,
-               'some_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}}
+               'some_map':    {'a': 1, 'b': 'b1', 'c': {'test': True}}}
 
         self.dynamo_boto3_client.delete_item(TableName=self.table_name,
-                           Key={
-                               self.HASH_COL:  {'S': str(row[self.HASH_COL])},
-                               self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])},
-                           })
+                                             Key={
+                                                 self.HASH_COL:  {'S': str(row[self.HASH_COL])},
+                                                 self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])},
+                                             })
 
         self.dynamo_client.put(row, self.table_name)
 
         result = self.dynamo_boto3_client.scan(TableName=self.table_name,
-                             FilterExpression="hash_col = :hash_col AND range_col = :range_col",
-                             ExpressionAttributeValues={
-                                 ':hash_col':  {'S': row[self.HASH_COL]},
-                                 ':range_col': {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                             }
-                             )
+                                               FilterExpression="hash_col = :hash_col AND range_col = :range_col",
+                                               ExpressionAttributeValues={
+                                                   ':hash_col':  {'S': row[self.HASH_COL]},
+                                                   ':range_col': {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+                                               }
+                                               )
 
         items = result['Items']
 
         self.assertEqual(1, len(items))
 
-        expected = [{'hash_col':  {'S': 'cat'}, 'range_col': {'N': '123'}, 'some_bool': {'BOOL': True},
+        expected = [{'hash_col': {'S': 'cat'}, 'range_col': {'N': '123'}, 'some_bool': {'BOOL': True},
                      'some_map': {'M': {'a': {'N': '1'}, 'b': {'S': 'b1'}, 'c': {'M': {'test': {'BOOL': True}}}}}}]
         self.assertEqual(expected, items)
 
@@ -130,11 +131,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         # First check that the row we are trying to update is PUT correctly.
         initial_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         initial_row = self.dynamo_client.dynamo_to_dict(initial_row)
@@ -146,11 +147,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.update(keys, attributes_to_update, table_name=self.table_name)
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -171,11 +172,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -194,11 +195,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -217,11 +218,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.update(keys, {}, attributes_to_increment=attributes_to_increment, table_name=self.table_name)
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -246,11 +247,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.dynamo_client.update(keys, {}, attributes_to_increment={'some_counter': '3'},
                                   condition_expression='some_col = no', table_name=self.table_name)
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -263,18 +264,19 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         # Should fail because row doesn't exist
         self.assertRaises(self.dynamo_client.dynamo_client.exceptions.ConditionalCheckFailedException,
-                          self.dynamo_client.patch, keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
+                          self.dynamo_client.patch, keys, attributes_to_update={'some_col': 'yes'},
+                          table_name=self.table_name)
 
         # Create the row
         self.dynamo_client.put(row, self.table_name)
         # Should pass because the row exists now
         self.dynamo_client.patch(keys, attributes_to_update={'some_col': 'yes'}, table_name=self.table_name)
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={
-                    self.HASH_COL:  {'S': row[self.HASH_COL]},
-                    self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
-                },
-                TableName=self.table_name,
+            Key={
+                self.HASH_COL:  {'S': row[self.HASH_COL]},
+                self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}
+            },
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -339,8 +341,11 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         keys = {self.HASH_COL: 'cat', self.RANGE_COL: '300'}
         row1 = {self.HASH_COL: 'cat', self.RANGE_COL: 123, 'other_col': 'abc123'}
         row2 = {self.HASH_COL: 'cat', self.RANGE_COL: 456, 'other_col': 'abc123'}
-        self.dynamo_client.put(row1, self.table_name)
-        self.dynamo_client.put(row2, self.table_name)
+
+        safe_put_to_ddb(row1, self.dynamo_client)
+        safe_put_to_ddb(row2, self.dynamo_client)
+        # self.dynamo_client.put(row1, self.table_name)
+        # self.dynamo_client.put(row2, self.table_name)
 
         result = self.dynamo_client.get_by_query(keys=keys, comparisons={self.RANGE_COL: '<='})
 
@@ -408,40 +413,36 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_get_by_query__comparison_begins_with(self):
-        self.HASH_KEY = ('env', 'S')
-        self.RANGE_KEY = ('config_name', 'S')
-        self.KEYS = ('env', 'config_name')
-        config = {
+
+        autotest_dynamo_s_s_db_setup = get_table_setup(hash_key=('hash_col', 'S'), range_key=('range_col', 'S'),
+                                                       table_name=get_autotest_ddb_name_with_custom_suffix('s_s'))
+        asyncio.run(self.autotest_ddbm.create_test_ddb(autotest_dynamo_s_s_db_setup))
+
+        CUSTOM_CONFIG = {
             'row_mapper':      {
-                'env':          'S',
-                'config_name':  'S',
-                'config_value': 'S'
+                'hash_col':      'S',
+                'range_col':     'S',
+                'config_value':     'S',
             },
-            'required_fields': ['env', 'config_name', 'config_value'],
-            'table_name':      self.table_name,
-            'hash_key': self.HASH_COL
+            'required_fields': ['hash_col'],
+            'table_name':      get_autotest_ddb_name_with_custom_suffix('s_s'),
+            'hash_key':        'hash_col'
         }
 
-        self.dynamo_client = DynamoDbClient(config=config)
+        ddbc = DynamoDbClient(CUSTOM_CONFIG)
 
-        row1 = {'env': 'cat', 'config_name': 'testzing', 'config_value': 'abc123'}
-        row2 = {'env': 'cat', 'config_name': 'dont_get_this', 'config_value': 'abc123'}
-        row3 = {'env': 'cat', 'config_name': 'testzer', 'config_value': 'abc124'}
+        safe_put_to_ddb({'hash_col': 'cat', 'range_col': 'dont_get_this', 'config_value': 'abc123'}, ddbc)
+        safe_put_to_ddb({'hash_col': 'cat', 'range_col': 'testzABCD', 'config_value': 'abc123'}, ddbc)
+        safe_put_to_ddb({'hash_col': 'cat', 'range_col': 'testz1234', 'config_value': 'abc124'}, ddbc)
 
-        for row in [row1, row2, row3]:
-            safe_put_to_ddb(row, self.dynamo_client)
-
-        keys = {'env': 'cat', 'config_name': 'testz'}
-        result = self.dynamo_client.get_by_query(
-                keys=keys,
-                table_name=self.table_name,
-                comparisons={'config_name': 'begins_with'}
+        result = ddbc.get_by_query(
+            keys={'hash_col': 'cat', 'range_col': 'testz'},
+            comparisons={'range_col': 'begins_with'}
         )
 
         self.assertEqual(len(result), 2)
 
-        self.assertTrue(row1 in result)
-        self.assertTrue(row3 in result)
+        asyncio.run(self.autotest_ddbm.drop_test_ddb(autotest_dynamo_s_s_db_setup))
 
 
     def test_get_by_query__max_items(self):
@@ -599,8 +600,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_delete(self):
-        self.dynamo_client.put({self.HASH_COL: 'cat1', self.RANGE_COL: 123})
-        self.dynamo_client.put({self.HASH_COL: 'cat2', self.RANGE_COL: 234})
+        safe_put_to_ddb({self.HASH_COL: 'cat1', self.RANGE_COL: 123}, self.dynamo_client)
+        safe_put_to_ddb({self.HASH_COL: 'cat2', self.RANGE_COL: 234}, self.dynamo_client)
 
         self.dynamo_client.delete(keys={self.HASH_COL: 'cat1', self.RANGE_COL: '123'})
 
@@ -617,16 +618,17 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         result2 = self.dynamo_client.get_table_keys(table_name=self.table_name)
         self.assertEqual(result2, ('hash_col', 'range_col'))
 
+
     def test_get_table_indexes(self):
         indexes = self.dynamo_client.get_table_indexes()
         expected = {
             'autotest_index': {
-                'projection_type': 'ALL',
-                'hash_key':        'hash_col',
-                'range_key':       'other_col',
+                'projection_type':        'ALL',
+                'hash_key':               'hash_col',
+                'range_key':              'other_col',
                 'provisioned_throughput': {
-                    'write_capacity': 1,
-                    'read_capacity':  1
+                    'write_capacity': 0,
+                    'read_capacity':  0
                 }
             }
         }
@@ -644,7 +646,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         operations = []
         query_keys = []
         for i in range(num_of_items):
-            item = {self.HASH_COL: f'cat{i%2}', self.RANGE_COL: i}
+            item = {self.HASH_COL: f'cat{i % 2}', self.RANGE_COL: i}
             operations.append({'Put': self.dynamo_client.build_put_query(item)})
             query_keys.append(item)
         for operations_chunk in chunks(operations, 10):
@@ -657,9 +659,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_update__remove_attrs__with_update(self):
-        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
-        attributes_to_update = {'some_col': 'yes', 'new_col':  'yup'}
+        keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+        attributes_to_update = {'some_col': 'yes', 'new_col': 'yup'}
 
         self.dynamo_client.put(row, self.table_name)
 
@@ -667,9 +669,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
                                   attributes_to_remove=['other_col'])
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
-                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
-                TableName=self.table_name,
+            Key={self.HASH_COL:  {'S': row[self.HASH_COL]},
+                 self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -681,8 +683,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_update__remove_attrs__without_update(self):
-        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+        keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
 
         self.dynamo_client.put(row, self.table_name)
 
@@ -690,9 +692,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
                                   attributes_to_remove=['other_col'])
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
-                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
-                TableName=self.table_name,
+            Key={self.HASH_COL:  {'S': row[self.HASH_COL]},
+                 self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)
@@ -703,8 +705,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_patch__remove_attrs__without_update(self):
-        keys = {self.HASH_COL:  'cat', self.RANGE_COL: '123'}
-        row = {self.HASH_COL:  'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
+        keys = {self.HASH_COL: 'cat', self.RANGE_COL: '123'}
+        row = {self.HASH_COL: 'cat', self.RANGE_COL: '123', 'some_col': 'no', 'other_col': 'foo'}
 
         self.dynamo_client.put(row, self.table_name)
 
@@ -712,9 +714,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
                                  attributes_to_remove=['other_col'])
 
         updated_row = self.dynamo_boto3_client.get_item(
-                Key={self.HASH_COL: {'S': row[self.HASH_COL]},
-                     self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
-                TableName=self.table_name,
+            Key={self.HASH_COL:  {'S': row[self.HASH_COL]},
+                 self.RANGE_COL: {self.RANGE_COL_TYPE: str(row[self.RANGE_COL])}},
+            TableName=self.table_name,
         )['Item']
 
         updated_row = self.dynamo_client.dynamo_to_dict(updated_row)

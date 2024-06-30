@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,17 +29,25 @@
 __all__ = ['SiblingsManager']
 __author__ = "Nikolay Grishchenko"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+
 import boto3
 import datetime
 import json
-import logging
 import os
 
 from math import ceil
 from sosw import Processor
-
-
-logger = logging.getLogger()
 
 
 class SiblingsManager(Processor):
@@ -92,17 +100,17 @@ class SiblingsManager(Processor):
         """
 
         response = self.events_client.list_rules()
-        logging.debug(lambda_context.invoked_function_arn)
-        logging.debug(response)
+        logger.debug(lambda_context.invoked_function_arn)
+        logger.debug(response)
 
         for rule in response.get('Rules', []):
             if not rule['State'] == 'ENABLED':
                 continue
 
             targets = self.events_client.list_targets_by_rule(Rule=rule['Name']).get('Targets', [])
-            logging.debug(targets)
+            logger.debug(targets)
             if any(t['Arn'] == lambda_context.invoked_function_arn for t in targets):
-                logger.info(f"Function {lambda_context.invoked_function_arn} has at least one enabled rule: {rule}")
+                logger.info("Function %s has at least one enabled rule: %s", lambda_context.invoked_function_arn, rule)
                 return True
 
         return self.config['auto_spawning']
@@ -140,7 +148,7 @@ class SiblingsManager(Processor):
             logger.error("Can't call siblings because I don't find any enabled CloudWatch Rules for me.")
             return
 
-        logger.info(f"Calling sibling of {name} with payload: {payload}")
+        logger.info("Calling sibling of %s with payload: %s", name, payload)
         self.lambda_client.invoke(FunctionName=name, InvocationType=invocation_type, Payload=payload)
 
 
@@ -187,5 +195,5 @@ class SiblingsManager(Processor):
 
             return ceil(number_of_invocations * (average_duration / (1000 * period)))
         else:
-            logger.info(f"Failed to get data from CW (or no data) for {name}.")
+            logger.info("Failed to get data from CW (or no data) for %s.", name)
             return 0

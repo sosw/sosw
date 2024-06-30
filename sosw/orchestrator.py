@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,17 @@ __all__ = ['Orchestrator']
 __author__ = "Nikolay Grishchenko"
 __version__ = "1.0"
 
-import logging
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import math
 
 from typing import List
@@ -38,10 +48,6 @@ from typing import List
 from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 class Orchestrator(Essential):

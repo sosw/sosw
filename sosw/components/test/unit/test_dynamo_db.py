@@ -94,6 +94,15 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             self.assertDictEqual(expected[key], dynamo_row[key])
 
 
+    def test_dict_to_dynamo__numeric_float(self):
+        dict_row = {'float_number': '1672531200.0', 'number_with_comma': '12345,67', 'number_with_two_dots': '123.45.67'}
+        dynamo_row = self.dynamo_client.dict_to_dynamo(dict_row, strict=False)
+        expected = {'float_number': {'N': '1672531200.0'}, 'number_with_comma': {'S': '12345,67'},
+                    'number_with_two_dots': {'S': '123.45.67'}}
+        for key in expected.keys():
+            self.assertDictEqual(expected[key], dynamo_row[key])
+
+
     def test_dict_to_dynamo_not_strict(self):
         dict_row = {'name': 'cat', 'age': 3, 'other_bool': False, 'other_bool2': 'False',
                     'other_map': {'a': 1, 'b': 'b1', 'c': {'test': True}}, 'some_list': ['x', 'y']}
@@ -225,8 +234,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
     def test_get_by_query__between(self):
         keys = {'hash_col': 'cat', 'st_between_range_col': '3', 'en_between_range_col': '6'}
 
-        self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
-
         self.dynamo_client.get_by_query(keys=keys)
         # print(f"Call_args for paginate: {self.paginator_mock.paginate.call_args}")
 
@@ -238,6 +245,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                       kwargs['KeyConditionExpression'])
 
 
+    @unittest.skip('Deprecated')
     def test_get_by_query__return_count(self):
 
         # Make sure dynamo paginator is mocked.
@@ -332,11 +340,12 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertEqual(result, [{'hash_col': 'b', 'range_col': 10, 'unknown_col': 'not_strict'}])
 
 
+    # @unittest.skip('Functionality deprecated')
     def test_get_by_query__max_items_and_count__raises(self):
         with self.assertRaises(Exception) as e:
-            self.dynamo_client.get_by_query({'hash_col': 'key'}, table_name=self.table_name, max_items=3,
+            self.dynamo_client._query_constructor({'hash_col': 'key'}, table_name=self.table_name, max_items=3,
                                                            return_count=True)
-        expected_msg = "DynamoDbCLient.get_by_query does not support `max_items` and `return_count` together"
+        expected_msg = "DynamoDbCLient.get_by_query does not support ``max_items`` and ``return_count`` together"
         self.assertEqual(e.exception.args[0], expected_msg)
 
 

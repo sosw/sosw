@@ -16,6 +16,11 @@ Resources:
      Properties:
        BucketName: !Sub "${SoswBucketName}-${AWS::AccountId}"
 
+  AutotestSoswBucket:
+     Type: AWS::S3::Bucket
+     Properties:
+       BucketName: !Sub "autotest-${SoswBucketName}-${AWS::AccountId}"
+
 
 Outputs:
   SoswBucket:

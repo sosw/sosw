@@ -17,16 +17,16 @@
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
-- Python 3.6, 3.7, 3.8
+- Python 3.8 | 3.9 | 3.10 | 3.11
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
-See the [Installation Guidelines](https://docs.sosw.app/en/master/installation.html) in the Documentation.
+See the [Installation Guidelines](https://docs.sosw.app/installation.html) in the Documentation.
 
 ## Development
 ### Getting Started
 
-Assuming you have Python 3.6 and `pipenv` installed. Create a new virtual environment: 
+Assuming you have Python 3.7+ and `pipenv` installed. Create a new virtual environment: 
 
 ```bash
 $ pipenv shell
@@ -47,15 +47,16 @@ $ pytest ./sosw/test/suite_unit.py
 
 ### Contribution Guidelines
 
-The latest [Contribution Guidelines](https://docs.sosw.app/en/master/contribution/index.html) with examples are in the documentation.
+The latest [Contribution Guidelines](https://docs.sosw.app/contribution/index.html) with examples are in the documentation.
 
 #### Release cycle
-- We follow both [Semantic Versioning](https://semver.org/) pattern
-  and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where comply
+
+We follow both the [Semantic Versioning](https://semver.org/) pattern and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where they comply. The following are important notes about our release cycle:
+
 - Master branch commits (merges) are automatically packaged and published to PyPI.
-- Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro)
-- Make your pull requests to the closest staging branch (with smallest after release number of either current or next Minor)
-- Make sure your branch is up to date with the branch you are making a PR to
+- Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro).
+- Make your pull requests to the closest staging branch (with smallest after release number of either current or next Minor).
+- Make sure your branch is up to date with the branch you are making a PR to.
 
 Example:
   - Latest released version in PyPI `0.7.31`
@@ -66,9 +67,9 @@ Example:
 Your PR should be to either `0_7_33` or `0_9_1` depending on the importance of changes. 
 
 #### Code formatting
-Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
+Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), with the following specifications:
 - both classes and functions are padded with 2 empty lines
-- dictionaries are value-alligned
+- dictionaries are value-aligned
 
 #### Initialization
 1. Fork the repository: https://github.com/sosw/sosw
@@ -82,7 +83,7 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), but:
 7. Read the Documentation Convention.
 
 #### More
-See more guidelines for contribution [in the docs](https://docs.sosw.app/en/master/contribution/index.html).
+See more guidelines for contribution [in the docs](https://docs.sosw.app/contribution/index.html).
 
 ### Building the docs
 Sphinx is used for building documentation.
@@ -99,7 +100,7 @@ This document has been placed in the public domain.
     sosw - Serverless Orchestrator of Serverless Workers
     
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>:
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>:
         Nikolay Grishchenko
         Sophie Fogel
         Gil Halperin

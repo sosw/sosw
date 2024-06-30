@@ -15,13 +15,13 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
+from sosw.managers.task import TaskManager
+from sosw.labourer import Labourer
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import first_or_none
-from sosw.labourer import Labourer
-from sosw.managers.task import TaskManager
-from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup, \
-    autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup, get_autotest_ddb_name, safe_put_to_ddb
+    autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup, safe_put_to_ddb
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
@@ -32,21 +32,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
+        """
+        Clean the classic autotest table.
+        """
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
+
         tables = [autotest_dynamo_db_tasks_setup, autotest_dynamo_db_closed_tasks_setup,
                   autotest_dynamo_db_retry_tasks_setup]
         cls.autotest_ddbm = AutotestDdbManager(tables)
-
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        asyncio.run(cls.autotest_ddbm.drop_ddbs())
-
-
-    def tearDown(self):
-        self.patcher.stop()
-        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     def setUp(self):
@@ -63,9 +57,9 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.NOW_TIME = 100000
 
-        self.table_name = autotest_dynamo_db_tasks_setup['TableName']
-        self.completed_tasks_table = autotest_dynamo_db_closed_tasks_setup['TableName']
-        self.retry_tasks_table = autotest_dynamo_db_retry_tasks_setup['TableName']
+        self.table_name = self.config['dynamo_db_config']['table_name']
+        self.completed_tasks_table = self.config['sosw_closed_tasks_table']
+        self.retry_tasks_table = self.config['sosw_retry_tasks_table']
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
@@ -74,10 +68,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.labourer = deepcopy(self.LABOURER)
 
 
-    def clean_task_tables(self):
-        clean_dynamo_table(self.table_name, (self.HASH_KEY[0],))
-        clean_dynamo_table(self.completed_tasks_table, ('task_id',))
-        clean_dynamo_table(self.retry_tasks_table, ('labourer_id', 'task_id'))
+    def tearDown(self):
+        self.patcher.stop()
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setup_tasks(self, status='available', mutiple_labourers=False, count_tasks=3):
@@ -92,7 +90,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         MAP = {
             'available': {
                 self.RANGE_KEY[0]:               lambda x: str(worker_id),
-                _('greenfield'):                 lambda x: round(1000 + random.randrange(0, 100000, 1000)),
+                _('greenfield'):                 lambda x: round(10000 + random.randrange(0, 100000, 1000)),
                 _('attempts'):                   lambda x: 0,
                 _('result_uploaded_files'):      lambda x: [{'bucket':      'cnvm',
                                                              's3_key':      'key',
@@ -155,15 +153,13 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
                 print(f"Putting {row} to {table}")
                 output.append(row)
-                self.dynamo_client.put(row, table_name=table)
-                time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+                safe_put_to_ddb(row, self.dynamo_client, table_name=table)
 
         return output
 
 
     def test_get_next_for_labourer(self):
         self.setup_tasks()
-        # time.sleep(5)
 
         result = self.manager.get_next_for_labourer(self.LABOURER, only_ids=True)
         # print(result)
@@ -245,7 +241,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
         self.setup_tasks(status='invoked')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_invoked_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -255,7 +250,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.setup_tasks(status='available')
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_running_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -264,7 +258,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         self.setup_tasks(status='running')
         self.setup_tasks(status='expired')
-        time.sleep(0.3)
         self.assertEqual(len(self.manager.get_expired_tasks_for_labourer(self.LABOURER)), 3)
 
 
@@ -441,7 +434,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
 
 
-    @unittest.skip("This funciton moved to Scavenger")
+    @unittest.skip("This function moved to Scavenger")
     @patch.object(boto3, '__version__', return_value='1.9.53')
     def test_retry_tasks__old_boto(self, n):
         self.test_retry_tasks()
@@ -461,8 +454,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             if gf > max_gf:
                 max_gf = gf
             row = {'labourer_id': f"{labourer.id}", 'task_id': f"task-{i}", 'greenfield': gf}
-            self.dynamo_client.put(row)
-            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+            safe_put_to_ddb(row, self.dynamo_client)
 
         result = self.manager.get_oldest_greenfield_for_labourer(labourer)
         self.assertEqual(min_gf, result)
@@ -478,8 +470,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         for i in range(num_of_tasks):
             row = {'labourer_id': f"some_lambda", 'task_id': f"task-{i}", 'greenfield': i}
-            self.dynamo_client.put(row)
-            time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
+            safe_put_to_ddb(row, self.dynamo_client)
 
         queue_len = self.manager.get_length_of_queue_for_labourer(labourer)
 
@@ -508,6 +499,5 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     def test_get_task_by_id__check_return_task_with_all_attrs(self):
         tasks = self.setup_tasks()
-        time.sleep(0.3)
         result = self.manager.get_task_by_id(tasks[0]['task_id'])
         self.assertEqual(result, tasks[0])

@@ -2,7 +2,6 @@ import boto3
 import os
 import unittest
 
-from unittest import mock
 from unittest.mock import MagicMock, patch
 
 os.environ["STAGE"] = "test"
@@ -26,27 +25,36 @@ class app_UnitTestCase(unittest.TestCase):
     def setUp(self):
         pass
 
-
     def tearDown(self):
         try:
             del (os.environ['AWS_LAMBDA_FUNCTION_NAME'])
         except Exception:
             pass
 
+        # global_vars.processor is a property that refers to another global. So we have to reset it explicitly.
+        # And at the same time we don't want to reset it during reinitialization in the working environment
+        global _processor, global_vars
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
 
-    @mock.patch("boto3.client")
+
+    @patch("boto3.client")
     def test_app_init(self, mock_boto_client):
         Processor(custom_config=self.TEST_CONFIG)
         self.assertTrue(True)
 
 
-    # Behaviour is deprecated.
-    # @mock.patch("boto3.client")
-    # def test_app_init__fails_without_custom_config(self, mock_boto_client):
-    #     self.assertRaises(RuntimeError, Processor)
-    #
+    @patch("boto3.client")
+    def test_app__pre_call__reset_stats(self, _):
+        processor = Processor(custom_config=self.TEST_CONFIG)
+        processor.__call__(event={'k': 'success'})
+        self.assertEqual(processor.stats['processor_calls'], 1)
+        processor.__pre_call__()
+        self.assertNotIn('processor_calls', processor.stats)
+        self.assertEqual(processor.stats['total_processor_calls'], 1)
 
-    @mock.patch("boto3.client")
+
+    @patch("boto3.client")
     def test_app_init__with_some_clients(self, mock_boto_client):
         custom_config = {
             'init_clients': ['Sns', 'Siblings'],
@@ -61,7 +69,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIsNotNone(getattr(processor, 'siblings_client'))
 
 
-    @mock.patch("boto3.client")
+    @patch("boto3.client")
     def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
         custom_config = {
             'init_clients': ['dynamodb', 'Siblings'],
@@ -78,7 +86,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
 
 
-    @mock.patch("boto3.client")
+    @patch("boto3.client")
     def test_app_init__with_some_invalid_client(self, mock_boto_client):
         custom_config = {
             'init_clients': ['NotExists']
@@ -87,7 +95,7 @@ class app_UnitTestCase(unittest.TestCase):
         mock_boto_client.assert_called_with('not_exists')
 
 
-    @mock.patch("sosw.app.get_config")
+    @patch("sosw.app.get_config")
     def test_app_calls_get_config(self, mock_ssm):
 
         mock_ssm.return_value = {'mock': 'called'}
@@ -109,6 +117,9 @@ class app_UnitTestCase(unittest.TestCase):
 
     def test_lambda_handler(self):
 
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+
         global_vars = LambdaGlobals()
         self.assertIsNone(global_vars.processor)
         self.assertIsNone(global_vars.lambda_context)
@@ -117,25 +128,53 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIsNotNone(lambda_handler)
 
         for i in range(3):
-            result = lambda_handler(event={'k': 'success'}, context={'context': 'test'})
+            result = lambda_handler(event={'k': 'success'}, context=mock_context)
             self.assertEqual(type(global_vars.processor), self.Child)
-            self.assertEqual(global_vars.lambda_context, {'context': 'test'})
+            self.assertEqual(global_vars.lambda_context, mock_context)
             self.assertEqual(result, 'success')
             self.assertEqual(global_vars.processor.stats['total_processor_calls'], i + 1)
             self.assertEqual(global_vars.processor.stats['total_calls_register_clients'], 1)
 
 
-    @mock.patch("boto3.client")
+    def test_property_account__initialized_from_context(self):
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789000:function:example:42'
+
+        self.assertIsNone(global_vars.lambda_context)
+
+        lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
+        lambda_handler(event={'k': 'success'}, context=mock_context)
+
+        self.assertEqual('123456789000', global_vars.processor._account)
+
+
+    @patch("boto3.client")
+    def test_property_account__initialized_from_sts(self, boto_client_mock):
+
+        get_caller_identity_mock = MagicMock()
+        get_caller_identity_mock.get.return_value='001234567890'
+
+        client_mock = MagicMock()
+        client_mock.get_caller_identity.return_value = get_caller_identity_mock
+
+        boto_client_mock.return_value = client_mock
+
+        p = Processor()
+        self.assertEqual('001234567890', p._account)
+        get_caller_identity_mock.get.assert_called_once_with('Account')
+
+
+    @patch("boto3.client")
     @patch.object(logger, 'setLevel')
     def test_lambda_handler__logger_level(self, logger_set_level, client_mock):
         global_vars = LambdaGlobals()
         lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
         event = {'k': 'm', 'logging_level': 20}
-        lambda_handler(event=event, context={'context': 'test'})
+        lambda_handler(event=event, context=None)
         logger_set_level.assert_called_once_with(20)
 
 
-    @mock.patch("boto3.client")
+    @patch("boto3.client")
     def test_die(self, mock_boto):
 
         p = Processor(custom_config=self.TEST_CONFIG)
@@ -144,7 +183,7 @@ class app_UnitTestCase(unittest.TestCase):
             p.die()
 
 
-    @mock.patch("boto3.client")
+    @patch("boto3.client")
     def test_die__uncatchable_death(self, mock_boto):
 
         class Child(Processor):
@@ -160,7 +199,7 @@ class app_UnitTestCase(unittest.TestCase):
             p.catch_me()
 
 
-    @mock.patch("boto3.client")
+    @patch("boto3.client")
     def test_die__calls_sns(self, mock_boto):
 
         mock_boto_client = MagicMock()
@@ -176,3 +215,50 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIn('SoswWorkerErrors', kwargs['TopicArn'])
         self.assertEqual(kwargs['Subject'], 'Some Function died')
         self.assertEqual(kwargs['Message'], 'Unknown Failure')
+
+
+    @patch("boto3.client")
+    @patch("sosw.app.DynamoDbClient")
+    def test_get_ddbc(self, mock_dynamodb_client, _):
+        """
+         Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
+
+         This test verifies that:
+             * `mock_dynamodb_client` is called once with the correct arguments.
+             * The returned client instance is an instance of `DynamoDbClient`.
+         """
+
+        prefix = 'example'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        # mock_dynamodb_client.return_value = MagicMock()
+
+        processor = Processor(custom_config=config)
+        client_instance = processor.get_ddbc(prefix)
+
+        mock_dynamodb_client.assert_called_once_with(config['example_dynamo_db_config'])
+        self.assertIsInstance(client_instance, MagicMock)
+
+
+    def test_get_ddbc_invalid_prefix(self):
+        """
+           Tests the `get_ddbc` method of Processor class when an invalid prefix is provided.
+
+           This test verifies that:
+               * A `ValueError` is raised when an invalid prefix is provided.
+               * The error message contains the expected message indicating the supported prefixes.
+           """
+
+        prefix = 'invalid'
+        config = {
+            'example_dynamo_db_config': {'table_name': 'example_table'},
+        }
+
+        processor = Processor(custom_config=config)
+
+        with self.assertRaises(ValueError) as context:
+            processor.get_ddbc(prefix)
+
+            self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")

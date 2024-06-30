@@ -4,10 +4,10 @@
 Tutorials
 =========
 
-.. toctree::
-   :titlesonly:
-   :caption: Sample functions:
+..  toctree::
+    :titlesonly:
+    :caption: Sample functions:
 
-   sosw_tutorial_pull_tweeter_hashtags
-
-   cleanup
+    sosw_tutorial_pull_tweeter_hashtags
+    sosw_layer
+    cleanup

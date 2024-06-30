@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,20 @@ import time
 def benchmark(fn):
     """
     Decorator that should be used on class methods that you want to benchmark.
-    It will aggregate to `self.stats` of the class timing of decorated functions.
+    It will aggregate to `self.stats` of the Processor class timing of decorated functions.
 
     | `fn` - pointer to class function. Class is not yet initialized.
     | `self` - pointer to class instance. Passed during the call of decorated method.
+
+    Usage example:
+
+    ..  code-block:: python
+
+        class Processor(SoswProcessor):
+
+            @benchmark
+            def make_query_to_db(self):
+                ...
     """
 
 

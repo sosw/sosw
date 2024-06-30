@@ -5,7 +5,7 @@
     sosw - Serverless Orchestrator of Serverless Workers
 
     The MIT License (MIT)
-    Copyright (C) 2022  sosw core contributors <info@sosw.app>
+    Copyright (C) 2024  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,20 +29,27 @@
 __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
 import boto3
-import logging
 import os
 
 from collections import defaultdict
 from importlib import import_module
 from typing import Dict
-
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
-
-
-logger = logging.getLogger()
+from sosw.components.dynamo_db import DynamoDbClient
 
 
 class Processor:
@@ -50,30 +57,49 @@ class Processor:
     Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
     You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
     `Worker` class in case you are running functions under `sosw` orchestration.
+
+
+    ``get_ddbc(prefix: str) -> DynamoDbClient:``
+
+    Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.
+
+    This method initializes custom DynamoDB clients based on the provided prefix. If a client with the
+    specified prefix has already been initialized, it returns the existing client. If not, it looks in the
+    Processor config for a prefixed dynamodb config (e.g. for prefix ``project_a`` -> ``project_a_dynamo_db_config``).
+    The dynamo_db client will be initialized as ``self.project_a_dynamo_db_client``.
+
+    This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB
+    syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.
+
+    :param str prefix:  The prefix for the DynamoDB client configuration and naming.
+    :raises ValueError: If the provided prefix is not supported by the available configuration.
+
     """
 
     DEFAULT_CONFIG = {}
 
     aws_account = None
     aws_region = os.getenv('AWS_REGION', None)
+    ddb_names = None
     lambda_context = None
 
 
     def __init__(self, custom_config=None, **kwargs):
         """
         Initialize the Processor.
-        Updates the default config with parameters from SSM, then from provided custom config (usually from event).
+        Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.
         """
 
         self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
-        self.lambda_context = kwargs.pop('context', None)
-        if self.lambda_context:
-            logger.warning("DEPRECATED: Processor.lambda_context is deprecated. Use global_vars.lambda_context instead")
-            self.aws_account = trim_arn_to_account(self.lambda_context.invoked_function_arn)
+        if global_vars.lambda_context:
+            if invoked_function_arn := getattr(global_vars.lambda_context, 'invoked_function_arn', None):
+                self.aws_account = trim_arn_to_account(invoked_function_arn)
+                logger.info("Setting self.aws_account from Lambda context to: %s", self.aws_account)
 
         self.init_config(custom_config=custom_config)
-        logger.info(f"Final {self.__class__.__name__} processor config: {self.config}")
+        logger.info("Final %s processor config", self.__class__.__name__)
+        logger.info(self.config)
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
@@ -83,11 +109,13 @@ class Processor:
 
     def init_config(self, custom_config: Dict = None):
         """
-        By default tries to initialize config from DEFAULT_CONFIG or as an empty dictionary.
+        By default, tries to initialize config from ``DEFAULT_CONFIG`` or as an empty dictionary.
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
-        Overwrite this method if custom logic of recursive updates in configs is required
+        Overwrite this method if custom logic of recursive updates in configs is required.
+
+        ..  note:: Read more about :ref:`Config_Sourse`
 
         :param Dict custom_config: dict with custom configurations
         """
@@ -176,16 +204,33 @@ class Processor:
                                    f"Tried suffixes for class: {client_suffixes}")
 
 
-    def __call__(self, event):
+    def __call__(self, event, reset_result: bool = True):
         """
         Call the Processor.
         You can either call super() at the end of your child function or completely overwrite this function.
+
+        :param reset_result: Whether to reset the result after the processor call. Defaults to True.
         """
 
         # Update the stats for number of calls.
-        # Makes sense for Processors initialized outside the scope of `lambda_handler`.
         self.stats['processor_calls'] += 1
+        if reset_result:
+            self.result = defaultdict(int)
+
+
+    def __pre_call__(self, recursive: bool = True):
+        """
+        Reset the result of the processor.
+        Cleans statistics other than specified for the lifetime of processor.
+        Makes sense for Processors initialized outside the scope of `lambda_handler`.
+        Call this before actually calling the processor.
+
+        Be careful about circular get_stats() calls from child classes.
+        If required overwrite get_stats() with recursive = False.
+        :param recursive:   Merge stats from self.***_client.
+        """
         self.result = defaultdict(int)
+        self.reset_stats(recursive)
 
 
     @staticmethod
@@ -205,17 +250,15 @@ class Processor:
         """
         Get current AWS Account to construct different ARNs.
 
-        We dont' have this parameter in Environmental variables, only can parse from Context.
-        Context is not global and is supposed to be passed by your `lambda_handler` during initialization.
+        We don't have this parameter in Environmental variables, only can parse from Context. It is stored
+        in ``global_vars`` and is supposed to be passed by your `lambda_handler` during initialization.
 
-        As a fallback we have an autodetection mechanism, but it is pretty heavy (~0.3 seconds).
-        So it is not called by default. This method should be used only if you really need it.
-
-        It is highly recommended to pass the `context` during initialization.
+        As a fallback for cases when we use ``Processor`` not in the Lambda environment, we have a lazy autodetection
+        mechanism using STS, but it is pretty heavy (~0.3 seconds).
 
         Some things to note:
          - We store this value in class variable for fast access
-         - If not yet set on the first call we initialise it.
+         - It uses Lazy initialization.
          - We first try from context and only if not provided - use the autodetection.
         """
 
@@ -233,12 +276,42 @@ class Processor:
         return self.aws_region
 
 
+    @benchmark
+    def get_ddbc(self, prefix: str) -> DynamoDbClient:
+        """
+        Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.
+
+        This method initializes custom DynamoDB clients based on the provided prefix. If a client with the
+        specified prefix has already been initialized, it returns the existing client. If not, it looks in the
+        Processor config for a prefixed dynamodb config (e.g. for prefix ``project_a`` -> ``project_a_dynamo_db_config``).
+        The dynamo_db client will be initialized as ``self.project_a_dynamo_db_client``.
+
+        This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB
+        syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.
+
+        :param str prefix:  The prefix for the DynamoDB client configuration and naming.
+        :raises ValueError: If the provided prefix is not supported by the available configuration.
+        """
+        if not self.ddb_names:
+            self.ddb_names = list([x.split('_dynamo_db_config')[0] for x in
+                                   filter(lambda x: x.endswith('_dynamo_db_config'), self.config)])
+
+        if prefix not in self.ddb_names:
+            raise ValueError(f"get_ddbc() method supports only prefixes: {self.ddb_names}")
+
+        name = f"{prefix}_dynamo_db_client"
+        if not hasattr(self, name):
+            setattr(self, name, DynamoDbClient(self.config[f'{prefix}_dynamo_db_config']))
+
+        return getattr(self, name)
+
+
     def get_stats(self, recursive: bool = True):
         """
         Return statistics of operations performed by current instance of the Class.
 
         Statistics of custom clients existing in the Processor is also aggregated by default.
-        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_client).
+        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_db_client).
         Clients must also have their own get_stats() methods implemented.
 
         Be careful about circular get_stats() calls from child classes.
@@ -262,7 +335,7 @@ class Processor:
                 except Exception:
                     logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
 
-        return self.stats
+        return dict(self.stats)
 
 
     def reset_stats(self, recursive: bool = True):
@@ -420,8 +493,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
 
     if global_vars is None:
-        logging.error(f"Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
-                      f"initialised in your Lambda function at the root level. Some functionality will break soon.")
+        logger.error("Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, "
+                     "initialised in your Lambda function at the root level. Some functionality will break soon.")
         global_vars = LambdaGlobals()
 
 
@@ -437,9 +510,10 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         if event.get('logging_level'):
             logger.setLevel(event.get('logging_level'))
 
-        logger.info(f"Called {os.environ.get('AWS_LAMBDA_FUNCTION_NAME')} lambda of "
-                    f"version {os.environ.get('AWS_LAMBDA_FUNCTION_VERSION')} with __name__: {__name__},"
-                    f"event: {event}, context: {context}")
+        logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
+                    os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
+                    __name__, context)
+        logger.info(event)
 
         test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
@@ -450,11 +524,12 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         result = global_vars.processor(event)
 
-        logger.info(f"stats: {global_vars.processor.get_stats()}")
-        global_vars.processor.reset_stats()
-        logger.info(f"result: {result}")
+        logger.info(global_vars.processor.get_stats())
 
+        global_vars.processor.reset_stats()
         global_vars.processor.reset_stats(recursive=True)
+
+        logger.info(result)
 
         return result
 
