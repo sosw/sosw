@@ -91,7 +91,6 @@ import os
 
 from sosw.components.helpers import chunks
 from sosw.components.dynamo_db import DynamoDbClient
-from sosw.test.helpers_test_dynamo_db import get_autotest_ddb_name_with_custom_suffix
 
 
 class SecretsManager:
@@ -498,10 +497,6 @@ class DynamoConfig:
     def _get_dynamo_client(self):
         if self.dynamo_client is None and not self.no_ddb_access:
             dynamo_config = self.config.get('dynamo_client_config')
-
-            # FIXME Consider deprecating this. Used only for safety, but hardcoding is bad.
-            if self.test:
-                dynamo_config['table_name'] = get_autotest_ddb_name_with_custom_suffix('config')
 
             try:
                 self.dynamo_client = DynamoDbClient(dynamo_config)
