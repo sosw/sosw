@@ -1,3 +1,4 @@
+import json
 import logging
 
 import boto3
@@ -54,11 +55,53 @@ class GlueBuilder(SoswProcessor):
     def create_role_for_crawler(self, name: str) -> str:
         arn = ''
 
-        self.iam_client.create_role()
+        logger.info("Creating assume role policy document")
+        assume_role_policy_document = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "glue.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        })
 
-        self.iam_client.attach_role_policy()
+        logger.info(f"Creating IAM role: {name}")
+        response = self.iam_client.create_role(
+            RoleName=name,
+            AssumeRolePolicyDocument=assume_role_policy_document,
+            Path='/',
+        )
+        arn = response['Role']['Arn']
+        logger.info(f"IAM role created with ARN: {arn}")
 
-        self.iam_client.put_role_policy()
+        logger.info(f"Attaching AWSGlueServiceRole policy to role: {name}")
+        self.iam_client.attach_role_policy(
+            RoleName=name,
+            PolicyArn='arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole',
+        )
+
+        inline_policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "dynamodb:*",
+                    "Resource": "arn:aws:dynamodb:*:*:table/*"
+                }
+            ]
+        }
+
+        logger.info(f"Putting inline policy to role: {name}")
+        self.iam_client.put_role_policy(
+            RoleName=name,
+            PolicyName=f'{name}_inline_policy',
+            PolicyDocument=json.dumps(inline_policy_document)
+        )
+        logger.info("Inline policy added successfully")
 
         return arn
 
@@ -98,7 +141,6 @@ class GlueBuilder(SoswProcessor):
                 result.extend(response['CrawlerNames'])
         logger.info("Found crawlers: %s", result)
         return result
-
 
 
     def create_crawlers_for_ddbs(self):
