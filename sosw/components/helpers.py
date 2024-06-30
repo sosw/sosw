@@ -54,6 +54,7 @@ __all__ = ['validate_account_to_dashed',
            'validate_list_of_words_from_csv_or_list',
            'first_or_none',
            'recursive_update',
+           'recursive_insert',
            'trim_arn_to_name',
            'trim_arn_to_account',
            'make_hash',
@@ -843,6 +844,40 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
             new[k] = v
 
     return new
+
+
+def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
+    """
+    Insert the ``value`` to the input dictionary ``d`` nested according to the ``path``.
+
+    By default, the separator is ``.``, but can be changed in the ``separator`` argument.
+    Returns the input ``d`` with modifications applied.
+
+    Example:
+
+    ..  code-block: python
+
+            d = {'a': {'b': {'z': 42}}}
+            result = recursive_insert(d, 'a.b.ccc.ddd', 123)
+
+            # Result
+            {'a': {'b': {'z': 42, 'ccc': {'ddd': 123}}}}
+    """
+
+    result = deepcopy(d) or {}
+    parts = path.split(separator, 1)
+    if not any(parts):
+        raise ValueError(f"Path is invalid. Should be separated with '{separator}', but received: {path}")
+
+    prefix, key = parts[0], parts[1]
+    if prefix not in result:
+        result[prefix] = {}
+    if separator in key:
+        result[prefix] = recursive_insert(result[prefix], key, value, separator)
+    else:
+        result[prefix][key] = value
+
+    return result
 
 
 def trim_arn_to_name(arn: str) -> str:

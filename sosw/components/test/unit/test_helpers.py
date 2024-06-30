@@ -562,6 +562,10 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIn({'a': '42', 'b': '42'}, r['a'])
 
 
+    def test_recursive_insert(self):
+        pass
+
+
     def test_dunder_to_dict(self):
         TESTS = [
             ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
