@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 import csv
 import logging
@@ -5,9 +6,9 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.dynamo_db import DynamoDbClient
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_config_setup, safe_put_to_ddb
 from sosw.components.config import SSMConfig, DynamoConfig, ConfigSource
-
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -15,6 +16,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
+@unittest.skip("Not used in favour of DynamoDB version. Disabled to avoid throttling problems")
 class SsmTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -42,26 +44,40 @@ class DynamoConfigTestCase(unittest.TestCase):
             'config_value': 'S'
         },
         'required_fields': ['env', 'config_name', 'config_value'],
-        'table_name':      'autotest_config_component'
+        'table_name':      autotest_dynamo_db_config_setup['TableName'],
     }
+
+    autotest_ddbm: AutotestDdbManager = None
+
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        tables = [autotest_dynamo_db_config_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
 
 
     def setUp(self):
         config = self.TEST_CONFIG.copy()
         self.dynamo_client = DynamoDbClient(config)
-        self.dynamo_config = DynamoConfig(test=True)
+        self.dynamo_config = DynamoConfig(test=True, config={
+            'dynamo_client_config': {'table_name': autotest_dynamo_db_config_setup['TableName']}})
 
 
     def tearDown(self):
-        clean_dynamo_table('autotest_config_component', keys=('env', 'config_name'))
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     @unittest.skip("TODO need normal patching")
     def test_get_config__json(self):
         row = {'env': 'production', 'config_name': 'sophie_test', 'config_value': '{"a": 1}'}
-        self.dynamo_client.put(row)
+        safe_put_to_ddb(row, self.dynamo_client)
 
-        config = self.dynamo_config.get_config('sophie_test', "production")
+        config = self.dynamo_config.get_config('sophie_test', 'production')
 
         self.assertEqual(config, {'a': 1})
 
@@ -92,7 +108,7 @@ class DynamoConfigTestCase(unittest.TestCase):
         ]
 
         for row in SAMPLES:
-            self.dynamo_client.put(row)
+            safe_put_to_ddb(row, self.dynamo_client)
 
         result = self.dynamo_config.get_credentials_by_prefix('testing')
 

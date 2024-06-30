@@ -32,7 +32,7 @@ class Scheduler_IntegrationTestCase(unittest.TestCase):
         cls.TEST_CONFIG['init_clients'] = ['S3', ]
 
         cls.AWS_ACCOUNT = boto3.client('sts').get_caller_identity().get('Account')
-        cls.BUCKET_NAME = f'autotest-{cls.AWS_ACCOUNT}'
+        cls.BUCKET_NAME = f'autotest-sosw-s3-{cls.AWS_ACCOUNT}'
         cls.clean_bucket(cls.BUCKET_NAME)
         tables = [autotest_dynamo_db_tasks_setup]
         cls.autotest_ddbm = AutotestDdbManager(tables)

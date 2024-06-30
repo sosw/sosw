@@ -398,8 +398,8 @@ class DynamoConfig:
         if self.dynamo_client is None:
             dynamo_config = self.config.get('dynamo_client_config')
 
-            if self.test:
-                dynamo_config['table_name'] = 'autotest_config_component'
+            if self.test and not dynamo_config.get('table_name', '').startswith('autotest'):
+                dynamo_config['table_name'] = 'autotest_config'
 
             self.dynamo_client = DynamoDbClient(dynamo_config)
 

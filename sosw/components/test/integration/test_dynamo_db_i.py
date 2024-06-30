@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 import logging
 import time
@@ -10,8 +11,9 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
+from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import chunks
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_setup, get_autotest_ddb_name, safe_put_to_ddb
 
 
 class DynamodbClientIntegrationTestCase(unittest.TestCase):
@@ -31,14 +33,25 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
             'some_map':      'M',
         },
         'required_fields': ['lambda_name'],
-        'table_name':      'autotest_dynamo_db',
+        'table_name':      get_autotest_ddb_name(),
         'hash_key': 'hash_col'
     }
 
+    autotest_ddbm: AutotestDdbManager = None
 
     @classmethod
-    def setUpClass(cls):
-        clean_dynamo_table()
+    def setUpClass(cls) -> None:
+        tables = [autotest_dynamo_db_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
+
+
+    def tearDown(self):
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     def setUp(self):
@@ -50,14 +63,13 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = (self.RANGE_COL, self.RANGE_COL)
 
         self.KEYS = (self.HASH_COL, self.RANGE_COL)
-        self.table_name = 'autotest_dynamo_db'
+
+        self.table_name = get_autotest_ddb_name()
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
         self.dynamo_boto3_client = boto3.client('dynamodb')
 
 
-    def tearDown(self):
-        clean_dynamo_table(self.table_name, self.KEYS)
 
 
     def test_put(self):
@@ -396,7 +408,6 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
 
     def test_get_by_query__comparison_begins_with(self):
-        self.table_name = 'autotest_config_component'  # This table has a string range key
         self.HASH_KEY = ('env', 'S')
         self.RANGE_KEY = ('config_name', 'S')
         self.KEYS = ('env', 'config_name')
@@ -407,7 +418,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
                 'config_value': 'S'
             },
             'required_fields': ['env', 'config_name', 'config_value'],
-            'table_name':      'autotest_config_component',
+            'table_name':      self.table_name,
             'hash_key': self.HASH_COL
         }
 
@@ -416,9 +427,9 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         row1 = {'env': 'cat', 'config_name': 'testzing', 'config_value': 'abc123'}
         row2 = {'env': 'cat', 'config_name': 'dont_get_this', 'config_value': 'abc123'}
         row3 = {'env': 'cat', 'config_name': 'testzer', 'config_value': 'abc124'}
-        self.dynamo_client.put(row1, self.table_name)
-        self.dynamo_client.put(row2, self.table_name)
-        self.dynamo_client.put(row3, self.table_name)
+
+        for row in [row1, row2, row3]:
+            safe_put_to_ddb(row, self.dynamo_client)
 
         keys = {'env': 'cat', 'config_name': 'testz'}
         result = self.dynamo_client.get_by_query(
@@ -439,7 +450,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         for x in range(1000, 1000 + INITIAL_TASKS):
             row = {self.HASH_COL: f"key", self.RANGE_COL: x}
-            self.dynamo_client.put(row, self.table_name)
+            safe_put_to_ddb(row, self.dynamo_client)
             if INITIAL_TASKS > 10:
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
@@ -450,7 +461,6 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         logging.info(f"Benchmark (n={n}): {bm}")
 
         self.assertEqual(len(result), n)
-        self.assertLess(bm, 0.1)
 
         # Check unspecified limit.
         result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name)

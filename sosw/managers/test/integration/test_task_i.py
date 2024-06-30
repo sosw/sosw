@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 import logging
 import os
@@ -9,30 +10,43 @@ import uuid
 from copy import deepcopy
 from unittest.mock import Mock, MagicMock, patch
 
-
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.managers.task import TaskManager
-from sosw.labourer import Labourer
-from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
 from sosw.components.dynamo_db import DynamoDbClient, clean_dynamo_table
 from sosw.components.helpers import first_or_none
+from sosw.labourer import Labourer
+from sosw.managers.task import TaskManager
+from sosw.test.variables import TEST_TASK_CLIENT_CONFIG, RETRY_TASKS, TASKS
+from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup, \
+    autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup, get_autotest_ddb_name, safe_put_to_ddb
 
 
 class TaskManager_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
 
+    autotest_ddbm: AutotestDdbManager = None
+
 
     @classmethod
-    def setUpClass(cls):
-        """
-        Clean the classic autotest table.
-        """
+    def setUpClass(cls) -> None:
         cls.TEST_CONFIG['init_clients'] = ['DynamoDb']
+        tables = [autotest_dynamo_db_tasks_setup, autotest_dynamo_db_closed_tasks_setup,
+                  autotest_dynamo_db_retry_tasks_setup]
+        cls.autotest_ddbm = AutotestDdbManager(tables)
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
+
+
+    def tearDown(self):
+        self.patcher.stop()
+        asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
     def setUp(self):
@@ -49,22 +63,15 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = ('labourer_id', 'S')
         self.NOW_TIME = 100000
 
-        self.table_name = self.config['dynamo_db_config']['table_name']
-        self.completed_tasks_table = self.config['sosw_closed_tasks_table']
-        self.retry_tasks_table = self.config['sosw_retry_tasks_table']
-
-        self.clean_task_tables()
+        self.table_name = autotest_dynamo_db_tasks_setup['TableName']
+        self.completed_tasks_table = autotest_dynamo_db_closed_tasks_setup['TableName']
+        self.retry_tasks_table = autotest_dynamo_db_retry_tasks_setup['TableName']
 
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
 
         self.labourer = deepcopy(self.LABOURER)
-
-
-    def tearDown(self):
-        self.patcher.stop()
-        self.clean_task_tables()
 
 
     def clean_task_tables(self):
@@ -84,14 +91,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         MAP = {
             'available': {
-                self.RANGE_KEY[0]:          lambda x: str(worker_id),
-                _('greenfield'):            lambda x: round(1000 + random.randrange(0, 100000, 1000)),
-                _('attempts'):              lambda x: 0,
-                _('result_uploaded_files'): lambda x: [{'bucket': 'cnvm',
-                                                        's3_key': 'key',
-                                                        'description': 'description'
-                                                        }],
-                _('stat_time_register_clients'):                 lambda x: 0.00440446899847
+                self.RANGE_KEY[0]:               lambda x: str(worker_id),
+                _('greenfield'):                 lambda x: round(1000 + random.randrange(0, 100000, 1000)),
+                _('attempts'):                   lambda x: 0,
+                _('result_uploaded_files'):      lambda x: [{'bucket':      'cnvm',
+                                                             's3_key':      'key',
+                                                             'description': 'description'
+                                                             }],
+                _('stat_time_register_clients'): lambda x: 0.00440446899847
             },
             'invoked':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
@@ -224,7 +231,8 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             mock_time.return_value = self.NOW_TIME
             self.manager.mark_task_invoked(self.LABOURER, row)
 
-        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"}, fetch_all_fields=True)
+        result = self.dynamo_client.get_by_query({self.HASH_KEY[0]: f"task_id_{self.LABOURER.id}_256"},
+                                                 fetch_all_fields=True)
         # print(f"The new updated value of task is: {result}")
 
         # Rounded -2 we check that the greenfield was updated
@@ -360,6 +368,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # Check it only gets tasks with timestamp <= now
         self.assertIn(tasks[0], result_tasks)
         self.assertIn(tasks[1], result_tasks)
+
 
     @unittest.skip("This funciton moved to Scavenger")
     def test_retry_tasks(self):

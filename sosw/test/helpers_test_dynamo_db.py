@@ -491,3 +491,6 @@ autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_ta
                                                 index_name='labourer_id_greenfield',
                                                 hash_key=('labourer_id', 'S'),
                                                 range_key=('desired_launch_time', 'N'))
+
+autotest_dynamo_db_config_setup = get_table_setup(hash_key=('env', 'S'), range_key=('config_name', 'S'),
+                                                  table_name=get_autotest_ddb_name() + '_config')
