@@ -89,7 +89,7 @@ import boto3
 import json
 import os
 
-from sosw.components.helpers import chunks
+from sosw.components.helpers import chunks, recursive_update
 from sosw.components.dynamo_db import DynamoDbClient
 
 
@@ -395,7 +395,7 @@ class DynamoConfig:
             }
         }
 
-        self.config.update(kwargs.get('config', {}))
+        self.config = recursive_update(self.config, kwargs.get('config', {}))
 
 
     def get_config(self, name, env="production"):
