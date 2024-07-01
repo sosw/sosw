@@ -7,7 +7,6 @@ from copy import deepcopy
 
 from sosw.components.test.unit.helpers_test_variables import *
 
-
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
@@ -387,12 +386,12 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_construct_dates_from_event__conflict_of_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'st_date': '2018-01-01', 'days_back': 10}), \
-        "Not raised conflict of attributes"
+            "Not raised conflict of attributes"
 
 
     def test_construct_dates_from_event__missing_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'bad_event': 'missing st_date and days_back'}), \
-        "Not raised missing attributes in event"
+            "Not raised missing attributes in event"
 
 
     def test_construct_dates_from_event__ok(self):
@@ -563,7 +562,32 @@ class helpers_UnitTestCase(unittest.TestCase):
 
 
     def test_recursive_insert(self):
-        pass
+        TESTS = [
+            (({}, 'a', 42), {'a': 42}),
+            ((None, 'a', 42), {'a': 42}),
+            ((None, 'a', None), {'a': None}),
+            (({}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': 13}}, 'a', 42), {'a': 42}),
+            (({'a': {'b': 1}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': {'c': 1}}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': {'c': 1}}}, 'a.b.d', 42), {'a': {'b': {'c': 1, 'd': 42}}}),
+            (({'a': {}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
+            (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
+        ]
+        for paylod, expected in TESTS:
+            self.assertEqual(recursive_insert(*paylod), expected)
+
+
+    def test_recursive_insert__errors(self):
+        TESTS = [
+            (({'a': 1}, 'a.b', 42), ValueError),
+            (({'a': {'b': 42}}, 'a.b.c', 42), ValueError),
+            (({}, '', 42), ValueError),
+            (({}, None, 42), ValueError),
+        ]
+        for paylod, expected in TESTS:
+            self.assertRaises(expected, recursive_insert, *paylod)
 
 
     def test_dunder_to_dict(self):
@@ -576,8 +600,8 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
         ]
 
-        for test, expected in TESTS:
-            self.assertEqual(dunder_to_dict(test), expected)
+        for paylod, expected in TESTS:
+            self.assertEqual(dunder_to_dict(paylod), expected)
 
 
     def test_dunder_to_dict__exceptions(self):
@@ -733,9 +757,9 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(get_message_dict_from_sns_event(sns_event),
                          {
                              "Records": [{
-                                             "eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2",
-                                             "s3":           {"bucket": {}, "object": {}}
-                                         }]
+                                 "eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2",
+                                 "s3":           {"bucket": {}, "object": {}}
+                             }]
                          })
 
 

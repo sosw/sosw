@@ -365,7 +365,7 @@ def validate_datetime_from_something(d):
         else datetime.datetime.fromtimestamp(x / 1000)),
         (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
         (datetime.datetime.strptime(d, '%Y-%m-%d')
-        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
+         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
     ]
 
     for mutator in mutators:
@@ -794,20 +794,18 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
 
     ..  code-block:: python
 
-            d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
-            u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
+        d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
+        u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
-            recursive_update(d, u)
+        recursive_update(d, u)
 
-            # result:
+        # result:
+        {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
 
-            {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
+        d.update(u)
 
-            d.update(u)
-
-            # result:
-
-            {'a': 43, 'b': {'b1': 22, 'b3': 33}}
+        # result:
+        {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
     List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
     """
@@ -857,25 +855,35 @@ def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
 
     ..  code-block: python
 
-            d = {'a': {'b': {'z': 42}}}
-            result = recursive_insert(d, 'a.b.ccc.ddd', 123)
+        d = {'a': {'b': {'z': 42}}}
+        result = recursive_insert(d, 'a.b.ccc.ddd', 123)
 
-            # Result
-            {'a': {'b': {'z': 42, 'ccc': {'ddd': 123}}}}
+        # Result
+        {'a': {'b': {'z': 42, 'ccc': {'ddd': 123}}}}
     """
 
     result = deepcopy(d) or {}
+    if not isinstance(path, str):
+        raise ValueError(f"Path is invalid. Should be a string separated with '{separator}', but received: {path}")
+
     parts = path.split(separator, 1)
     if not any(parts):
         raise ValueError(f"Path is invalid. Should be separated with '{separator}', but received: {path}")
 
-    prefix, key = parts[0], parts[1]
-    if prefix not in result:
-        result[prefix] = {}
-    if separator in key:
-        result[prefix] = recursive_insert(result[prefix], key, value, separator)
+    if len(parts) == 1:
+        result[parts[0]] = value
+
     else:
-        result[prefix][key] = value
+        prefix, key = parts[0], parts[1]
+        if prefix not in result:
+            result[prefix] = {}
+        if not isinstance(result[prefix], dict):
+            raise ValueError(f"The path '{path}' leads to some non-dict nested element. Can't insert deeper.")
+
+        if separator in key:
+            result[prefix] = recursive_insert(result[prefix], key, value, separator)
+        else:
+            result[prefix][key] = value
 
     return result
 
