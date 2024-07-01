@@ -853,7 +853,7 @@ def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
 
     Example:
 
-    ..  code-block: python
+    ..  code-block:: python
 
         d = {'a': {'b': {'z': 42}}}
         result = recursive_insert(d, 'a.b.ccc.ddd', 123)
