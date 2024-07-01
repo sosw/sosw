@@ -546,8 +546,9 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     If you are just checking if some elements exist, you might be interested in
     recursive_exists_strict() or recursive_exists_soft() helpers.
 
-    .. :warninig:
-        Please be aware that this method doesn't not check for duplicates in iterable elements on neither
+    ..  warning::
+
+        Please be aware that this method does not check for duplicates in iterable elements on neither
         level during extraction.
 
     :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
