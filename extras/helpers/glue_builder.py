@@ -23,6 +23,7 @@ class GlueBuilder(SoswProcessor):
     DEFAULT_CONFIG = {
         'init_clients': ['glue', 'dynamodb', 'iam'],
         'glue_database_name': 'ddb_tables',
+        'region': 'us-west-2',
     }
 
     dynamodb_client: boto3.client = None
@@ -50,6 +51,8 @@ class GlueBuilder(SoswProcessor):
         super().__call__(event, **kwargs)
 
         self.create_crawlers_for_ddbs()
+
+        self.run_existing_crawlers()
 
         logger.info(self.get_stats())
 
@@ -123,13 +126,14 @@ class GlueBuilder(SoswProcessor):
             PolicyArn='arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole',
         )
 
+        table_name = name[4:-8]  #hard_codding is always good
         inline_policy_document = {
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
                     "Action": "dynamodb:*",
-                    "Resource": "arn:aws:dynamodb:*:*:table/*"
+                    "Resource": f"arn:aws:dynamodb:{self.config['region']}:{self._account}:table/{table_name}"
                 }
             ]
         }
@@ -143,17 +147,20 @@ class GlueBuilder(SoswProcessor):
         logger.info("Inline policy added successfully")
 
         for i in range(3):
+            i += 1
+            logger.info("Waiting for role to be created. Although IAM role is created and policy is attached, "
+                        "boto3 glue client create_crawler function takes time to understand this.")
+            time.sleep(i*10)
             try:
                 role = self.iam_client.get_role(
                     RoleName=name,
                 )
                 if role:
+
                     logger.info("Found existing role %s", role)
                     return recursive_matches_extract(role, 'Role.Arn')
             except self.iam_client.exceptions.NoSuchEntityException:
-                i += 1
-                logger.info("Waiting for role to be created")
-                time.sleep(i)
+                pass
 
 
     @benchmark
