@@ -863,28 +863,22 @@ def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
         {'a': {'b': {'z': 42, 'ccc': {'ddd': 123}}}}
     """
 
-    result = deepcopy(d) or {}
-    if not isinstance(path, str):
-        raise ValueError(f"Path is invalid. Should be a string separated with '{separator}', but received: {path}")
+    if not isinstance(path, str) or not path:
+        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', but received: {path}")
+
+    result = deepcopy(d) if d is not None else {}
 
     parts = path.split(separator, 1)
-    if not any(parts):
-        raise ValueError(f"Path is invalid. Should be separated with '{separator}', but received: {path}")
 
     if len(parts) == 1:
         result[parts[0]] = value
-
     else:
-        prefix, key = parts[0], parts[1]
+        prefix, key = parts
         if prefix not in result:
             result[prefix] = {}
         if not isinstance(result[prefix], dict):
             raise ValueError(f"The path '{path}' leads to some non-dict nested element. Can't insert deeper.")
-
-        if separator in key:
-            result[prefix] = recursive_insert(result[prefix], key, value, separator)
-        else:
-            result[prefix][key] = value
+        result[prefix] = recursive_insert(result[prefix], key, value, separator)
 
     return result
 
