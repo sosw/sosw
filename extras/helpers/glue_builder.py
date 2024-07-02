@@ -32,7 +32,7 @@ class GlueBuilder(SoswProcessor):
 
 
     def list_glue_databases(self) -> list:
-        databases =[]
+        databases = []
 
         paginator = self.glue_client.get_paginator('get_databases')
         for page in paginator.paginate():
@@ -47,12 +47,13 @@ class GlueBuilder(SoswProcessor):
     def get_config(self, name):
         return {}
 
+
     def __call__(self, event={}, **kwargs):
         super().__call__(event, **kwargs)
 
         self.create_crawlers_for_ddbs()
 
-        self.run_existing_crawlers()
+        # self.run_existing_crawlers()
 
         logger.info(self.get_stats())
 
@@ -150,13 +151,12 @@ class GlueBuilder(SoswProcessor):
             i += 1
             logger.info("Waiting for role to be created. Although IAM role is created and policy is attached, "
                         "boto3 glue client create_crawler function takes time to understand this.")
-            time.sleep(i*10)
+            time.sleep(i * 10)
             try:
                 role = self.iam_client.get_role(
                     RoleName=name,
                 )
                 if role:
-
                     logger.info("Found existing role %s", role)
                     return recursive_matches_extract(role, 'Role.Arn')
             except self.iam_client.exceptions.NoSuchEntityException:
@@ -168,6 +168,8 @@ class GlueBuilder(SoswProcessor):
         crawler_name = f'ddb_{tablename}_crawler'
         if crawler_name in self.get_crawlers():
             logger.info("%s crawler already exists", crawler_name)
+            self.run_existing_crawlers(crawler_name)
+            logger.info("Run crawler %s", crawler_name)
             return crawler_name
 
         my_role = self.create_role_for_crawler(name=crawler_name)
@@ -185,6 +187,8 @@ class GlueBuilder(SoswProcessor):
             }
         )
         logger.info("Created crawler %s", crawler_name)
+        self.run_existing_crawlers(crawler_name)
+        logger.info("Run crawler %s", crawler_name)
         return crawler_name
 
 
@@ -207,7 +211,6 @@ class GlueBuilder(SoswProcessor):
     def create_crawlers_for_ddbs(self):
         tables = self.get_ddb_tables()
         for table in tables:
-
             self.create_crawler_for_ddb(table)
 
 
@@ -227,9 +230,10 @@ class GlueBuilder(SoswProcessor):
         return result
 
 
-    def run_existing_crawlers(self):
-        pass
-
+    def run_existing_crawlers(self, name: str):
+        self.glue_client.start_crawler(
+            Name=name,
+        )
 
 
 if __name__ == '__main__':
@@ -242,4 +246,3 @@ if __name__ == '__main__':
     # if dbs := glue_builder.list_glue_databases():
     #     for db in dbs:
     #         tables = glue_builder.list_glue_tables(db)
-
