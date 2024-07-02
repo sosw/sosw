@@ -1,30 +1,33 @@
 import json
 import logging
+import time
 
 import boto3
 from sosw.app import Processor as SoswProcessor
+from sosw.components.benchmark import benchmark
+from sosw.components.helpers import recursive_matches_extract
 
+try:
+    from aws_lambda_powertools import Logger
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler("glue_operations.log"),
-                        logging.StreamHandler()
-                    ])
-logger = logging.getLogger()
-logging.getLogger('botocore').setLevel(logging.WARNING)
-logging.getLogger('boto3').setLevel(logging.WARNING)
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
 
 
 class GlueBuilder(SoswProcessor):
     DEFAULT_CONFIG = {
         'init_clients': ['glue', 'dynamodb', 'iam'],
+        'glue_database_name': 'ddb_tables',
     }
 
     dynamodb_client: boto3.client = None
     glue_client: boto3.client = None
     iam_client: boto3.client = None
-
 
 
     def list_glue_databases(self) -> list:
@@ -36,9 +39,37 @@ class GlueBuilder(SoswProcessor):
                 databases.append(database['Name'])
                 logger.debug("Found database: %s", database['Name'])
 
+        logger.info("Databases %s", databases)
         return databases
 
 
+    def get_config(self, name):
+        return {}
+
+    def __call__(self, event={}, **kwargs):
+        super().__call__(event, **kwargs)
+
+        self.create_crawlers_for_ddbs()
+
+        logger.info(self.get_stats())
+
+
+    @benchmark
+    def create_glue_database(self, name: str = None) -> str:
+        name = name or self.config['glue_database_name']
+        logger.info(name)
+        if name in self.list_glue_databases():
+            return name
+
+        self.glue_client.create_database(
+            DatabaseInput={
+                'Name': name,
+            },
+        )
+        return name
+
+
+    @benchmark
     def list_glue_tables(self, database: str) -> list:
         tables = []
 
@@ -53,7 +84,15 @@ class GlueBuilder(SoswProcessor):
 
 
     def create_role_for_crawler(self, name: str) -> str:
-        arn = ''
+        try:
+            role = self.iam_client.get_role(
+                RoleName=name,
+            )
+            if role:
+                logger.info("Found existing role %s", role)
+                return recursive_matches_extract(role, 'Role.Arn')
+        except self.iam_client.exceptions.NoSuchEntityException:
+            pass
 
         logger.info("Creating assume role policy document")
         assume_role_policy_document = json.dumps({
@@ -103,19 +142,33 @@ class GlueBuilder(SoswProcessor):
         )
         logger.info("Inline policy added successfully")
 
-        return arn
+        for i in range(3):
+            try:
+                role = self.iam_client.get_role(
+                    RoleName=name,
+                )
+                if role:
+                    logger.info("Found existing role %s", role)
+                    return recursive_matches_extract(role, 'Role.Arn')
+            except self.iam_client.exceptions.NoSuchEntityException:
+                i += 1
+                logger.info("Waiting for role to be created")
+                time.sleep(i)
 
 
+    @benchmark
     def create_crawler_for_ddb(self, tablename: str) -> str:
         crawler_name = f'ddb_{tablename}_crawler'
         if crawler_name in self.get_crawlers():
             logger.info("%s crawler already exists", crawler_name)
             return crawler_name
 
+        my_role = self.create_role_for_crawler(name=crawler_name)
+        logger.info(my_role)
         self.glue_client.create_crawler(
             Name=crawler_name,
-            Role=self.create_role_for_crawler(name=crawler_name),
-            DatabaseName='ddb_tables',
+            Role=my_role,
+            DatabaseName=self.config['glue_database_name'],
             Targets={
                 'DynamoDBTargets': [
                     {
@@ -128,6 +181,7 @@ class GlueBuilder(SoswProcessor):
         return crawler_name
 
 
+    @benchmark
     def get_crawlers(self) -> list:
         result = []
         response = self.glue_client.list_crawlers()
@@ -150,6 +204,7 @@ class GlueBuilder(SoswProcessor):
             self.create_crawler_for_ddb(table)
 
 
+    @benchmark
     def get_ddb_tables(self) -> list:
         result = []
         response = self.dynamodb_client.list_tables()
@@ -165,13 +220,19 @@ class GlueBuilder(SoswProcessor):
         return result
 
 
+    def run_existing_crawlers(self):
+        pass
+
+
+
 if __name__ == '__main__':
     logger.info("Application started")
     glue_builder = GlueBuilder()
-    glue_builder.get_ddb_tables()
+    glue_builder()
+    # glue_builder.get_ddb_tables()
+    # glue_builder.create_glue_database()
+    #
+    # if dbs := glue_builder.list_glue_databases():
+    #     for db in dbs:
+    #         tables = glue_builder.list_glue_tables(db)
 
-    if dbs := glue_builder.list_glue_databases():
-        for db in dbs:
-            tables = glue_builder.list_glue_tables(db)
-
-    glue_builder.create_crawlers_for_ddbs()
