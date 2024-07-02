@@ -7,10 +7,13 @@ Serverless Orchestrator of Serverless Workers
 ..  image:: https://travis-ci.com/sosw/sosw.svg?branch=master
     :alt: Travis - Build
     :target: https://travis-ci.com/sosw/sosw
-.. image:: https://img.shields.io/docsrs/docs
+..  image:: https://img.shields.io/docsrs/docs
     :alt: Documentation Status
     :target: https://docs.sosw.app/?badge=latest
-.. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
+..  image:: _static/images/coverage.svg
+    :alt: Test Coverage
+    :target: https://docs.sosw.app/?badge=latest
+..  image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
     :alt: PyPI - Installs / month
     :target: https://pypi.org/project/sosw/
 ..  image:: https://img.shields.io/pypi/l/sosw?color=blue
