@@ -25,10 +25,24 @@ class GlueBuilder(SoswProcessor):
         'glue_database_name': 'ddb_tables',
         'region': 'us-west-2',
     }
-
     dynamodb_client: boto3.client = None
     glue_client: boto3.client = None
     iam_client: boto3.client = None
+
+
+    def get_config(self, name):
+        return {}
+
+
+    def __call__(self, event={}, **kwargs):
+        super().__call__(event, **kwargs)
+
+        self.create_glue_database()
+        self.create_crawlers_for_ddbs()
+
+        self.run_existing_crawlers()
+
+        logger.info(self.get_stats())
 
 
     def list_glue_databases(self) -> list:
@@ -42,20 +56,6 @@ class GlueBuilder(SoswProcessor):
 
         logger.info("Databases %s", databases)
         return databases
-
-
-    def get_config(self, name):
-        return {}
-
-
-    def __call__(self, event={}, **kwargs):
-        super().__call__(event, **kwargs)
-
-        self.create_crawlers_for_ddbs()
-
-        # self.run_existing_crawlers()
-
-        logger.info(self.get_stats())
 
 
     @benchmark
@@ -168,8 +168,6 @@ class GlueBuilder(SoswProcessor):
         crawler_name = f'ddb_{tablename}_crawler'
         if crawler_name in self.get_crawlers():
             logger.info("%s crawler already exists", crawler_name)
-            self.run_existing_crawlers(crawler_name)
-            logger.info("Run crawler %s", crawler_name)
             return crawler_name
 
         my_role = self.create_role_for_crawler(name=crawler_name)
@@ -187,8 +185,6 @@ class GlueBuilder(SoswProcessor):
             }
         )
         logger.info("Created crawler %s", crawler_name)
-        self.run_existing_crawlers(crawler_name)
-        logger.info("Run crawler %s", crawler_name)
         return crawler_name
 
 
@@ -230,19 +226,16 @@ class GlueBuilder(SoswProcessor):
         return result
 
 
-    def run_existing_crawlers(self, name: str):
-        self.glue_client.start_crawler(
-            Name=name,
-        )
+    def run_existing_crawlers(self):
+        crawlers = self.get_crawlers()
+        for crawler in crawlers:
+            self.glue_client.start_crawler(
+                Name=crawler,
+            )
+            logger.info("Crawler %s started", crawler)
 
 
 if __name__ == '__main__':
     logger.info("Application started")
     glue_builder = GlueBuilder()
     glue_builder()
-    # glue_builder.get_ddb_tables()
-    # glue_builder.create_glue_database()
-    #
-    # if dbs := glue_builder.list_glue_databases():
-    #     for db in dbs:
-    #         tables = glue_builder.list_glue_tables(db)
