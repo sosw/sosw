@@ -182,6 +182,10 @@ class GlueBuilder(SoswProcessor):
                         'Path': tablename,
                     },
                 ],
+            },
+            SchemaChangePolicy={
+                'UpdateBehavior': 'UPDATE_IN_DATABASE',
+                'DeleteBehavior': 'DEPRECATE_IN_DATABASE',
             }
         )
         logger.info("Created crawler %s", crawler_name)
