@@ -180,6 +180,7 @@ class GlueBuilder(SoswProcessor):
                 'DynamoDBTargets': [
                     {
                         'Path': tablename,
+                        'scanAll': True,
                     },
                 ],
             },
