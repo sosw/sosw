@@ -5,6 +5,7 @@ import time
 import unittest
 import os
 
+
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
 os.environ["STAGE"] = "test"
@@ -56,8 +57,8 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         self.RANGE_KEY = (self.RANGE_COL, self.RANGE_COL)
 
         self.KEYS = (self.HASH_COL, self.RANGE_COL)
+
         self.table_name = get_autotest_ddb_name()
-        # self.table_name = 'autotest_dynamo_db'
         self.dynamo_client = DynamoDbClient(config=self.TEST_CONFIG)
 
         self.dynamo_boto3_client = boto3.client('dynamodb')
@@ -450,7 +451,7 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
 
         for x in range(1000, 1000 + INITIAL_TASKS):
             row = {self.HASH_COL: f"key", self.RANGE_COL: x}
-            self.dynamo_client.put(row, self.table_name)
+            safe_put_to_ddb(row, self.dynamo_client)
             if INITIAL_TASKS > 10:
                 time.sleep(0.1)  # Sleep a little to fit the Write Capacity (10 WCU) of autotest table.
 
@@ -461,7 +462,6 @@ class DynamodbClientIntegrationTestCase(unittest.TestCase):
         logging.info(f"Benchmark (n={n}): {bm}")
 
         self.assertEqual(len(result), n)
-        # self.assertLess(bm, 0.1)
 
         # Check unspecified limit.
         result = self.dynamo_client.get_by_query({self.HASH_COL: 'key'}, table_name=self.table_name)
