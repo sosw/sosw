@@ -109,18 +109,19 @@ Another deployment requirement is to create several `DynamoDB` tables.
 Once again, the detailed guide for initial setup can be found in the :ref:`Installation Guidelines`.
 
 
-.. toctree::
-   :titlesonly:
-   :caption: Contents:
-   :maxdepth: 2
+..  toctree::
+    :titlesonly:
+    :caption: Contents:
+    :maxdepth: 2
 
-   installation
-   essentials/index
-   components/index
-   managers/index
-   tutorials/index
+    installation
+    essentials/index
+    components/index
+    managers/index
+    tools/index
+    tutorials/index
 
-   contribution/index
+    contribution/index
 
 
 Indices and tables
