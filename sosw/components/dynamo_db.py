@@ -82,7 +82,12 @@ class DynamoDbClient:
     """
 
 
-    def __init__(self, config):
+    def __init__(self, config: dict,  glue_client: boto3.client = None):
+        """
+        If ``skip_glue`` not in config, try to enrich config from Glue Data Catalog. May provide ``glue_client``
+        to save initialization time.
+        """
+
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
         # If this is a test, make sure the table is a test table
@@ -90,7 +95,10 @@ class DynamoDbClient:
             assert config['table_name'].startswith('autotest_') or config['table_name'] == 'config', \
                 f"Bad table name {config['table_name']} in autotest"
 
-        self.config = config
+        if 'skip_glue' not in config:
+            self.config = self.enrich_config_from_glue(config, glue_client)
+        else:
+            self.config = config
 
         # create a dynamodb client
         self.dynamo_client = boto3.client('dynamodb', region_name=config.get('region_name'))
@@ -108,6 +116,12 @@ class DynamoDbClient:
 
         self.type_serializer = TypeSerializer()
         self.type_deserializer = TypeDeserializer()
+
+
+    def enrich_config_from_glue(self, config: dict, glue_client: boto3.client = None) -> dict:
+        return config
+
+
 
 
     def identify_dynamo_capacity(self, table_name=None):

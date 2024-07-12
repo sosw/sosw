@@ -537,5 +537,33 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         )
 
 
+    def test_enrich_config_from_glue__call_logic(self):
+        TESTS = [
+            ({
+                    'config': self.TEST_CONFIG,
+                    'glue_client': True,
+                },
+                1),
+            ({
+                    'config': self.TEST_CONFIG,
+                },
+                1),
+            ({
+                    'config': {'skip_glue': True, **self.TEST_CONFIG},
+                    'glue_client': True,
+                },
+                0),
+            ({
+                    'config': {'skip_glue': True, **self.TEST_CONFIG}},
+                0),
+        ]
+
+        for init_payload, expected_calls in TESTS:
+            TestDynamoDbClient = deepcopy(DynamoDbClient)
+            TestDynamoDbClient.enrich_config_from_glue = MagicMock(return_value=self.TEST_CONFIG)
+            test_client = TestDynamoDbClient(**init_payload)
+            self.assertEqual(len(test_client.enrich_config_from_glue.mock_calls), expected_calls)
+
+
 if __name__ == '__main__':
     unittest.main()
