@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 from .benchmark import benchmark
-from .helpers import chunks, to_bool
+from .helpers import chunks, recursive_matches_extract, recursive_update, to_bool
 
 
 class DynamoDbClient:
@@ -80,6 +80,17 @@ class DynamoDbClient:
         }
 
     """
+
+    GLUE_TYPES_MAPPING = {
+        'S': ['string', 'char', 'varchar'],
+        'N': ['decimal', 'double', 'float', 'int', 'tinyint', 'smallint', 'bigint'],
+        'B': ['binary'],
+        'BOOL': ['boolean'],
+        'M': ['struct'],
+        'L': ['array'],
+        'SS': ['set<string>'],
+        'NS': ['set<bigint>'],
+    }
 
 
     def __init__(self, config: dict,  glue_client: boto3.client = None):
@@ -118,9 +129,82 @@ class DynamoDbClient:
         self.type_deserializer = TypeDeserializer()
 
 
-    def enrich_config_from_glue(self, config: dict, glue_client: boto3.client = None) -> dict:
-        return config
+    def convert_glue_column_to_ddb(self, column) -> dict:
+        """
+        From Glue column:
+        ``{'Name': 'id', 'Type': 'string'}``
 
+        To Dynamo DB column:
+        ``{'id': 'S'}``
+        """
+
+        try:
+            return {
+                column['Name']: next(key for key, value in self.GLUE_TYPES_MAPPING.items() if column['Type'] in value)
+            }
+        except StopIteration:
+            raise ValueError(f"Unsupported type {column['Type']} of item in Glue table")
+        except KeyError:
+            raise ValueError("Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
+                             f"Received {column}")
+
+
+    @benchmark
+    def enrich_config_from_glue(self, config: dict, glue_client: boto3.client = None) -> dict:
+        """
+        This functions allows config to have only the ``table_name`` and in case we have a Glue Database ``ddb_tables``
+        with Crawlers regularly updating it, we can construct the rest of the config from it.
+
+        Read more: `https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler`_
+
+        Lazy initialization of ``boto3.client('glue')`` is supposed to be in the ``app`` module, but for compatibility
+        with ``DynamoDbClient`` initialized outside the scope of the Processor (e.g. your custom scripts), we support
+        initialization of the ``glue_client`` if missing.
+
+        In order to use Glue the Role of your application should have relevant permissions.
+        By default, we ignore missing permissions and just return the config as is.
+        """
+        if not glue_client:
+            glue_client = boto3.client('glue', region_name=config.get('region_name'))
+
+        try:
+            glue_table = glue_client.get_table(
+                DatabaseName='ddb_tables',
+                Name=config['table_name']
+            )
+        except glue_client.exceptions.EntityNotFoundException:
+            logger.warning("Table %s wasn't found in Glue Data Catalog 'ddb_tables' Database", config['table_name'])
+            return config
+        except glue_client.exceptions.FIXME:
+            logger.warning("User is not authorised to use Amazon Glue")
+
+        if 'row_mapper' not in config:
+            config['row_mapper'] = {}
+
+        for column in glue_table['StorageDescriptor']['Columns']:
+            config = recursive_update(config['row_mapper'], column)
+
+        hash_key = recursive_matches_extract(glue_table, 'Table.Parameters.hashKey')
+        range_key = recursive_matches_extract(glue_table, 'Table.Parameters.rangeKey')
+
+        if 'required_fields' not in config:
+            config['required_fields'] = []
+
+        for attr in [hash_key, range_key]:
+            if attr not in config['required_fields']:
+                config['required_fields'].append(attr)
+
+            config_value = config.get(attr)
+            glue_value = recursive_matches_extract(glue_table, f'Table.Parameters.{attr}')
+
+            if glue_value:
+                if config_value:
+                    if config_value != glue_value:
+                        raise RuntimeError(f"Config has incorrect {attr}. In Glue DataCatalog it is {glue_value}")
+                else:
+                    config[attr] = glue_value
+
+        return config
 
 
 
