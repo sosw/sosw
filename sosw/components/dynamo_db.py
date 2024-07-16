@@ -138,6 +138,16 @@ class DynamoDbClient:
         ``{'id': 'S'}``
         """
 
+        for attr in ['Name', 'Type']:
+            if attr not in column.keys() or not column.get(attr):
+                raise ValueError(
+                    "Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
+                    f"Received {column}")
+
+        # if not all(attr in column.keys() for attr in ['Name', 'Type'] if column.get(attr)):
+        #     raise ValueError("Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
+        #                      f"Received {column}")
+
         try:
             return {
                 column['Name']: next(key for key, value in self.GLUE_TYPES_MAPPING.items() if column['Type'] in value)
@@ -149,7 +159,6 @@ class DynamoDbClient:
                              f"Received {column}")
 
 
-    @benchmark
     def enrich_config_from_glue(self, config: dict, glue_client: boto3.client = None) -> dict:
         """
         This functions allows config to have only the ``table_name`` and in case we have a Glue Database ``ddb_tables``

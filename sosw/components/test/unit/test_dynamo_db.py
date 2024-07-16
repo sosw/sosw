@@ -565,5 +565,31 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
             self.assertEqual(len(test_client.enrich_config_from_glue.mock_calls), expected_calls)
 
 
+    def test_convert_glue_column_to_ddb(self):
+        TESTS = [
+            ({'Name': 'foo', 'Type': 'string'}, {'foo': 'S'}),
+            ({'Name': 'foo', 'Type': 'int'}, {'foo': 'N'}),
+            ({'Name': 'foo', 'Type': 'decimal'}, {'foo': 'N'}),
+            ({'Name': 'foo', 'Type': 'boolean'}, {'foo': 'BOOL'}),
+        ]
+
+        for payload, expected_result in TESTS:
+            self.assertEqual(self.dynamo_client.convert_glue_column_to_ddb(payload), expected_result)
+
+
+    def test_convert_glue_column_to_ddb__negative(self):
+        TESTS = [
+            ({'Name': 'foo', 'Type': ''}, ValueError),
+            ({'Name': 'foo',}, ValueError),
+            ({'Name': '', 'Type': 'decimal'}, ValueError),
+            ({'Type': 'decimal'}, ValueError),
+            ({'Name': 'foo', 'Type': 'notexistingtype'}, ValueError),
+        ]
+
+        for payload, expected_result in TESTS:
+            # print(payload)
+            self.assertRaises(expected_result, self.dynamo_client.convert_glue_column_to_ddb, payload)
+
+
 if __name__ == '__main__':
     unittest.main()
