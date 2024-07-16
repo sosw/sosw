@@ -190,7 +190,8 @@ class DynamoDbClient:
         if 'row_mapper' not in config:
             config['row_mapper'] = {}
 
-        for column in glue_table['StorageDescriptor']['Columns']:
+        for column in glue_table['Table']['StorageDescriptor']['Columns']:
+            # FIXME THIS IS WRONG LOGIC. Breaks everything. Danger! Achtung! Alarma!
             config = recursive_update(config['row_mapper'], column)
 
         hash_key = recursive_matches_extract(glue_table, 'Table.Parameters.hashKey')
