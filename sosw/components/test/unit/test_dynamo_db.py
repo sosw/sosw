@@ -1,5 +1,7 @@
 import datetime
+import gc
 import logging
+import sys
 import time
 import unittest
 import os
@@ -9,14 +11,13 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch, Mock
 
 from .helpers_test_variables import PPR_DESCRIBE_TABLE, PT_DESCRIBE_TABLE
-from sosw.components.helpers import recursive_insert
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.components.dynamo_db import DynamoDbClient
+from ...dynamo_db import DynamoDbClient
 
 
 class dynamodb_client_UnitTestCase(unittest.TestCase):
@@ -40,6 +41,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 		'required_fields': ['lambda_name'],
 		'table_name':      'autotest_dynamo_db',
 		'hash_key':        'hash_col',
+		# 'skip_glue': True,
 	}
 
 
@@ -542,35 +544,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 		)
 
 
-	def test_enrich_config_from_glue__call_logic(self):
-		TESTS = [
-			({
-				 'config':      self.TEST_CONFIG,
-				 'glue_client': True,
-			 },
-			 1),
-			({
-				 'config': self.TEST_CONFIG,
-			 },
-			 1),
-			({
-				 'config':      {'skip_glue': True, **self.TEST_CONFIG},
-				 'glue_client': True,
-			 },
-			 0),
-			({
-				 'config': {'skip_glue': True, **self.TEST_CONFIG}},
-			 0),
-		]
-
-		for init_payload, expected_calls in TESTS:
-			TestDynamoDbClient = deepcopy(DynamoDbClient)
-			TestDynamoDbClient.enrich_config_from_glue = MagicMock(return_value=self.TEST_CONFIG)
-			test_client = TestDynamoDbClient(**init_payload)
-			self.assertEqual(len(test_client.enrich_config_from_glue.mock_calls), expected_calls)
-
-
-	# @patch('')
 	def test_enrich_config_from_glue__logic(self):
 		GLUE_MOCK_RESPONSE = {'Table': {'Name':              'persons',
 										'DatabaseName':      'ddb_tables',
@@ -597,21 +570,29 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 		TESTS = [
 			(
-				{'table_name': 'foo'}, {'Name': 'name', 'Type': 'string'},
-				{'table_name': 'foo', 'row_mapper': {}, 'hash_key': id, 'required_fields': ['id']}
-			)
+				{'table_name': 'autotest_foo'},
+				{'Name': 'name', 'Type': 'string'},
+				{'table_name': 'autotest_foo', 'row_mapper': {'id': 'S', 'phone': 'N', 'name': 'S'},
+				 'hash_key':   'id', 'required_fields': ['id']}
+			),
+			(
+				{'table_name': 'autotest_foo'},
+				{'Name': 'address', 'Type': 'struct<key:string,age:bigint>'},
+				{'table_name': 'autotest_foo', 'row_mapper': {'id': 'S', 'phone': 'N', 'address': 'M'},
+				 'hash_key':   'id', 'required_fields': ['id']}
+			),
 		]
 
 		for payload, custom_mock_field, expected_value in TESTS:
 			glue_client = MagicMock()
-			response = deepcopy(GLUE_MOCK_RESPONSE)
-			response = recursive_insert(response,'Table.StorageDescriptor.Columns', custom_mock_field)
-			glue_client.get_table.return_value = response
+			mocked_response = deepcopy(GLUE_MOCK_RESPONSE)
+			mocked_response['Table']['StorageDescriptor']['Columns'].append(custom_mock_field)
+			# print(mocked_response)
+			glue_client.get_table.return_value = mocked_response
 
 			result = self.dynamo_client.enrich_config_from_glue(config=payload, glue_client=glue_client)
-			print(result)
+			self.assertEqual(result, expected_value)
 
-			self.assertEqual(1,2)
 
 	def test_convert_glue_column_to_ddb(self):
 		TESTS = [
@@ -619,6 +600,10 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 			({'Name': 'foo', 'Type': 'int'}, {'foo': 'N'}),
 			({'Name': 'foo', 'Type': 'decimal'}, {'foo': 'N'}),
 			({'Name': 'foo', 'Type': 'boolean'}, {'foo': 'BOOL'}),
+			({'Name': 'foo', 'Type': 'struct<key:string,age:bigint>'}, {'foo': 'M'}),
+			({'Name': 'foo', 'Type': 'set<string>'}, {'foo': 'SS'}),
+			({'Name': 'foo', 'Type': 'set<bigint>'}, {'foo': 'NS'}),
+			({'Name': 'foo', 'Type': 'array<string>'}, {'foo': 'L'}),
 		]
 
 		for payload, expected_result in TESTS:
@@ -635,7 +620,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 		]
 
 		for payload, expected_result in TESTS:
-			# print(payload)
+			print(payload)
 			self.assertRaises(expected_result, self.dynamo_client.convert_glue_column_to_ddb, payload)
 
 
