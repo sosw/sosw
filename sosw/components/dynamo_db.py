@@ -162,7 +162,7 @@ class DynamoDbClient:
 		This functions allows config to have only the ``table_name`` and in case we have a Glue Database ``ddb_tables``
 		with Crawlers regularly updating it, we can construct the rest of the config from it.
 
-		Read more: `https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler`_
+		Read more: https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler
 
 		Lazy initialization of ``boto3.client('glue')`` is supposed to be in the ``app`` module, but for compatibility
 		with ``DynamoDbClient`` initialized outside the scope of the Processor (e.g. your custom scripts), we support
