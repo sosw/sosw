@@ -864,7 +864,8 @@ def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
     """
 
     if not isinstance(path, str) or not path:
-        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', but received: {path}")
+        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', "
+                         f"but received: {path}")
 
     result = deepcopy(d) if d is not None else {}
 
