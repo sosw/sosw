@@ -276,6 +276,17 @@ class Processor:
         return self.aws_region
 
 
+    def _c(self, path: str):
+        """
+        Shortcut to access values from the Processor config.
+
+        E.g. ``val = self._c('path.to.param')``
+
+        Is similar to: ``val = self.config.get('path', {}).get('to', {}).get('param', None)``
+        """
+        return recursive_matches_extract(self.config, path)
+
+
     @benchmark
     def get_ddbc(self, prefix: str) -> DynamoDbClient:
         """
