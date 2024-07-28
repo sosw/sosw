@@ -152,7 +152,7 @@ class DynamoDbClient:
 					}
 		except KeyError:
 			raise ValueError("Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
-							 f"Received {column}")
+			                 f"Received {column}")
 
 		raise ValueError(f"Unsupported type {column['Type']} of item in Glue table")
 
@@ -184,6 +184,7 @@ class DynamoDbClient:
 			logger.warning("Table %s wasn't found in Glue Data Catalog 'ddb_tables' Database", config['table_name'])
 			return config
 		except glue_client.exceptions.AccessDeniedException:
+			# check the error!!!
 			logger.warning("User is not authorized to use Amazon Glue")
 
 		if 'row_mapper' not in config:
@@ -256,13 +257,13 @@ class DynamoDbClient:
 
 		if self._table_descriptions and table_name in self._table_descriptions:
 			logger.debug("Description taken from cache for table %s: %s ", table_name,
-						 self._table_descriptions[table_name])
+			             self._table_descriptions[table_name])
 			return self._table_descriptions[table_name]
 		else:
 			table_description = self.dynamo_client.describe_table(TableName=table_name)
 			self._table_descriptions[table_name] = table_description
 			logger.debug("Description for table %s received from API and cached: %s ", table_name,
-						 self._table_descriptions[table_name])
+			             self._table_descriptions[table_name])
 			return self._table_descriptions[table_name]
 
 
@@ -347,9 +348,9 @@ class DynamoDbClient:
 			# global sec. indexes have their own capacities, while a local sec. index uses the capacity of the table.
 			if index.get('ProvisionedThroughput') or table_description.get('ProvisionedThroughput'):
 				write_capacity = index.get('ProvisionedThroughput', {}).get('WriteCapacityUnits') or \
-								 table_description['ProvisionedThroughput']['WriteCapacityUnits']
+				                 table_description['ProvisionedThroughput']['WriteCapacityUnits']
 				read_capacity = index.get('ProvisionedThroughput', {}).get('ReadCapacityUnits') or \
-								table_description['ProvisionedThroughput']['ReadCapacityUnits']
+				                table_description['ProvisionedThroughput']['ReadCapacityUnits']
 				indexes[name]['provisioned_throughput'] = {
 					'write_capacity': write_capacity,
 					'read_capacity':  read_capacity
@@ -377,7 +378,7 @@ class DynamoDbClient:
 
 		if strict is not None:
 			logger.warning("dynamo_to_dict ``strict`` variable is deprecated in sosw 0.7.13+. "
-						   "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
+			               "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
 		fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 		result = {}
 
@@ -391,7 +392,7 @@ class DynamoDbClient:
 					if val is None and key_type not in val_dict:
 						real_type = list(val_dict.keys())[0]
 						raise ValueError(f"'{key}' is expected to be of type '{key_type}' in row_mapper, "
-										 f"but real value is of type '{real_type}'")
+						                 f"but real value is of type '{real_type}'")
 
 					# type_deserializer.deserialize() parses 'N' to ``Decimal`` type but it cant be parsed to a datetime
 					# so we cast it to either an integer or a float.
@@ -496,7 +497,7 @@ class DynamoDbClient:
 				if isinstance(val, bool) or (isinstance(val, str) and val.lower() in ['false', 'true']):
 					result[key_with_prefix] = {'BOOL': to_bool(val)}
 				elif isinstance(val, (int, float)) or (isinstance(val, str)
-													   and (val.isnumeric() or val.replace('.', '', 1).isnumeric())):
+				                                       and (val.isnumeric() or val.replace('.', '', 1).isnumeric())):
 					result[key_with_prefix] = {'N': str(val)}
 				elif isinstance(val, str):
 					result[key_with_prefix] = {'S': str(val)}
@@ -507,29 +508,29 @@ class DynamoDbClient:
 			else:
 				if key not in self.config.get('required_fields', []):
 					logger.warning("Field %s is missing from row_mapper, so we can't convert it to DynamoDB "
-								   "syntax. This is not a required field, so we continue, but please investigate "
-								   "row: %s", key, row_dict)
+					               "syntax. This is not a required field, so we continue, but please investigate "
+					               "row: %s", key, row_dict)
 				else:
 					raise ValueError(f"Field {key} is missing from row_mapper, so we can't convert it to DynamoDB "
-									 f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
+					                 f"syntax. This is a required field, so we can not continue. Row: {row_dict}")
 
 		logger.debug("dict_to_dynamo result: %s", result)
 		return result
 
 
 	def _query_constructor(self, keys: Dict,
-						   table_name: Optional[str] = None,
-						   *,
-						   index_name: Optional[str] = None,
-						   comparisons: Optional[Dict] = None,
-						   max_items: Optional[int] = None,
-						   filter_expression: Optional[str] = None,
-						   strict: bool = None,
-						   return_count: bool = False,
-						   desc: bool = False,
-						   fetch_all_fields: bool = None,
-						   expr_attrs_names: list = None,
-						   consistent_read: bool = None) -> dict:
+	                       table_name: Optional[str] = None,
+	                       *,
+	                       index_name: Optional[str] = None,
+	                       comparisons: Optional[Dict] = None,
+	                       max_items: Optional[int] = None,
+	                       filter_expression: Optional[str] = None,
+	                       strict: bool = None,
+	                       return_count: bool = False,
+	                       desc: bool = False,
+	                       fetch_all_fields: bool = None,
+	                       expr_attrs_names: list = None,
+	                       consistent_read: bool = None) -> dict:
 		"""
 		..  _query_constructor:
 
@@ -570,7 +571,7 @@ class DynamoDbClient:
 
 		if strict is not None:
 			logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
-						   "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
+			               "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
 		fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
 		table_name = self._get_validate_table_name(table_name)
@@ -725,7 +726,7 @@ class DynamoDbClient:
 
 
 	def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
-					consistent_read=None):
+	                consistent_read=None):
 		"""
 		Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
 		Careful - don't make queries of too many items, this could run for a long time.
@@ -748,7 +749,7 @@ class DynamoDbClient:
 
 		if strict is not None:
 			logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
-						   "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
+			               "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
 		fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
 		response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -762,7 +763,7 @@ class DynamoDbClient:
 
 
 	def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
-							  consistent_read=None):
+	                          consistent_read=None):
 		"""
 		Scans a table. Don't use this method if you want to select by keys. It is SLOW compared to get_by_query.
 		Careful - don't make queries of too many items, this could run for a long time.
@@ -786,7 +787,7 @@ class DynamoDbClient:
 
 		if strict is not None:
 			logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
-						   "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
+			               "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
 		fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
 		response_iterator = self._build_scan_iterator(attrs, table_name, index_name, consistent_read)
@@ -838,7 +839,7 @@ class DynamoDbClient:
 
 
 	def batch_get_items_one_table(self, keys_list, table_name=None, max_retries=0, retry_wait_base_time=0.2,
-								  strict=None, fetch_all_fields=None, consistent_read=None):
+	                              strict=None, fetch_all_fields=None, consistent_read=None):
 		"""
 		Gets a batch of items from a single dynamo table.
 		Only accepts keys, can't query by other columns.
@@ -867,7 +868,7 @@ class DynamoDbClient:
 
 		if strict is not None:
 			logger.warning("batch_get_items_one_table ``strict`` variable is deprecated in sosw 0.7.13+. "
-						   "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
+			               "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
 		fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
 		table_name = self._get_validate_table_name(table_name)
@@ -999,8 +1000,8 @@ class DynamoDbClient:
 
 	# @benchmark
 	def update(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
-			   attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
-			   condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
+	           attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+	           condition_expression: Optional[str] = None, attributes_to_remove: Optional[List[str]] = None):
 		"""
 		Updates an item in DynamoDB. Will create a new item if it doesn't exist.
 		IMPORTANT - If you want to make sure it exists, use ``patch`` method
@@ -1026,7 +1027,7 @@ class DynamoDbClient:
 
 		if not attributes_to_update and not attributes_to_increment and not attributes_to_remove:
 			raise ValueError(f"In dynamodb.update, please specify either attributes_to_update "
-							 f"or attributes_to_increment or attributes_to_remove")
+			                 f"or attributes_to_increment or attributes_to_remove")
 
 		expression_attributes = {}
 		update_set_val_expr_parts = []
@@ -1083,8 +1084,8 @@ class DynamoDbClient:
 
 
 	def patch(self, keys: Dict, attributes_to_update: Optional[Dict] = None,
-			  attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
-			  attributes_to_remove: Optional[List[str]] = None):
+	          attributes_to_increment: Optional[Dict] = None, table_name: Optional[str] = None,
+	          attributes_to_remove: Optional[List[str]] = None):
 		"""
 		Updates an item in DynamoDB. Will fail if an item with these keys does not exist.
 		"""
@@ -1092,9 +1093,9 @@ class DynamoDbClient:
 		hash_key = self.config['hash_key']
 		condition_expression = f'attribute_exists {hash_key}'
 		self.update(keys=keys, attributes_to_update=attributes_to_update,
-					attributes_to_increment=attributes_to_increment, table_name=table_name,
-					condition_expression=condition_expression,
-					attributes_to_remove=attributes_to_remove)
+		            attributes_to_increment=attributes_to_increment, table_name=table_name,
+		            condition_expression=condition_expression,
+		            attributes_to_remove=attributes_to_remove)
 
 
 	def delete(self, keys: Dict, table_name: Optional[str] = None):
@@ -1137,9 +1138,9 @@ class DynamoDbClient:
 			assert len(t) == 1, "one transaction must contain only one operation"
 			action = list(t.keys())[0]
 			assert action in supported_actions, f"Bad action '{action}'. " \
-												f"Supported actions: {', '.join(supported_actions)}"
+			                                    f"Supported actions: {', '.join(supported_actions)}"
 			assert isinstance(t[action], dict), f"transaction[{action}] must be a dictionary. bad type: " \
-												f"{type(t[action])}"
+			                                    f"{type(t[action])}"
 
 		for t_chunk in chunks(transactions, 10):
 			logger.debug("Transactions: %s", t_chunk)
@@ -1156,7 +1157,7 @@ class DynamoDbClient:
 
 			if table_name is None:
 				raise RuntimeError("Failed to dynamo action. no 'table_name' in config  and table_name wasn't "
-								   "specified in the arguments.")
+				                   "specified in the arguments.")
 		if os.environ.get('STAGE') == 'test':
 			assert table_name.startswith('autotest_') or table_name == 'config', f"Bad table name in test: {table_name}"
 
