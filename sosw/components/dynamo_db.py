@@ -184,8 +184,7 @@ class DynamoDbClient:
             logger.warning("Table %s wasn't found in Glue Data Catalog 'ddb_tables' Database", config['table_name'])
             return config
         except glue_client.exceptions.AccessDeniedException:
-            # check the error!!!
-            logger.warning("User is not authorized to use Amazon Glue")
+            logger.warning("User is not authorized to use Amazon Glue. Assuming you have provided sufficient config.")
             return config
 
         if 'row_mapper' not in config:
