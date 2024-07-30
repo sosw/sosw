@@ -186,6 +186,7 @@ class DynamoDbClient:
         except glue_client.exceptions.AccessDeniedException:
             # check the error!!!
             logger.warning("User is not authorized to use Amazon Glue")
+            return config
 
         if 'row_mapper' not in config:
             config['row_mapper'] = {}
