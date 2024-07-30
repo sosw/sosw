@@ -162,7 +162,8 @@ class DynamoDbClient:
         This functions allows config to have only the ``table_name`` and in case we have a Glue Database ``ddb_tables``
         with Crawlers regularly updating it, we can construct the rest of the config from it.
 
-        Read more: https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler
+        Read more: `sys_glue_ddb_crawler
+        <https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler>`_
 
         Lazy initialization of ``boto3.client('glue')`` is supposed to be in the ``app`` module, but for compatibility
         with ``DynamoDbClient`` initialized outside the scope of the Processor (e.g. your custom scripts), we support
@@ -247,8 +248,8 @@ class DynamoDbClient:
 
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
         """
-        Returns description of the table from AWS. Response like:
-        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table
+        Returns description of the table from AWS. Response like: `DynamoDB.Client.describe_table
+        <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table>`_
 
         :return: Description of the table
         """
@@ -681,7 +682,8 @@ class DynamoDbClient:
     def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
         """
         Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
-        https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+        `Expressions.OperatorsAndFunctions.html
+        <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html>`_
 
         Supported: regular comparators, between, attribute_[not\_]exists
 
