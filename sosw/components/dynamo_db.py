@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 
 from .benchmark import benchmark
-from .helpers import chunks, to_bool
+from .helpers import chunks, recursive_matches_extract, recursive_update, to_bool, camel_case_to_underscore
 
 
 class DynamoDbClient:
@@ -81,8 +81,24 @@ class DynamoDbClient:
 
     """
 
+    GLUE_TYPES_MAPPING = {
+        'S':    ['string', 'char', 'varchar'],
+        'N':    ['decimal', 'double', 'float', 'int', 'tinyint', 'smallint', 'bigint'],
+        'B':    ['binary'],
+        'BOOL': ['boolean'],
+        'M':    ['struct'],
+        'L':    ['array'],
+        'SS':   ['set<string>'],
+        'NS':   ['set<bigint>'],
+    }
 
-    def __init__(self, config):
+
+    def __init__(self, config: dict, glue_client: boto3.client = None):
+        """
+        If ``skip_glue`` not in config, try to enrich config from Glue Data Catalog. May provide ``glue_client``
+        to save initialization time.
+        """
+
         assert isinstance(config, dict), "Config must be provided during DynamoDbClient initialization"
 
         # If this is a test, make sure the table is a test table
@@ -90,7 +106,10 @@ class DynamoDbClient:
             assert config['table_name'].startswith('autotest_') or config['table_name'] == 'config', \
                 f"Bad table name {config['table_name']} in autotest"
 
-        self.config = config
+        if 'skip_glue' not in config:
+            self.config = self.enrich_config_from_glue(config, glue_client)
+        else:
+            self.config = config
 
         # create a dynamodb client
         self.dynamo_client = boto3.client('dynamodb', region_name=config.get('region_name'))
@@ -108,6 +127,93 @@ class DynamoDbClient:
 
         self.type_serializer = TypeSerializer()
         self.type_deserializer = TypeDeserializer()
+
+
+    def convert_glue_column_to_ddb(self, column) -> dict:
+        """
+        From Glue column:
+        ``{'Name': 'id', 'Type': 'string'}``
+
+        To Dynamo DB column:
+        ``{'id': 'S'}``
+        """
+
+        for attr in ['Name', 'Type']:
+            if attr not in column.keys() or not column.get(attr):
+                raise ValueError(
+                    "Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
+                    f"Received {column}")
+
+        try:
+            for key, types in self.GLUE_TYPES_MAPPING.items():
+                if any(column['Type'].startswith(t) for t in types):
+                    return {
+                        column['Name']: key
+                    }
+        except KeyError:
+            raise ValueError("Input 'column' expected in Glue Data Catalog format {'Name': 'id', 'Type': 'string'}. "
+                             f"Received {column}")
+
+        raise ValueError(f"Unsupported type {column['Type']} of item in Glue table")
+
+
+    def enrich_config_from_glue(self, config: dict, glue_client: boto3.client = None) -> dict:
+        """
+        This functions allows config to have only the ``table_name`` and in case we have a Glue Database ``ddb_tables``
+        with Crawlers regularly updating it, we can construct the rest of the config from it.
+
+        Read more: `sys_glue_ddb_crawler
+        <https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler>`_
+
+        Lazy initialization of ``boto3.client('glue')`` is supposed to be in the ``app`` module, but for compatibility
+        with ``DynamoDbClient`` initialized outside the scope of the Processor (e.g. your custom scripts), we support
+        initialization of the ``glue_client`` if missing.
+
+        In order to use Glue the Role of your application should have relevant permissions.
+        By default, we ignore missing permissions and just return the config as is.
+        """
+
+        if not glue_client:
+            glue_client = boto3.client('glue', region_name=config.get('region_name'))
+
+        try:
+            glue_table = glue_client.get_table(
+                DatabaseName='ddb_tables',
+                Name=config['table_name']
+            )
+        except glue_client.exceptions.EntityNotFoundException:
+            logger.warning("Table %s wasn't found in Glue Data Catalog 'ddb_tables' Database", config['table_name'])
+            return config
+        except glue_client.exceptions.AccessDeniedException:
+            logger.warning("User is not authorized to use Amazon Glue. Assuming you have provided sufficient config.")
+            return config
+
+        if 'row_mapper' not in config:
+            config['row_mapper'] = {}
+
+        for column in glue_table['Table']['StorageDescriptor']['Columns']:
+            config['row_mapper'] = recursive_update(config['row_mapper'], self.convert_glue_column_to_ddb(column))
+
+        hashKey = recursive_matches_extract(glue_table, 'Table.Parameters.hashKey')
+        rangeKey = recursive_matches_extract(glue_table, 'Table.Parameters.rangeKey')
+
+        if 'required_fields' not in config:
+            config['required_fields'] = []
+
+        for name, attr in {'hashKey': hashKey, 'rangeKey': rangeKey}.items():
+            if isinstance(attr, str) and attr not in config['required_fields']:
+                config['required_fields'].append(attr)
+
+            config_value = config.get(name)
+            glue_value = recursive_matches_extract(glue_table, f'Table.Parameters.{name}')
+
+            if isinstance(glue_value, str) and glue_value:
+                if config_value:
+                    if config_value != glue_value:
+                        raise RuntimeError(f"Config has incorrect {name}. In Glue DataCatalog it is {glue_value}")
+                else:
+                    config[camel_case_to_underscore(name)] = glue_value
+        return config
 
 
     def identify_dynamo_capacity(self, table_name=None):
@@ -142,8 +248,8 @@ class DynamoDbClient:
 
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
         """
-        Returns description of the table from AWS. Response like:
-        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table
+        Returns description of the table from AWS. Response like: `DynamoDB.Client.describe_table
+        <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table>`_
 
         :return: Description of the table
         """
@@ -334,7 +440,8 @@ class DynamoDbClient:
                     else:
                         result[key] = self.type_deserializer.deserialize(val_dict)
 
-        assert all(True for x in self.config['required_fields'] if result.get(x)), "Some ``required_fields`` are missing"
+        assert all(
+            True for x in self.config['required_fields'] if result.get(x)), "Some ``required_fields`` are missing"
         return result
 
 
@@ -518,7 +625,6 @@ class DynamoDbClient:
             logger.debug("Forcing ConsistentRead in query args of get_by_query to: %s", consistent_read)
             query_args['ConsistentRead'] = consistent_read
 
-
         # In case of any of the attributes names are in the list of Reserved Words in DynamoDB or other situations when,
         # there is a need to specify ExpressionAttributeNames, then a dict should be passed to the query.
         if expr_attrs_names:
@@ -537,7 +643,8 @@ class DynamoDbClient:
         if max_items:
             query_args['PaginationConfig'] = {'MaxItems': max_items}
             if return_count:
-                raise Exception(f"DynamoDbCLient.get_by_query does not support ``max_items`` and ``return_count`` together")
+                raise Exception(
+                    f"DynamoDbCLient.get_by_query does not support ``max_items`` and ``return_count`` together")
 
         if desc:
             query_args['ScanIndexForward'] = False
@@ -575,7 +682,8 @@ class DynamoDbClient:
     def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
         """
         Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
-        https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+        `Expressions.OperatorsAndFunctions.html
+        <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html>`_
 
         Supported: regular comparators, between, attribute_[not\_]exists
 
@@ -610,13 +718,14 @@ class DynamoDbClient:
             key = words[0]
             result_expr = f"{key} between :st_between_{key} and :en_between_{key}"
             result_values = self.dict_to_dynamo({
-                                                    f"st_between_{key}": words[2],
-                                                    f"en_between_{key}": words[4]
-                                                }, add_prefix=':', strict=False)
+                f"st_between_{key}": words[2],
+                f"en_between_{key}": words[4]
+            }, add_prefix=':', strict=False)
         else:
             raise ValueError(f"Unsupported expression for Filtering: {expression}")
 
         return result_expr, result_values
+
 
     def get_by_scan(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
                     consistent_read=None):
@@ -653,6 +762,7 @@ class DynamoDbClient:
             self.stats['dynamo_scan_queries'] += 1
 
         return result
+
 
     def get_by_scan_generator(self, attrs=None, table_name=None, index_name=None, strict=None, fetch_all_fields=None,
                               consistent_read=None):
@@ -772,7 +882,7 @@ class DynamoDbClient:
         # Check if we skipped something - if we did, try again.
         def get_unprocessed_keys(db_result):
             return 'UnprocessedKeys' in db_result and db_result['UnprocessedKeys'] \
-                   and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
+                and table_name in db_result['UnprocessedKeys'] and db_result['UnprocessedKeys'][table_name]['Keys']
 
 
         all_items = []
@@ -1173,8 +1283,8 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
 
         for row in page['Items']:
             client.delete_item(
-                    TableName=table_name,
-                    Key={key: row[key] for key in keys}
+                TableName=table_name,
+                Key={key: row[key] for key in keys}
             )
 
             stats['deleted'] += 1
