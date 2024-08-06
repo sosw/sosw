@@ -7,10 +7,13 @@ Serverless Orchestrator of Serverless Workers
 ..  image:: https://travis-ci.com/sosw/sosw.svg?branch=master
     :alt: Travis - Build
     :target: https://travis-ci.com/sosw/sosw
-.. image:: https://img.shields.io/docsrs/docs
+..  image:: https://img.shields.io/docsrs/docs
     :alt: Documentation Status
     :target: https://docs.sosw.app/?badge=latest
-.. image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
+..  image:: _static/images/coverage.svg
+    :alt: Test Coverage
+    :target: https://docs.sosw.app/?badge=latest
+..  image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
     :alt: PyPI - Installs / month
     :target: https://pypi.org/project/sosw/
 ..  image:: https://img.shields.io/pypi/l/sosw?color=blue
@@ -106,18 +109,19 @@ Another deployment requirement is to create several `DynamoDB` tables.
 Once again, the detailed guide for initial setup can be found in the :ref:`Installation Guidelines`.
 
 
-.. toctree::
-   :titlesonly:
-   :caption: Contents:
-   :maxdepth: 2
+..  toctree::
+    :titlesonly:
+    :caption: Contents:
+    :maxdepth: 2
 
-   installation
-   essentials/index
-   components/index
-   managers/index
-   tutorials/index
+    installation
+    essentials/index
+    components/index
+    managers/index
+    tools/index
+    tutorials/index
 
-   contribution/index
+    contribution/index
 
 
 Indices and tables

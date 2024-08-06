@@ -262,3 +262,10 @@ class app_UnitTestCase(unittest.TestCase):
             processor.get_ddbc(prefix)
 
             self.assertEqual(str(context.exception), "get_ddbc() method supports only prefixes: ['example']")
+
+    def test_c(self):
+        p = Processor(custom_config={'a': {'b': {'c': 42}}})
+
+        self.assertEqual(p._c('a.b.c'), 42)
+        self.assertEqual(p._c('a.b.z'), None)
+        self.assertEqual(p._c('z'), None)

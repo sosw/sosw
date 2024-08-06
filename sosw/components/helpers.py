@@ -54,6 +54,7 @@ __all__ = ['validate_account_to_dashed',
            'validate_list_of_words_from_csv_or_list',
            'first_or_none',
            'recursive_update',
+           'recursive_insert',
            'trim_arn_to_name',
            'trim_arn_to_account',
            'make_hash',
@@ -364,7 +365,7 @@ def validate_datetime_from_something(d):
         else datetime.datetime.fromtimestamp(x / 1000)),
         (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
         (datetime.datetime.strptime(d, '%Y-%m-%d')
-        if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
+         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
     ]
 
     for mutator in mutators:
@@ -545,8 +546,9 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     If you are just checking if some elements exist, you might be interested in
     recursive_exists_strict() or recursive_exists_soft() helpers.
 
-    .. :warninig:
-        Please be aware that this method doesn't not check for duplicates in iterable elements on neither
+    ..  warning::
+
+        Please be aware that this method does not check for duplicates in iterable elements on neither
         level during extraction.
 
     :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
@@ -793,20 +795,18 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
 
     ..  code-block:: python
 
-            d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
-            u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
+        d = {'a': 42, 'b': {'b1': 33, 'b2': 44}}
+        u = {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
-            recursive_update(d, u)
+        recursive_update(d, u)
 
-            # result:
+        # result:
+        {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
 
-            {'a': 43, 'b': {'b1': 22, 'b2': 44, 'b3': 33}}
+        d.update(u)
 
-            d.update(u)
-
-            # result:
-
-            {'a': 43, 'b': {'b1': 22, 'b3': 33}}
+        # result:
+        {'a': 43, 'b': {'b1': 22, 'b3': 33}}
 
     List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.
     """
@@ -843,6 +843,45 @@ def recursive_update(d: Dict, u: Mapping) -> Dict:
             new[k] = v
 
     return new
+
+
+def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
+    """
+    Insert the ``value`` to the input dictionary ``d`` nested according to the ``path``.
+
+    By default, the separator is ``.``, but can be changed in the ``separator`` argument.
+    Returns the input ``d`` with modifications applied.
+
+    Example:
+
+    ..  code-block:: python
+
+        d = {'a': {'b': {'z': 42}}}
+        result = recursive_insert(d, 'a.b.ccc.ddd', 123)
+
+        # Result
+        {'a': {'b': {'z': 42, 'ccc': {'ddd': 123}}}}
+    """
+
+    if not isinstance(path, str) or not path:
+        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', "
+                         f"but received: {path}")
+
+    result = deepcopy(d) if d is not None else {}
+
+    parts = path.split(separator, 1)
+
+    if len(parts) == 1:
+        result[parts[0]] = value
+    else:
+        prefix, key = parts
+        if prefix not in result:
+            result[prefix] = {}
+        if not isinstance(result[prefix], dict):
+            raise ValueError(f"The path '{path}' leads to some non-dict nested element. Can't insert deeper.")
+        result[prefix] = recursive_insert(result[prefix], key, value, separator)
+
+    return result
 
 
 def trim_arn_to_name(arn: str) -> str:

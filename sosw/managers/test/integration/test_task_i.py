@@ -61,8 +61,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
         self.retry_tasks_table = self.config['sosw_retry_tasks_table']
 
-        # self.autotest_ddbm.clean_ddbs()
-
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
