@@ -78,10 +78,11 @@ class Processor:
 
     DEFAULT_CONFIG = {}
 
-    aws_account = None
-    aws_region = os.getenv('AWS_REGION', None)
-    ddb_names = None
-    lambda_context = None
+    aws_account: str = None
+    aws_region: str = os.getenv('AWS_REGION', None)
+    ddb_names: list = None
+    stats: dict = None
+    result: dict = None
 
 
     def __init__(self, custom_config=None, **kwargs):
