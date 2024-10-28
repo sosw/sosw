@@ -63,6 +63,7 @@ __all__ = ['validate_account_to_dashed',
            'unwrap_event_recursively',
            'is_event_from_sqs',
            'small_int_from_string',
+           'get_if_dict_or_default',
            ]
 
 import datetime
@@ -74,7 +75,7 @@ import uuid
 from collections import abc, defaultdict
 from copy import deepcopy
 from datetime import timezone
-from typing import Iterable, Callable, Dict, Mapping, List, Optional
+from typing import Iterable, Callable, Dict, Mapping, List, Optional, Any
 
 from sosw.components.exceptions import EventNotFromSourceException
 
@@ -663,7 +664,7 @@ def dunder_to_dict(data: dict, separator=None):
     return dict(result)
 
 
-def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
+def nested_dict_from_keys(keys: List, value: Optional[Any] = None) -> Dict:
     """
     Constructs a nested dictionary using a list of keys to embed recursively.
     If `value` is provided it is assigned to the last subkey.
@@ -1096,3 +1097,12 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     int_value = int(hex_digest, 16)
 
     return int_value % (10 ** num_digits)
+
+def get_if_dict_or_default(obj: Any, key: str, default: Any = None) -> Optional[Any]:
+    """
+    Retrieves the value associated with `key` from `obj` if `obj` is a dictionary.
+    If `obj` is not a dictionary or `key` does not exist, returns `default`.
+
+    :return: The value associated with `key` if `obj` is a dictionary and `key` exists, otherwise `default`.
+    """
+    return obj.get(key, default) if isinstance(obj, dict) else default
