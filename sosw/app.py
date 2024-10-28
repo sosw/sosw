@@ -507,7 +507,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         :return: Result of the lambda function call.
         """
 
-        if event.get('logging_level'):
+        if get_if_dict_or_default(event, 'logging_level'):
             logger.setLevel(event.get('logging_level'))
 
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
@@ -515,7 +515,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
                     __name__, context)
         logger.info(event)
 
-        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        test = get_if_dict_or_default(event, 'test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
 
         global_vars.lambda_context = context
 

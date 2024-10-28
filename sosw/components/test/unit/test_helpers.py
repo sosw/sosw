@@ -1,5 +1,6 @@
 import datetime
 from datetime import timezone
+from pickle import TRUE
 import time
 import unittest
 import os
@@ -818,6 +819,17 @@ class helpers_UnitTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
 
+
+    def test_get_if_dict_or_default(self):
+        """
+        Test get_if_dict_or_default().
+        :return:
+        """
+
+        self.assertEqual(get_if_dict_or_default({'test': True}, 'test'), True)
+        self.assertEqual(get_if_dict_or_default({}, 'test'), None)
+        self.assertEqual(get_if_dict_or_default('test', 'test'), None)
+        self.assertEqual(get_if_dict_or_default({}, 'test', True), True)
 
 if __name__ == '__main__':
     unittest.main()
