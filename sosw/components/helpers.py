@@ -1096,3 +1096,18 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     int_value = int(hex_digest, 16)
 
     return int_value % (10 ** num_digits)
+
+
+def slug_to_camel_case(text):
+    """
+    Split the input text by hyphens to get individual words
+    Convert each word to capitalize the first letter and join them to form CamelCase
+    
+    :return: Resulting CamelCase string
+
+    """
+    words = text.split('-')
+
+    camel_case = ''.join(word.capitalize() for word in words)
+
+    return camel_case

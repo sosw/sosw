@@ -819,5 +819,20 @@ class helpers_UnitTestCase(unittest.TestCase):
             small_int_from_string("test", num_digits=-1)
 
 
+    def test_small_int_from_string(self):
+        test_cases = [
+            ("camel-case-text", "CamelCaseText"),
+            ("leadingtrailing", "Leadingtrailing"),
+            ("camel-case-123", "CamelCase123"),
+            ("singleword", "Singleword"),
+            ("multiple-consecutive-hyphens", "MultipleConsecutiveHyphens"),
+            ("",""),
+            ("camel", "Camel")
+        ]
+        for input_text, expected_output in test_cases:
+            with self.subTest(input_text=input_text, expected_output=expected_output):
+                self.assertEqual(slug_to_camel_case(input_text), expected_output)
+
+
 if __name__ == '__main__':
     unittest.main()
