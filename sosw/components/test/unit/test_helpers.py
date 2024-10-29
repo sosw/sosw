@@ -819,7 +819,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             small_int_from_string("test", num_digits=-1)
 
 
-    def test_small_int_from_string(self):
+    def test_slug_to_camel_case(self):
         test_cases = [
             ("camel-case-text", "CamelCaseText"),
             ("leadingtrailing", "Leadingtrailing"),
