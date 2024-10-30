@@ -822,10 +822,10 @@ class helpers_UnitTestCase(unittest.TestCase):
     def test_slug_to_camel_case(self):
         test_cases = [
             ("camel-case-text", "CamelCaseText"),
-            ("leadingtrailing", "Leadingtrailing"),
             ("camel-case-123", "CamelCase123"),
             ("singleword", "Singleword"),
-            ("multiple-consecutive-hyphens", "MultipleConsecutiveHyphens"),
+            ("multiple--consecutive--hyphens", "MultipleConsecutiveHyphens"),
+            ("someWord-partially-CamelCased", "SomeWordPartiallyCamelCased")
             ("",""),
             ("camel", "Camel")
         ]

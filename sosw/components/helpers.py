@@ -1107,6 +1107,7 @@ def slug_to_camel_case(text):
     :return: Resulting CamelCase string
 
     """
+    text = re.sub(r'(?<!^)(?=[A-Z])', '_', text).lower()
     words = text.split('-')
 
     camel_case = ''.join(word.capitalize() for word in words)
