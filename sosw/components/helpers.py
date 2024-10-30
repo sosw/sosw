@@ -63,6 +63,7 @@ __all__ = ['validate_account_to_dashed',
            'unwrap_event_recursively',
            'is_event_from_sqs',
            'small_int_from_string',
+           'slug_to_camel_case',
            ]
 
 import datetime
@@ -1096,3 +1097,19 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     int_value = int(hex_digest, 16)
 
     return int_value % (10 ** num_digits)
+
+
+def slug_to_camel_case(text):
+    """
+    Split the input text by hyphens to get individual words
+    Convert each word to capitalize the first letter and join them to form CamelCase
+    
+    :return: Resulting CamelCase string
+
+    """
+    text = re.sub(r'(?<!^)(?=[A-Z])', '_', text).lower()
+    words = text.split('-')
+
+    camel_case = ''.join(word.capitalize() for word in words)
+
+    return camel_case

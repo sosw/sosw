@@ -819,5 +819,20 @@ class helpers_UnitTestCase(unittest.TestCase):
             small_int_from_string("test", num_digits=-1)
 
 
+    def test_slug_to_camel_case(self):
+        test_cases = [
+            ("camel-case-text", "CamelCaseText"),
+            ("camel-case-123", "CamelCase123"),
+            ("singleword", "Singleword"),
+            ("multiple--consecutive--hyphens", "MultipleConsecutiveHyphens"),
+            ("someWord-partially-CamelCased", "SomeWordPartiallyCamelCased")
+            ("",""),
+            ("camel", "Camel")
+        ]
+        for input_text, expected_output in test_cases:
+            with self.subTest(input_text=input_text, expected_output=expected_output):
+                self.assertEqual(slug_to_camel_case(input_text), expected_output)
+
+
 if __name__ == '__main__':
     unittest.main()
