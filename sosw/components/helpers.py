@@ -42,6 +42,7 @@ __all__ = ['validate_account_to_dashed',
            'validate_date_list_from_event_or_days_back',
            'validate_date_from_something',
            'validate_datetime_from_something',
+           'validate_date_timestamp_from_something',
            'validate_string_matches_datetime_format',
            'is_valid_date',
            'recursive_matches_soft',
@@ -64,6 +65,7 @@ __all__ = ['validate_account_to_dashed',
            'unwrap_event_recursively',
            'is_event_from_sqs',
            'small_int_from_string',
+           'slug_to_camel_case',
            ]
 
 import datetime
@@ -392,6 +394,29 @@ def validate_date_from_something(d):
     """
 
     return validate_datetime_from_something(d).date()
+
+
+def validate_date_timestamp_from_something(d) -> float:
+    """
+    Converts the input `d` to timestamp of the date rounded.
+
+    :param d: Some input. Supported types:
+                * datetime.datetime
+                * datetime.date
+                * int - Epoch or Epoch milliseconds
+                * float - Epoch or Epoch milliseconds
+                * str (YYYY-MM-DD)
+                * str (YYYY-MM-DD HH:MM:SS)
+                * str(epoch time seconds as string)
+                * str(epoch time seconds (float) as string)
+    :return: Transformed `d`
+    :raises: ValueError
+    """
+
+    dt = validate_datetime_from_something(d)
+    date_only = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return date_only.timestamp()
 
 
 def validate_string_matches_datetime_format(date_str, date_format, field_name='date'):
@@ -864,7 +889,8 @@ def recursive_insert(d: dict, path: str, value, separator: str = '.') -> dict:
     """
 
     if not isinstance(path, str) or not path:
-        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', but received: {path}")
+        raise ValueError(f"Path is invalid. Should be a non-empty string separated with '{separator}', "
+                         f"but received: {path}")
 
     result = deepcopy(d) if d is not None else {}
 
@@ -1134,3 +1160,20 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     int_value = int(hex_digest, 16)
 
     return int_value % (10 ** num_digits)
+
+
+def slug_to_camel_case(text: str) -> str:
+    """
+    Split the input text by hyphens to get individual words
+    Convert each word to capitalize the first letter and join them to form CamelCase
+    
+    :return: Resulting CamelCase string
+     
+    """
+    text = re.sub(r'(?<!^)(?=[A-Z])', '-', text).lower()
+    words = text.split('-')
+
+    camel_case = ''.join(word.capitalize() for word in words)
+
+    return camel_case
+
