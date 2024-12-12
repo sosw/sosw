@@ -30,24 +30,21 @@ Essential components of **`sosw`** orchestration are implemented as AWS Lambda f
 .. note::
    Please pronounce `sosw` correctly: */ˈsɔːsəʊ/*
 
-
-| CREATE FUNCTION | ORCHESTRATE WORKFLOWS |
-
-..  toctree::
-    :titlesonly:
-    :caption: Contents:
-    :maxdepth: 2
+..	toctree::
+	:titlesonly:
+	:caption: Contents:
+	:maxdepth: 2
 
 	quickstart
 	orchestration
-    installation
-    essentials/index
-    components/index
-    managers/index
-    tools/index
-    tutorials/index
+	installation
+	essentials/index
+	components/index
+	managers/index
+	tools/index
+	tutorials/index
 
-    contribution/index
+	contribution/index
 
 
 Indices and tables
@@ -56,7 +53,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. _the example: https://raw.githubusercontent.com/sosw/sosw/master/examples/yaml/initial/sosw-dev-shared-dynamodb.yaml
-.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
-.. _Scheduled Events: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html

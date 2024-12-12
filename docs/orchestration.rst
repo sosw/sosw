@@ -43,7 +43,7 @@ Read more: :ref:`Scheduler`
 Orchestration
 -------------
 
-The :ref:`Orchestrator` is called automatically every minute by `Scheduled Events`_.
+The :ref:`Orchestrator` is called automatically every minute by `AWS EventBridge Scheduler`_.
 It evaluates the status of Workers at the current moment, the health of external metrics
 the Workers may depend on (e.g CPU lod of some DB, IOPS, etc.) and invokes the appropriate
 amount of new parallel invocations.
@@ -53,7 +53,7 @@ Read more: :ref:`Orchestrator`
 Scavenger
 ---------
 
-The :ref:`Scavenger` is called automatically every minute by `Scheduled Events`_.
+The :ref:`Scavenger` is called automatically every minute by `AWS EventBridge Scheduler`_.
 It collects the tasks marked as ``completed`` by the Workers and archives them.
 
 If the task did not successfully accomplish it tries to re-invoke it with configurable exponential delay.
@@ -78,3 +78,6 @@ Another deployment requirement is to create several `DynamoDB` tables.
 
 Once again, the detailed guide for initial setup can be found in the :ref:`Installation Guidelines`.
 
+.. _the example: https://raw.githubusercontent.com/sosw/sosw/master/examples/yaml/initial/sosw-dev-shared-dynamodb.yaml
+.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
+.. _AWS EventBridge Scheduler: https://docs.aws.amazon.com/eventbridge/latest/userguide/using-eventbridge-scheduler.html

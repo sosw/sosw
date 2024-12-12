@@ -130,7 +130,7 @@ html_theme_options = {
     'canonical_url': 'https://docs.sosw.app/',
     'analytics_id': 'G-Z2R1VYR62X',  #  Provided by Google in your dashboard
     'logo_only': True,
-    'version_selector': True,
+    # 'version_selector': True,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
