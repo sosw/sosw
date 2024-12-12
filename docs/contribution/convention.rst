@@ -20,6 +20,37 @@ Basics
   even if they are not really required.
 * Richard wins against Winnie.
 
+Imports
+-------
+
+..  code-block:: python
+
+    import core modules
+    -*(empty line)*
+    import custom libraries
+    --
+    import custom modules
+    --
+    from core import something
+    --
+    from custom libraries import something
+    --
+    from custom modules import something
+
+| Within each of the blocks sort alphabetically.
+| Example:
+
+..  code-block:: python
+
+    import datetime
+    import time
+
+    import requests
+
+    from collections.defaultdict import defaultdict
+
+    from my_lib_abc.models import AwesomeModel
+    from my_lib_abc.qwerty import AwesomeClass
 
 Building the docs
 ------------------
