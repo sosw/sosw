@@ -33,6 +33,9 @@ __all__ = ['validate_account_to_dashed',
            'validate_account_to_int',
            'validate_list_of_numbers_from_csv',
            'camel_case_to_underscore',
+           'underscore_to_camel_case',
+           'slug_to_camel_case',
+           'camel_case_to_slug',           
            'chunks',
            'validate_uuid4',
            'rstrip_all',
@@ -65,7 +68,6 @@ __all__ = ['validate_account_to_dashed',
            'unwrap_event_recursively',
            'is_event_from_sqs',
            'small_int_from_string',
-           'slug_to_camel_case',
            ]
 
 import datetime
@@ -172,6 +174,37 @@ def camel_case_to_underscore(name):
 
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', str(name))
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def underscore_to_camel_case(name):
+    """
+    Convert input from underscore case to camel case
+
+    :param name:    - str   -   snake_case string
+    :return:        - str   -   SnakeCase string
+    """
+    return re.sub(r'_([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
+
+
+def camel_case_to_slug(name):
+    """
+    Convert input from camel case to slug case
+
+    :param name:    - str   -   CamleCase string
+    :return:        - str   -   slug-case string
+    """
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', str(name))
+    return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+
+
+def slug_to_camel_case(name):
+    """
+    Convert input from slug case to camel case
+
+    :param name:    - str   -   slug-case string
+    :return:        - str   -   SnakeCase string
+    """
+    return re.sub(r'-([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
 
 
 def chunks(l, n):
