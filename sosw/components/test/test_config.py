@@ -42,7 +42,7 @@ class DynamoConfigTestCase(unittest.TestCase):
             'config_value': 'S'
         },
         'required_fields': ['env', 'config_name', 'config_value'],
-        'table_name':      get_autotest_ddb_name_with_custom_suffix('config'),
+        'table_name': autotest_dynamo_db_config_setup['TableName'],
     }
 
     autotest_ddbm: AutotestDdbManager = None
@@ -54,26 +54,28 @@ class DynamoConfigTestCase(unittest.TestCase):
         cls.autotest_ddbm = AutotestDdbManager(tables)
 
 
+    @classmethod
+    def tearDownClass(cls) -> None:
+        asyncio.run(cls.autotest_ddbm.drop_ddbs())
+
+
     def setUp(self):
         config = self.TEST_CONFIG.copy()
         self.dynamo_client = DynamoDbClient(config)
-        self.dynamo_config = DynamoConfig(test=True)
+        self.dynamo_config = DynamoConfig(test=True, config={
+            'dynamo_client_config': {'table_name': autotest_dynamo_db_config_setup['TableName']}})
 
 
     def tearDown(self):
         asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        asyncio.run(cls.autotest_ddbm.drop_ddbs())
-
-
+    # @unittest.skip("TODO need normal patching")
     def test_get_config__json(self):
         row = {'env': 'production', 'config_name': 'sophie_test', 'config_value': '{"a": 1}'}
         safe_put_to_ddb(row, self.dynamo_client)
 
-        result = self.dynamo_config.get_config('sophie_test', "production")
+        result = self.dynamo_config.get_config('sophie_test', 'production')
         self.assertEqual(result, {'a': 1})
 
 
@@ -81,12 +83,12 @@ class DynamoConfigTestCase(unittest.TestCase):
         row = {'env': 'production', 'config_name': 'sophie_test2', 'config_value': 'some text'}
         safe_put_to_ddb(row, self.dynamo_client)
 
-        result = self.dynamo_config.get_config('sophie_test2', "production")
+        result = self.dynamo_config.get_config('sophie_test2', 'production')
         self.assertEqual(result, 'some text')
 
 
     def test_get_config__doesnt_exist(self):
-        config = self.dynamo_config.get_config('sophie_test', "production")
+        config = self.dynamo_config.get_config('sophie_test', 'production')
         self.assertEqual(config, {})
 
 
