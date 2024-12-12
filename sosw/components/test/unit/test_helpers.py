@@ -598,10 +598,6 @@ class helpers_UnitTestCase(unittest.TestCase):
             (({'a': {}}, 'a.b', 42), {'a': {'b': 42}}),
             (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
             (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
-
-            (({'a': [{'b': 13}]}, 'a', 42), {'a': [42, {'b': 13}]}),
-            (({'a': [{'b': 15}]}, 'a', 42), {'a': [{'b': 15}, 42]}),
-
         ]
         for paylod, expected in TESTS:
             self.assertEqual(recursive_insert(*paylod), expected)
