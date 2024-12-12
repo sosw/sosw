@@ -11,7 +11,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
-
+from sosw.components.helpers import underscore_to_camel_case, camel_case_to_slug, slug_to_camel_case
 
 class helpers_UnitTestCase(unittest.TestCase):
 
@@ -874,6 +874,13 @@ class helpers_UnitTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
 
+            
+    def test_case_helper_functions(self):    
+        self.assertEqual(camel_case_to_underscore(VALID_CASES['camel']), VALID_CASES['underscore'])
+        self.assertEqual(underscore_to_camel_case(VALID_CASES['underscore']), VALID_CASES['camel'])
+        self.assertEqual(camel_case_to_slug(VALID_CASES['camel']), VALID_CASES['slug'])
+        self.assertEqual(slug_to_camel_case(VALID_CASES['slug']), VALID_CASES['camel'])
+ 
     
     def test_slug_to_camel_case(self):
         test_cases = [

@@ -519,8 +519,12 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         :return: Result of the lambda function call.
         """
 
-        if event.get('logging_level'):
-            logger.setLevel(event.get('logging_level'))
+        try:
+            if level := event.get('logging_level'):
+                logger.setLevel(level)
+        except AttributeError:
+            logger.debug("The payload is not dict")
+            pass
 
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
                     os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
