@@ -124,29 +124,29 @@ the layer.
 
 Here's a basic CloudFormation template snippet demonstrating how to connect a layer to a Lambda function:
 
-..   code-block:: yaml
+..  code-block:: yaml
 
     Resources:
-  MyLambdaLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      ContentUri: my_sosw_layer.zip
-      CompatibleRuntimes:
-        - python3.8
-        - python3.9
-        - python3.10
-        - python3.11
+        MyLambdaLayer:
+        Type: AWS::Lambda::LayerVersion
+        Properties:
+            ContentUri: my_sosw_layer.zip
+            CompatibleRuntimes:
+                - python3.10
+                - python3.11
+                - python3.12
+                - python3.13
 
-  MyLambdaFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code:
-        S3Bucket: my_bucket
-        S3Key: my_function.zip
-      Handler: app.lambda_handler
-      Runtime: python3.11
-      Layers:
-        - !Ref MyLambdaLayer
+        MyLambdaFunction:
+            Type: AWS::Lambda::Function
+            Properties:
+            Code:
+               S3Bucket: my_bucket
+               S3Key: my_function.zip
+            Handler: app.lambda_handler
+            Runtime: python3.13
+            Layers:
+                - !Ref MyLambdaLayer
 
 ------------
 Update Layer
@@ -174,7 +174,9 @@ Each time you publish an update to the layer, Lambda increments the version numb
 Every layer version is identified by a unique Amazon Resource Name (ARN).
 When adding a layer to the function, you must specify the exact layer version you want to use.
 
-You can use `layers_versions_changer.py
+..	warning:: The correct way as of Dec 2024 is to publish version to AWS SSM Parameter Store and import from there in Lambda stacks.
+
+You can also use `layers_versions_changer.py
 <https://github.com/sosw/sosw-examples/blob/master/helpers/sosw_layers_version_changer/layers_versions_changer.py>`_ to automate the process of updating layer versions across all CloudFormation and SAM templates in your project.
 This script intelligently replaces placeholders in your templates with the actual layer version, ensuring that functions within your project
 automatically use the latest layer versions without manual intervention. This streamlines the management of layer versions across your serverless applications,
