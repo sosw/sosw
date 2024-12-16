@@ -17,13 +17,13 @@ setup(name='sosw',
           'Development Status :: 5 - Production/Stable',
           'Operating System :: Other OS',
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python :: 3.8',
-          'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12',
+          'Programming Language :: Python :: 3.13',
           'Topic :: Software Development'
       ],
       packages=find_packages(exclude=['docs', 'test', 'examples', "*.test", "*.test.*"]),
       install_requires=[
-          'boto3>=1.20'
+          'boto3>=1.35.0'
       ])
