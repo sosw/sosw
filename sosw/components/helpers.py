@@ -202,7 +202,7 @@ def slug_to_camel_case(name):
     Convert input from slug case to camel case
 
     :param name:    - str   -   slug-case string
-    :return:        - str   -   SnakeCase string
+    :return:        - str   -   CamelCase string
     """
     return re.sub(r'-([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
 
@@ -1195,7 +1195,7 @@ def small_int_from_string(input_string: str, num_digits: int = 2) -> int:
     return int_value % (10 ** num_digits)
 
 
-def slug_to_camel_case(text: str) -> str:
+def slug_to_camel_case_mk2(text: str) -> str:
     """
     Split the input text by hyphens to get individual words
     Convert each word to capitalize the first letter and join them to form CamelCase

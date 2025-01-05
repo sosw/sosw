@@ -99,7 +99,7 @@ class MetaHandler:
             try:
                 self.dynamo_db_client = DynamoDbClient(config=self.config['dynamo_db_config'])
             except:
-                logging.exception("Failed to initialize MetaHandler DynamoDbClient")
+                logger.exception("Failed to initialize MetaHandler DynamoDbClient")
                 self.dynamo_db_client = None
         else:
             self.dynamo_db_client = None

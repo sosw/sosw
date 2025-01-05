@@ -26,11 +26,21 @@
     SOFTWARE.
 """
 
-import logging
 import time
 
 from typing import Tuple
 from functools import wraps
+
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
 
 def logging_wrapper(level: int = None):
@@ -71,9 +81,9 @@ def logging_wrapper(level: int = None):
                 for k, v in kwargs.items():
                     s_parts.append(f"{k}={v},")
 
-                logging.log(level, " ".join(s_parts).strip(','))
+                logger.log(level, " ".join(s_parts).strip(','))
             except Exception:
-                logging.log(level, f"Running {method.__name__} with args={args}, kwargs={kwargs}")
+                logger.log(level, f"Running {method.__name__} with args={args}, kwargs={kwargs}")
 
             result = method(*args, **kwargs)
             return result
@@ -110,8 +120,8 @@ def retry(exception_to_check: (Exception, Tuple[Exception]) = Exception, tries: 
                     return func(*args, **kwargs)
                 except exception_to_check as e:
                     msg = f"{str(e)}, Retrying in {mutable_delay} seconds..."
-                    if logging:
-                        logging.warning(msg)
+                    if logger:
+                        logger.warning(msg)
                     else:
                         print(msg)
                     time.sleep(mutable_delay)
