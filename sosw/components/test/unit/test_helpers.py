@@ -325,7 +325,7 @@ class helpers_UnitTestCase(unittest.TestCase):
     def test_recursive_match_extract(self):
         SRC = {
             "bar": [{"page": {"oid": 234}}, {"page": {"code": "exclude_me", "id": 123}},
-                    {"page": {"code": "ok", "id": 333}}], "name": "test"
+                    {"page": {"code": "ok", "id": 333}}], "name": "test", 42: "foo"
         }
 
         self.assertEqual(recursive_matches_extract(SRC, 'name'), "test")
@@ -333,6 +333,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(recursive_matches_extract(SRC, 'bar.page.id'), 123, "The first one in list")
         self.assertEqual(recursive_matches_extract(SRC, 'bar.page.id', exclude_key='code', exclude_val='exclude_me'),
                          333, "Exclude did not work.")
+        self.assertEqual(recursive_matches_extract(SRC, "42"), "foo")
 
         self.assertIsNone(recursive_matches_extract(SRC, 'na'))
         self.assertIsNone(recursive_matches_extract(SRC, 'bar.baz'))
@@ -344,9 +345,10 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_recursive_matches_extract__ignore_case(self):
         TESTS = [
-            ({'HEADERS': {'Origin': 'foo'}}, 'headers.origin', 'foo'),
-            ({'headers': {'oriGIN': 'foo'}}, 'Headers.OrIgiN', 'foo'),
-            ({'hEaDeRs': {'oRiGiN': 'foo'}}, 'headers.origin', 'foo')
+            ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
+            ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
+            ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
+            ({"hEaDeRs": {42: "foo"}}, "headers.42", "foo")
         ]
 
         for payload, path, result in TESTS:

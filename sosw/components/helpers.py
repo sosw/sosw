@@ -580,7 +580,7 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     ignore_case = kwargs.get("ignore_case", False)
 
     if ignore_case:
-        key = key.lower()
+        key = key.lower() if isinstance(key,str) else key
         src = ignore_case_copy(src)
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
@@ -616,7 +616,12 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
                 # logging.debug("Skipping element because it matches exclude parameters.")
                 return None
         except KeyError:
-            pass  # There is a chance that the exclude key is simply missing. We ignore it then.
+            pass
+        
+        if re.match(r"\d+", key):
+            return src.get(key, src.get(int(key)))
+        
+        # There is a chance that the exclude key is simply missing. We ignore it then.
         return src.get(key)
     else:
         raise RuntimeError("Your function is stupid")
