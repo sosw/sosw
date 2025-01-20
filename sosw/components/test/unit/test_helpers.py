@@ -7,12 +7,11 @@ from copy import deepcopy
 
 from sosw.components.test.unit.helpers_test_variables import *
 
-
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
-
+from sosw.components.helpers import underscore_to_camel_case, camel_case_to_slug, slug_to_camel_case
 
 class helpers_UnitTestCase(unittest.TestCase):
 
@@ -322,6 +321,30 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertRaises(ValueError, validate_date_from_something, input_type)
 
 
+    def test_validate_date_timestamp_from_something(self):
+        TESTS = [
+            ('9999-12-30 23:59:59', datetime.datetime(9999, 12, 30).timestamp()),
+            ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1).timestamp()),
+            ('2018-07-05', datetime.datetime(2018, 7, 5).timestamp()),
+            ('1970-01-01', datetime.datetime(1970, 1, 1).timestamp()),
+            ('1000', datetime.datetime(1970, 1, 1).timestamp()),
+            ('1000.1', datetime.datetime(1970, 1, 1).timestamp()),
+            (datetime.datetime(2023, 9, 1, 14, 0, 0), datetime.datetime(2023, 9, 1).timestamp()),
+            (datetime.date(2023, 9, 1), datetime.datetime(2023, 9, 1).timestamp()),
+            (1000, datetime.datetime(1970, 1, 1).timestamp()),
+            (1000.1, datetime.datetime(1970, 1, 1).timestamp()),
+            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1).timestamp()),
+            ('2018-01-01 10:01:03 hello world', datetime.datetime(2018, 1, 1).timestamp())
+        ]
+
+        for variant, expected_result in TESTS:
+            self.assertEqual(validate_date_timestamp_from_something(variant), expected_result)
+
+
+        self.assertRaises(ValueError, validate_date_timestamp_from_something, 'somebadstring')
+        self.assertRaises(ValueError, validate_date_timestamp_from_something, 253402300800000)
+
+
     def test_recursive_match_extract(self):
         SRC = {
             "bar": [{"page": {"oid": 234}}, {"page": {"code": "exclude_me", "id": 123}},
@@ -400,12 +423,12 @@ class helpers_UnitTestCase(unittest.TestCase):
 
     def test_construct_dates_from_event__conflict_of_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'st_date': '2018-01-01', 'days_back': 10}), \
-        "Not raised conflict of attributes"
+            "Not raised conflict of attributes"
 
 
     def test_construct_dates_from_event__missing_attributes(self):
         self.assertRaises(AttributeError, construct_dates_from_event, {'bad_event': 'missing st_date and days_back'}), \
-        "Not raised missing attributes in event"
+            "Not raised missing attributes in event"
 
 
     def test_construct_dates_from_event__ok(self):
@@ -575,6 +598,35 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIn({'a': '42', 'b': '42'}, r['a'])
 
 
+    def test_recursive_insert(self):
+        TESTS = [
+            (({}, 'a', 42), {'a': 42}),
+            ((None, 'a', 42), {'a': 42}),
+            ((None, 'a', None), {'a': None}),
+            (({}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': 13}}, 'a', 42), {'a': 42}),
+            (({'a': {'b': 1}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': {'c': 1}}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'b': {'c': 1}}}, 'a.b.d', 42), {'a': {'b': {'c': 1, 'd': 42}}}),
+            (({'a': {}}, 'a.b', 42), {'a': {'b': 42}}),
+            (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
+            (({'a': {'foo': 42}}, 'a.b', 42), {'a': {'b': 42, 'foo': 42}}),
+        ]
+        for paylod, expected in TESTS:
+            self.assertEqual(recursive_insert(*paylod), expected)
+
+
+    def test_recursive_insert__errors(self):
+        TESTS = [
+            (({'a': 1}, 'a.b', 42), ValueError),
+            (({'a': {'b': 42}}, 'a.b.c', 42), ValueError),
+            (({}, '', 42), ValueError),
+            (({}, None, 42), ValueError),
+        ]
+        for paylod, expected in TESTS:
+            self.assertRaises(expected, recursive_insert, *paylod)
+
+
     def test_dunder_to_dict(self):
         TESTS = [
             ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
@@ -585,8 +637,8 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
         ]
 
-        for test, expected in TESTS:
-            self.assertEqual(dunder_to_dict(test), expected)
+        for paylod, expected in TESTS:
+            self.assertEqual(dunder_to_dict(paylod), expected)
 
 
     def test_dunder_to_dict__exceptions(self):
@@ -742,9 +794,9 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertEqual(get_message_dict_from_sns_event(sns_event),
                          {
                              "Records": [{
-                                             "eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2",
-                                             "s3":           {"bucket": {}, "object": {}}
-                                         }]
+                                 "eventVersion": "2.0", "eventSource": "aws:s3", "awsRegion": "us-west-2",
+                                 "s3":           {"bucket": {}, "object": {}}
+                             }]
                          })
 
 
@@ -830,6 +882,28 @@ class helpers_UnitTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
+
+            
+    def test_case_helper_functions(self):    
+        self.assertEqual(camel_case_to_underscore(VALID_CASES['camel']), VALID_CASES['underscore'])
+        self.assertEqual(underscore_to_camel_case(VALID_CASES['underscore']), VALID_CASES['camel'])
+        self.assertEqual(camel_case_to_slug(VALID_CASES['camel']), VALID_CASES['slug'])
+        self.assertEqual(slug_to_camel_case(VALID_CASES['slug']), VALID_CASES['camel'])
+ 
+    
+    def test_slug_to_camel_case(self):
+        test_cases = [
+            ("camel-case-text", "CamelCaseText"),
+            ("camel-case-123", "CamelCase123"),
+            ("singleword", "Singleword"),
+            ("multiple--consecutive--hyphens", "MultipleConsecutiveHyphens"),
+            ("someWord-partially-CamelCased", "SomeWordPartiallyCamelCased"),
+            ("",""),
+            ("camel", "Camel")
+        ]
+        for input_text, expected_output in test_cases:
+            with self.subTest(input_text=input_text, expected_output=expected_output):
+                self.assertEqual(slug_to_camel_case(input_text), expected_output)
 
 
 if __name__ == '__main__':
