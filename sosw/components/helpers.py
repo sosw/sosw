@@ -594,6 +594,13 @@ def recursive_matches_strict(src, key, val, **kwargs):
 
 
 def ignore_case_copy(src):
+    """A funtion to create a copy of a source dict with all string keys in lower case.
+    
+    Keyword arguments:
+    :param dict src -- Input dictionary
+    :return dict: a copy of the dict with all string keys in lower case.
+    """
+    
     output = {}
     for k, v in src.items():
         if isinstance(k,str):
