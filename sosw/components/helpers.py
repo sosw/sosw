@@ -647,8 +647,8 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     ignore_case = kwargs.get("ignore_case", False)
 
     if ignore_case:
-        key = key.lower() if isinstance(key,str) else key
-        src = ignore_case_copy(src)
+        key = key.lower()
+        src = ignore_case_copy(src) if isinstance(src,dict) else [ignore_case_copy(s) for s in src]
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
