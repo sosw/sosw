@@ -685,8 +685,6 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
         except KeyError:
             pass
         
-        if re.match(r"\d+", key):
-            return src.get(key, src.get(int(key)))
         
         # There is a chance that the exclude key is simply missing. We ignore it then.
         return src.get(key)
