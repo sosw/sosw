@@ -371,7 +371,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
             ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
             ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
-            ({"hEaDeRs": {42: "foo"}}, "headers.42", "foo")
+            (({"hEaDeRs": {"oRiGiN": "foo"}},{"headers": {"origin": "foo"}}), "headers.origin", "foo")
         ]
 
         for payload, path, result in TESTS:
