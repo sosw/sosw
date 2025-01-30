@@ -348,7 +348,7 @@ class helpers_UnitTestCase(unittest.TestCase):
     def test_recursive_match_extract(self):
         SRC = {
             "bar": [{"page": {"oid": 234}}, {"page": {"code": "exclude_me", "id": 123}},
-                    {"page": {"code": "ok", "id": 333}}], "name": "test", 42: "foo"
+                    {"page": {"code": "ok", "id": 333}}], "name": "test", "42": "foo",
         }
 
         self.assertEqual(recursive_matches_extract(SRC, 'name'), "test")
