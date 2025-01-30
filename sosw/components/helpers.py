@@ -593,6 +593,26 @@ def recursive_matches_strict(src, key, val, **kwargs):
         raise RuntimeError("Your function is stupid", src, key, val)
 
 
+def ignore_case_copy(src):
+    """A funtion to create a copy of a source dict with all string keys in lower case.
+    
+    Keyword arguments:
+    :param dict src -- Input dictionary
+    :return dict: a copy of the dict with all string keys in lower case.
+    """
+    
+    output = {}
+    for k, v in src.items():
+        if isinstance(k,str):
+            if isinstance(v,dict):
+                output[k.lower()] = ignore_case_copy(v)
+            output[k.lower()] = v
+            continue
+
+        output[k] = v
+    return output
+
+
 def recursive_matches_extract(src, key, separator=None, **kwargs):
     """
     Searches the 'src' recursively for nested elements provided in 'key' with dot notation.
@@ -623,6 +643,12 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
 
     :return:    Value from structure extracted by specified path
     """
+
+    ignore_case = kwargs.get("ignore_case", False)
+
+    if ignore_case:
+        key = key.lower()
+        src = ignore_case_copy(src) if isinstance(src,dict) else [ignore_case_copy(s) for s in src]
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
@@ -657,7 +683,10 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
                 # logging.debug("Skipping element because it matches exclude parameters.")
                 return None
         except KeyError:
-            pass  # There is a chance that the exclude key is simply missing. We ignore it then.
+            pass
+        
+        
+        # There is a chance that the exclude key is simply missing. We ignore it then.
         return src.get(key)
     else:
         raise RuntimeError("Your function is stupid")
