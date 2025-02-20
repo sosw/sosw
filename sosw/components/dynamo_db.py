@@ -571,9 +571,8 @@ class DynamoDbClient:
         """
 
         if strict is not None:
-            logger.warning("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
+            logger.error("get_by_query ``strict`` variable is deprecated in sosw 0.7.13+. "
                            "Please replace it's usage with ``fetch_all_fields`` (and reverse the boolean value)")
-        fetch_all_fields = fetch_all_fields if fetch_all_fields is not None else False if strict is None else not strict
 
         table_name = self._get_validate_table_name(table_name)
 
@@ -685,7 +684,7 @@ class DynamoDbClient:
         `Expressions.OperatorsAndFunctions.html
         <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html>`_
 
-        Supported: regular comparators, between, attribute_[not\_]exists
+        Supported: regular comparators, between, attribute_exists, attribute_not_exists
 
         :return:  Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.
         """
