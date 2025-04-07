@@ -174,7 +174,7 @@ Each time you publish an update to the layer, Lambda increments the version numb
 Every layer version is identified by a unique Amazon Resource Name (ARN).
 When adding a layer to the function, you must specify the exact layer version you want to use.
 
-..	warning:: The correct way as of Dec 2024 is to publish version to AWS SSM Parameter Store and import from there in Lambda stacks.
+..	warning:: The correct way as of Dec 2025 is to publish version to AWS SSM Parameter Store and import from there in Lambda stacks.
 
 You can also use `layers_versions_changer.py
 <https://github.com/sosw/sosw-examples/blob/master/helpers/sosw_layers_version_changer/layers_versions_changer.py>`_ to automate the process of updating layer versions across all CloudFormation and SAM templates in your project.

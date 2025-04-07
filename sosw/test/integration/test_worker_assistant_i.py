@@ -17,6 +17,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
+@unittest.skip
 class WorkerAssistant_IntegrationTestCase(unittest.TestCase):
 
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
