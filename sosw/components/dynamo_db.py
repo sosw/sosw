@@ -679,7 +679,7 @@ class DynamoDbClient:
 
 
     def _parse_filter_expression(self, expression: str) -> Tuple[str, Dict]:
-        """
+        r"""
         Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
         `Expressions.OperatorsAndFunctions.html
         <https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html>`_
