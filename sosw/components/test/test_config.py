@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.config import SSMConfig, DynamoConfig, ConfigSource
 from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_config_setup, \
-    get_autotest_ddb_name_with_custom_suffix, safe_put_to_ddb
+    safe_put_to_ddb
 
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
@@ -70,7 +70,6 @@ class DynamoConfigTestCase(unittest.TestCase):
         asyncio.run(self.autotest_ddbm.clean_ddbs())
 
 
-    # @unittest.skip("TODO need normal patching")
     def test_get_config__json(self):
         row = {'env': 'production', 'config_name': 'sophie_test', 'config_value': '{"a": 1}'}
         safe_put_to_ddb(row, self.dynamo_client)

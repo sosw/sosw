@@ -17,7 +17,7 @@
 ![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
 
 ## Dependencies
-- Python 3.8 | 3.9 | 3.10 | 3.11
+- Python 3.10 | 3.11 | 3.12 | 3.13
 - [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
 
 ## Installation
@@ -100,7 +100,7 @@ This document has been placed in the public domain.
     sosw - Serverless Orchestrator of Serverless Workers
     
     The MIT License (MIT)
-    Copyright (C) 2024  sosw core contributors <info@sosw.app>:
+    Copyright (C) 2025  sosw core contributors <info@sosw.app>:
         Nikolay Grishchenko
         Sophie Fogel
         Gil Halperin

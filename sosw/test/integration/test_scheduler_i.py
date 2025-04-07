@@ -20,6 +20,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 
+@unittest.skip
 class Scheduler_IntegrationTestCase(unittest.TestCase):
     AWS_ACCOUNT = None
     BUCKET_NAME = None

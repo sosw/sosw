@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from sosw.orchestrator import Orchestrator
 from sosw.labourer import Labourer
-from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG, TEST_TASK_CLIENT_CONFIG
+from sosw.test.variables import TEST_ORCHESTRATOR_CONFIG
 from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo_db_tasks_setup
 
 os.environ["STAGE"] = "test"

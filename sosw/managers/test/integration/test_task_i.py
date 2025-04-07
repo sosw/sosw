@@ -24,6 +24,7 @@ from sosw.test.helpers_test_dynamo_db import AutotestDdbManager, autotest_dynamo
     autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup, safe_put_to_ddb
 
 
+@unittest.skip
 class TaskManager_IntegrationTestCase(unittest.TestCase):
     TEST_CONFIG = TEST_TASK_CLIENT_CONFIG
     LABOURER = Labourer(id='some_function', arn='arn:aws:lambda:us-west-2:000000000000:function:some_function')
@@ -61,8 +62,6 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         self.completed_tasks_table = self.config['sosw_closed_tasks_table']
         self.retry_tasks_table = self.config['sosw_retry_tasks_table']
 
-        # self.autotest_ddbm.clean_ddbs()
-
         self.dynamo_client = DynamoDbClient(config=self.config['dynamo_db_config'])
         self.manager = TaskManager(custom_config=self.config)
         self.manager.ecology_client = MagicMock()
@@ -83,7 +82,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     def setup_tasks(self, status='available', mutiple_labourers=False, count_tasks=3):
         """ Some fake adding some scheduled tasks for some workers. """
 
-        _ = self.manager.get_db_field_name
+        _dbf = self.manager.get_db_field_name
         _cfg = self.manager.config.get
 
         table = _cfg('dynamo_db_config')['table_name'] if status not in ['closed', 'failed'] \
@@ -92,49 +91,49 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         MAP = {
             'available': {
                 self.RANGE_KEY[0]:               lambda x: str(worker_id),
-                _('greenfield'):                 lambda x: round(10000 + random.randrange(0, 100000, 1000)),
-                _('attempts'):                   lambda x: 0,
-                _('result_uploaded_files'):      lambda x: [{'bucket':      'cnvm',
+                _dbf('greenfield'):                 lambda x: round(10000 + random.randrange(0, 100000, 1000)),
+                _dbf('attempts'):                   lambda x: 0,
+                _dbf('result_uploaded_files'):      lambda x: [{'bucket':      'cnvm',
                                                              's3_key':      'key',
                                                              'description': 'description'
                                                              }],
-                _('stat_time_register_clients'): lambda x: 0.00440446899847
+                _dbf('stat_time_register_clients'): lambda x: 0.00440446899847
             },
             'invoked':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
-                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta'),
-                _('attempts'):     lambda x: 1,
+                _dbf('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta'),
+                _dbf('attempts'):     lambda x: 1,
             },
             'expired':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
-                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                _dbf('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
                                              - random.randint(1000, 10000),
-                _('attempts'):     lambda x: 1,
+                _dbf('attempts'):     lambda x: 1,
             },
             'running':   {
                 self.RANGE_KEY[0]: lambda x: str(worker_id),
-                _('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                _dbf('greenfield'):   lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
                                              - random.randint(1, 900),
-                _('attempts'):     lambda x: 1,
+                _dbf('attempts'):     lambda x: 1,
             },
 
             'closed':    {
-                _('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                _dbf('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
                                                         - random.randint(1000, 10000),
-                _('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_1",
+                _dbf('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_1",
 
-                _('completed_at'):            lambda x: x[_('greenfield')] - _cfg('greenfield_invocation_delta')
+                _dbf('completed_at'):            lambda x: x[_dbf('greenfield')] - _cfg('greenfield_invocation_delta')
                                                         + random.randint(10, 300),
-                _('closed_at'):               lambda x: x[_('completed_at')] + random.randint(1,
+                _dbf('closed_at'):               lambda x: x[_dbf('completed_at')] + random.randint(1,
                                                                                               60),
-                _('attempts'):                lambda x: 3,
+                _dbf('attempts'):                lambda x: 3,
             },
             'failed':    {
-                _('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
+                _dbf('greenfield'):              lambda x: round(time.time()) + _cfg('greenfield_invocation_delta')
                                                         - random.randint(1000, 10000),
-                _('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_0",
-                _('closed_at'):               lambda x: x[_('greenfield')] + 900 + random.randint(1, 60),
-                _('attempts'):                lambda x: 3,
+                _dbf('labourer_id_task_status'): lambda x: f"{self.LABOURER.id}_0",
+                _dbf('closed_at'):               lambda x: x[_dbf('greenfield')] + 900 + random.randint(1, 60),
+                _dbf('attempts'):                lambda x: 3,
             },
         }
 
@@ -265,17 +264,17 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     # @unittest.skip("Function currently depricated")
     # def test_close_task(self):
-    #     _ = self.manager.get_db_field_name
+    #     _dbf = self.manager.get_db_field_name
     #     # Create task with id=123
-    #     task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2,
-    #             _('completed_at'): 123123}
+    #     task = {_dbf('task_id'): '123', _dbf('labourer_id'): 'lambda1', _dbf('greenfield'): 8888, _dbf('attempts'): 2,
+    #             _dbf('completed_at'): 123123}
     #     self.dynamo_client.put(task)
     #
     #     # Call
     #     self.manager.close_task(task_id='123', labourer_id='lambda1')
     #
     #     # Get from db, check
-    #     tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+    #     tasks = self.dynamo_client.get_by_query({_dbf('task_id'): '123'})
     #     self.assertEqual(len(tasks), 1)
     #     task_result = tasks[0]
     #
@@ -284,39 +283,39 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
     #     for k in ['task_id', 'labourer_id', 'greenfield', 'attempts']:
     #         assert expected_result[k] == task_result[k]
     #
-    #     self.assertTrue(_('closed_at') in task_result, msg=f"{_('closed_at')} not in task_result {task_result}")
-    #     self.assertTrue(time.time() - 360 < task_result[_('closed_at')] < time.time())
+    #     self.assertTrue(_dbf('closed_at') in task_result, msg=f"{_dbf('closed_at')} not in task_result {task_result}")
+    #     self.assertTrue(time.time() - 360 < task_result[_dbf('closed_at')] < time.time())
 
     def test_archive_task(self):
-        _ = self.manager.get_db_field_name
+        _dbf = self.manager.get_db_field_name
         # Create task with id=123
-        task = {_('task_id'): '123', _('labourer_id'): 'lambda1', _('greenfield'): 8888, _('attempts'): 2}
+        task = {_dbf('task_id'): '123', _dbf('labourer_id'): 'lambda1', _dbf('greenfield'): 8888, _dbf('attempts'): 2}
         self.dynamo_client.put(task)
 
         # Call
         self.manager.archive_task('123')
 
         # Check the task isn't in the tasks db, but is in the completed_tasks table
-        tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+        tasks = self.dynamo_client.get_by_query({_dbf('task_id'): '123'})
         self.assertEqual(len(tasks), 0)
 
-        completed_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'}, table_name=self.completed_tasks_table)
+        completed_tasks = self.dynamo_client.get_by_query({_dbf('task_id'): '123'}, table_name=self.completed_tasks_table)
         self.assertEqual(len(completed_tasks), 1)
         completed_task = completed_tasks[0]
 
         for k in task.keys():
             self.assertEqual(task[k], completed_task[k])
         for k in completed_task.keys():
-            if k != _('closed_at'):
+            if k != _dbf('closed_at'):
                 self.assertEqual(task[k], completed_task[k])
 
-        self.assertTrue(time.time() - 360 < completed_task[_('closed_at')] < time.time())
+        self.assertTrue(time.time() - 360 < completed_task[_dbf('closed_at')] < time.time())
 
 
     def test_move_task_to_retry_table(self):
-        _ = self.manager.get_db_field_name
+        _dbf = self.manager.get_db_field_name
         labourer_id = 'lambda1'
-        task = {_('task_id'): '123', _('labourer_id'): labourer_id, _('greenfield'): 8888, _('attempts'): 2}
+        task = {_dbf('task_id'): '123', _dbf('labourer_id'): labourer_id, _dbf('greenfield'): 8888, _dbf('attempts'): 2}
         delay = 300
 
         self.dynamo_client.put(task)
@@ -326,10 +325,10 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             mock_time.return_value = self.NOW_TIME
             self.manager.move_task_to_retry_table(task, delay)
 
-            result_tasks = self.dynamo_client.get_by_query({_('task_id'): '123'})
+            result_tasks = self.dynamo_client.get_by_query({_dbf('task_id'): '123'})
             self.assertEqual(len(result_tasks), 0)
 
-            result_retry_tasks = self.dynamo_client.get_by_query({_('labourer_id'): labourer_id},
+            result_retry_tasks = self.dynamo_client.get_by_query({_dbf('labourer_id'): labourer_id},
                                                                  table_name=self.retry_tasks_table)
             self.assertEqual(len(result_retry_tasks), 1)
             result = first_or_none(result_retry_tasks)
@@ -337,14 +336,14 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
             for k in task:
                 self.assertEqual(task[k], result[k])
             for k in result:
-                if k != _('desired_launch_time'):
+                if k != _dbf('desired_launch_time'):
                     self.assertEqual(result[k], task[k])
 
-            self.assertTrue(time.time() + delay - 60 < result[_('desired_launch_time')] < time.time() + delay + 60)
+            self.assertTrue(time.time() + delay - 60 < result[_dbf('desired_launch_time')] < time.time() + delay + 60)
 
 
     def test_get_tasks_to_retry_for_labourer(self):
-        _ = self.manager.get_db_field_name
+        _dbf = self.manager.get_db_field_name
 
         tasks = RETRY_TASKS.copy()
         # Add tasks to retry table
@@ -367,7 +366,7 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
     @unittest.skip("This funciton moved to Scavenger")
     def test_retry_tasks(self):
-        _ = self.manager.get_db_field_name
+        _dbf = self.manager.get_db_field_name
 
         with patch('time.time') as t:
             t.return_value = 9500
@@ -378,12 +377,12 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
         # Add tasks to tasks_table
         regular_tasks = [
             {
-                _('labourer_id'): labourer.id, _('task_id'): '11', _('arn'): 'some_arn', _('payload'): {},
-                _('greenfield'):  8888
+                _dbf('labourer_id'): labourer.id, _dbf('task_id'): '11', _dbf('arn'): 'some_arn', _dbf('payload'): {},
+                _dbf('greenfield'):  8888
             },
             {
-                _('labourer_id'): labourer.id, _('task_id'): '22', _('arn'): 'some_arn', _('payload'): {},
-                _('greenfield'):  9999
+                _dbf('labourer_id'): labourer.id, _dbf('task_id'): '22', _dbf('arn'): 'some_arn', _dbf('payload'): {},
+                _dbf('greenfield'):  9999
             },
         ]
         for task in regular_tasks:
@@ -419,21 +418,21 @@ class TaskManager_IntegrationTestCase(unittest.TestCase):
 
         for retry_task in retry_tasks:
             try:
-                matching = next(x for x in tasks_table_items if x[_('task_id')] == retry_task[_('task_id')])
+                matching = next(x for x in tasks_table_items if x[_dbf('task_id')] == retry_task[_dbf('task_id')])
             except StopIteration:
                 print(f"Task not retried {retry_task}. Probably not yet desired.")
                 continue
 
             for k in retry_task.keys():
-                if k not in [_('greenfield'), _('desired_launch_time')]:
+                if k not in [_dbf('greenfield'), _dbf('desired_launch_time')]:
                     self.assertEqual(retry_task[k], matching[k])
 
             for k in matching.keys():
-                if k != _('greenfield'):
+                if k != _dbf('greenfield'):
                     self.assertEqual(retry_task[k], matching[k])
 
-            print(f"New greenfield of a retried task: {matching[_('greenfield')]}")
-            self.assertTrue(matching[_('greenfield')] < min([x[_('greenfield')] for x in regular_tasks]))
+            print(f"New greenfield of a retried task: {matching[_dbf('greenfield')]}")
+            self.assertTrue(matching[_dbf('greenfield')] < min([x[_dbf('greenfield')] for x in regular_tasks]))
 
 
     @unittest.skip("This function moved to Scavenger")

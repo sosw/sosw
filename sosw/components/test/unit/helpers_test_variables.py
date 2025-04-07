@@ -219,3 +219,9 @@ PT_DESCRIBE_TABLE = {
         'RetryAttempts': 0
     }
 }
+
+VALID_CASES = {
+    "underscore": "valid_case",
+    "camel": "ValidCase",
+    "slug": "valid-case"
+}

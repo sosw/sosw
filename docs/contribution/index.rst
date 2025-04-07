@@ -69,14 +69,30 @@ Initialization
 Building the docs
 ------------------
 
-To build the docs locally, run: ``sphinx-build -ab html ./docs ./sosw-rtd``
+To build the docs locally, run: ``sphinx-build -Wab html ./docs ./sosw-rtd``
 
 You can also use the built in python web server to view the html version directly from localhost
 in your preferred browser.
 
-.. code-block:: bash
+..  code-block:: bash
 
- sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+    sphinx-build -Wab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+
+Coverage
+------------------------------------------------
+..  image:: ../_static/images/coverage.svg
+
+We use pytest-cov_ for calculating the test coverage.
+Currently there is no automatic blocker for untested code. In order to calculate the actual coverage you
+have to run it will all the integration tests, so this is mainly used during release.
+
+``.converagerc`` holds the configuration for Coverage module.
+
+..  code-block:: bash
+
+    pytest --cov=sosw sosw/
+    rm  docs/_static/images/coverage.svg; coverage-badge -o docs/_static/images/coverage.svg
+
 
 Pull Requests Checklist
 -----------------------
@@ -128,3 +144,4 @@ Great that you are ready to contribute!
 Some guidelines of how to do create PRs from forks can be found in `GitHub documentation`_.
 
 .. _GitHub documentation: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork
+.. _pytest-cov: https://github.com/pytest-dev/pytest-cov
