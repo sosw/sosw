@@ -77,7 +77,7 @@ class Processor:
     """
 
     DEFAULT_CONFIG = {}
-
+    DISABLE_DDB_CONFIG = False
     aws_account: str = None
     aws_region: str = os.getenv('AWS_REGION', None)
     ddb_names: list = None
@@ -123,9 +123,10 @@ class Processor:
 
         # Initialize config from default config
         self.config = self.DEFAULT_CONFIG or {}
-        # Update config recursively from any existing lambda function config
-        self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+        if not self.DISABLE_DDB_CONFIG:
+            # Update config recursively from any existing lambda function config
+            self.config = recursive_update(self.config,
+                                           self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
         # Update config recursively from custom config
         self.config = recursive_update(self.config, custom_config or {})
 
