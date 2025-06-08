@@ -612,43 +612,37 @@ def ignore_case_copy(src):
         output[k] = v
     return output
 
-
 def recursive_matches_extract(src, key, separator=None, **kwargs):
     """
-    Searches the 'src' recursively for nested elements provided in 'key' with dot notation.
-    In case some levels are iterable (list, tuple) it checks every element in it till finds it.
+    Recursively extracts the first matching value from a nested dictionary or iterable structure using a dot notation path.
+
+    In case some levels are iterable (list, tuple), it checks each element recursively until it finds the match.
 
     Returns the first found element or None.
-    In case the full path is inaccessible also returns None.
+    If the full path is inaccessible, also returns None.
 
-    If you are just checking if some elements exist, you might be interested in
-    recursive_exists_strict() or recursive_exists_soft() helpers.
+    You may also want to use `recursive_exists_strict()` or `recursive_exists_soft()` if you're only checking for existence.
 
-    ..  warning::
+    .. warning::
+        This method does not check for duplicates in iterable elements at any level during extraction.
 
-        Please be aware that this method does not check for duplicates in iterable elements on neither
-        level during extraction.
-
-    :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
-    :param str key:         Path to search with dot notation.
-    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
-
-    In order to filter out some specific elements, you might want to use the optional 'exclude' attributes.
-    If attributes are specified and the last level element following the path
-    (dot notation) will have a key-value, the check for the main key-value will be skipped.
-    See unittests to understand the bahaviour better.
-
-    :param str exclude_key:     Key to check in last level element to exclude.
-    :param str exclude_val:     Value to match in last level element to exclude.
-
-    :return:    Value from structure extracted by specified path
+    :param dict|list src: Input nested structure (dicts/lists).
+    :param str key: Dot notation path to extract, e.g., "user.profile.name".
+    :param str separator: Path separator (default: '.').
+    :param bool case_insensitive: (optional) If True, performs case-insensitive matching for keys in path.
+    :param str exclude_key: (optional) Key to check for exclusion.
+    :param Any exclude_val: (optional) Value to match for exclusion (requires exclude_key).
+    :return: The first matching value from the structure or None.
     """
 
-    ignore_case = kwargs.get("ignore_case", False)
+    exclude_key = kwargs.get("exclude_key")
+    exclude_val = kwargs.get("exclude_val")
+    case_insensitive = kwargs.get("case_insensitive") or kwargs.get("ignore_case", False)
 
-    if ignore_case:
+    if case_insensitive:
         key = key.lower()
-        src = ignore_case_copy(src) if isinstance(src,dict) else [ignore_case_copy(s) for s in src]
+        src = ignore_case_copy(src) if isinstance(src, dict) else [ignore_case_copy(s) for s in src]
+
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
