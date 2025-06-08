@@ -366,7 +366,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertRaises(AttributeError, recursive_matches_extract, SRC, 'foo.bar.baz', exclude_val=1)
 
 
-    def test_recursive_matches_extract__ignore_case(self):
+    def test_recursive_matches_extract__case_insensitive(self):
         TESTS = [
             ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
             ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
@@ -375,7 +375,8 @@ class helpers_UnitTestCase(unittest.TestCase):
         ]
 
         for payload, path, result in TESTS:
-            self.assertEqual(recursive_matches_extract(payload, path, ignore_case=True), result)
+            self.assertEqual(recursive_matches_extract(payload, path, case_insensitive=True), result)
+
 
 
     def test_chunks(self):
