@@ -708,7 +708,6 @@ def dunder_to_dict(data: dict, separator=None):
        result = dunder_to_dict(data)
 
        # result:
-
        {
            'a': 'v1',
            'b': {
@@ -759,14 +758,16 @@ def dict_to_dunder(d, *, parent: str = '', separator: str = '__') -> dict:
 
     ..  code-block:: python
 
-        {
-           'a': 'v1',
-           'b': {
-               'c': 'v2',
-               'd': {'e': 'v3'}
-           }
-        }
+        d = {
+               'a': 'v1',
+               'b': {
+                   'c': 'v2',
+                   'd': {'e': 'v3'}
+               }
+            }
+        result = dict_to_dunder(d)
 
+        # result:
         {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
 
     :param str separator:   Custom separator for recursive extraction. Default: `'__'`
