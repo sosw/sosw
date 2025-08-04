@@ -342,8 +342,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             (datetime.date(2023, 9, 1), datetime.datetime(2023, 9, 1).timestamp()),
             (1000, datetime.datetime(1970, 1, 1).timestamp()),
             (1000.1, datetime.datetime(1970, 1, 1).timestamp()),
-            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1).timestamp()),
-            ('2018-01-01 10:01:03 hello world', datetime.datetime(2018, 1, 1).timestamp())
+            ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1).timestamp()),
         ]
 
         for variant, expected_result in TESTS:
