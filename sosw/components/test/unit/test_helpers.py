@@ -11,6 +11,7 @@ os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
 
+
 class helpers_UnitTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -286,8 +287,18 @@ class helpers_UnitTestCase(unittest.TestCase):
             ('1234567890.123456789000', datetime.datetime.fromtimestamp(1234567890.123456789000)),
             ('2018-01-01', datetime.datetime(2018, 1, 1)),
             ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1, 10, 1, 3)),
-            ('2018-01-01 10:01:03 hello_world', datetime.datetime(2018, 1, 1, 10, 1, 3)),
-            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+            ('2018-01-01 10:01:03   ', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+
+            ('2025-01-01T10:01:03', datetime.datetime(2025, 1, 1, 10, 1, 3)),
+            ('2025-01-01T10:01:03.250577', datetime.datetime(2025, 1, 1, 10, 1, 3, 250577)),
+
+            ('2025-01-01T10:01:03', datetime.datetime(2025, 1, 1, 10, 1, 3)),
+            ('2025-01-01T10:01:03.250577', datetime.datetime(2025, 1, 1, 10, 1, 3, 250577)),
+
+            ('2025-01-01T10:01:03-0100',
+             datetime.datetime(2025, 1, 1, 10, 1, 3, tzinfo=datetime.timezone(datetime.timedelta(hours=-1)))),
+            ('2025-01-01T10:01:03.250577+0300',
+             datetime.datetime(2025, 1, 1, 10, 1, 3, 250577, tzinfo=datetime.timezone(datetime.timedelta(hours=3)))),
         ]
 
         for variant, expected_result in TESTS:
@@ -338,7 +349,6 @@ class helpers_UnitTestCase(unittest.TestCase):
         for variant, expected_result in TESTS:
             self.assertEqual(validate_date_timestamp_from_something(variant), expected_result)
 
-
         self.assertRaises(ValueError, validate_date_timestamp_from_something, 'somebadstring')
         self.assertRaises(ValueError, validate_date_timestamp_from_something, 253402300800000)
 
@@ -369,7 +379,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
             ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
             ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
-            (({"hEaDeRs": {"oRiGiN": "foo"}},{"headers": {"origin": "foo"}}), "headers.origin", "foo")
+            (({"hEaDeRs": {"oRiGiN": "foo"}}, {"headers": {"origin": "foo"}}), "headers.origin", "foo")
         ]
 
         for payload, path, result in TESTS:
@@ -664,6 +674,7 @@ class helpers_UnitTestCase(unittest.TestCase):
         for expected, payload in TESTS:
             self.assertEqual(dict_to_dunder(payload), expected)
 
+
     def test_nested_dict_from_keys(self):
         TESTS = [
             ((['a', 'b', 'c'],), {'a': {'b': {'c': None}}}),
@@ -891,14 +902,14 @@ class helpers_UnitTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
 
-            
-    def test_case_helper_functions(self):    
+
+    def test_case_helper_functions(self):
         self.assertEqual(camel_case_to_underscore(VALID_CASES['camel']), VALID_CASES['underscore'])
         self.assertEqual(underscore_to_camel_case(VALID_CASES['underscore']), VALID_CASES['camel'])
         self.assertEqual(camel_case_to_slug(VALID_CASES['camel']), VALID_CASES['slug'])
         self.assertEqual(slug_to_camel_case(VALID_CASES['slug']), VALID_CASES['camel'])
- 
-    
+
+
     def test_slug_to_camel_case(self):
         test_cases = [
             ("camel-case-text", "CamelCaseText"),
@@ -906,7 +917,7 @@ class helpers_UnitTestCase(unittest.TestCase):
             ("singleword", "Singleword"),
             ("multiple--consecutive--hyphens", "MultipleConsecutiveHyphens"),
             ("someWord-partially-CamelCased", "SomeWordPartiallyCamelCased"),
-            ("",""),
+            ("", ""),
             ("camel", "Camel")
         ]
         for input_text, expected_output in test_cases:

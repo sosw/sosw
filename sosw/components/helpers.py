@@ -35,7 +35,7 @@ __all__ = ['validate_account_to_dashed',
            'camel_case_to_underscore',
            'underscore_to_camel_case',
            'slug_to_camel_case',
-           'camel_case_to_slug',           
+           'camel_case_to_slug',
            'chunks',
            'validate_uuid4',
            'rstrip_all',
@@ -384,10 +384,11 @@ def validate_datetime_from_something(d):
                 * datetime.date
                 * int - Epoch or Epoch milliseconds
                 * float - Epoch or Epoch milliseconds
-                * str (YYYY-MM-DD)
-                * str (YYYY-MM-DD HH:MM:SS)
-                * str(epoch time seconds as string)
-                * str(epoch time seconds (float) as string)
+                * str (epoch time seconds as string)
+                * str (epoch time seconds (float) as string)
+                * str: Many different formats are supported, but the order only from more specific to less specific,
+                  (e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).
+
     :return: Transformed `d`
     :rtype: datetime.datetime
     :raises: ValueError
@@ -399,16 +400,36 @@ def validate_datetime_from_something(d):
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
         else datetime.datetime.fromtimestamp(x / 1000)),
-        (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
-        (datetime.datetime.strptime(d, '%Y-%m-%d')
-         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
+        (str, lambda x: try_str_to_dt(x)),
     ]
+
+
+    def try_str_to_dt(x):
+        if x.replace('.', '').isnumeric():
+            try:
+                return datetime.datetime.fromtimestamp(float(x))
+            except ValueError:
+                return datetime.datetime.fromtimestamp(float(x) / 1000)
+
+        formats = ['%Y-%m-%d',
+                   '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S%z',
+                   '%Y-%m-%d %H:%M:%S.%f%z', '%Y-%m-%d %H:%M:%S%:z', '%Y-%m-%d %H:%M:%S.%f%:z',
+                   '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S%z',
+                   '%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S%:z', '%Y-%m-%dT%H:%M:%S.%f%:z']
+        val = x.strip()
+        for fmt in formats:
+            try:
+                return datetime.datetime.strptime(val, fmt)
+            except ValueError:
+                continue  # Try the next format
+        raise ValueError(f"Some unconvertable type for datetime validation: {d}")
+
 
     for mutator in mutators:
         if isinstance(d, mutator[0]):
             return mutator[1](d)
 
-    raise ValueError("Some unconvertable type for datetime validation: {}".format(d))
+    raise ValueError(f"Some unconvertable type for datetime validation: {d}")
 
 
 def validate_date_from_something(d):
@@ -601,11 +622,11 @@ def ignore_case_copy(src):
     :param dict src -- Input dictionary
     :return dict: a copy of the dict with all string keys in lower case.
     """
-    
+
     output = {}
     for k, v in src.items():
-        if isinstance(k,str):
-            if isinstance(v,dict):
+        if isinstance(k, str):
+            if isinstance(v, dict):
                 output[k.lower()] = ignore_case_copy(v)
             output[k.lower()] = v
             continue
@@ -649,7 +670,7 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
 
     if ignore_case:
         key = key.lower()
-        src = ignore_case_copy(src) if isinstance(src,dict) else [ignore_case_copy(s) for s in src]
+        src = ignore_case_copy(src) if isinstance(src, dict) else [ignore_case_copy(s) for s in src]
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
@@ -685,8 +706,7 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
                 return None
         except KeyError:
             pass
-        
-        
+
         # There is a chance that the exclude key is simply missing. We ignore it then.
         return src.get(key)
     else:
@@ -1268,4 +1288,3 @@ def slug_to_camel_case(text: str) -> str:
     camel_case = ''.join(word.capitalize() for word in words)
 
     return camel_case
-
