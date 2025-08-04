@@ -387,7 +387,7 @@ def validate_datetime_from_something(d):
                 * str (epoch time seconds as string)
                 * str (epoch time seconds (float) as string)
                 * str: Many different formats are supported, but the order only from more specific to less specific,
-                  (e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).
+                (e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).
 
     :return: Transformed `d`
     :rtype: datetime.datetime
