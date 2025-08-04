@@ -52,6 +52,7 @@ __all__ = ['validate_account_to_dashed',
            'recursive_matches_strict',
            'recursive_matches_extract',
            'dunder_to_dict',
+           'dict_to_dunder',
            'nested_dict_from_keys',
            'convert_string_to_words',
            'construct_dates_from_event',
@@ -717,7 +718,7 @@ def dunder_to_dict(data: dict, separator=None):
        }
 
     :param data: A dictionary that is converted to Nested.
-    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
+    :param str separator:   Custom separator for recursive extraction. Default: `'__'`
     """
 
     if not separator:
@@ -750,6 +751,34 @@ def dunder_to_dict(data: dict, separator=None):
             result[main_key] = recursive_update(result[main_key], new_subdict)
 
     return dict(result)
+
+
+def dict_to_dunder(d, *, parent: str = '', separator: str = '__') -> dict:
+    """
+    Converts the nested dict to a flat dict with keys using dunder notation. Reverse of `dunder_to_dict`.
+
+    ..  code-block:: python
+
+        {
+           'a': 'v1',
+           'b': {
+               'c': 'v2',
+               'd': {'e': 'v3'}
+           }
+        }
+
+        {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
+
+    :param str separator:   Custom separator for recursive extraction. Default: `'__'`
+    """
+    items = {}
+    for k, v in d.items():
+        new_key = f"{parent}{separator}{k}" if parent else str(k)
+        if isinstance(v, dict):
+            items.update(dict_to_dunder(v, parent=new_key, separator=separator))
+        else:
+            items[new_key] = v
+    return items
 
 
 def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:

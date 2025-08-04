@@ -1,5 +1,4 @@
 import datetime
-from datetime import timezone
 import time
 import unittest
 import os
@@ -11,7 +10,6 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
-from sosw.components.helpers import underscore_to_camel_case, camel_case_to_slug, slug_to_camel_case
 
 class helpers_UnitTestCase(unittest.TestCase):
 
@@ -637,8 +635,8 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
         ]
 
-        for paylod, expected in TESTS:
-            self.assertEqual(dunder_to_dict(paylod), expected)
+        for payload, expected in TESTS:
+            self.assertEqual(dunder_to_dict(payload), expected)
 
 
     def test_dunder_to_dict__exceptions(self):
@@ -655,6 +653,16 @@ class helpers_UnitTestCase(unittest.TestCase):
             print(kwarg)
             self.assertRaises(exception, dunder_to_dict, **kwarg)
 
+
+    def test_dict_to_dunder(self):
+        TESTS = [
+            ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"a": "v1", "b__d__e": "v3", "b__c": "v2"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"b__c__c1": 41, "b__c__e": "e_val"}, {"b__c": {"c1": 41, "e": "e_val"}}),
+        ]
+
+        for expected, payload in TESTS:
+            self.assertEqual(dict_to_dunder(payload), expected)
 
     def test_nested_dict_from_keys(self):
         TESTS = [
