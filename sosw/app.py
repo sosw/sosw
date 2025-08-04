@@ -45,7 +45,7 @@ import os
 
 from collections import defaultdict
 from importlib import import_module
-from typing import Dict
+from typing import Dict, Any
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
@@ -277,15 +277,18 @@ class Processor:
         return self.aws_region
 
 
-    def _c(self, path: str):
+    def _c(self, path: str, default: Any = None) -> Any | None:
         """
         Shortcut to access values from the Processor config.
 
         E.g. ``val = self._c('path.to.param')``
 
-        Is similar to: ``val = self.config.get('path', {}).get('to', {}).get('param', None)``
+        Is similar to: ``val = self.config.get('path', {}).get('to', {}).get('param', default)``
+
+        The value specified in `default` or None is returned if the path is not found.
         """
-        return recursive_matches_extract(self.config, path)
+        result = recursive_matches_extract(self.config, path)
+        return result if result is not None else default
 
 
     @benchmark
