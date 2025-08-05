@@ -1,3 +1,5 @@
+import datetime
+
 import boto3
 import os
 import unittest
@@ -269,3 +271,12 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(p._c('a.b.c'), 42)
         self.assertEqual(p._c('a.b.z'), None)
         self.assertEqual(p._c('z'), None)
+
+    def test_c_default(self):
+        p = Processor(custom_config={'a': {'b': {'c': 42}}})
+
+        self.assertEqual(p._c('a.b.z', 'foo'), 'foo')
+        self.assertEqual(p._c('z', 42.2), 42.2)
+
+        dt = datetime.datetime.now()
+        self.assertEqual(p._c('z', dt), dt)

@@ -45,7 +45,7 @@ import os
 
 from collections import defaultdict
 from importlib import import_module
-from typing import Dict
+from typing import Dict, Any
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
@@ -166,7 +166,7 @@ class Processor:
             for path in import_paths:
                 try:
                     some_module = import_module(path(module_name))
-                    logger.debug(f"Imported {service} from {path(module_name)}")
+                    logger.debug("Imported %s from %s",service, path(module_name))
                     break
                 except Exception:
                     pass
@@ -183,11 +183,11 @@ class Processor:
                 try:
                     some_class = getattr(some_module, f"{service}{suffix}")
                 except AttributeError as e:
-                    logger.debug(f"Didn't find {service} with suffix {suffix} in module {module_name}")
+                    logger.debug("Didn't find %s with suffix %s in module %s", service, suffix, module_name)
                     continue
 
                 some_client_config = self.config.get(f"{module_name}_config")
-                logger.debug(f"Found config for {module_name}: {some_client_config}")
+                logger.debug("Found config for %s: %s", module_name, some_client_config)
 
                 # Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility
                 if some_client_config:
@@ -198,7 +198,7 @@ class Processor:
 
                 else:
                     setattr(self, f"{module_name}_client", some_class())
-                logger.info(f"Successfully registered {module_name}_client")
+                logger.info("Successfully registered %s_client", module_name)
                 break
             else:
                 raise RuntimeError(f"Failed to import {service} from {some_module}. "
@@ -277,15 +277,18 @@ class Processor:
         return self.aws_region
 
 
-    def _c(self, path: str):
+    def _c(self, path: str, default: Any = None) -> Any | None:
         """
         Shortcut to access values from the Processor config.
 
         E.g. ``val = self._c('path.to.param')``
 
-        Is similar to: ``val = self.config.get('path', {}).get('to', {}).get('param', None)``
+        Is similar to: ``val = self.config.get('path', {}).get('to', {}).get('param', default)``
+
+        The value specified in `default` or None is returned if the path is not found.
         """
-        return recursive_matches_extract(self.config, path)
+        result = recursive_matches_extract(self.config, path)
+        return result if result is not None else default
 
 
     @benchmark
@@ -343,9 +346,9 @@ class Processor:
             for some_client in [x for x in dir(self) if x.endswith('_client')]:
                 try:
                     self.stats.update(getattr(self, some_client).get_stats())
-                    logger.info(f"Updated Processor stats with stats of {some_client}")
+                    logger.debug("Updated Processor stats with stats of %s", some_client)
                 except Exception:
-                    logger.debug(f"{some_client} doesn't have get_stats() implemented. Recommended to fix this.")
+                    logger.debug("%s doesn't have get_stats() implemented. Recommended to fix this.", some_client)
 
         return dict(self.stats)
 

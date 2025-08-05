@@ -408,7 +408,8 @@ class DynamoDbClient:
                             try:
                                 result[key] = json.loads(val)
                             except ValueError:
-                                logger.warning("A JSON-looking string failed to parse: %s", val)
+                                logger.debug("A JSON-looking string failed to parse: %s", val)
+                                self.stats['json_looking_string_failed_to_parse'] += 1
                                 result[key] = val
                         else:
                             result[key] = val
