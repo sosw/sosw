@@ -44,6 +44,7 @@ except ImportError:
 import time
 
 
+from sosw._deprecation import warn_deprecated
 from sosw.app import global_vars
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import recursive_update
@@ -54,6 +55,11 @@ class MetaHandler:
     """
     MetaHandler is helper class for Essential classes.
     It works with DynamoDB table to store the meta data of operations on Tasks.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Record audit trails of your workflows
+        directly to DynamoDB or CloudWatch instead.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -88,6 +94,10 @@ class MetaHandler:
     }
 
     def __init__(self, custom_config: Dict = None, **kwargs):
+
+        warn_deprecated('MetaHandler',
+                        hint="Record audit trails of your workflows directly to DynamoDB "
+                             "or CloudWatch instead.")
 
         # Initialize config from default config
         self.config = self.DEFAULT_CONFIG or {}

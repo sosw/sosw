@@ -45,6 +45,7 @@ import math
 
 from typing import List
 
+from sosw._deprecation import warn_deprecated
 from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
@@ -54,6 +55,11 @@ class Orchestrator(Essential):
     """
     | Orchestrator class.
     | Iterates the pre-configured Labourers and invokes appropriate number of Tasks for each one.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use AWS Step Functions or Amazon EventBridge
+        to orchestrate your Lambdas, or AWS Lambda durable functions for long-running workflows.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -69,6 +75,13 @@ class Orchestrator(Essential):
     }
 
     task_client: TaskManager = None
+
+
+    def __init__(self, *args, **kwargs):
+        warn_deprecated('Orchestrator',
+                        hint="Use AWS Step Functions or Amazon EventBridge to orchestrate your Lambdas, "
+                             "or AWS Lambda durable functions for long-running workflows.")
+        super().__init__(*args, **kwargs)
 
 
     def __call__(self, event):

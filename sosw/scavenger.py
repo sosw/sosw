@@ -43,6 +43,7 @@ except ImportError:
 
 from typing import Dict
 
+from sosw._deprecation import warn_deprecated
 from sosw.essential import Essential
 from sosw.labourer import Labourer
 from sosw.managers.task import TaskManager
@@ -55,6 +56,11 @@ class Scavenger(Essential):
     - archive_tasks(labourer)
     - handle_expired_tasks(labourer)
     - retry_tasks(labourer)
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use AWS Step Functions error handling
+        or SQS dead-letter queues to retry and archive failed tasks.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -69,6 +75,13 @@ class Scavenger(Essential):
     # these clients will be initialized by Processor constructor
     task_client: TaskManager = None
     sns_client = None
+
+
+    def __init__(self, *args, **kwargs):
+        warn_deprecated('Scavenger',
+                        hint="Use AWS Step Functions error handling or SQS dead-letter queues "
+                             "to retry and archive failed tasks.")
+        super().__init__(*args, **kwargs)
 
 
     def __call__(self, *args, **kwargs):

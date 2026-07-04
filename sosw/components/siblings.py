@@ -47,7 +47,7 @@ import json
 import os
 
 from math import ceil
-from sosw import Processor
+from sosw.app import Processor
 
 
 class SiblingsManager(Processor):

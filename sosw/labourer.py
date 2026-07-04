@@ -45,8 +45,18 @@ except ImportError:
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
+from sosw._deprecation import warn_deprecated
+
 
 class Labourer:
+    """
+    Settings container describing a type of Workers of the ``sosw`` orchestration model.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0 together with the orchestration entities
+        it describes. See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
+    """
+
     ATTRIBUTES = ('id', 'arn')
     CUSTOM_ATTRIBUTES = ('arn', 'start', 'invoked', 'expired', 'health', 'health_metrics', 'average_duration',
                          'max_duration', 'max_attempts', 'max_simultaneous_invocations')
@@ -60,6 +70,10 @@ class Labourer:
 
 
     def __init__(self, **kwargs):
+
+        warn_deprecated('Labourer',
+                        hint="Labourer describes workers of the deprecated sosw orchestration model "
+                             "and has no replacement.")
 
         if kwargs.pop('strict', False):
             for k, v in kwargs.items():

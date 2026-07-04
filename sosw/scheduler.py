@@ -51,6 +51,7 @@ from typing import Iterable
 from copy import deepcopy
 from typing import List, Set, Tuple, Union, Optional, Dict
 
+from sosw._deprecation import warn_deprecated
 from sosw.essential import Essential
 from sosw.app import LambdaGlobals
 from sosw.components.helpers import get_list_of_multiple_or_one_or_empty_from_dict, trim_arn_to_name, chunks
@@ -86,6 +87,10 @@ class Scheduler(Essential):
     values of this parameter are simple strings/integers the scheduler shall chunk them in batches of given size.
     By default will chunk to 1kk objects in a list.
 
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use Amazon EventBridge Scheduler
+        or AWS Step Functions to schedule and chunk your jobs.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -126,6 +131,9 @@ class Scheduler(Essential):
 
     def __init__(self, *args, **kwargs):
 
+        warn_deprecated('Scheduler',
+                        hint="Use Amazon EventBridge Scheduler or AWS Step Functions to schedule "
+                             "and chunk your jobs.")
         super().__init__(*args, **kwargs)
 
         self.set_queue_file()

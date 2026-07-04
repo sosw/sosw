@@ -54,6 +54,7 @@ from collections import OrderedDict
 from statistics import mean
 from typing import Dict, List, Optional, Union
 
+from sosw._deprecation import warn_deprecated
 from sosw.app import Processor
 from sosw.labourer import Labourer
 from sosw.components.benchmark import benchmark
@@ -71,6 +72,15 @@ ECO_STATUSES = (
 
 
 class EcologyManager(Processor):
+    """
+    Manages the health status (ecology) of Labourers based on CloudWatch metrics and running tasks.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use CloudWatch alarms and AWS-native
+        auto scaling or throttling controls to protect your resources.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
+    """
+
     DEFAULT_CONFIG = {
         'init_clients': ['cloudwatch'],
         'default_metric_values':
@@ -88,6 +98,9 @@ class EcologyManager(Processor):
 
 
     def __init__(self, *args, **kwargs):
+        warn_deprecated('EcologyManager',
+                        hint="Use CloudWatch alarms and AWS-native auto scaling or throttling controls "
+                             "to protect your resources.")
         super().__init__(*args, **kwargs)
 
 
