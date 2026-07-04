@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -29,9 +29,7 @@
 
 This package init is a lazy façade (:pep:`562`): ``import sosw`` imports neither ``boto3`` nor any
 package modules and emits no warnings. Public names (e.g. ``sosw.Processor``) are resolved and
-cached on first attribute access. The deprecated orchestration entities remain importable for
-backwards compatibility, but emit a ``DeprecationWarning`` when instantiated. They will be removed
-in ``sosw`` 4.0. See the migration guide: https://docs.sosw.app/migration_3_0.html
+cached on first attribute access.
 """
 
 __all__ = [
@@ -39,13 +37,6 @@ __all__ = [
     'LambdaGlobals',
     'LambdaApi',
     'get_lambda_handler',
-    'Essential',
-    'Labourer',
-    'Orchestrator',
-    'Scavenger',
-    'Scheduler',
-    'Worker',
-    'WorkerAssistant',
 ]
 
 from importlib import import_module
@@ -57,14 +48,19 @@ _LAZY_ATTRIBUTES = {
     'LambdaGlobals':      'sosw.app',
     'LambdaApi':          'sosw.lambda_api',
     'get_lambda_handler': 'sosw.app',
-    'Essential':          'sosw.essential',
-    'Labourer':           'sosw.labourer',
-    'Orchestrator':       'sosw.orchestrator',
-    'Scavenger':          'sosw.scavenger',
-    'Scheduler':          'sosw.scheduler',
-    'Worker':             'sosw.worker',
-    'WorkerAssistant':    'sosw.worker_assistant',
 }
+
+# Names removed in the 3.0 major release together with the whole self-hosted orchestration layer.
+# Kept only to raise a helpful AttributeError pointing at the migration options.
+_REMOVED_ATTRIBUTES = (
+    'Orchestrator',
+    'Scavenger',
+    'Scheduler',
+    'Worker',
+    'WorkerAssistant',
+    'Labourer',
+    'Essential',
+)
 
 
 def _get_version() -> str:
@@ -87,13 +83,19 @@ def __getattr__(name):
     Resolve public attributes lazily (PEP 562), keeping ``import sosw`` free of heavy imports.
 
     :param str name:        Name of the requested package attribute.
-    :raises AttributeError: If the name is not a public attribute of the package.
+    :raises AttributeError: If the name is not a public attribute of the package. For the names
+                            of the orchestration layer removed in the 3.0 major release the error
+                            message explains the migration options.
     """
 
     if name == '__version__':
         value = _get_version()
     elif name in _LAZY_ATTRIBUTES:
         value = getattr(import_module(_LAZY_ATTRIBUTES[name]), name)
+    elif name in _REMOVED_ATTRIBUTES:
+        raise AttributeError(
+                f"{name} was removed in the 3.0 major release. The orchestration layer is no longer part of "
+                f"sosw — pin 'sosw<3' to keep using it, or see https://docs.sosw.app/migration_3_0.html")
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

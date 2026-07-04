@@ -15,11 +15,11 @@ It gives every Lambda a common backbone:
 
 ## History and positioning
 
-Until 2.x the package was the "Serverless Orchestrator of Serverless Workers" — a self-hosted
-orchestration suite (Orchestrator, Scheduler, Scavenger, Worker…). Since **3.0.0** those orchestration
-entities are **deprecated** (functional through 3.x, removed in 4.0): AWS-native services
-(Step Functions, EventBridge, durable execution) now cover that ground. The framework core —
-Processor, components, helpers — is the product.
+Until the 0.7.x line the package was the "Serverless Orchestrator of Serverless Workers" — a
+self-hosted orchestration suite (Orchestrator, Scheduler, Scavenger, Worker…). The 3.0 major
+release **removed** those orchestration entities entirely: AWS-native services (Step Functions,
+EventBridge, durable execution) now cover that ground, and users of the old layer pin `sosw<3`.
+The framework core — Processor, components, helpers — is the product.
 
 ## Users
 
@@ -31,5 +31,5 @@ Processor, components, helpers — is the product.
 
 - 100% unit test line coverage, enforced in CI. Unit suite is network-free and fast (seconds).
 - Zero mandatory dependencies beyond `boto3`.
-- Python 3.10–3.14 supported; CI-tested on the three latest (3.12–3.14).
+- Python 3.12–3.14 supported and CI-tested.
 - Docs at https://docs.sosw.app must build warning-free.

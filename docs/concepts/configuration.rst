@@ -69,7 +69,7 @@ lookup — it saves a DynamoDB query (or a failed attempt) on every cold start:
         DISABLE_DDB_CONFIG = True                        # class attribute, or:
         DEFAULT_CONFIG = {'disable_ddb_config': True}    # config flag (custom_config works too)
 
-``DEFAULT_CONFIG`` and ``custom_config`` are still applied. New in 3.0.0.
+``DEFAULT_CONFIG`` and ``custom_config`` are still applied.
 
 
 SSM Parameter Store and Secrets Manager

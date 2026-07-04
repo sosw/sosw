@@ -83,8 +83,8 @@ same rule (:py:func:`sosw.app._derive_test_flag`):
 
 ..  note::
 
-    Up to ``sosw`` 2.x an operator-precedence bug inverted this rule in both directions (an
-    explicit flag was ignored whenever the ``STAGE`` said otherwise). Fixed in 3.0.0 — see the
+    In the 0.7.x line an operator-precedence bug inverted this rule in both directions (an
+    explicit flag was ignored whenever the ``STAGE`` said otherwise). This is fixed — see the
     :doc:`migration guide <../migration_3_0>`.
 
 

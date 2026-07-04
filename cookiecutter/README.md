@@ -23,7 +23,7 @@ Answer the prompts (defaults in parentheses):
 | `project_slug` | Python-friendly project directory name (`my_sosw_lambda`) |
 | `function_name` | Lambda `FunctionName` and CloudFormation stack name, kebab-case (derived from the slug) |
 | `description` | One-line description used in the template and docstrings |
-| `python_version` | Lambda runtime version (`3.14`; also 3.10 / 3.11 / 3.12 / 3.13) |
+| `python_version` | Lambda runtime version (`3.14`; also 3.13 / 3.12) |
 | `use_lambda_api` | `yes` scaffolds an HTTP API Lambda on `sosw.lambda_api.LambdaApi` (declarative routes, auth, JSON envelopes); `no` (default) scaffolds a plain event Processor |
 | `aws_region` | Region written to `samconfig.toml` |
 

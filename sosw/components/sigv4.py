@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -210,7 +210,7 @@ class AwsSigV4RequestGenerator:
     def get_signature_key(self):
         """
         Key derivation functions. See:
-        http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python
+        https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html
         """
         k_date = self.sign(('AWS4' + self.aws_secret_access_key).encode('utf-8'), self.datestamp)
         k_region = self.sign(k_date, self.aws_region)

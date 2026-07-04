@@ -12,7 +12,7 @@ orchestration layer stays importable but is formally deprecated.
 ## R1 — Packaging & version
 
 - WHEN the package is built, THE SYSTEM SHALL read all metadata from `pyproject.toml` (setup.py removed or reduced to a shim) with `version = "3.0.0"`.
-- THE SYSTEM SHALL declare support for Python 3.10, 3.11, 3.12, 3.13 and 3.14 in classifiers and `requires-python >= 3.10`.
+- THE SYSTEM SHALL declare support for Python 3.12, 3.13 and 3.14 in classifiers and `requires-python >= 3.12`.
 - THE SYSTEM SHALL keep `boto3` as the only mandatory runtime dependency.
 - THE SYSTEM SHALL expose optional extras: `sosw[durable]` for the AWS durable execution SDK.
 - WHEN dev dependencies are locked, THE SYSTEM SHALL NOT ship known-vulnerable pins (current Pipfile.lock carries 15 Dependabot alerts; regenerate or remove the lockfile).
@@ -59,7 +59,7 @@ orchestration layer stays importable but is formally deprecated.
 
 ## R8 — CI (GitHub Workflows only)
 
-- PR checks SHALL run: unit tests on a 3.10–3.14 matrix, a coverage job failing under the enforced threshold (100 at release), and a docs build (`sphinx -W`).
+- PR checks SHALL run: unit tests on a 3.12–3.14 matrix, a coverage job failing under the enforced threshold (100 at release), and a docs build (`sphinx -W`).
 - The TestPyPI RC publish SHALL trigger for `X_Y_Z`-style staging branches (not only `0_*`) and patch the version wherever it lives after the pyproject migration.
 - Travis badges/references SHALL be removed from README and docs; badges point at GitHub Actions.
 - The stray repo-root `.aws/config` SHALL be removed; `.claude/` ignored.

@@ -72,7 +72,7 @@ permissions to read it, or simply no use for runtime overrides — in either of 
 
 ``DEFAULT_CONFIG`` and ``custom_config`` are still applied in this case.
 
-..  note:: ``disable_ddb_config`` is new in ``sosw`` 3.0.0 (absorbed from community PR #376).
+..  note:: ``disable_ddb_config`` was absorbed from community PR #376.
 
 Anywhere in your code, read configuration values through the ``self._c()`` shortcut with dot
 notation and an optional default:
@@ -132,8 +132,8 @@ Two counters with two different lifetimes:
 
 ..  note::
 
-    Up to ``sosw`` 2.x the handler called ``reset_stats()`` twice per invocation; since 3.0.0 it
-    is called once (recursively). See the :doc:`migration guide <../migration_3_0>`.
+    In the 0.7.x line the handler called ``reset_stats()`` twice per invocation; it is now
+    called once (recursively). See the :doc:`migration guide <../migration_3_0>`.
 
 Custom clients participate in both ``get_stats()`` and ``reset_stats()`` recursively when they
 implement these methods themselves.

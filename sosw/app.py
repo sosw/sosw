@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -72,9 +72,10 @@ def _derive_test_flag(explicit_flag=None):
 
 class Processor:
     """
-    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
-    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
-    `Worker` class in case you are running functions under `sosw` orchestration.
+    Core Processor class template. This is the base class of the framework: every Lambda built on
+    ``sosw`` subclasses it (directly, or through specializations like
+    :py:class:`~sosw.lambda_api.LambdaApi`). It provides layered configuration, automatic client
+    registration, statistics counters and a uniform entry point.
 
 
     ``get_ddbc(prefix: str) -> DynamoDbClient:``
@@ -494,7 +495,7 @@ class LambdaGlobals:
     e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.
 
     This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.
-    See Worker examples in documentation for more info.
+    See the Processor examples in documentation for more info.
     """
 
 

@@ -1,0 +1,173 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>docs.hello &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/docs/hello.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">docs.hello</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for docs.hello</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="hello">
+<a class="viewcode-back" href="../../contribution/convention.html#docs.hello.hello">[docs]</a>
+<span></span><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    User friendly welcome function.</span>
+<span class="sd">    Uses `name` and `age` to salute user.</span>
+<span class="sd">    This is still same line of documentation.</span>
+
+<span class="sd">    While this is a new paragraph.</span>
+<span class="sd">    Note that `rst` is sensitive to empty lines and spaces.</span>
+
+<span class="sd">    Some code Example:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        def hello():</span>
+<span class="sd">            return &quot;world&quot;</span>
+
+<span class="sd">    This is paragraph 3.</span>
+
+<span class="sd">    * And some bullet list</span>
+<span class="sd">    * With couple rows</span>
+<span class="sd">    * Even 3 rows</span>
+
+<span class="sd">    Now go parameters. PyCharm adds them automatically.</span>
+
+<span class="sd">    :param str name:    User name of type string.</span>
+<span class="sd">    :param tags:        Types are not required, but this is a good</span>
+<span class="sd">                        practice to show what you expect.</span>
+
+<span class="sd">    :param age:         You can also specify multiple types, with a</span>
+<span class="sd">                        little different syntax.</span>
+<span class="sd">                        Note that empty lines do not matter here for</span>
+<span class="sd">                        `sphinx`, but good for code readability.</span>
+<span class="sd">    :type age:          int | float</span>
+
+<span class="sd">    :rtype:             dict</span>
+<span class="sd">    :return:            You can specify type of return value in</span>
+<span class="sd">                        `rtype` (if it is uncertain).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="s1">&#39;bro&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;kid&#39;</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

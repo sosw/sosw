@@ -82,7 +82,7 @@ Top-level `sosw/lambda_api.py` (a peer of the handler factories, not a `componen
 
 ## 7. CI/CD
 
-- `run-unittests.yml`: matrix 3.10/3.11/3.12/3.13/3.14 → pytest suite; separate `coverage` job (3.13)
+- `run-unittests.yml`: matrix 3.12/3.13/3.14 → pytest suite; separate `coverage` job (3.14)
   with `--cov-fail-under`.
 - `docs-builder-action.yaml`: pip-based install (no pipenv), `sphinx-build -W`.
 - `publish-to-test-pypi.yml`: RC trigger pattern covers `[0-9]+_[0-9]+_[0-9]+` branches; version patch

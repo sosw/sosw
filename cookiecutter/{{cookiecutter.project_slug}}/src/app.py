@@ -89,7 +89,7 @@ from sosw.app import Processor as SoswProcessor
 
 class Processor(SoswProcessor):
     """
-    Main worker of ``{{ cookiecutter.function_name }}``.
+    Main Processor of ``{{ cookiecutter.function_name }}``.
 
     The final config is built in layers: ``DEFAULT_CONFIG``, recursively updated with the
     ``{{ cookiecutter.function_name }}_config`` record of the DynamoDB ``config`` table

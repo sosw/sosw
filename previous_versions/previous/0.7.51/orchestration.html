@@ -1,0 +1,193 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orchestration with ``sosw`` &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/orchestration.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=38589524"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Orchestration with ``sosw``</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/orchestration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="essential-workflow-schema">
+<h1>Essential Workflow Schema<a class="headerlink" href="#essential-workflow-schema" title="Link to this heading"></a></h1>
+<figure class="align-center">
+<img alt="Simple sosw workflows" src="_images/simple-sosw.png" />
+</figure>
+</section>
+<section id="workers">
+<h1>Workers<a class="headerlink" href="#workers" title="Link to this heading"></a></h1>
+<p>The <strong>Worker</strong> functions themselves are <strong>your</strong> functions that require Orchestration. <code class="docutils literal notranslate"><span class="pre">sosw</span></code> package
+has multiple components and tools that we encourage you to use in your Workers to make the code DRY and stable:
+statistic aggregation, components initialization, configuration automatic assembling and more…</p>
+<p>In order to be Orchestrated by <code class="docutils literal notranslate"><span class="pre">sosw</span></code>, the functions should be able to mark tasks they receive as <cite>completed</cite>
+once the job is done. If you inherit the main classes of your Lambdas from <a class="reference internal" href="essentials/worker.html#worker"><span class="std std-ref">Worker</span></a> this will be handled
+automatically. The default behaviour of Workers is not to touch the queue, but to call a <a class="reference internal" href="essentials/worker_assistant.html#worker-assistant"><span class="std std-ref">Worker Assitant</span></a>
+lambda to mark tasks as completed.</p>
+<p>Read more: <a class="reference internal" href="essentials/worker.html#worker"><span class="std std-ref">Worker</span></a></p>
+<hr class="docutils" />
+<p>There could be defined three different Workflows.</p>
+</section>
+<section id="scheduling">
+<h1>Scheduling<a class="headerlink" href="#scheduling" title="Link to this heading"></a></h1>
+<p>Scheduling is transformation of your business jobs to specific tasks for Lambda <a class="reference internal" href="essentials/worker.html#worker"><span class="std std-ref">Worker</span></a>.
+One task = one invocation of a Worker. Scheduler provides an interface for your Business Applications, other Lambdas,
+Events (e.g. Scheduled Rules) to provide the Business Job.</p>
+<p>Chunking of the Payload happens following the rules that you pre-configure.
+One of the built-in dimensions for chunking is calendar.</p>
+<p>Scheduled tasks go to a stateful queue to be invoked when the time comes.</p>
+<p>Read more: <a class="reference internal" href="essentials/scheduler.html#scheduler"><span class="std std-ref">Scheduler</span></a></p>
+</section>
+<section id="orchestration">
+<h1>Orchestration<a class="headerlink" href="#orchestration" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="essentials/orchestrator.html#orchestrator"><span class="std std-ref">Orchestrator</span></a> is called automatically every minute by <a class="reference external" href="https://docs.aws.amazon.com/eventbridge/latest/userguide/using-eventbridge-scheduler.html">AWS EventBridge Scheduler</a>.
+It evaluates the status of Workers at the current moment, the health of external metrics
+the Workers may depend on (e.g CPU lod of some DB, IOPS, etc.) and invokes the appropriate
+amount of new parallel invocations.</p>
+<p>Read more: <a class="reference internal" href="essentials/orchestrator.html#orchestrator"><span class="std std-ref">Orchestrator</span></a></p>
+</section>
+<section id="scavenger">
+<h1>Scavenger<a class="headerlink" href="#scavenger" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="essentials/scavenger.html#scavenger"><span class="std std-ref">Scavenger</span></a> is called automatically every minute by <a class="reference external" href="https://docs.aws.amazon.com/eventbridge/latest/userguide/using-eventbridge-scheduler.html">AWS EventBridge Scheduler</a>.
+It collects the tasks marked as <code class="docutils literal notranslate"><span class="pre">completed</span></code> by the Workers and archives them.</p>
+<p>If the task did not successfully accomplish it tries to re-invoke it with configurable exponential delay.
+In case the task completely fails after several invocations, the Scavenger marks it is <code class="docutils literal notranslate"><span class="pre">dead</span></code> and removes
+from the queue to avoid infinite retries. In this case some external alarm system: SNS or Lambda
+may be triggered as well.</p>
+<p>Read more: <a class="reference internal" href="essentials/scavenger.html#scavenger"><span class="std std-ref">Scavenger</span></a></p>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p><a class="reference internal" href="installation.html#installation-guidelines"><span class="std std-ref">Installation</span></a></p>
+<p><strong>`sosw`</strong> requires you to implement/deploy several Lambda functions (Essentials) using the appropriate core classes.
+The deployment is described in details, but assumes that you are familiar with basic AWS Serverless products.</p>
+<p>Another deployment requirement is to create several <cite>DynamoDB</cite> tables.</p>
+<div class="line-block">
+<div class="line">You can find the Cloudformation template for the databases in <a class="reference external" href="https://raw.githubusercontent.com/sosw/sosw/master/examples/yaml/initial/sosw-dev-shared-dynamodb.yaml">the example</a>.</div>
+<div class="line">If you are not familiar with CloudFormation, we highly recommend at least learning the basics from <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html">the tutorial</a>.</div>
+</div>
+<p>Once again, the detailed guide for initial setup can be found in the <a class="reference internal" href="installation.html#installation-guidelines"><span class="std std-ref">Installation</span></a>.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

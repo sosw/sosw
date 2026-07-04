@@ -10,19 +10,10 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 import sosw.app
-import sosw.essential
-import sosw.labourer
-import sosw.orchestrator
-import sosw.scavenger
-import sosw.scheduler
-import sosw.worker
 import sosw.components.config
 import sosw.components.dynamo_db
 import sosw.components.siblings
 import sosw.components.sns
-import sosw.managers.ecology
-import sosw.managers.meta_handler
-import sosw.managers.task
 
 
 class powertools_guards_UnitTestCase(unittest.TestCase):
@@ -38,8 +29,7 @@ class powertools_guards_UnitTestCase(unittest.TestCase):
     installed in the test environment.
 
     Only the import-time wiring is asserted here. No sosw code paths are executed while the fake
-    package is in place: some modules (e.g. ``sosw.managers.meta_handler``) reference names that only
-    exist when the real ImportError branch of the guard was taken.
+    package is in place.
 
     ``sosw.lambda_api`` is intentionally not listed: its powertools branch is covered by its own test
     in ``sosw/test/unit/test_lambda_api.py``.
@@ -48,19 +38,10 @@ class powertools_guards_UnitTestCase(unittest.TestCase):
     # Guarded module -> kwargs the module is expected to construct its powertools Logger with.
     GUARDED_MODULES = [
         (sosw.app, {}),
-        (sosw.essential, {}),
-        (sosw.labourer, {}),
-        (sosw.orchestrator, {}),
-        (sosw.scavenger, {}),
-        (sosw.scheduler, {}),
-        (sosw.worker, {}),
         (sosw.components.config, {'child': True}),
         (sosw.components.dynamo_db, {'child': True}),
         (sosw.components.siblings, {}),
         (sosw.components.sns, {}),
-        (sosw.managers.ecology, {}),
-        (sosw.managers.meta_handler, {}),
-        (sosw.managers.task, {}),
     ]
 
 

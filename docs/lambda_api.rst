@@ -10,7 +10,7 @@ declare a route table in the config, implement the handlers as methods, and ``La
 care of event parsing, authorization, routing, response rendering and the error contract.
 
 Both API Gateway payload formats are supported: **REST API (v1.0)** and **HTTP API (v2.0)**
-proxy events. New in ``sosw`` 3.0.0.
+proxy events.
 
 
 Minimal example

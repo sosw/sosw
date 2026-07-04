@@ -626,6 +626,18 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIn({'a': '42', 'b': '42'}, r['a'])
 
 
+    def test_recursive_update__unhashable_non_dict_types_in_lists(self):
+
+        # The elements are unhashable (lists) and are not dictionaries: uniques can be filtered
+        # neither via set() nor via JSONification of dict items, so the lists are merged as is.
+        a = {'a': [[1], [2]]}
+        b = {'a': [[2], [3]]}
+
+        r = recursive_update(a, b)
+
+        self.assertEqual(r['a'], [[1], [2], [2], [3]])
+
+
     def test_recursive_insert(self):
         TESTS = [
             (({}, 'a', 42), {'a': 42}),

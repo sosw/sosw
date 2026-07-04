@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>

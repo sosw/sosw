@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -1020,7 +1020,7 @@ def trim_arn_to_name(arn: str) -> str:
     Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Special handling for super global services (e.g. S3 buckets)
@@ -1039,7 +1039,7 @@ def trim_arn_to_account(arn: str) -> str:
     Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Seems a little messy, but passes more/less any test of different ARNs we tried.

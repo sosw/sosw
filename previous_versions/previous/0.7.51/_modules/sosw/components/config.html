@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.components.config &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/components/config.html" />
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.components.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.components.config</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+
+<span class="sd">Config manager component. Has methods for getting configuration for Lambdas.</span>
+
+<span class="sd">The default is ``DynamoConfig``. It is automatically called from the ``app.Processor.__init__`` and if your Lambda</span>
+<span class="sd">has permissions to access  the ``config`` table, the Processor will look for the record: ``YOUR_FUNCTION_NAME_config``,</span>
+<span class="sd">and recursively  update the ``DEFAULT_CONFIG`` with it.</span>
+
+<span class="sd">You can also import and use the following functions.</span>
+<span class="sd">They can be directly imported from this module and will be automatically switched to DDB / SSM / Secrets manager.</span>
+
+<span class="sd">- get_config_</span>
+<span class="sd">- get_credentials_by_prefix_</span>
+<span class="sd">- get_secrets_credentials_</span>
+<span class="sd">- update_config_</span>
+
+<span class="sd">..  warning::</span>
+
+<span class="sd">    Using these methods requires the Role to have relevant permissions to access DynamoDB / SSM Parameter Store /</span>
+<span class="sd">    AWS Secrets.</span>
+
+<span class="sd">Usage example `(pseudo code)`:</span>
+
+<span class="sd">..  code-block:: python</span>
+
+<span class="sd">    from SOME_DB_DRIVER import connect</span>
+<span class="sd">    from sosw.components.config import get_secrets_credentials, get_config, update_config</span>
+<span class="sd">    from sosw.app import Processor as SoswProcessor</span>
+
+<span class="sd">    class Processor(SoswProcessor):</span>
+
+<span class="sd">        def work_with_db(self):</span>
+
+<span class="sd">            db_settings = get_credentials_by_prefix(&#39;db_&#39;)</span>
+<span class="sd">            db_password = get_secrets_credentials(type=&#39;name&#39;, value=&#39;db_password&#39;)[&#39;db_password&#39;]</span>
+
+<span class="sd">            connection = connect(**db_settings, password=db_password)</span>
+
+<span class="sd">            last_processed_row = get_config(&#39;last_row&#39;)</span>
+
+<span class="sd">            db_result = connection.query(f&quot;SOME QUERY LIMIT last_processed_row, 10;&quot;)</span>
+<span class="sd">            self.do_something(db_result)</span>
+
+<span class="sd">            update_config(&#39;last_row&#39;, last_processed_row + 10)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ConfigSource&#39;</span><span class="p">,</span> <span class="s1">&#39;get_config&#39;</span><span class="p">,</span> <span class="s1">&#39;update_config&#39;</span><span class="p">,</span> <span class="s1">&#39;get_credentials_by_prefix&#39;</span><span class="p">,</span> <span class="s1">&#39;get_secrets_credentials&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Sophie Fogel, Nikolay Grishchenko&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.7.3&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">aws_lambda_powertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">recursive_update</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.dynamo_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynamoDbClient</span>
+
+
+<div class="viewcode-block" id="SecretsManager">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SecretsManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecretsManager</span><span class="p">:</span>
+    <span class="n">secretsmanager_client</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">test</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;autotest&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span> <span class="k">else</span> <span class="kc">False</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_secretsmanager_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">secretsmanager_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">secretsmanager_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;secretsmanager&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">secretsmanager_client</span>
+
+
+<div class="viewcode-block" id="SecretsManager.call_boto_secrets_with_pagination">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SecretsManager.call_boto_secrets_with_pagination">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_boto_secrets_with_pagination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoke SecretsManager functions with the ability to paginate results.</span>
+
+<span class="sd">        ..  _get_secrets_credentials:</span>
+
+<span class="sd">        :param f:   SecretsManager function to invoke.</span>
+
+<span class="sd">        :return:    If the function can be the paginate the response will return as paginate iterator.</span>
+<span class="sd">                    Else it will return as a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">secretsmanager_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_secretsmanager_client</span><span class="p">()</span>
+
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">secretsmanager_client</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">can_paginate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">secretsmanager_client</span><span class="p">,</span> <span class="s1">&#39;can_paginate&#39;</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">can_paginate</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SecretsManager.</span><span class="si">%s</span><span class="s2"> can natively paginate&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">paginator</span> <span class="o">=</span> <span class="n">secretsmanager_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">paginator</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SecretsManager.</span><span class="si">%s</span><span class="s2"> can not natively paginate&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">response_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="k">while</span> <span class="s1">&#39;NextToken&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;NextToken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;NextToken&#39;</span><span class="p">]</span>
+                <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">response_list</span></div>
+
+
+
+<div class="viewcode-block" id="SecretsManager.get_secrets_credentials">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SecretsManager.get_secrets_credentials">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_secrets_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.</span>
+
+<span class="sd">        Must provide ``type`` and ``value`` to search. Type is either ``&#39;tag&#39;`` or ``&#39;name&#39;``. ``value`` is a string.</span>
+
+<span class="sd">        Usage example:</span>
+
+<span class="sd">        ..  code-block:: python</span>
+
+<span class="sd">            my_secret =  get_secrets_credentials(type=&#39;name&#39;, value=&#39;my_secret_name&#39;)</span>
+
+<span class="sd">            my_secrets_by_tag = get_secrets_credentials(type=&#39;tag&#39;, value=&#39;project_a_credentials&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">filters</span><span class="p">,</span> <span class="n">secrets_dict</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">{}</span>
+        <span class="n">filter_type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)</span>
+        <span class="n">valid_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tag&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_type</span> <span class="ow">or</span> <span class="n">filter_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Error no type Tag/Name provided&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Error no value provided&#39;</span><span class="p">)</span>
+
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;Key&#39;</span><span class="p">:</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="p">]}]</span> <span class="k">if</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s1">&#39;name&#39;</span> <span class="k">else</span> \
+            <span class="p">[{</span><span class="s1">&#39;Key&#39;</span><span class="p">:</span> <span class="s1">&#39;tag-value&#39;</span><span class="p">,</span> <span class="s1">&#39;Values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">value</span><span class="p">]}]</span>
+
+        <span class="n">secretsmanager_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_secretsmanager_client</span><span class="p">()</span>
+
+        <span class="n">secret_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_boto_secrets_with_pagination</span><span class="p">(</span><span class="s1">&#39;list_secrets&#39;</span><span class="p">,</span> <span class="n">Filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+        <span class="n">secrets</span> <span class="o">=</span> <span class="p">[</span><span class="n">secret</span> <span class="k">for</span> <span class="n">secret</span> <span class="ow">in</span> <span class="n">secret_response</span> <span class="k">for</span> <span class="n">secret</span> <span class="ow">in</span> <span class="n">secret</span><span class="p">[</span><span class="s1">&#39;SecretList&#39;</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">secrets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">secret</span> <span class="ow">in</span> <span class="n">secrets</span><span class="p">:</span>
+                <span class="n">secret_value</span> <span class="o">=</span> <span class="n">secretsmanager_client</span><span class="o">.</span><span class="n">get_secret_value</span><span class="p">(</span><span class="n">SecretId</span><span class="o">=</span><span class="n">secret</span><span class="p">[</span><span class="s1">&#39;ARN&#39;</span><span class="p">])</span>
+                <span class="n">secrets_dict</span><span class="p">[</span><span class="n">secret</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">secret_value</span><span class="p">[</span><span class="s1">&#39;SecretString&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;No credentials found in SecretsManager for </span><span class="si">%s</span><span class="s1"> with </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">secrets_dict</span>
+
+        <span class="k">return</span> <span class="n">secrets_dict</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SSMConfig">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SSMConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SSMConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Methods to access some configurations and/or credentials stored in AWS SSM ParameterStore.</span>
+<span class="sd">    Please note that SSM has a pretty low limit of concurrent calls and it THROTTLES.</span>
+<span class="sd">    For high load Lambdas it is recommended to use DynamoConfig instead.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ssm_client</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">test</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;autotest&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span> <span class="k">else</span> <span class="kc">False</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_ssm_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;ssm&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssm_client</span>
+
+
+<div class="viewcode-block" id="SSMConfig.get_config">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SSMConfig.get_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the Config from AWS SSM ParameterStore and return as a JSON parsed dictionary.</span>
+
+<span class="sd">        :param str name:    Name of config to extract</span>
+<span class="sd">        :rtype:             dict</span>
+<span class="sd">        :return:            Config of some Controller</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ssm_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_ssm_client</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ssm_client</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span>
+                <span class="n">Names</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                <span class="n">WithDecryption</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">ssm_client</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span>
+                <span class="n">Names</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                <span class="n">WithDecryption</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Parameters&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;Value&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+
+<div class="viewcode-block" id="SSMConfig.update_config">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SSMConfig.update_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update a parameter in SSM ParameterStore with a new value.</span>
+
+<span class="sd">        :param  str     name:   Parameter name to address.</span>
+<span class="sd">        :param  object  val:    Parameter value to update.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">description</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">param_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;param_type&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;String&#39;</span><span class="p">,</span> <span class="s1">&#39;StringList&#39;</span><span class="p">,</span> <span class="s1">&#39;SecureString&#39;</span><span class="p">):</span>
+            <span class="n">param_type</span> <span class="o">=</span> <span class="s1">&#39;String&#39;</span>
+
+        <span class="n">ssm_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_ssm_client</span><span class="p">()</span>
+        <span class="n">ssm_client</span><span class="o">.</span><span class="n">put_parameter</span><span class="p">(</span>
+            <span class="n">Name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">Description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+            <span class="n">Value</span><span class="o">=</span><span class="n">val</span><span class="p">,</span>
+            <span class="n">Type</span><span class="o">=</span><span class="n">param_type</span><span class="p">,</span>
+            <span class="n">Overwrite</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SSMConfig.call_boto_with_pagination">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SSMConfig.call_boto_with_pagination">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_boto_with_pagination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoke SSM functions with the ability to paginate results.</span>
+
+<span class="sd">        :param str f:           SSM function to invoke.</span>
+<span class="sd">        :param object kwargs:   Keyword arguments for the function to invoke.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ssm_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_ssm_client</span><span class="p">()</span>
+
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ssm_client</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">can_paginate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ssm_client</span><span class="p">,</span> <span class="s1">&#39;can_paginate&#39;</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">can_paginate</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;&#39;SSM.</span><span class="si">%s</span><span class="s2">()&#39; can natively paginate&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">paginator</span> <span class="o">=</span> <span class="n">ssm_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">paginator</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;&#39;SSM.</span><span class="si">%s</span><span class="s2">()&#39; can not natively paginate&quot;</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">response_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="k">while</span> <span class="s1">&#39;NextToken&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;NextToken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;NextToken&#39;</span><span class="p">]</span>
+                <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">response_list</span></div>
+
+
+
+<div class="viewcode-block" id="SSMConfig.get_credentials_by_prefix">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.SSMConfig.get_credentials_by_prefix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_credentials_by_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the credentials with given `prefix` from AWS SSM ParameterStore and return as a dictionary.</span>
+
+<span class="sd">        In ParameterStore the values `Name` must begin with `prefix_` and they must have Tag:Environment `(production|dev)`.</span>
+<span class="sd">        The type of elements is expected to be SecureString. Regular strings could work, but not guaranteed.</span>
+
+<span class="sd">        :param str prefix:  prefix of records to extract</span>
+<span class="sd">        :rtype:             dict</span>
+<span class="sd">        :return:            Some credentials</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">env_tag</span> <span class="o">=</span> <span class="s1">&#39;production&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="k">else</span> <span class="s1">&#39;dev&#39;</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="k">if</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span>
+
+        <span class="n">describe_params_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_boto_with_pagination</span><span class="p">(</span><span class="s1">&#39;describe_parameters&#39;</span><span class="p">,</span>
+                                                                  <span class="n">ParameterFilters</span><span class="o">=</span><span class="p">[</span>
+                                                                      <span class="p">{</span><span class="s2">&quot;Key&quot;</span><span class="p">:</span> <span class="s2">&quot;tag:Environment&quot;</span><span class="p">,</span> <span class="s2">&quot;Values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">env_tag</span><span class="p">]},</span>
+                                                                      <span class="p">{</span>
+                                                                          <span class="s1">&#39;Key&#39;</span><span class="p">:</span>    <span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Option&#39;</span><span class="p">:</span> <span class="s1">&#39;BeginsWith&#39;</span><span class="p">,</span>
+                                                                          <span class="s1">&#39;Values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">prefix</span><span class="p">]</span>
+                                                                      <span class="p">}])</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SSM.describe_parameters(prefix=</span><span class="si">%s</span><span class="s2">) received response: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">describe_params_response</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">describe_params_response</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;Parameters&#39;</span><span class="p">]]</span>
+
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">names</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;No credentials found in SSM ParameterStore with prefix </span><span class="si">%s</span><span class="s2"> for Environment: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">env_tag</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># This is supposed to work fine if you ask multiple keys even if some are not encrypted.</span>
+        <span class="c1"># Anyway you should encrypt everything.</span>
+        <span class="n">decryption_required</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([</span><span class="kc">True</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;SecureString&#39;</span><span class="p">])</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">chunk_of_names</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+            <span class="n">get_params_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_boto_with_pagination</span><span class="p">(</span><span class="s1">&#39;get_parameters&#39;</span><span class="p">,</span> <span class="n">Names</span><span class="o">=</span><span class="n">chunk_of_names</span><span class="p">,</span>
+                                                                 <span class="n">WithDecryption</span><span class="o">=</span><span class="n">decryption_required</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SSM.get_parameters(names=%s) received response: %s&quot;</span><span class="p">,</span> <span class="n">chunk_of_names</span><span class="p">,</span> <span class="n">get_params_response</span><span class="p">)</span>
+
+            <span class="c1"># Update keys and values from this page of response to result. Removes the prefix away for keys.</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">param</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">get_params_response</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;Parameters&#39;</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">([(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DynamoConfig">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.DynamoConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DynamoConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a manager to operate with custom configurations for Lambdas stored in the ``config`` DynamoDB table.</span>
+<span class="sd">    It tries to find the table ``config`` in the same region where the Lambda runs with the following structure:</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        &#39;env&#39;:          &#39;S&#39;,</span>
+<span class="sd">        &#39;config_name&#39;:  &#39;S&#39;,</span>
+<span class="sd">        &#39;config_value&#39;: &#39;S&#39;,</span>
+
+<span class="sd">    If the table exists and the Lambda has permissions to access it, the class will look for the record:</span>
+<span class="sd">    ``YOUR_FUNCTION_config``, and recursively update the ``DEFAULT_CONFIG`` with it.</span>
+
+<span class="sd">    .. _get_config:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dynamo_client</span><span class="p">:</span> <span class="n">DynamoDbClient</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">no_ddb_access</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;autotest&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span> <span class="k">else</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dynamo_client_config&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;row_mapper&#39;</span><span class="p">:</span>      <span class="p">{</span>
+                    <span class="s1">&#39;env&#39;</span><span class="p">:</span>          <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;config_name&#39;</span><span class="p">:</span>  <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="s1">&#39;S&#39;</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;required_fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">,</span> <span class="s1">&#39;config_value&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;table_name&#39;</span><span class="p">:</span>      <span class="s1">&#39;config&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="k">else</span> <span class="s1">&#39;autotest_config&#39;</span><span class="p">,</span>
+                <span class="c1"># &#39;region&#39;: TODO IMPLEMENT AS AN OPTIONAL PARAMETER FOR app.Processor</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">recursive_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+
+
+<div class="viewcode-block" id="DynamoConfig.get_config">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.DynamoConfig.get_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s2">&quot;production&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the Config from DynamoDB ``config`` table and return as a JSON parsed dictionary.</span>
+<span class="sd">        If not in JSON format, returns a string.</span>
+
+<span class="sd">        ..  note::</span>
+
+<span class="sd">            In case the environment is ``test`` the table name will be automatically changed to ``autotest_config``.</span>
+<span class="sd">            This might be relevant only for complex integration tests.</span>
+
+<span class="sd">        :param str name:    Name of config to extract</span>
+<span class="sd">        :param str env:     Environment name, usually: &#39;production&#39; or &#39;dev&#39;</span>
+<span class="sd">        :rtype:             dict|string</span>
+<span class="sd">        :return:            Configuration</span>
+
+<span class="sd">        ..  _update_config:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">dynamo_client</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dynamo_client</span><span class="p">():</span>
+
+            <span class="n">items</span> <span class="o">=</span> <span class="n">dynamo_client</span><span class="o">.</span><span class="n">get_by_query</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="n">env</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">})</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">items</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">config_value</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;config_value&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">item</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Got config value from DDB: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">config_value</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">config_value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">config_value</span> <span class="k">if</span> <span class="n">config_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Tried to get DynamoConfig, but failed.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span></div>
+
+
+
+<div class="viewcode-block" id="DynamoConfig.update_config">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.DynamoConfig.update_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update a field in the DynamoDB ``config`` table with a new value. May be used to store not sensitive tokens.</span>
+
+<span class="sd">        ..  warning: For sensitive credentials use SecretsManager!</span>
+
+<span class="sd">        ..  _get_credentials_by_prefix:</span>
+
+<span class="sd">        :param  str     name:   Field name to address.</span>
+<span class="sd">        :param  object  val:    Field value to update.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;autotest&#39;</span><span class="p">]:</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="s2">&quot;dev&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="s2">&quot;production&quot;</span>
+
+        <span class="n">dynamo_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dynamo_client</span><span class="p">()</span>
+        <span class="n">dynamo_client</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="n">env</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">},</span> <span class="n">attributes_to_update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="n">val</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="DynamoConfig.get_credentials_by_prefix">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.DynamoConfig.get_credentials_by_prefix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_credentials_by_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;production&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetches multiple records from the ``config`` table. Filters rows that start with the prefix and returns them</span>
+<span class="sd">        as a dict with this prefix trimmed.</span>
+
+<span class="sd">        ..  warning: For sensitive credentials use SecretsManager!</span>
+
+<span class="sd">        Example in ``config`` DDB:</span>
+
+<span class="sd">        ..  code-block:: python</span>
+
+<span class="sd">            {&#39;env&#39;: &#39;production&#39;, &#39;config_name&#39;: &#39;project_a_db_username&#39;, &#39;config_value&#39;: &#39;john&#39;}</span>
+<span class="sd">            {&#39;env&#39;: &#39;production&#39;, &#39;config_name&#39;: &#39;project_a_db_port&#39;, &#39;config_value&#39;: &#39;27019&#39;}</span>
+<span class="sd">            {&#39;env&#39;: &#39;production&#39;, &#39;config_name&#39;: &#39;another_db_username&#39;, &#39;config_value&#39;: &#39;silver&#39;}</span>
+
+
+<span class="sd">            credentials = get_credentials_by_prefix(&#39;project_a_db&#39;)</span>
+
+<span class="sd">            # {&#39;username&#39;: &#39;john&#39;, &#39;port&#39;: &#39;27019&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="k">if</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="ow">or</span> <span class="n">prefix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;autotest_&#39;</span><span class="p">):</span>
+            <span class="n">env</span> <span class="o">=</span> <span class="s2">&quot;dev&quot;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">dynamo_client</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dynamo_client</span><span class="p">():</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="n">dynamo_client</span><span class="o">.</span><span class="n">get_by_query</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="n">env</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="n">prefix</span><span class="p">},</span>
+                                               <span class="n">comparisons</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="s1">&#39;begins_with&#39;</span><span class="p">})</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;config_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;config_value&#39;</span><span class="p">])</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="n">config_name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;config_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">config_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;config_value&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_dynamo_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dynamo_client</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_ddb_access</span><span class="p">:</span>
+            <span class="n">dynamo_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dynamo_client_config&#39;</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dynamo_client</span> <span class="o">=</span> <span class="n">DynamoDbClient</span><span class="p">(</span><span class="n">dynamo_config</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to initialize DynamoDB client for ConfigSource: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">no_ddb_access</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dynamo_client</span></div>
+
+
+
+<div class="viewcode-block" id="ConfigSource">
+<a class="viewcode-back" href="../../../components/config.html#sosw.components.config.ConfigSource">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfigSource</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A strategy adapter for config. Returns config from the selected config source.</span>
+<span class="sd">    You can implement your own functions using these clients, and they can even call different configurations.</span>
+
+<span class="sd">    :param str sources:     Config clients to initialize. Supported: `SSM` and `Dynamo` (default).</span>
+<span class="sd">                            Could be both, comma-separated. The first one then becomes default.</span>
+
+<span class="sd">    :param dict config:     Custom configurations for clients. Should be in `ssm_config`, `dynamo_config`, etc.</span>
+<span class="sd">                            Don&#39;t be confused, but sometimes configs also need their own configs. :)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SUPPORTED_SOURCES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Dynamo&#39;</span><span class="p">,</span> <span class="s1">&#39;SSM&#39;</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">test</span> <span class="ow">or</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span> <span class="k">else</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sources</span><span class="p">:</span>
+            <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Dynamo&#39;</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported sources: </span><span class="si">{</span><span class="n">sources</span><span class="si">}</span><span class="s2">. Must be a csv or string of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">SUPPORTED_SOURCES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SUPPORTED_SOURCES</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Unsupported sources: </span><span class="si">{</span><span class="n">sources</span><span class="si">}</span><span class="s2">. Must be a csv or &quot;</span> \
+                                                                  <span class="sa">f</span><span class="s2">&quot;string of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">SUPPORTED_SOURCES</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Overwrite default configs with custom ones if provided.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{})</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+
+            <span class="c1"># Config of Config Client</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_config&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+            <span class="c1"># Config Client class</span>
+            <span class="bp">cls</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">Config&quot;</span><span class="p">](</span><span class="n">config</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c1"># Set instance of Config Client as attribute of current ConfigSource object.</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_config&quot;</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">_config&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initialized default_source = </span><span class="si">%s</span><span class="s2">_config&quot;</span><span class="p">,</span> <span class="n">source</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">secrets_manager_class</span> <span class="o">=</span> <span class="n">SecretsManager</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span><span class="o">.</span><span class="n">update_config</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_credentials_by_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_source</span><span class="o">.</span><span class="n">get_credentials_by_prefix</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_secrets_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">secrets_manager_class</span><span class="o">.</span><span class="n">get_secrets_credentials</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="n">test</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span> <span class="k">else</span> <span class="kc">False</span>
+
+<span class="n">__config_source</span> <span class="o">=</span> <span class="n">ConfigSource</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">)</span>
+
+<span class="n">get_config</span> <span class="o">=</span> <span class="n">__config_source</span><span class="o">.</span><span class="n">get_config</span>
+<span class="n">update_config</span> <span class="o">=</span> <span class="n">__config_source</span><span class="o">.</span><span class="n">update_config</span>
+<span class="n">get_credentials_by_prefix</span> <span class="o">=</span> <span class="n">__config_source</span><span class="o">.</span><span class="n">get_credentials_by_prefix</span>
+<span class="n">get_secrets_credentials</span> <span class="o">=</span> <span class="n">__config_source</span><span class="o">.</span><span class="n">get_secrets_credentials</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

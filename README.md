@@ -1,12 +1,12 @@
-<img alt="sosw - Serverless Orchestrator of Serverless Workers" width="350" src="https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/logo/sosw_black.png">
+<img alt="sosw - a framework for bootstrapping AWS Lambda functions" width="350" src="https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/logo/sosw_black.png">
 
-# Serverless Orchestrator of Serverless Workers
+# sosw
 [![Tests](https://github.com/sosw/sosw/actions/workflows/run-unittests.yml/badge.svg)](https://github.com/sosw/sosw/actions/workflows/run-unittests.yml)
 [![Docs](https://github.com/sosw/sosw/actions/workflows/docs-builder-action.yaml/badge.svg)](https://github.com/sosw/sosw/actions/workflows/docs-builder-action.yaml)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs)](https://pypi.org/project/sosw/)
 [![PyPI - Licence](https://img.shields.io/pypi/l/sosw?color=blue)](https://github.com/sosw/sosw/blob/master/LICENSE)
 
-**sosw** is a Python framework for bootstrapping AWS Lambda functions — formerly the *Serverless Orchestrator of Serverless Workers*.
+**sosw** is a Python framework for bootstrapping AWS Lambda functions.
 
 Every Lambda gets the same production-grade skeleton in a dozen lines: the `Processor` base class with layered configuration (code defaults + DynamoDB/SSM overrides), automatic initialization of AWS clients, statistics counters, and a generated handler that caches the Processor across warm invocations. On top of that: `LambdaApi` — a declarative router for functions behind API Gateway, optional [AWS durable execution](https://docs.sosw.app/durable.html) support, and a battle-tested library of components and helpers. The only runtime dependency is `boto3`.
 
@@ -39,8 +39,8 @@ The Processor initializes once per Lambda container; warm invocations reuse it. 
 ## Installation
 
 ```bash
-pip install sosw                # Python 3.10 - 3.14
-pip install sosw[durable]       # + AWS durable execution support (Python 3.11+)
+pip install sosw                # Python 3.12 - 3.14
+pip install sosw[durable]       # + AWS durable execution support
 ```
 
 ## Documentation
@@ -51,11 +51,11 @@ pip install sosw[durable]       # + AWS durable execution support (Python 3.11+)
 - [Concepts](https://docs.sosw.app/concepts/index.html) — Processor, warm start, configuration
 - [LambdaApi](https://docs.sosw.app/lambda_api.html) — HTTP APIs from a single Lambda
 - [Durable functions](https://docs.sosw.app/durable.html) — long-running checkpointed workflows
-- [Migration guide](https://docs.sosw.app/migration_3_0.html) — upgrading from 0.7.x to 3.0
+- [Migration guide](https://docs.sosw.app/migration_3_0.html) — upgrading from the 0.7.x line
 
-## Deprecation notice
+## Coming from the 0.7.x line?
 
-The original orchestration layer (`Orchestrator`, `Scheduler`, `Scavenger`, `Worker`, and their managers) is **deprecated since 3.0.0**: it stays fully functional through every 3.x release (instantiation emits a `DeprecationWarning`) and will be removed in 4.0. Use AWS Step Functions, EventBridge Scheduler, or durable functions instead — per-entity guidance lives in the [migration guide](https://docs.sosw.app/migration_3_0.html), and the preserved orchestration docs are under [Deprecated](https://docs.sosw.app/deprecated/index.html).
+`sosw` began as the *Serverless Orchestrator of Serverless Workers*. The self-hosted orchestration layer (`Orchestrator`, `Scheduler`, `Scavenger`, `Worker`, and their managers) was **removed in the 3.0 major release**. Teams that use it should pin `pip install 'sosw<3'` (the 0.7.x line keeps working, and its docs are preserved at [docs.sosw.app/previous/0.7.51](https://docs.sosw.app/previous/0.7.51/index.html)) and plan the move to AWS Step Functions, EventBridge Scheduler, or durable functions — guidance in the [migration guide](https://docs.sosw.app/migration_3_0.html).
 
 ## Development
 
@@ -105,7 +105,7 @@ We follow both the [Semantic Versioning](https://semver.org/) pattern and [PEP44
 - `master` merges are automatically packaged and published to [PyPI](https://pypi.org/project/sosw/).
 - Keep your branch up to date with the branch you are making a PR to.
 
-Example: the latest released version on PyPI is `3.0.0`; open staging branches are `3_0_1` and `3_1_0`. A bugfix PR targets `3_0_1`; a new feature targets `3_1_0`.
+Example: if the latest released version on PyPI is `3.4.0`, the open staging branches are `3_4_1` and `3_5_0`. A bugfix PR targets `3_4_1`; a new feature targets `3_5_0`.
 
 #### Code style
 
@@ -117,7 +117,7 @@ Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), with the following spe
 
 This document has been placed in the public domain.
     
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
     
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>:

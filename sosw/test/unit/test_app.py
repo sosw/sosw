@@ -10,6 +10,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
+from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
 
@@ -69,6 +70,27 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIsInstance(getattr(processor, 'sns_client'), SnsManager,
                               "SnsManager was not initialized. Probably boto3 sns instead of it.")
         self.assertIsNotNone(getattr(processor, 'siblings_client'))
+
+
+    @patch("boto3.client")
+    def test_app_init__client_class_receives_config(self, mock_boto_client):
+        """
+        Classes with the `Client` suffix (e.g. DynamoDbClient) receive their config as `config`.
+        """
+
+        custom_config = {
+            'init_clients':     ['DynamoDb'],
+            'dynamo_db_config': {
+                'row_mapper':      {'hash_col': 'S'},
+                'required_fields': ['hash_col'],
+                'table_name':      'autotest_dynamo_db',
+            }
+        }
+
+        processor = Processor(custom_config=custom_config)
+
+        self.assertIsInstance(getattr(processor, 'dynamo_db_client'), DynamoDbClient)
+        self.assertEqual(processor.dynamo_db_client.config['table_name'], 'autotest_dynamo_db')
 
 
     @patch("boto3.client")
@@ -460,13 +482,13 @@ class app_UnitTestCase(unittest.TestCase):
     def test_reset_stats__skips_non_numeric_values(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.stats['numeric'] = 5
-        p.stats['labourer_name'] = 'some_function'
+        p.stats['function_name'] = 'some_function'
 
         p.reset_stats()
 
         self.assertEqual(p.stats['total_numeric'], 5)
-        self.assertNotIn('labourer_name', p.stats)
-        self.assertNotIn('total_labourer_name', p.stats)
+        self.assertNotIn('function_name', p.stats)
+        self.assertNotIn('total_function_name', p.stats)
 
 
     @patch("boto3.client")

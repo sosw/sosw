@@ -28,7 +28,7 @@ SSM_PARAMETER='lambda-layer-sosw-latest'
 DRY_RUN='false'
 AWS_ARGS=()
 
-COMPATIBLE_RUNTIMES='python3.10 python3.11 python3.12 python3.13 python3.14'
+COMPATIBLE_RUNTIMES='python3.12 python3.13 python3.14'
 
 usage() {
     sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'

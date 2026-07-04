@@ -30,8 +30,8 @@ Release cycle
   `PyPI <https://pypi.org/project/sosw/>`_ — ``master`` *is* the release.
 - Keep your branch up to date with the branch you are making a PR to.
 
-Example: the latest released version on PyPI is ``3.0.0``; the open staging branches are
-``3_0_1`` and ``3_1_0``. A bugfix PR goes to ``3_0_1``; a new feature to ``3_1_0``.
+Example: if the latest released version on PyPI is ``3.4.0``, the open staging branches are
+``3_4_1`` and ``3_5_0``. A bugfix PR goes to ``3_4_1``; a new feature to ``3_5_0``.
 
 .. _`Semantic Versioning`: https://semver.org/
 .. _PEP440: https://www.python.org/dev/peps/pep-0440/
@@ -51,7 +51,7 @@ Development setup
     pip install boto3 pytest pytest-cov -r docs/requirements.txt
 
 The package itself depends only on ``boto3``; everything else is for tests and docs.
-All metadata lives in ``pyproject.toml`` (there is no ``setup.py`` since 3.0.0).
+All metadata lives in ``pyproject.toml`` (there is no ``setup.py``).
 
 
 Code style
@@ -111,14 +111,13 @@ Continuous integration
 
 GitHub Workflows run on every pull request:
 
-- **Tests** (``run-unittests.yml``) — the unit suite on a Python 3.12 / 3.13 / 3.14 matrix (the
-  three latest versions; the package itself supports 3.10+), plus a coverage job enforcing the
-  threshold on Python 3.14.
+- **Tests** (``run-unittests.yml``) — the unit suite on a Python 3.12 / 3.13 / 3.14 matrix (all
+  the supported versions), plus a coverage job enforcing the threshold on Python 3.14.
 - **Docs** (``docs-builder-action.yaml``) — strict Sphinx build; **any warning fails the build**.
 - **TestPyPI** (``publish-to-test-pypi.yml``) — publishes release candidates from ``X_Y_Z``
   staging branches.
 - **PyPI** (``publish-to-pypi.yml``) — publishes from ``master``.
-- **Publish Docs** (``publish-docs.yml``) — publishes the built docs to https://docs.sosw.app
+- **Publish Docs** (``publish-docs.yml``) — publishes the built docs to this documentation site
   automatically on every push to ``master`` (OIDC-assumed AWS role, no static keys); a manual
   dispatch offers a dry-run mode.
 

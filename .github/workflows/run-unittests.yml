@@ -1,6 +1,6 @@
-# Runs the sosw unit test suite on every pull request: once per CI-tested Python version
-# (the three latest; the package itself supports 3.10+), plus a separate coverage job that
-# enforces the minimum line coverage threshold.
+# Runs the sosw unit test suite on every pull request: once per supported Python version
+# (3.12 - 3.14), plus a separate coverage job that enforces the minimum line coverage
+# threshold.
 
 name: Tests
 

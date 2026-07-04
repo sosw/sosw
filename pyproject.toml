@@ -8,7 +8,7 @@ name = "sosw"
 version = "3.0.0"
 description = "Serverless framework for bootstrapping AWS Lambda functions"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
     { name = "Nikolay Grishchenko", email = "ngr@sosw.app" },
@@ -16,8 +16,6 @@ authors = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",

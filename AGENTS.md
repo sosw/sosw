@@ -5,13 +5,14 @@ on top of `sosw`**, and agents **contributing to this repository**. Human docs: 
 
 ## What sosw is
 
-Since 3.0.0 `sosw` is a **framework for bootstrapping AWS Lambda functions**: a `Processor` base
+`sosw` is a **framework for bootstrapping AWS Lambda functions**: a `Processor` base
 class with layered configuration, statistics, and warm-start container reuse, plus thin middleware
-components for AWS services. The legacy orchestration layer ("Serverless Orchestrator of Serverless
-Workers", pre-3.0) is deprecated: functional through 3.x, warns on instantiation, removed in 4.0.
-Do not build anything new on the deprecated entities.
+components for AWS services. The legacy self-hosted orchestration layer ("Serverless Orchestrator
+of Serverless Workers", the 0.7.x line) was removed in the 3.0 major release: do not build anything
+on it — use AWS Step Functions, EventBridge Scheduler, or durable execution, and point users of the
+old layer to `pip install 'sosw<3'` and https://docs.sosw.app/migration_3_0.html
 
-The only mandatory runtime dependency is `boto3`. Supported Python: 3.10–3.14.
+The only mandatory runtime dependency is `boto3`. Supported Python: 3.12–3.14.
 
 ## Package map
 
@@ -21,7 +22,6 @@ The only mandatory runtime dependency is `boto3`. Supported Python: 3.10–3.14.
 | `sosw/lambda_api.py` | CORE | `LambdaApi(Processor)`: declarative router for Lambdas behind API Gateway (REST v1 + HTTP v2), Cognito claims, CORS, JSON envelopes |
 | `sosw/durable.py` | CORE, optional dep | `get_durable_lambda_handler` for AWS Lambda durable execution (`pip install sosw[durable]`) + SDK-optional helpers |
 | `sosw/components/` | COMPONENT | AWS middleware: `config`, `dynamo_db`, `sns`, `siblings`, `sigv4`, `exceptions` (incl. `ApiError` hierarchy), `benchmark`, `helpers` |
-| `sosw/orchestrator.py`, `scheduler.py`, `scavenger.py`, `worker.py`, `worker_assistant.py`, `labourer.py`, `essential.py`, `sosw/managers/` | DEPRECATED | self-hosted orchestration; bugfixes only, removed in 4.0 — prefer Step Functions / EventBridge / durable execution |
 
 Bootstrap tooling: `cookiecutter/` (project template — see its README) and `examples/layers/sosw/`
 (Lambda layer build + deploy scripts).
@@ -29,7 +29,7 @@ Bootstrap tooling: `cookiecutter/` (project template — see its README) and `ex
 ## Build a Lambda on sosw
 
 Import from concrete modules: `from sosw.app import Processor` — not `from sosw import Processor`
-(the package init is a lazy façade kept for compatibility).
+(the package init is a lazy façade kept for convenience).
 
 ### Minimal Processor Lambda
 
@@ -259,8 +259,7 @@ and assert the second result reflects only the second event:
 
 ### Contributing tests to sosw itself
 
-- `unittest.TestCase` style. Files live in `sosw/test/unit/`, `sosw/components/test/unit/`,
-  `sosw/managers/test/unit/`.
+- `unittest.TestCase` style. Files live in `sosw/test/unit/` and `sosw/components/test/unit/`.
 - **Register every new unit test file in `sosw/test/suite_unit.py`** (import the TestCase and
   `addTest` it) — CI runs only that explicit suite, pytest discovery is not used. An unregistered
   test never runs.
@@ -321,10 +320,9 @@ PRs violating these get bounced in review:
 - Branch flow: feature branch → PR into the current **`X_Y_Z` staging branch** (e.g. `3_0_1`), not
   into `master`. Pushes to staging branches publish release candidates to TestPyPI; merging the
   release PR `X_Y_Z → master` publishes to PyPI. Never merge to `master` yourself.
-- CI gates on PRs: unit suite on Python 3.12–3.14 (the three latest; the package supports 3.10+),
+- CI gates on PRs: unit suite on Python 3.12–3.14 (all the supported versions),
   **100% coverage** (job runs on 3.14), and a Sphinx docs build with `-W` (any docs warning fails
   the build — update `docs/` in the same PR when you change public API or docstrings referenced
   there).
-- Deprecated modules: bugfixes only, no new features, nothing removed before 4.0.
 - `examples/`, `cookiecutter/`, and `AGENTS.md` must track the public API: if your change alters
   signatures or config conventions shown there, update them in the same PR.
