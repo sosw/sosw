@@ -10,7 +10,7 @@ import sys
 
 from pathlib import Path
 from urllib import request
-from sosw import Processor
+from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 
 
