@@ -1,19 +1,26 @@
+import unittest
+
 # Core applications
 from .unit.test_app import app_UnitTestCase
 from .unit.test_deprecations import Deprecations_UnitTestCase
 from .unit.test_durable import durable_UnitTestCase, durable_WithFakeSdk_UnitTestCase
+from .unit.test_essential import Essential_UnitTestCase
 from .unit.test_labourer import Labourer_UnitTestCase
 from .unit.test_lambda_api import lambda_api_UnitTestCase
 from .unit.test_orchestrator import Orchestrator_UnitTestCase
+from .unit.test_powertools_guards import powertools_guards_UnitTestCase
 from .unit.test_scavenger import Scavenger_UnitTestCase
 from .unit.test_scheduler import Scheduler_UnitTestCase
 from .unit.test_worker import Worker_UnitTestCase
 from .unit.test_worker_assistant import WorkerAssistant_UnitTestCase
 
 # Components
-from ..components.test.unit.test_config import Config_UnitTestCase
+from ..components.test.unit.test_config import Config_UnitTestCase, DynamoConfig_UnitTestCase, SSMConfig_UnitTestCase
+from ..components.test.unit.test_decorators import decorators_UnitTestCase
 from ..components.test.unit.test_dynamo_db import dynamodb_client_UnitTestCase
+from ..components.test.unit.test_dynamo_db_init import dynamodb_client_init_UnitTestCase
 from ..components.test.unit.test_helpers import helpers_UnitTestCase
+from ..components.test.unit.test_secrets_manager import secretsmanager_client_UnitTestCase
 from sosw.components.test.unit.test_siblings import siblings_TestCase
 from sosw.components.test.unit.test_sns import sns_TestCase
 from sosw.components.test.unit.test_sigv4 import sigv4_TestCase
@@ -23,34 +30,42 @@ from ..managers.test.unit.test_task import *
 from ..managers.test.unit.test_ecology import *
 from ..managers.test.unit.test_meta_handler import *
 
+
 def suite():
     test_suite = unittest.TestSuite()
 
     # Core applications
-    test_suite.addTest(unittest.makeSuite(app_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Deprecations_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(durable_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(durable_WithFakeSdk_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Labourer_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(lambda_api_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Orchestrator_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Scavenger_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Scheduler_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(Worker_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(WorkerAssistant_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(app_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Deprecations_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(durable_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(durable_WithFakeSdk_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Essential_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Labourer_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(lambda_api_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Orchestrator_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(powertools_guards_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Scavenger_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Scheduler_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Worker_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(WorkerAssistant_UnitTestCase))
 
     # Components
-    test_suite.addTest(unittest.makeSuite(Config_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(dynamodb_client_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(helpers_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(siblings_TestCase))
-    test_suite.addTest(unittest.makeSuite(sns_TestCase))
-    test_suite.addTest(unittest.makeSuite(sigv4_TestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Config_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(DynamoConfig_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(SSMConfig_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(decorators_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(dynamodb_client_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(dynamodb_client_init_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(helpers_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(secretsmanager_client_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(siblings_TestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(sns_TestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(sigv4_TestCase))
 
     # Managers
-    test_suite.addTest(unittest.makeSuite(ecology_manager_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(task_manager_UnitTestCase))
-    test_suite.addTest(unittest.makeSuite(meta_handler_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(ecology_manager_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(task_manager_UnitTestCase))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(meta_handler_UnitTestCase))
 
     return test_suite
 

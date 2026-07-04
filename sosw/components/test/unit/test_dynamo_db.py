@@ -17,7 +17,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from ...dynamo_db import DynamoDbClient
+from ...dynamo_db import DynamoDbClient, clean_dynamo_table
 
 
 class dynamodb_client_UnitTestCase(unittest.TestCase):
@@ -387,7 +387,8 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                                                           condition_expression='attribute_exists hash_col')
 
 
-    def test_sleep_db__get_capacity_called(self):
+    @patch.object(time, 'sleep')
+    def test_sleep_db__get_capacity_called(self, mock_sleep):
         self.dynamo_client.dynamo_client = MagicMock()
 
         self.dynamo_client.sleep_db(last_action_time=datetime.datetime.now(), action='write', table_name='autotest_new')
@@ -400,7 +401,7 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
 
 
     @patch.object(time, 'sleep')
-    def test_sleep_db__fell_asleep(self, mock_sleep):
+    def test_sleep_db__fell_asleep__provisioned(self, mock_sleep):
         """ Test for table if BillingMode is PROVISIONED """
         self.dynamo_client.get_capacity = MagicMock(return_value={'read': 10, 'write': 5})
         # Check that went to sleep
@@ -410,13 +411,14 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 1)
         args, kwargs = mock_sleep.call_args
 
-        # Should sleep around 1 / capacity second minus "time_between_ms" minus code execution time
-        self.assertGreater(args[0], 1 / self.dynamo_client.get_capacity()['write'] - time_between_ms - 0.02)
+        # Should sleep around 1 / capacity seconds minus the elapsed `time_between_ms` (converted to seconds)
+        # minus code execution time.
+        self.assertGreater(args[0], 1 / self.dynamo_client.get_capacity()['write'] - time_between_ms / 1000 - 0.02)
         self.assertLess(args[0], 1 / self.dynamo_client.get_capacity()['write'])
 
 
     @patch.object(time, 'sleep')
-    def test_sleep_db__fell_asleep(self, mock_sleep):
+    def test_sleep_db__fell_asleep__pay_per_request(self, mock_sleep):
         """ Test for table if BillingMode is PAY_PER_REQUEST """
 
         self.dynamo_client.get_capacity = MagicMock(return_value={'read': 0, 'write': 0})
@@ -622,6 +624,600 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
         for payload, expected_result in TESTS:
             print(payload)
             self.assertRaises(expected_result, self.dynamo_client.convert_glue_column_to_ddb, payload)
+
+
+    def test_convert_glue_column_to_ddb__key_error_becomes_value_error(self):
+        class BrokenColumn(dict):
+            """ Reports keys as present, but explodes on direct subscription. """
+
+            def __getitem__(self, key):
+                raise KeyError(key)
+
+        column = BrokenColumn({'Name': 'foo', 'Type': 'string'})
+
+        with self.assertRaises(ValueError) as e:
+            self.dynamo_client.convert_glue_column_to_ddb(column)
+
+        self.assertIn("Glue Data Catalog format", str(e.exception))
+
+
+    def test_enrich_config_from_glue__table_not_found__returns_config_as_is(self):
+        glue_client = MagicMock()
+        glue_client.exceptions.EntityNotFoundException = type('EntityNotFoundException', (Exception,), {})
+        glue_client.exceptions.AccessDeniedException = type('AccessDeniedException', (Exception,), {})
+        glue_client.get_table.side_effect = glue_client.exceptions.EntityNotFoundException()
+
+        config = {'table_name': 'autotest_unknown_table'}
+        result = self.dynamo_client.enrich_config_from_glue(config=config, glue_client=glue_client)
+
+        self.assertEqual({'table_name': 'autotest_unknown_table'}, result)
+
+
+    def test_enrich_config_from_glue__access_denied__returns_config_as_is(self):
+        glue_client = MagicMock()
+        glue_client.exceptions.EntityNotFoundException = type('EntityNotFoundException', (Exception,), {})
+        glue_client.exceptions.AccessDeniedException = type('AccessDeniedException', (Exception,), {})
+        glue_client.get_table.side_effect = glue_client.exceptions.AccessDeniedException()
+
+        config = {'table_name': 'autotest_restricted_table'}
+        result = self.dynamo_client.enrich_config_from_glue(config=config, glue_client=glue_client)
+
+        self.assertEqual({'table_name': 'autotest_restricted_table'}, result)
+
+
+    def test_enrich_config_from_glue__conflicting_hash_key__raises(self):
+        GLUE_RESPONSE = {
+            'Table': {
+                'StorageDescriptor': {'Columns': [{'Name': 'id', 'Type': 'string'}]},
+                'Parameters':        {'hashKey': 'id'},
+            }
+        }
+
+        glue_client = MagicMock()
+        glue_client.get_table.return_value = deepcopy(GLUE_RESPONSE)
+
+        with self.assertRaises(RuntimeError) as e:
+            self.dynamo_client.enrich_config_from_glue(config={'table_name': 'autotest_foo', 'hashKey': 'other_col'},
+                                                       glue_client=glue_client)
+        self.assertEqual("Config has incorrect hashKey. In Glue DataCatalog it is id", str(e.exception))
+
+        # A matching key in the config passes, and the underscore version is not injected from Glue.
+        glue_client.get_table.return_value = deepcopy(GLUE_RESPONSE)
+        result = self.dynamo_client.enrich_config_from_glue(config={'table_name': 'autotest_foo', 'hashKey': 'id'},
+                                                            glue_client=glue_client)
+        self.assertNotIn('hash_key', result)
+        self.assertEqual(['id'], result['required_fields'])
+
+
+    def test_identify_dynamo_capacity__default_table_name_from_config(self):
+        self.dynamo_client._table_descriptions = {}
+        self.dynamo_client._table_capacity = {}
+        self.dynamo_mock.describe_table.return_value = {
+            'Table': {'ProvisionedThroughput': {'ReadCapacityUnits': 50, 'WriteCapacityUnits': 5}}
+        }
+
+        self.dynamo_client.identify_dynamo_capacity()
+
+        self.assertEqual({'read': 50, 'write': 5}, self.dynamo_client._table_capacity['autotest_dynamo_db'])
+        self.dynamo_mock.describe_table.assert_called_with(TableName='autotest_dynamo_db')
+
+
+    def test__describe_table__uses_cache(self):
+        initial_calls = self.dynamo_mock.describe_table.call_count
+
+        first = self.dynamo_client._describe_table()
+        second = self.dynamo_client._describe_table('autotest_dynamo_db')
+
+        self.assertEqual(initial_calls, self.dynamo_mock.describe_table.call_count,
+                         "Repeated calls must be served from the cache without new API calls")
+        self.assertIs(first, second)
+
+
+    def test_get_table_keys(self):
+        description = {
+            'Table': {
+                'KeySchema': [
+                    {'AttributeName': 'hash_col', 'KeyType': 'HASH'},
+                    {'AttributeName': 'range_col', 'KeyType': 'RANGE'},
+                ]
+            }
+        }
+        self.dynamo_client._describe_table = Mock(return_value=description)
+
+        self.assertEqual(('hash_col', 'range_col'), self.dynamo_client.get_table_keys('autotest_dynamo_db'))
+
+
+    def test_get_table_indexes__skips_inactive_and_returns_range_key(self):
+        description = {
+            'Table': {
+                'ProvisionedThroughput':  {'ReadCapacityUnits': 100, 'WriteCapacityUnits': 10},
+                'LocalSecondaryIndexes':  [
+                    {
+                        'IndexName':  'local_index',
+                        'KeySchema':  [
+                            {'AttributeName': 'hash_col', 'KeyType': 'HASH'},
+                            {'AttributeName': 'other_col', 'KeyType': 'RANGE'},
+                        ],
+                        'Projection': {'ProjectionType': 'KEYS_ONLY'},
+                    }
+                ],
+                'GlobalSecondaryIndexes': [
+                    {
+                        'IndexName':   'creating_index',
+                        'KeySchema':   [{'AttributeName': 'some_col', 'KeyType': 'HASH'}],
+                        'Projection':  {'ProjectionType': 'ALL'},
+                        'IndexStatus': 'CREATING',
+                    }
+                ],
+            }
+        }
+        self.dynamo_client._describe_table = Mock(return_value=description)
+
+        result = self.dynamo_client.get_table_indexes('autotest_dynamo_db')
+
+        self.assertNotIn('creating_index', result, "Indexes not yet ACTIVE must be skipped")
+        self.assertEqual({
+            'projection_type':        'KEYS_ONLY',
+            'hash_key':               'hash_col',
+            'range_key':              'other_col',
+            'provisioned_throughput': {
+                'write_capacity': 10,
+                'read_capacity':  100,
+            },
+        }, result['local_index'])
+
+
+    def test_dynamo_to_dict__deprecated_strict(self):
+        dynamo_row = {'hash_col': {'S': 'cat'}, 'free_col': {'S': 'x'}}
+
+        with self.assertLogs(level=logging.WARNING) as cm:
+            result = self.dynamo_client.dynamo_to_dict(dynamo_row, strict=False)
+
+        self.assertTrue(any('deprecated' in line for line in cm.output))
+        self.assertEqual({'hash_col': 'cat', 'free_col': 'x'}, result,
+                         "strict=False must be translated to fetch_all_fields=True")
+
+
+    def test_dynamo_to_dict__json_looking_string_fails_to_parse(self):
+        bad_json = '{"unquoted": value}'
+
+        result = self.dynamo_client.dynamo_to_dict({'hash_col': {'S': 'cat'}, 'other_col': {'S': bad_json}})
+        self.assertEqual(bad_json, result['other_col'])
+        self.assertEqual(1, self.dynamo_client.stats['json_looking_string_failed_to_parse'])
+
+        result = self.dynamo_client.dynamo_to_dict({'any_col': {'S': bad_json}}, fetch_all_fields=True)
+        self.assertEqual(bad_json, result['any_col'])
+
+
+    def test_dict_to_dynamo__not_strict__unmapped_type_uses_type_serializer(self):
+        result = self.dynamo_client.dict_to_dynamo({'unmapped_list': ['x', 'y']}, strict=False)
+
+        self.assertEqual({'L': [{'S': 'x'}, {'S': 'y'}]}, result['unmapped_list'])
+
+
+    def test_dict_to_dynamo__strict_skips_unmapped_optional_field(self):
+        with self.assertLogs(level=logging.WARNING) as cm:
+            result = self.dynamo_client.dict_to_dynamo({'lambda_name': 'foo', 'unmapped_col': 'bar'})
+
+        self.assertTrue(any('missing from row_mapper' in line for line in cm.output))
+        self.assertEqual({'lambda_name': {'S': 'foo'}}, result)
+
+
+    def test_dict_to_dynamo__strict_raises_for_unmapped_required_field(self):
+        config = deepcopy(self.TEST_CONFIG)
+        config['required_fields'] = ['mandatory_col']
+        dynamo_client = DynamoDbClient(config=config)
+
+        with self.assertRaises(ValueError) as e:
+            dynamo_client.dict_to_dynamo({'mandatory_col': 'foo'})
+
+        self.assertIn("Field mandatory_col is missing from row_mapper", str(e.exception))
+
+
+    def test_get_by_query__deprecated_strict(self):
+        with self.assertLogs(level=logging.ERROR) as cm:
+            self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, strict=True)
+
+        self.assertTrue(any('deprecated' in line for line in cm.output))
+
+
+    def test_get_by_query__begins_with(self):
+        self.dynamo_client.get_by_query(keys={'hash_col': 'cat', 'other_col': 'pre'},
+                                        comparisons={'other_col': 'begins_with'})
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertIn('begins_with (other_col, :other_col)', kwargs['KeyConditionExpression'])
+        self.assertIn('hash_col = :hash_col', kwargs['KeyConditionExpression'])
+
+
+    def test_get_by_query__consistent_read_on_table(self):
+        self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, consistent_read=True)
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertTrue(kwargs['ConsistentRead'])
+
+
+    def test_get_by_query__filter_expression(self):
+        self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, filter_expression='en_time between 10 and 20')
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('en_time between :st_between_en_time and :en_between_en_time', kwargs['FilterExpression'])
+        self.assertEqual({'N': '10'}, kwargs['ExpressionAttributeValues'][':st_between_en_time'])
+        self.assertEqual({'N': '20'}, kwargs['ExpressionAttributeValues'][':en_between_en_time'])
+
+
+    def test_get_by_query__index_name_and_desc(self):
+        self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, index_name='autotest_index', desc=True)
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('autotest_index', kwargs['IndexName'])
+        self.assertEqual('ALL_PROJECTED_ATTRIBUTES', kwargs['Select'])
+        self.assertFalse(kwargs['ScanIndexForward'])
+
+
+    def test_get_by_query__return_count(self):
+        self.paginator_mock.paginate.return_value = [{'Count': 24, 'LastEvaluatedKey': 'bzz'}, {'Count': 12}]
+
+        result = self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, return_count=True)
+
+        self.assertEqual(36, result)
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('COUNT', kwargs['Select'])
+
+
+    def test_get_by_query__paginates_and_converts_rows(self):
+        self.paginator_mock.paginate.return_value = [
+            {'Items': [{'hash_col': {'S': 'cat1'}, 'range_col': {'N': '1'}},
+                       {'hash_col': {'S': 'cat2'}, 'range_col': {'N': '2'}}]},
+            {'Items': [{'hash_col': {'S': 'cat3'}, 'range_col': {'N': '3'}}]},
+        ]
+
+        result = self.dynamo_client.get_by_query(keys={'hash_col': 'cat'})
+
+        self.assertEqual([
+            {'hash_col': 'cat1', 'range_col': 1},
+            {'hash_col': 'cat2', 'range_col': 2},
+            {'hash_col': 'cat3', 'range_col': 3},
+        ], result)
+        self.assertEqual(2, self.dynamo_client.stats['dynamo_get_queries'])
+
+
+    def test_get_by_query__max_items_stops_pagination(self):
+        self.paginator_mock.paginate.return_value = [
+            {'Items': [{'hash_col': {'S': 'cat1'}, 'range_col': {'N': '1'}},
+                       {'hash_col': {'S': 'cat2'}, 'range_col': {'N': '2'}}]},
+            {'Items': [{'hash_col': {'S': 'cat3'}, 'range_col': {'N': '3'}}]},
+        ]
+
+        result = self.dynamo_client.get_by_query(keys={'hash_col': 'cat'}, max_items=1)
+
+        self.assertEqual([{'hash_col': 'cat1', 'range_col': 1}], result)
+        self.assertEqual(1, self.dynamo_client.stats['dynamo_get_queries'],
+                         "Pagination must stop as soon as max_items rows are fetched")
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual({'MaxItems': 1}, kwargs['PaginationConfig'])
+
+
+    def test_get_by_scan(self):
+        self.paginator_mock.paginate.return_value = [
+            {'Items': [{'hash_col': {'S': 'cat1'}, 'range_col': {'N': '1'}}]},
+            {'Items': [{'hash_col': {'S': 'cat2'}, 'range_col': {'N': '2'}}]},
+        ]
+
+        result = self.dynamo_client.get_by_scan(attrs={'some_col': 'foo'}, index_name='autotest_index',
+                                                consistent_read=True)
+
+        self.dynamo_mock.get_paginator.assert_called_with('scan')
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('autotest_dynamo_db', kwargs['TableName'])
+        self.assertEqual('some_col = :some_col', kwargs['FilterExpression'])
+        self.assertEqual({':some_col': {'S': 'foo'}}, kwargs['ExpressionAttributeValues'])
+        self.assertEqual('autotest_index', kwargs['IndexName'])
+        self.assertTrue(kwargs['ConsistentRead'])
+
+        self.assertEqual([{'hash_col': 'cat1', 'range_col': 1}, {'hash_col': 'cat2', 'range_col': 2}], result)
+        self.assertEqual(2, self.dynamo_client.stats['dynamo_scan_queries'])
+
+
+    def test_get_by_scan__no_attrs_and_deprecated_strict(self):
+        with self.assertLogs(level=logging.WARNING) as cm:
+            result = self.dynamo_client.get_by_scan(strict=False)
+
+        self.assertTrue(any('deprecated' in line for line in cm.output))
+        self.assertEqual([], result)
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertNotIn('FilterExpression', kwargs)
+        self.assertNotIn('ExpressionAttributeValues', kwargs)
+        self.assertNotIn('IndexName', kwargs)
+        self.assertNotIn('ConsistentRead', kwargs)
+
+
+    def test_get_by_scan__index_name_from_config(self):
+        config = deepcopy(self.TEST_CONFIG)
+        config['index_name'] = 'autotest_config_index'
+        dynamo_client = DynamoDbClient(config=config)
+
+        dynamo_client.get_by_scan()
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('autotest_config_index', kwargs['IndexName'])
+
+
+    def test_get_by_scan_generator(self):
+        self.paginator_mock.paginate.return_value = [
+            {'Items': [{'hash_col': {'S': 'cat1'}, 'range_col': {'N': '1'}}]},
+            {'Items': [{'hash_col': {'S': 'cat2'}, 'range_col': {'N': '2'}}]},
+        ]
+
+        result = list(self.dynamo_client.get_by_scan_generator(attrs={'some_col': 'foo'}))
+
+        self.assertEqual([
+            [{'hash_col': 'cat1', 'range_col': 1}],
+            [{'hash_col': 'cat2', 'range_col': 2}],
+        ], result, "The generator must yield each page as a separate list of rows")
+        self.assertEqual(2, self.dynamo_client.stats['dynamo_scan_queries'])
+
+
+    def test_get_by_scan_generator__deprecated_strict(self):
+        with self.assertLogs(level=logging.WARNING) as cm:
+            result = list(self.dynamo_client.get_by_scan_generator(strict=True))
+
+        self.assertTrue(any('deprecated' in line for line in cm.output))
+        self.assertEqual([], result)
+
+
+    def test_batch_get_items_one_table__deprecated_strict(self):
+        db_result = {'Responses': {self.table_name: [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}}]}}
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        with self.assertLogs(level=logging.WARNING) as cm:
+            result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], strict=True)
+
+        self.assertTrue(any('deprecated' in line for line in cm.output))
+        self.assertEqual([{'hash_col': 'b', 'range_col': 10}], result)
+
+
+    def test_batch_get_items_one_table__consistent_read(self):
+        db_result = {'Responses': {self.table_name: [{'hash_col': {'S': 'b'}, 'range_col': {'N': '10'}}]}}
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}], consistent_read=True)
+
+        args, kwargs = self.dynamo_client.dynamo_client.batch_get_item.call_args
+        self.assertTrue(kwargs['RequestItems'][self.table_name]['ConsistentRead'])
+
+
+    @patch.object(time, 'sleep')
+    def test_batch_get_items_one_table__retries_unprocessed_keys(self, mock_sleep):
+        unprocessed_keys = [{'hash_col': {'S': 'b'}}]
+        first = {
+            'Responses':       {self.table_name: [{'hash_col': {'S': 'a'}, 'range_col': {'N': '1'}}]},
+            'UnprocessedKeys': {self.table_name: {'Keys': unprocessed_keys}},
+        }
+        second = {'Responses': {self.table_name: [{'hash_col': {'S': 'b'}, 'range_col': {'N': '2'}}]}}
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(side_effect=[first, second])
+
+        result = self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'a'}, {'hash_col': 'b'}],
+                                                              max_retries=2, retry_wait_base_time=0.25)
+
+        self.assertEqual([{'hash_col': 'a', 'range_col': 1}, {'hash_col': 'b', 'range_col': 2}], result)
+        mock_sleep.assert_called_once_with(0.25)
+        self.assertEqual(2, self.dynamo_client.dynamo_client.batch_get_item.call_count)
+
+        args, kwargs = self.dynamo_client.dynamo_client.batch_get_item.call_args_list[1]
+        self.assertEqual(unprocessed_keys, kwargs['RequestItems'][self.table_name]['Keys'],
+                         "The retry must request only the unprocessed keys")
+
+
+    @patch.object(time, 'sleep')
+    def test_batch_get_items_one_table__raises_after_max_retries(self, mock_sleep):
+        db_result = {
+            'Responses':       {self.table_name: [{'hash_col': {'S': 'a'}, 'range_col': {'N': '1'}}]},
+            'UnprocessedKeys': {self.table_name: {'Keys': [{'hash_col': {'S': 'b'}}]}},
+        }
+        self.dynamo_client.dynamo_client.batch_get_item = Mock(return_value=db_result)
+
+        with self.assertRaises(Exception) as e:
+            self.dynamo_client.batch_get_items_one_table(keys_list=[{'hash_col': 'b'}],
+                                                         max_retries=2, retry_wait_base_time=0.25)
+
+        self.assertIn("batch_get_items action failed for table autotest_dynamo_db", str(e.exception))
+        self.assertEqual(3, self.dynamo_client.dynamo_client.batch_get_item.call_count,
+                         "Expected the initial call plus max_retries retries")
+        mock_sleep.assert_any_call(0.25)
+        mock_sleep.assert_any_call(0.5)
+
+
+    def test_create__sends_condition_expression(self):
+        self.dynamo_client.create({'hash_col': 'cat', 'range_col': '123'})
+
+        args, kwargs = self.dynamo_mock.put_item.call_args
+        self.assertEqual('autotest_dynamo_db', kwargs['TableName'])
+        self.assertEqual({'hash_col': {'S': 'cat'}, 'range_col': {'N': '123'}}, kwargs['Item'])
+        self.assertEqual('attribute_not_exists(hash_col)', kwargs['ConditionExpression'])
+        self.assertEqual(1, self.dynamo_client.stats['dynamo_put_queries'])
+
+
+    def test_delete__calls_boto_client(self):
+        self.dynamo_client.delete({'hash_col': 'cat', 'range_col': 42})
+
+        args, kwargs = self.dynamo_mock.delete_item.call_args
+        self.assertEqual({
+            'TableName': 'autotest_dynamo_db',
+            'Key':       {'hash_col': {'S': 'cat'}, 'range_col': {'N': '42'}},
+        }, kwargs)
+
+
+    def test_update__composes_full_query(self):
+        self.dynamo_client.update(keys={'hash_col': 'cat', 'range_col': 123},
+                                  attributes_to_update={'some_col': 'foo'},
+                                  attributes_to_increment={'some_counter': 5},
+                                  attributes_to_remove=['other_col'],
+                                  condition_expression='en_time < 100')
+
+        args, kwargs = self.dynamo_mock.update_item.call_args
+        self.assertEqual('autotest_dynamo_db', kwargs['TableName'])
+        self.assertEqual({'hash_col': {'S': 'cat'}, 'range_col': {'N': '123'}}, kwargs['Key'])
+        self.assertEqual('SET #some_col = :some_col, '
+                         '#some_counter = if_not_exists(#some_counter, :zero) + :some_counter '
+                         'REMOVE other_col', kwargs['UpdateExpression'])
+        self.assertEqual({'#some_col': 'some_col', '#some_counter': 'some_counter'},
+                         kwargs['ExpressionAttributeNames'])
+        self.assertEqual({
+            ':some_col':       {'S': 'foo'},
+            ':some_counter':   {'N': '5'},
+            ':zero':           {'N': '0'},
+            ':filter_en_time': {'N': '100'},
+        }, kwargs['ExpressionAttributeValues'])
+        self.assertEqual('en_time < :filter_en_time', kwargs['ConditionExpression'])
+        self.assertEqual(1, self.dynamo_client.stats['dynamo_update_queries'])
+
+
+    def test_update__raises_without_attributes(self):
+        with self.assertRaises(ValueError) as e:
+            self.dynamo_client.update(keys={'hash_col': 'cat'})
+
+        self.assertIn('attributes_to_update', str(e.exception))
+
+
+    def test_update__remove_only_with_attribute_exists_condition(self):
+        self.dynamo_client.update(keys={'hash_col': 'cat'}, attributes_to_remove=['other_col'],
+                                  condition_expression='attribute_exists hash_col')
+
+        args, kwargs = self.dynamo_mock.update_item.call_args
+        self.assertEqual('REMOVE other_col', kwargs['UpdateExpression'])
+        self.assertEqual('attribute_exists (hash_col)', kwargs['ConditionExpression'])
+        self.assertNotIn('ExpressionAttributeNames', kwargs)
+        self.assertNotIn('ExpressionAttributeValues', kwargs)
+
+
+    def test_make_put_transaction_item(self):
+        result = self.dynamo_client.make_put_transaction_item({'hash_col': 'cat', 'range_col': 7},
+                                                              table_name='autotest_other')
+
+        self.assertEqual({
+            'Put': {
+                'TableName': 'autotest_other',
+                'Item':      {'hash_col': {'S': 'cat'}, 'range_col': {'N': '7'}},
+            }
+        }, result)
+
+
+    def test_make_delete_transaction_item(self):
+        result = self.dynamo_client.make_delete_transaction_item({'hash_col': 'cat'}, table_name='autotest_other')
+
+        self.assertEqual({
+            'Delete': {
+                'TableName': 'autotest_other',
+                'Key':       {'hash_col': {'S': 'cat'}},
+            }
+        }, result)
+
+
+    def test_transact_write(self):
+        t1 = self.dynamo_client.make_put_transaction_item({'hash_col': 'cat'}, table_name='autotest_one')
+        t2 = self.dynamo_client.make_delete_transaction_item({'hash_col': 'dog'}, table_name='autotest_two')
+
+        self.dynamo_client.transact_write(t1, t2)
+
+        self.dynamo_mock.transact_write_items.assert_called_once()
+        args, kwargs = self.dynamo_mock.transact_write_items.call_args
+        self.assertEqual([t1, t2], list(kwargs['TransactItems']))
+        self.assertEqual(1, self.dynamo_client.stats['dynamo_transact_write_operations'])
+
+
+    def test_transact_write__chunks_by_ten(self):
+        transactions = [self.dynamo_client.make_put_transaction_item({'hash_col': f'cat{i}'},
+                                                                     table_name='autotest_one') for i in range(11)]
+
+        self.dynamo_client.transact_write(*transactions)
+
+        self.assertEqual(2, self.dynamo_mock.transact_write_items.call_count)
+        first_args, first_kwargs = self.dynamo_mock.transact_write_items.call_args_list[0]
+        second_args, second_kwargs = self.dynamo_mock.transact_write_items.call_args_list[1]
+        self.assertEqual(10, len(first_kwargs['TransactItems']))
+        self.assertEqual(1, len(second_kwargs['TransactItems']))
+        self.assertEqual(2, self.dynamo_client.stats['dynamo_transact_write_operations'])
+
+
+    def test_transact_write__validates_transactions(self):
+        TESTS = [
+            ('not_a_dict', "transaction must be a dictionary"),
+            ({'Put': {'a': 1}, 'Delete': {'b': 2}}, "only one operation"),
+            ({'Update': {'a': 1}}, "Bad action 'Update'"),
+            ({'Put': 'not_a_dict'}, "must be a dictionary"),
+        ]
+
+        for transaction, expected_msg in TESTS:
+            with self.assertRaises(AssertionError) as e:
+                self.dynamo_client.transact_write(transaction)
+            self.assertIn(expected_msg, str(e.exception))
+
+        self.dynamo_mock.transact_write_items.assert_not_called()
+
+
+    def test__get_validate_table_name__raises_without_table_name(self):
+        config = deepcopy(self.TEST_CONFIG)
+        dynamo_client = DynamoDbClient(config=config)
+        del dynamo_client.config['table_name']
+
+        with self.assertRaises(RuntimeError) as e:
+            dynamo_client._get_validate_table_name()
+
+        self.assertIn("no 'table_name' in config", str(e.exception))
+
+
+    def test_get_stats__and_reset_stats(self):
+        self.dynamo_client.put({'hash_col': 'cat'})
+
+        self.assertEqual(1, self.dynamo_client.get_stats()['dynamo_put_queries'])
+
+        self.dynamo_client.reset_stats()
+
+        self.assertEqual(0, self.dynamo_client.get_stats()['dynamo_put_queries'])
+
+
+    def test_clean_dynamo_table__refuses_non_autotest_table(self):
+        self.assertRaises(AssertionError, clean_dynamo_table, 'production_table')
+
+
+    def test_clean_dynamo_table(self):
+        self.paginator_mock.paginate.return_value = [
+            {'Items': [{'hash_col': {'S': 'a'}, 'range_col': {'N': '1'}, 'other_col': {'S': 'x'}}]},
+            {'Items': [{'hash_col': {'S': 'b'}, 'range_col': {'N': '2'}}]},
+        ]
+
+        clean_dynamo_table()
+
+        self.dynamo_mock.get_paginator.assert_called_with('scan')
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('autotest_dynamo_db', kwargs['TableName'])
+        self.assertNotIn('FilterExpression', kwargs)
+
+        self.assertEqual(2, self.dynamo_mock.delete_item.call_count)
+        self.dynamo_mock.delete_item.assert_any_call(TableName='autotest_dynamo_db',
+                                                     Key={'hash_col': {'S': 'a'}, 'range_col': {'N': '1'}})
+        self.dynamo_mock.delete_item.assert_any_call(TableName='autotest_dynamo_db',
+                                                     Key={'hash_col': {'S': 'b'}, 'range_col': {'N': '2'}})
+
+
+    def test_clean_dynamo_table__filter_expression(self):
+        self.paginator_mock.paginate.return_value = [{'Items': []}]
+
+        with patch('sosw.components.dynamo_db.DynamoDbClient') as client_class_mock:
+            client_class_mock.return_value._parse_filter_expression.return_value = \
+                ('name = :filter_name', {':filter_name': {'S': 'cat'}})
+
+            clean_dynamo_table('autotest_dynamo_db', keys=('hash_col',), filter_expression='name = cat')
+
+        client_class_mock.assert_called_once_with(config={'row_mapper': {'name': 'S'}})
+        client_class_mock.return_value._parse_filter_expression.assert_called_once_with('name = cat')
+
+        args, kwargs = self.paginator_mock.paginate.call_args
+        self.assertEqual('name = :filter_name', kwargs['FilterExpression'])
+        self.assertEqual({':filter_name': {'S': 'cat'}}, kwargs['ExpressionAttributeValues'])
+        self.dynamo_mock.delete_item.assert_not_called()
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import datetime
 import time
 import unittest
 import os
+import uuid
 from copy import deepcopy
 
 from sosw.components.test.unit.helpers_test_variables import *
@@ -10,6 +11,7 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
+from sosw.components.helpers import ignore_case_copy
 
 
 class helpers_UnitTestCase(unittest.TestCase):
@@ -941,6 +943,115 @@ class helpers_UnitTestCase(unittest.TestCase):
         for input_text, expected_output in test_cases:
             with self.subTest(input_text=input_text, expected_output=expected_output):
                 self.assertEqual(slug_to_camel_case(input_text), expected_output)
+
+
+    def test_validate_account_to_int(self):
+        self.assertEqual(validate_account_to_int('123-456-7890'), 1234567890)
+        self.assertEqual(validate_account_to_int('1234567890'), 1234567890)
+        self.assertEqual(validate_account_to_int(1234567890), 1234567890)
+
+        self.assertRaises(ValueError, validate_account_to_int, '123')
+        self.assertRaises(ValueError, validate_account_to_int, 'not-an-account')
+
+
+    def test_validate_list_of_numbers_from_csv__not_iterable(self):
+        self.assertEqual(validate_list_of_numbers_from_csv(None), [])
+
+
+    def test_validate_uuid4(self):
+        # Beware the historical quirk of this validator: an invalid uuid string returns False,
+        # while a valid uuid4 falls through the validation and returns None (also falsy!).
+        self.assertFalse(validate_uuid4('not-a-uuid'))
+        self.assertIsNone(validate_uuid4(str(uuid.uuid4())))
+
+
+    def test_rstrip_all__raises_unsupported_patterns(self):
+        # A frozenset of strings still compiles the regex, but only str | list | set | tuple are supported.
+        self.assertRaises(ValueError, rstrip_all, 'some_name', frozenset({'_name'}))
+
+
+    def test_get_one_or_none_from_dict__not_iterable_plural(self):
+        with self.assertRaises(ValueError) as exc:
+            get_one_or_none_from_dict({'accounts': 42}, 'account')
+
+        self.assertIn("not-iterable", str(exc.exception))
+
+
+    def test_validate_date_list_from_event_or_days_back__defaults(self):
+        self.assertEqual(validate_date_list_from_event_or_days_back({}), [datetime.date.today()])
+        self.assertEqual(validate_date_list_from_event_or_days_back({}, days_back=3),
+                         [datetime.date.today() - datetime.timedelta(days=3)])
+        self.assertEqual(validate_date_list_from_event_or_days_back({'date_list': ''}, days_back=1),
+                         [datetime.date.today() - datetime.timedelta(days=1)])
+
+
+    def test_validate_datetime_from_something__epoch_milliseconds_string(self):
+        # The value is too big for the epoch seconds, so it is retried as epoch milliseconds.
+        self.assertEqual(validate_datetime_from_something('1700000000000'),
+                         datetime.datetime.fromtimestamp(1700000000))
+
+
+    def test_validate_string_matches_datetime_format__invalid_date_str(self):
+        for bad_date_str in [None, '', 42]:
+            with self.subTest(date_str=bad_date_str):
+                with self.assertRaises(ValueError) as exc:
+                    validate_string_matches_datetime_format(bad_date_str, '%Y/%m/%d', field_name='my_date')
+
+                self.assertIn("Bad input for my_date", str(exc.exception))
+
+
+    def test_validate_string_matches_datetime_format__invalid_format(self):
+        for bad_format in [None, '', 42]:
+            with self.subTest(date_format=bad_format):
+                with self.assertRaises(ValueError) as exc:
+                    validate_string_matches_datetime_format('2018/05/15', bad_format)
+
+                self.assertIn("Bad input for format", str(exc.exception))
+
+
+    def test_is_valid_date(self):
+        self.assertTrue(is_valid_date('2018/09/16', ['%Y/%m/%d']))
+        self.assertTrue(is_valid_date('2018-09-16', ['%Y/%m/%d', '%Y-%m-%d']))
+
+        self.assertFalse(is_valid_date('16.09.2018', ['%Y/%m/%d', '%Y-%m-%d']))
+        self.assertFalse(is_valid_date('2018/09/16', []))
+
+
+    def test_recursive_matchers__guard_against_empty_key_path(self):
+        """
+        The defensive RuntimeError branch of the recursive matchers is reachable only with a str-like
+        key whose split() yields an empty path. Assert all three matchers guard against it.
+        """
+
+
+        class EmptySplitKey(str):
+
+            def split(self, *args, **kwargs):
+                return []
+
+
+        key = EmptySplitKey('a')
+
+        self.assertRaises(RuntimeError, recursive_matches_soft, {'a': 1}, key, 1)
+        self.assertRaises(RuntimeError, recursive_matches_strict, {'a': 1}, key, 1)
+        self.assertRaises(RuntimeError, recursive_matches_extract, {'a': 1}, key)
+
+
+    def test_recursive_matches_strict__requires_both_exclude_attributes(self):
+        self.assertRaises(AttributeError, recursive_matches_strict, {'a': 1}, 'a', 1, exclude_key='b')
+
+
+    def test_ignore_case_copy(self):
+        SRC = {'Foo': 1, 'BAR': {'Nested': 2}, 42: 'numeric_key'}
+
+        result = ignore_case_copy(SRC)
+
+        self.assertEqual(result, {'foo': 1, 'bar': {'Nested': 2}, 42: 'numeric_key'},
+                         "String keys must be lowercased, other keys preserved as is")
+
+
+    def test_convert_string_to_words__raises_not_a_string(self):
+        self.assertRaises(TypeError, convert_string_to_words, 42)
 
 
 if __name__ == '__main__':

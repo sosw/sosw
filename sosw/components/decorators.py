@@ -53,6 +53,7 @@ def logging_wrapper(level: int = None):
         level = logging.INFO
 
     def decorator(method):
+        @wraps(method)
         def wrapper(*args, **kwargs):
             try:
                 var_names = method.__code__.co_varnames[:method.__code__.co_argcount]

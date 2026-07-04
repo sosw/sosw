@@ -103,6 +103,12 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
 
     def test_register_task_manager__resets_stats(self):
+        # Until `register_task_manager()` replaces it with an instance attribute, `running_tasks`
+        # is the class-level defaultdict of EcologyManager. The mutations below before the
+        # registration land in that shared dict, so clean them up to keep other tests and suite
+        # reruns in the same process isolated.
+        self.addCleanup(EcologyManager.running_tasks.pop, 'foo', None)
+
         # Should be defaultdict(int)
         self.assertEqual(self.manager.running_tasks['foo'], 0)
 
@@ -268,3 +274,41 @@ class ecology_manager_UnitTestCase(unittest.TestCase):
 
         # Checking some default from hardcoded DEFAULT_CONFIG
         self.assertEqual(kwargs['Period'], self.manager.config['default_metric_values']['Period'])
+
+
+    def test_call__not_implemented(self):
+        self.assertRaises(NotImplementedError, self.manager, {'some': 'event'})
+
+
+    def test_get_labourer_average_duration__raises_not_task_client(self):
+        self.assertRaises(RuntimeError, self.manager.get_labourer_average_duration, self.LABOURER)
+
+
+    def test_get_labourer_average_duration__calls_task_manager(self):
+        tm = MagicMock()
+        tm.get_average_labourer_duration.return_value = 300
+        self.manager.register_task_manager(tm)
+
+        self.assertEqual(self.manager.get_labourer_average_duration(self.LABOURER), 300)
+        tm.get_average_labourer_duration.assert_called_once_with(self.LABOURER)
+
+
+    def test_get_stats__not_recursive(self):
+        self.manager.task_client = MagicMock()
+        self.manager.stats['foo'] = 5
+
+        result = self.manager.get_stats(recursive=True)
+
+        self.assertEqual(result['foo'], 5)
+        self.manager.task_client.get_stats.assert_not_called()
+
+
+    def test_reset_stats__not_recursive(self):
+        self.manager.task_client = MagicMock()
+        self.manager.stats['foo'] = 5
+
+        self.manager.reset_stats(recursive=True)
+
+        self.assertEqual(self.manager.stats['total_foo'], 5)
+        self.assertNotIn('foo', self.manager.stats)
+        self.manager.task_client.reset_stats.assert_not_called()

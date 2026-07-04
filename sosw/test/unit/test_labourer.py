@@ -36,6 +36,13 @@ class Labourer_UnitTestCase(unittest.TestCase):
         f"Labourer supports only {Labourer.ATTRIBUTES}"
 
 
+    def test_init__strict_with_supported_attributes(self):
+        lab = Labourer(id='foo', arn='some_arn', strict=True)
+
+        self.assertEqual(lab.id, 'foo')
+        self.assertEqual(lab.arn, 'some_arn')
+
+
     def test_set_defaults__called(self):
         with patch('sosw.labourer.Labourer.set_defaults')  as sd:
             lab = Labourer(id=42)
@@ -63,3 +70,7 @@ class Labourer_UnitTestCase(unittest.TestCase):
         self.labourer.set_custom_attribute('start', time.time())
 
         self.assertLessEqual(self.labourer.start, time.time())
+
+
+    def test_set_custom_attribute__unsupported_raises(self):
+        self.assertRaises(ValueError, self.labourer.set_custom_attribute, 'unsupported_attr', 42)

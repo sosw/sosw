@@ -48,7 +48,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest pytest-cov boto3
 
-    # The 75% threshold is a staging value: the tests & coverage PR of the 3.0.0 release
-    # raises it to 100.
+    # Full line coverage is enforced since the tests & coverage PR of the 3.0.0 release.
     - name: Run unit tests with coverage
-      run: python -m pytest sosw/test/suite_unit.py --cov=sosw --cov-report=term --cov-fail-under=75
+      run: python -m pytest sosw/test/suite_unit.py --cov=sosw --cov-report=term --cov-fail-under=100

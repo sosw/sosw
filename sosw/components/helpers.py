@@ -198,16 +198,6 @@ def camel_case_to_slug(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
 
-def slug_to_camel_case(name):
-    """
-    Convert input from slug case to camel case
-
-    :param name:    - str   -   slug-case string
-    :return:        - str   -   SnakeCase string
-    """
-    return re.sub(r'-([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
-
-
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
 

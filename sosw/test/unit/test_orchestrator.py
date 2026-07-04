@@ -157,3 +157,25 @@ class Orchestrator_UnitTestCase(unittest.TestCase):
         self.orchestrator.task_client.get_next_for_labourer.assert_not_called()
         self.orchestrator.task_client.invoke_task.assert_not_called()
         self.orchestrator.meta_handler.post.assert_not_called()
+
+
+    def test_call__invokes_for_each_registered_labourer(self):
+        labourers = [self.LABOURER, Labourer(id='another_function', arn='another_arn')]
+
+        self.orchestrator.task_client = MagicMock()
+        self.orchestrator.task_client.register_labourers.return_value = labourers
+        self.orchestrator.invoke_for_labourer = MagicMock()
+
+        self.orchestrator({'some': 'event'})
+
+        self.orchestrator.task_client.register_labourers.assert_called_once_with()
+        self.assertEqual(self.orchestrator.invoke_for_labourer.call_count, 2)
+        self.orchestrator.invoke_for_labourer.assert_has_calls([mock.call(labourers[0]), mock.call(labourers[1])])
+
+
+    def test_get_labourers(self):
+        self.orchestrator.task_client = MagicMock()
+        self.orchestrator.task_client.get_labourers.return_value = [self.LABOURER]
+
+        self.assertEqual(self.orchestrator.get_labourers(), [self.LABOURER])
+        self.orchestrator.task_client.get_labourers.assert_called_once_with()

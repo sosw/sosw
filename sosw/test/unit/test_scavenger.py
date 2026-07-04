@@ -126,6 +126,78 @@ class Scavenger_UnitTestCase(unittest.TestCase):
         self.assertEqual(result, 225)
 
 
-    @unittest.skip("Logic is not yet final")
     def test_should_retry_task(self):
-        raise NotImplementedError
+        labourer = Labourer(id='some_lambda', arn='some_arn', max_attempts=3)
+
+        self.assertTrue(self.scavenger.should_retry_task(labourer, {'attempts': 2}))
+        self.assertFalse(self.scavenger.should_retry_task(labourer, {'attempts': 3}))
+        self.assertFalse(self.scavenger.should_retry_task(labourer, {'attempts': 4}))
+
+
+    def test_move_task_to_retry_table(self):
+        labourer = Labourer(id='lambda1', arn='arn1', max_duration=300)
+
+        self.scavenger.move_task_to_retry_table(self.task, labourer)
+
+        # Wanted delay: max_duration 300 * attempts 2 = 600.
+        self.scavenger.task_client.move_task_to_retry_table.assert_called_once_with(self.task, 600)
+        self.scavenger.meta_handler.post.assert_called_once_with(task_id='123', labourer_id='lambda1',
+                                                                 action='scheduled_for_retry')
+
+
+    def test_retry_tasks(self):
+        tasks_to_retry = [
+            {'task_id': '511', 'labourer_id': 'lambda3'},
+            {'task_id': '512', 'labourer_id': 'lambda3'},
+        ]
+        self.scavenger.task_client.get_tasks_to_retry_for_labourer = MagicMock(return_value=tasks_to_retry)
+        self.scavenger.task_client.get_oldest_greenfield_for_labourer = MagicMock(return_value=1000)
+
+        self.scavenger.retry_tasks(self.labourer)
+
+        self.scavenger.task_client.get_tasks_to_retry_for_labourer.assert_called_once_with(labourer=self.labourer,
+                                                                                           limit=20)
+        self.scavenger.task_client.retry_task.assert_has_calls([
+            call(task=tasks_to_retry[0], labourer_id='lambda3', greenfield=999),
+            call(task=tasks_to_retry[1], labourer_id='lambda3', greenfield=998),
+        ])
+        self.scavenger.meta_handler.post.assert_has_calls([
+            call(task_id='511', labourer_id='lambda3', action='ready_for_retry'),
+            call(task_id='512', labourer_id='lambda3', action='ready_for_retry'),
+        ])
+
+
+    def test_retry_tasks__no_tasks(self):
+        self.scavenger.task_client.get_tasks_to_retry_for_labourer = MagicMock(return_value=[])
+        self.scavenger.task_client.get_oldest_greenfield_for_labourer = MagicMock(return_value=1000)
+
+        self.scavenger.retry_tasks(self.labourer)
+
+        self.scavenger.task_client.retry_task.assert_not_called()
+        self.scavenger.meta_handler.post.assert_not_called()
+
+
+    def test_archive_tasks(self):
+        completed_tasks = [
+            {'task_id': '123', 'labourer_id': 'lambda3'},
+            {'task_id': '124', 'labourer_id': 'lambda3'},
+        ]
+        self.scavenger.task_client.get_completed_tasks_for_labourer = MagicMock(return_value=completed_tasks)
+
+        self.scavenger.archive_tasks(self.labourer)
+
+        self.scavenger.task_client.archive_task.assert_has_calls([call('123'), call('124')])
+        self.scavenger.meta_handler.post.assert_has_calls([
+            call(task_id='123', labourer_id='lambda3', action='archived'),
+            call(task_id='124', labourer_id='lambda3', action='archived'),
+        ])
+
+
+    def test_get_db_field_name(self):
+        # Remove the identity mock installed by setUp to reach the real method.
+        del self.scavenger.get_db_field_name
+
+        self.scavenger.task_client.get_db_field_name = MagicMock(return_value='mapped_field')
+
+        self.assertEqual(self.scavenger.get_db_field_name('attempts'), 'mapped_field')
+        self.scavenger.task_client.get_db_field_name.assert_called_once_with('attempts')

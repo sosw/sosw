@@ -89,3 +89,41 @@ class meta_handler_UnitTestCase(unittest.TestCase):
 
 
         self.assertEqual(type(self.manager._ma(123)), str)
+
+
+    def test_init__write_meta_to_ddb_disabled__no_dynamo_client(self):
+        """
+        If `write_meta_to_ddb` is disabled, the MetaHandler should not initialize the DynamoDbClient at all.
+        """
+
+        config = deepcopy(TEST_META_HANDLER_CONFIG)
+        config['write_meta_to_ddb'] = False
+
+        with patch('boto3.client'):
+            manager = MetaHandler(custom_config=config)
+
+        self.assertIsNone(manager.dynamo_db_client)
+
+
+    def test_init__tolerates_dynamo_client_failure(self):
+        """
+        Failure to initialize the DynamoDbClient should not break the MetaHandler. Meta data is optional.
+        """
+
+        with patch('sosw.managers.meta_handler.DynamoDbClient', MagicMock(side_effect=Exception("Boom"))):
+            manager = MetaHandler(custom_config=deepcopy(TEST_META_HANDLER_CONFIG))
+
+        self.assertIsNone(manager.dynamo_db_client)
+
+
+    def test_post__logs_row_if_no_dynamo_client(self):
+        config = deepcopy(TEST_META_HANDLER_CONFIG)
+        config['write_meta_to_ddb'] = False
+
+        with patch('boto3.client'):
+            manager = MetaHandler(custom_config=config)
+
+        with self.assertLogs(level=logging.INFO) as log_context:
+            manager.post(**TEST_META_HANDLER_POST_ARGS)
+
+        self.assertTrue(any('Skip saving task meta data' in line for line in log_context.output))
