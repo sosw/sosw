@@ -107,6 +107,71 @@ class app_UnitTestCase(unittest.TestCase):
         mock_ssm.assert_called_once_with('test_func_config')
 
 
+    @patch("sosw.app.get_config")
+    def test_init__test_flag_precedence(self, mock_ssm):
+        """
+        An explicitly passed `test` flag must always win. Otherwise the flag is derived from STAGE.
+        """
+
+        mock_ssm.return_value = {}
+
+        matrix = [
+            # (explicit_flag, stage, expected)
+            (True, 'test', True),
+            (False, 'test', False),
+            (None, 'test', True),
+            (True, 'prod', True),
+            (False, 'prod', False),
+            (None, 'prod', False),
+        ]
+
+        for explicit_flag, stage, expected in matrix:
+            with self.subTest(explicit_flag=explicit_flag, stage=stage):
+                kwargs = {} if explicit_flag is None else {'test': explicit_flag}
+                with patch.dict(os.environ, {'STAGE': stage}):
+                    processor = Processor(custom_config=self.TEST_CONFIG, **kwargs)
+                self.assertEqual(processor.test, expected)
+
+
+    @patch("sosw.app.get_config")
+    def test_init_config__disable_ddb_config__from_custom_config(self, mock_ssm):
+
+        os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
+
+        processor = Processor(custom_config={'disable_ddb_config': True, 'foo': 'bar'})
+
+        mock_ssm.assert_not_called()
+        self.assertEqual(processor.config['foo'], 'bar', "custom_config must still be applied")
+
+
+    @patch("sosw.app.get_config")
+    def test_init_config__disable_ddb_config__from_class_attribute(self, mock_ssm):
+
+        class NoDdbConfigProcessor(Processor):
+            DISABLE_DDB_CONFIG = True
+
+        os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
+
+        processor = NoDdbConfigProcessor(custom_config=self.TEST_CONFIG)
+
+        mock_ssm.assert_not_called()
+        self.assertEqual(processor.config['test'], True, "custom_config must still be applied")
+
+
+    @patch("sosw.app.get_config")
+    def test_init_config__disable_ddb_config__from_default_config(self, mock_ssm):
+
+        class DefaultsProcessor(Processor):
+            DEFAULT_CONFIG = {'disable_ddb_config': True, 'some_default': 42}
+
+        os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
+
+        processor = DefaultsProcessor()
+
+        mock_ssm.assert_not_called()
+        self.assertEqual(processor.config['some_default'], 42, "DEFAULT_CONFIG must still be applied")
+
+
     # @unittest.skip("https://github.com/bimpression/sosw/issues/40")
     # def test__account(self):
     #     raise NotImplementedError
@@ -136,6 +201,106 @@ class app_UnitTestCase(unittest.TestCase):
             self.assertEqual(result, 'success')
             self.assertEqual(global_vars.processor.stats['total_processor_calls'], i + 1)
             self.assertEqual(global_vars.processor.stats['total_calls_register_clients'], 1)
+
+
+    def test_lambda_handler__test_flag_precedence(self):
+        """
+        The `test` key of the event must always win. Otherwise the flag is derived from STAGE.
+        """
+
+        matrix = [
+            # (event_test_key, stage, expected)
+            (True, 'test', True),
+            (False, 'test', False),
+            (None, 'test', True),
+            (True, 'prod', True),
+            (False, 'prod', False),
+            (None, 'prod', False),
+        ]
+
+        for event_flag, stage, expected in matrix:
+            with self.subTest(event_flag=event_flag, stage=stage):
+                global_vars = LambdaGlobals()
+                global_vars.processor = None
+
+                processor_class = MagicMock()
+                lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+                event = {'k': 'v'} if event_flag is None else {'k': 'v', 'test': event_flag}
+                with patch.dict(os.environ, {'STAGE': stage}):
+                    lambda_handler(event=event, context=MagicMock())
+
+                processor_class.assert_called_once_with(custom_config=self.TEST_CONFIG, test=expected)
+
+
+    def test_lambda_handler__non_dict_event(self):
+        """
+        The handler must accept non-dict payloads: the `test` flag then derives from STAGE only.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        with patch.dict(os.environ, {'STAGE': 'prod'}):
+            lambda_handler(event=['not', 'a', 'dict'], context=MagicMock())
+
+        processor_class.assert_called_once_with(custom_config=self.TEST_CONFIG, test=False)
+
+
+    def test_lambda_handler__caches_processor_across_invocations(self):
+        """
+        Warm start contract: the Processor is constructed on the cold start only and then reused.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        lambda_handler(event={'k': 1}, context=MagicMock())
+        first_processor = global_vars.processor
+        lambda_handler(event={'k': 2}, context=MagicMock())
+
+        processor_class.assert_called_once()
+        self.assertIs(global_vars.processor, first_processor)
+
+
+    def test_lambda_handler__resets_stats_once_per_invocation(self):
+        """
+        `reset_stats()` must be called exactly once per invocation, recursively.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        lambda_handler(event={'k': 1}, context=MagicMock())
+        processor_instance = processor_class.return_value
+        processor_instance.reset_stats.assert_called_once_with(recursive=True)
+
+        lambda_handler(event={'k': 2}, context=MagicMock())
+        self.assertEqual(processor_instance.reset_stats.call_count, 2)
+
+
+    @patch.object(logger, 'error')
+    def test_get_lambda_handler__missing_global_vars(self, mock_logger_error):
+        """
+        Missing global_vars is reported, but the handler must still work on the module-level globals.
+        """
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class)
+
+        mock_logger_error.assert_called_once()
+
+        lambda_handler(event={'k': 1}, context=MagicMock())
+        processor_class.assert_called_once()
 
 
     def test_property_account__initialized_from_context(self):

@@ -1,6 +1,7 @@
 # Core applications
 from .unit.test_app import app_UnitTestCase
 from .unit.test_deprecations import Deprecations_UnitTestCase
+from .unit.test_durable import durable_UnitTestCase, durable_WithFakeSdk_UnitTestCase
 from .unit.test_labourer import Labourer_UnitTestCase
 from .unit.test_lambda_api import lambda_api_UnitTestCase
 from .unit.test_orchestrator import Orchestrator_UnitTestCase
@@ -28,6 +29,8 @@ def suite():
     # Core applications
     test_suite.addTest(unittest.makeSuite(app_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Deprecations_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(durable_UnitTestCase))
+    test_suite.addTest(unittest.makeSuite(durable_WithFakeSdk_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Labourer_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(lambda_api_UnitTestCase))
     test_suite.addTest(unittest.makeSuite(Orchestrator_UnitTestCase))
