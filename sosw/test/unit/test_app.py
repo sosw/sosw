@@ -97,6 +97,35 @@ class app_UnitTestCase(unittest.TestCase):
         mock_boto_client.assert_called_with('not_exists')
 
 
+    @patch("boto3.client")
+    def test_register_clients__raises_when_boto3_fallback_fails(self, mock_boto_client):
+        """
+        If a client is neither importable from components/managers nor a valid boto3 service,
+        register_clients must fail fast and loud.
+        """
+
+        mock_boto_client.side_effect = Exception("Unknown service")
+
+        with self.assertRaises(RuntimeError) as exc:
+            Processor(custom_config={'init_clients': ['NotExists']})
+
+        self.assertIn("Failed to import for service not_exists", str(exc.exception))
+
+
+    @patch("boto3.client")
+    def test_register_clients__raises_when_module_has_no_client_class(self, mock_boto_client):
+        """
+        The module `sosw.components.helpers` imports fine, but has neither HelpersManager nor HelpersClient.
+        """
+
+        with self.assertRaises(RuntimeError) as exc:
+            Processor(custom_config={'init_clients': ['Helpers']})
+
+        self.assertIn("Failed to import Helpers", str(exc.exception))
+        self.assertIn("Manager", str(exc.exception))
+        self.assertIn("Client", str(exc.exception))
+
+
     @patch("sosw.app.get_config")
     def test_app_calls_get_config(self, mock_ssm):
 
@@ -382,6 +411,103 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIn('SoswWorkerErrors', kwargs['TopicArn'])
         self.assertEqual(kwargs['Subject'], 'Some Function died')
         self.assertEqual(kwargs['Message'], 'Unknown Failure')
+
+
+    @patch("boto3.client")
+    def test_die__sns_failure_still_raises_system_exit(self, mock_boto):
+        """
+        Even if publishing the death notice to SNS fails, die() must log that and still exit.
+        """
+
+        p = Processor(custom_config=self.TEST_CONFIG)
+        mock_boto.side_effect = Exception("No SNS access")
+
+        with patch.object(logger, 'exception') as mock_logger_exception:
+            with self.assertRaises(SystemExit) as exc:
+                p.die("Some failure")
+
+        self.assertEqual(exc.exception.code, 1)
+        mock_logger_exception.assert_any_call("Failed to send SNS message to Alarms.")
+
+
+    @patch("boto3.client")
+    def test_get_stats__recursive_merges_stats_of_clients(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.stats['own_calls'] = 3
+        p.foo_client = MagicMock()
+        p.foo_client.get_stats.return_value = {'foo_stat': 42}
+        p.bar_client = object()  # A client without get_stats() implemented. Must be silently skipped.
+
+        stats = p.get_stats()
+
+        self.assertEqual(stats['foo_stat'], 42)
+        self.assertEqual(stats['own_calls'], 3)
+        p.foo_client.get_stats.assert_called_once()
+
+
+    @patch("boto3.client")
+    def test_get_stats__not_recursive_skips_clients(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.foo_client = MagicMock()
+
+        stats = p.get_stats(recursive=False)
+
+        self.assertNotIn('foo_stat', stats)
+        p.foo_client.get_stats.assert_not_called()
+
+
+    @patch("boto3.client")
+    def test_reset_stats__skips_non_numeric_values(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.stats['numeric'] = 5
+        p.stats['labourer_name'] = 'some_function'
+
+        p.reset_stats()
+
+        self.assertEqual(p.stats['total_numeric'], 5)
+        self.assertNotIn('labourer_name', p.stats)
+        self.assertNotIn('total_labourer_name', p.stats)
+
+
+    @patch("boto3.client")
+    def test_reset_stats__recursive_resets_clients(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.foo_client = MagicMock()
+        p.bar_client = object()  # A client without reset_stats() implemented. Must be silently skipped.
+
+        p.reset_stats()
+
+        p.foo_client.reset_stats.assert_called_once()
+
+
+    @patch("boto3.client")
+    def test_reset_stats__not_recursive_skips_clients(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.foo_client = MagicMock()
+
+        p.reset_stats(recursive=False)
+
+        p.foo_client.reset_stats.assert_not_called()
+
+
+    @patch("boto3.client")
+    def test_exit__closes_connections(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.sql = MagicMock()
+        p.conn = MagicMock()
+
+        p.__exit__(None, None, None)
+
+        p.sql.sqldb.session.remove.assert_called_once()
+        p.conn.close.assert_called_once()
+
+
+    @patch("boto3.client")
+    def test_exit__survives_missing_connections(self, _):
+        p = Processor(custom_config=self.TEST_CONFIG)
+
+        # Must not raise for a Processor without `sql` or `conn` attributes.
+        p.__exit__(None, None, None)
 
 
     @patch("boto3.client")

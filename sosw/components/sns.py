@@ -79,7 +79,10 @@ class SnsManager():
         self.separator = "\n\n#####\n\n"
         self.message_attributes = None
 
-        self.test = kwargs.get('test') or True if os.environ.get('STAGE') == 'test' else False
+        # An explicitly provided `test` flag always wins. Only when it is not provided (None),
+        # the flag is derived from the STAGE environment variable.
+        explicit_test = kwargs.get('test')
+        self.test = explicit_test if explicit_test is not None else os.environ.get('STAGE') == 'test'
         if self.test:
             self.recipient = 'arn:aws:sns:us-west-2:000000000000:autotest_topic'
 

@@ -1290,4 +1290,4 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
             stats['deleted'] += 1
         logger.debug("clean_dynamo_table() of %s: %s", table_name, stats)
 
-    logger.info(f"clean_dynamo_table() of %s: %s", table_name, stats)
+    logger.info("clean_dynamo_table() of %s: %s", table_name, stats)

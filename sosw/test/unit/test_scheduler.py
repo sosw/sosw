@@ -232,6 +232,39 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.scheduler.siblings_client.spawn_sibling.call_count, 1)
 
 
+    def test_process_file__no_file_in_queue(self):
+        self.scheduler.get_and_lock_queue_file = MagicMock(return_value=None)
+        self.scheduler.upload_and_unlock_queue_file = MagicMock()
+        self.scheduler.clean_tmp = MagicMock()
+
+        self.scheduler.process_file()
+
+        self.scheduler.upload_and_unlock_queue_file.assert_not_called()
+        self.scheduler.clean_tmp.assert_not_called()
+
+
+    def test_process_file__spawn_sibling_failure_is_not_fatal(self):
+        """
+        If spawning a sibling fails, the file must still be uploaded back and the tmp cleaned.
+        """
+
+        self.put_local_file(self.FNAME, json=True)
+        self.scheduler.get_and_lock_queue_file = MagicMock(return_value=self.FNAME)
+        self.scheduler.upload_and_unlock_queue_file = MagicMock()
+        self.scheduler.clean_tmp = MagicMock()
+        self.scheduler.siblings_client.spawn_sibling.side_effect = Exception("Failed to invoke sibling")
+
+        # Not enough remaining time from the very beginning: go straight to spawning a sibling.
+        self.custom_lambda_context.get_remaining_time_in_millis = MagicMock(return_value=1000)
+
+        self.scheduler.process_file()
+
+        self.scheduler.siblings_client.spawn_sibling.assert_called_once()
+        self.assertNotIn('siblings_spawned', self.scheduler.stats)
+        self.scheduler.upload_and_unlock_queue_file.assert_called_once()
+        self.scheduler.clean_tmp.assert_called_once()
+
+
     ### Tests of construct_job_data ###
     def test_construct_job_data(self):
 
@@ -384,6 +417,24 @@ class Scheduler_UnitTestCase(unittest.TestCase):
     def test_chunk_dates__raises_invalid_period_pattern(self):
         TASK = {'period': 'putin_the_best'}
         self.assertRaises(ValueError, self.scheduler.chunk_dates, job=TASK), "Putin is not supported"
+
+
+    def test_chunk_dates__custom_period_patterns__raises_non_string_pattern(self):
+        self.scheduler.config['custom_period_patterns'] = ['good_pattern', 42]
+
+        with self.assertRaises(TypeError) as exc:
+            self.scheduler.chunk_dates(job={'period': 'today'})
+
+        self.assertIn("expected to be str", str(exc.exception))
+
+
+    def test_chunk_dates__custom_period_patterns__raises_not_a_list(self):
+        self.scheduler.config['custom_period_patterns'] = 'just_a_string'
+
+        with self.assertRaises(TypeError) as exc:
+            self.scheduler.chunk_dates(job={'period': 'today'})
+
+        self.assertIn("expected to be (list, tuple)", str(exc.exception))
 
 
     def test_last_x_days(self):
@@ -800,6 +851,23 @@ class Scheduler_UnitTestCase(unittest.TestCase):
             self.assertEqual(self.scheduler.validate_list_of_vals(test), expected)
 
 
+    def test_validate_list_of_vals__single_key_dict_with_embedded_data(self):
+        DATA = {'a': {'nested': 'payload'}}
+        self.assertEqual(self.scheduler.validate_list_of_vals(DATA), [DATA])
+
+
+    def test_validate_list_of_vals__raises(self):
+        TESTS = [
+            ['flat', {'embedded': 'dict'}],  # List with values of unsupported types.
+            {'a': {'x': 1}, 'b': None},  # Multi-key dict with embedded data.
+            42,  # Not an iterable at all.
+        ]
+
+        for test in TESTS:
+            with self.subTest(test=test):
+                self.assertRaises(InvalidJob, self.scheduler.validate_list_of_vals, test)
+
+
     def test_get_and_lock_queue_file__s3_calls(self):
 
         self.scheduler.get_and_lock_queue_file()
@@ -822,6 +890,108 @@ class Scheduler_UnitTestCase(unittest.TestCase):
         self.scheduler.s3_client.delete_object.assert_not_called()
 
         self.scheduler.s3_client.upload_file.assert_called_once()
+
+
+    def test_get_and_lock_queue_file__no_remote_file(self):
+        """
+        A missing remote queue file is not fatal: counted in stats, no lock manipulations in S3.
+        """
+
+
+        class ClientError(Exception):
+            pass
+
+
+        self.scheduler.s3_client.exceptions.ClientError = ClientError
+        self.scheduler.s3_client.download_file.side_effect = ClientError("404 Not Found")
+
+        r = self.scheduler.get_and_lock_queue_file()
+
+        self.assertEqual(r, self.scheduler.local_queue_file)
+        self.assertEqual(self.scheduler.stats['non_existing_remote_queue'], 1)
+        self.scheduler.s3_client.copy_object.assert_not_called()
+        self.scheduler.s3_client.delete_object.assert_not_called()
+
+
+    def test_upload_and_unlock_queue_file__uploads_existing_local_file(self):
+        self.put_local_file()
+
+        self.scheduler.upload_and_unlock_queue_file()
+
+        self.scheduler.s3_client.upload_file.assert_called_once_with(
+                Filename=self.scheduler.local_queue_file, Bucket=self.scheduler._queue_bucket,
+                Key=self.scheduler.remote_queue_file)
+        self.scheduler.s3_client.delete_object.assert_called_once_with(
+                Bucket=self.scheduler._queue_bucket, Key=self.scheduler.remote_queue_locked_file)
+
+
+    def test_upload_and_unlock_queue_file__no_remote_locked_file(self):
+        """
+        Missing remote locked file (e.g. a fresh queue) must not raise.
+        """
+
+
+        class ClientError(Exception):
+            pass
+
+
+        self.scheduler.s3_client.exceptions.ClientError = ClientError
+        self.scheduler.s3_client.delete_object.side_effect = ClientError("404 Not Found")
+
+        self.scheduler.upload_and_unlock_queue_file()
+
+        self.scheduler.s3_client.upload_file.assert_not_called()
+        self.scheduler.s3_client.delete_object.assert_called_once()
+
+
+    def test_clean_tmp(self):
+        self.put_local_file()
+        self.assertTrue(os.path.isfile(self.scheduler.local_queue_file))
+
+        self.scheduler.clean_tmp()
+
+        self.assertFalse(os.path.isfile(self.scheduler.local_queue_file))
+
+
+    def test_clean_tmp__custom_file_name(self):
+        self.put_local_file(self.FNAME)
+
+        self.scheduler.clean_tmp(self.FNAME)
+
+        self.assertFalse(os.path.isfile(self.FNAME))
+
+
+    def test_set_queue_file__explicit_name(self):
+        self.scheduler.set_queue_file('some_sibling_file.txt')
+        self.assertEqual(self.scheduler._queue_file_name, 'some_sibling_file.txt')
+        self.assertEqual(self.scheduler.local_queue_file, '/tmp/some_sibling_file.txt')
+
+
+    def test_get_db_field_name(self):
+        # setUp() replaces the method with a stub lambda. Remove it to test the real one.
+        del self.scheduler.get_db_field_name
+        self.scheduler.task_client.get_db_field_name.return_value = 'mapped_field'
+
+        self.assertEqual(self.scheduler.get_db_field_name('task_id'), 'mapped_field')
+        self.scheduler.task_client.get_db_field_name.assert_called_once_with('task_id')
+
+
+    def test_parse_job_to_file__raises_if_local_file_already_exists(self):
+        self.put_local_file()
+
+        with self.assertRaises(RuntimeError) as exc:
+            self.scheduler.parse_job_to_file({'lambda_name': self.LABOURER.id})
+
+        self.assertIn("already having some unprocessed file", str(exc.exception))
+
+
+    def test_parse_job_to_file__raises_for_unregistered_labourer(self):
+        self.scheduler.task_client.get_labourer.return_value = None
+
+        with self.assertRaises(RuntimeError) as exc:
+            self.scheduler.parse_job_to_file({'lambda_name': 'unregistered_function'})
+
+        self.assertIn("Invalid (unregistered) Labourer", str(exc.exception))
 
 
     def test_parse_job_to_file(self):
@@ -893,6 +1063,31 @@ class Scheduler_UnitTestCase(unittest.TestCase):
 
         self.scheduler.s3_client.upload_file.assert_called_once()
         self.scheduler.s3_client.delete_object.assert_called_once()
+
+
+    def test_call__as_sibling_uses_file_name_from_job(self):
+        """
+        When called as a sibling (with `file_name` in the job), the Scheduler must continue processing
+        the received queue file instead of parsing the job to a new one.
+        """
+
+        self.scheduler.parse_job_to_file = MagicMock()
+        self.scheduler.process_file = MagicMock()
+
+        self.scheduler({'lambda_name': self.LABOURER.id, 'file_name': 'tasks_queue_SIBLING.txt'})
+
+        self.assertEqual(self.scheduler._queue_file_name, 'tasks_queue_SIBLING.txt')
+        self.scheduler.parse_job_to_file.assert_not_called()
+        self.scheduler.process_file.assert_called_once()
+
+
+    def test_sleeptime_for_dynamo__on_demand_table(self):
+        """
+        For on-demand billing the get_capacity() returns zeroes and the sleeptime must be zero.
+        """
+
+        self.scheduler.task_client.dynamo_db_client.get_capacity.return_value = {'read': 0, 'write': 0}
+        self.assertEqual(self.scheduler._sleeptime_for_dynamo, 0)
 
 
     def test_sleeptime_for_dynamo(self):

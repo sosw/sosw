@@ -143,7 +143,8 @@ class SecretsManager:
             response_list.append(response)
             while 'NextToken' in response:
                 kwargs['NextToken'] = response['NextToken']
-                response_list.append(func(**kwargs))
+                response = func(**kwargs)
+                response_list.append(response)
             return response_list
 
 
@@ -300,7 +301,8 @@ class SSMConfig:
             response_list.append(response)
             while 'NextToken' in response:
                 kwargs['NextToken'] = response['NextToken']
-                response_list.append(func(**kwargs))
+                response = func(**kwargs)
+                response_list.append(response)
             return response_list
 
 
@@ -344,7 +346,7 @@ class SSMConfig:
         for chunk_of_names in chunks(names, 10):
             get_params_response = self.call_boto_with_pagination('get_parameters', Names=chunk_of_names,
                                                                  WithDecryption=decryption_required)
-            logger.debug(f"SSM.get_parameters(names=%s) received response: %s", chunk_of_names, get_params_response)
+            logger.debug("SSM.get_parameters(names=%s) received response: %s", chunk_of_names, get_params_response)
 
             # Update keys and values from this page of response to result. Removes the prefix away for keys.
             params = [param for obj in get_params_response for param in obj['Parameters']]
@@ -522,9 +524,10 @@ class ConfigSource:
     SUPPORTED_SOURCES = ('Dynamo', 'SSM')
 
 
-    def __init__(self, test=False, sources=None, config=None, **kwargs):
+    def __init__(self, test=None, sources=None, config=None, **kwargs):
 
-        self.test = test or True if os.environ.get('STAGE') == 'test' else False
+        # An explicitly provided `test` flag always wins. Only when it is not provided (None) derive it from the env.
+        self.test = test if test is not None else os.environ.get('STAGE') == 'test'
 
         if not sources:
             sources = ['Dynamo']
