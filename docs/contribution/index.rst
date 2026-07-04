@@ -5,8 +5,6 @@ Contribution Guidelines
 =======================
 
 
-..  contents::
-
 ..  toctree::
 
     Documentation Convention <convention>
