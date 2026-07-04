@@ -41,8 +41,7 @@ These entities no longer exist in the package:
 * ``sosw.Orchestrator``, ``sosw.Scheduler``, ``sosw.Scavenger``,
 * ``sosw.Worker``, ``sosw.WorkerAssistant``,
 * ``sosw.Labourer``, ``sosw.Essential``,
-* the whole ``sosw.managers`` package (``TaskManager``, ``EcologyManager``, ``MetaHandler``),
-* the ``helpers.slug_to_camel_case`` function.
+* the whole ``sosw.managers`` package (``TaskManager``, ``EcologyManager``, ``MetaHandler``).
 
 Accessing a removed name through the package façade (``from sosw import Orchestrator``) raises an
 ``AttributeError`` that points back to this page. Importing the removed modules directly

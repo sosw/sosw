@@ -171,8 +171,10 @@ class Processor:
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
 
-        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.
-        Name of the Class must be name of `client` with either of the suffixes ('Manager' or 'Client').
+        Clients are imported from the `components` or `managers` packages of your own Lambda, from
+        `sosw.components`, or fall back to a plain boto3 client. Name of the module must be
+        underscored name of Client. Name of the Class must be name of `client` with either of the
+        suffixes ('Manager' or 'Client').
 
         .. warning::
            To be implemented!
@@ -192,7 +194,6 @@ class Processor:
             lambda x: f"components.{x}",
             lambda x: f"managers.{x}",
             lambda x: f"sosw.components.{x}",
-            lambda x: f"sosw.managers.{x}",
         ]
 
         # # Initialize required clients

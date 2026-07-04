@@ -89,7 +89,7 @@ Client registration
 assigns them to the Processor with the ``_client`` suffix. For every name it tries, in order:
 
 #.  a module in the ``components`` or ``managers`` package of *your* Lambda;
-#.  a module in ``sosw.components`` or ``sosw.managers`` — names are the CamelCase class stem,
+#.  a module in ``sosw.components`` — names are the CamelCase class stem,
     e.g. ``'DynamoDb'`` → :ref:`DynamoDbClient <DynamoDB_Client>`, ``'Siblings'`` → ``SiblingsManager``;
 #.  a plain ``boto3.client()`` — e.g. ``'sts'`` → ``self.sts_client = boto3.client('sts')``.
 

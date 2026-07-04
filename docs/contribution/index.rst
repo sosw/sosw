@@ -92,8 +92,7 @@ Rules of the suite:
   a few seconds.
 - Set ``os.environ['STAGE'] = 'test'`` and ``os.environ['autotest'] = 'True'`` *before* importing
   ``sosw`` modules in a test file.
-- Test files live in ``sosw/test/unit/``, ``sosw/components/test/unit/`` and
-  ``sosw/managers/test/unit/``.
+- Test files live in ``sosw/test/unit/`` and ``sosw/components/test/unit/``.
 
 **Coverage bar: 100%.** CI runs the suite with ``--cov=sosw`` and fails below the enforced
 threshold (``.coveragerc`` excludes the test directories themselves):
