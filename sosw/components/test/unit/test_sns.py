@@ -327,3 +327,14 @@ class sns_TestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    def test_send_message_with_subject_when_self_subject_is_none(self):
+        """When self.subject is None but subject arg is passed, set_subject should be called."""
+        sns = SnsManager(test=True)  # No default subject
+        sns.commit = MagicMock(side_effect=self.clean_queue)
+        sns.send_message("test message", subject="My Subject")
+        self.assertEqual(len(sns.queue), 1, "Message should be queued")
+        # If the bug existed, self.subject would still be None and commit would raise RuntimeError.
+        # Instead, set_subject was called and the queue was committed.
+        sns.commit.assert_called_once()
+        self.assertEqual(sns.subject, "My Subject")
