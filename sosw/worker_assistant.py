@@ -35,6 +35,7 @@ __version__ = "1.0"
 import json
 import time
 
+from sosw._deprecation import warn_deprecated
 from sosw.essential import Essential
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.helpers import get_one_from_dict
@@ -52,6 +53,11 @@ class WorkerAssistant(Essential):
     Should pass the ``action`` and ``task_id`` attributes in the payload of the call.
 
     See example of the usage in :ref:`Worker`.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use the callbacks of your orchestration
+        engine instead, e.g. AWS Step Functions ``SendTaskSuccess`` / ``SendTaskFailure``.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -81,6 +87,13 @@ class WorkerAssistant(Essential):
 
     # these clients will be initialized by Processor constructor
     dynamo_db_client: DynamoDbClient = None
+
+
+    def __init__(self, *args, **kwargs):
+        warn_deprecated('WorkerAssistant',
+                        hint="Use the callbacks of your orchestration engine instead, "
+                             "e.g. AWS Step Functions SendTaskSuccess / SendTaskFailure.")
+        super().__init__(*args, **kwargs)
 
 
     def __call__(self, event):

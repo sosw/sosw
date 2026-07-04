@@ -43,6 +43,7 @@ except ImportError:
 
 import os
 
+from sosw._deprecation import warn_deprecated
 from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 from sosw.managers.meta_handler import MetaHandler
@@ -55,6 +56,11 @@ class Essential(Processor):
     Currently implemented:
 
     * Update the ``self.config`` with shared settings (e.g list of registered Labourers)
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Inherit your Lambdas directly
+        from :ref:`Processor` (``sosw.app.Processor``) instead.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     meta_handler: MetaHandler = None
@@ -62,6 +68,7 @@ class Essential(Processor):
 
     def __init__(self, *args, **kwargs):
 
+        warn_deprecated('Essential', hint="Inherit your Lambdas directly from sosw.app.Processor instead.")
         super().__init__(*args, **kwargs)
 
         self.meta_handler = MetaHandler(custom_config=self.config.get('meta_handler_config'))

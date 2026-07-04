@@ -43,6 +43,7 @@ except ImportError:
 
 import json
 
+from sosw._deprecation import warn_deprecated
 from sosw.app import Processor
 from sosw.managers.meta_handler import MetaHandler
 from typing import Dict
@@ -64,6 +65,11 @@ class Worker(Processor):
     You also need to grant write permissions for this table to your Lambda.
 
     You can find more information about the configuration in the :ref:`MetaHandler<meta_handler>` chapter.
+
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Inherit your Lambdas directly
+        from :ref:`Processor` (``sosw.app.Processor``) instead.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -77,6 +83,7 @@ class Worker(Processor):
 
     def __init__(self, *args, **kwargs):
 
+        warn_deprecated('Worker', hint="Inherit your Lambdas directly from sosw.app.Processor instead.")
         super().__init__(*args, **kwargs)
 
         if 'meta_handler_config' in self.config:

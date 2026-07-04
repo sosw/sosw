@@ -50,6 +50,7 @@ from copy import deepcopy
 from json.decoder import JSONDecodeError
 from typing import Dict, List, Optional, Union
 
+from sosw._deprecation import warn_deprecated
 from sosw.app import Processor
 from sosw.components.benchmark import benchmark
 from sosw.components.dynamo_db import DynamoDbClient
@@ -68,6 +69,10 @@ class TaskManager(Processor):
 
     The very important concept to understand about Task workflow is `greenfield`. :ref:`Read more <greenfield>`.
 
+    ..  deprecated:: 3.0.0
+        Deprecated since ``sosw`` 3.0.0, will be removed in 4.0. Use AWS-native services
+        (SQS, Step Functions) to manage queues of tasks.
+        See the `migration guide <https://docs.sosw.app/migration_3_0.html>`_.
     """
 
     DEFAULT_CONFIG = {
@@ -147,6 +152,12 @@ class TaskManager(Processor):
     ecology_client = None
     dynamo_db_client: DynamoDbClient = None
     lambda_client: boto3.client = None
+
+
+    def __init__(self, *args, **kwargs):
+        warn_deprecated('TaskManager',
+                        hint="Use AWS-native services (SQS, Step Functions) to manage queues of tasks.")
+        super().__init__(*args, **kwargs)
 
 
     def get_oldest_greenfield_for_labourer(self, labourer: Labourer, reverse: bool = False) -> int:
