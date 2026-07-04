@@ -37,6 +37,7 @@ in ``sosw`` 4.0. See the migration guide: https://docs.sosw.app/migration_3_0.ht
 __all__ = [
     'Processor',
     'LambdaGlobals',
+    'LambdaApi',
     'get_lambda_handler',
     'Essential',
     'Labourer',
@@ -54,6 +55,7 @@ from importlib import import_module
 _LAZY_ATTRIBUTES = {
     'Processor':          'sosw.app',
     'LambdaGlobals':      'sosw.app',
+    'LambdaApi':          'sosw.lambda_api',
     'get_lambda_handler': 'sosw.app',
     'Essential':          'sosw.essential',
     'Labourer':           'sosw.labourer',
