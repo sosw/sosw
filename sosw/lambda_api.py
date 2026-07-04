@@ -372,7 +372,9 @@ class LambdaApi(Processor):
         :return:            The claims dictionary, or an empty dict if the event carries none.
         """
 
-        authorizer = (event.get('requestContext') or {}).get('authorizer') or {}
+        authorizer = (event.get('requestContext') or {}).get('authorizer')
+        if not isinstance(authorizer, dict):
+            authorizer = {}
 
         claims = authorizer.get('claims')
         if not isinstance(claims, dict):

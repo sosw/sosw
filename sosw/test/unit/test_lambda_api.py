@@ -312,6 +312,10 @@ class lambda_api_UnitTestCase(unittest.TestCase):
         self.assertEqual(LambdaApi.get_claims(self.make_v1_event()), {})
         self.assertEqual(LambdaApi.get_claims({}), {})
 
+        # A crafted non-dict authorizer must degrade to empty claims (401 path), not crash to a 500.
+        self.assertEqual(LambdaApi.get_claims({'requestContext': {'authorizer': 'crafted-string'}}), {})
+        self.assertEqual(LambdaApi.get_claims({'requestContext': {'authorizer': ['crafted', 'list']}}), {})
+
 
     def test_call__auth_required__missing_claims__401(self):
         processor = self.make_processor(self.AUTH_CONFIG)
