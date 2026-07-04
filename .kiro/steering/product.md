@@ -31,5 +31,5 @@ Processor, components, helpers — is the product.
 
 - 100% unit test line coverage, enforced in CI. Unit suite is network-free and fast (seconds).
 - Zero mandatory dependencies beyond `boto3`.
-- Python 3.10–3.14.
+- Python 3.10–3.14 supported; CI-tested on the three latest (3.12–3.14).
 - Docs at https://docs.sosw.app must build warning-free.

@@ -1,0 +1,68 @@
+# Publishes the documentation to https://docs.sosw.app: builds the Sphinx docs strictly (-W),
+# syncs the result to the docs S3 bucket and invalidates the CloudFront distribution.
+#
+# Runs automatically on every push to master. Can also be dispatched manually: the default
+# dry-run mode builds the docs and only prints the would-be `s3 sync` changes (--dryrun),
+# skipping the CloudFront invalidation.
+#
+# AWS access is OIDC-assumed via aws-actions/configure-aws-credentials — no static keys.
+# Required repository variables:
+#   DOCS_AWS_ROLE_ARN   - IAM role trusted for GitHub OIDC, assumed by this workflow
+#   DOCS_AWS_REGION     - us-west-2
+#   DOCS_BUCKET         - sosw-documentation-926629045956
+#   DOCS_CLOUDFRONT_ID  - E162963MSFBLR9
+
+name: Publish Docs
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        default: true
+        description: 'Build and s3-sync --dryrun only; no invalidation'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish docs
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r docs/requirements.txt
+
+    - name: Build docs
+      run: python -m sphinx -W -a -b html docs sosw-rtd
+
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ vars.DOCS_AWS_ROLE_ARN }}
+        aws-region: ${{ vars.DOCS_AWS_REGION }}
+
+    # Push events and manual dispatches with dry_run=false sync for real; a manual dispatch
+    # with dry_run=true (the default) only prints the would-be changes.
+    - name: Sync docs to S3
+      run: |
+        DRYRUN=$([[ '${{ github.event_name }}' == 'workflow_dispatch' && '${{ inputs.dry_run }}' == 'true' ]] && echo '--dryrun' || echo '')
+        aws s3 sync sosw-rtd/ 's3://${{ vars.DOCS_BUCKET }}/' --delete $DRYRUN
+
+    - name: Invalidate CloudFront cache
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false)
+      run: aws cloudfront create-invalidation --distribution-id '${{ vars.DOCS_CLOUDFRONT_ID }}' --paths '/*'

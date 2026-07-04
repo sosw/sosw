@@ -321,9 +321,10 @@ PRs violating these get bounced in review:
 - Branch flow: feature branch → PR into the current **`X_Y_Z` staging branch** (e.g. `3_0_1`), not
   into `master`. Pushes to staging branches publish release candidates to TestPyPI; merging the
   release PR `X_Y_Z → master` publishes to PyPI. Never merge to `master` yourself.
-- CI gates on PRs: unit suite on Python 3.10–3.14, **100% coverage**, and a Sphinx docs build with
-  `-W` (any docs warning fails the build — update `docs/` in the same PR when you change public
-  API or docstrings referenced there).
+- CI gates on PRs: unit suite on Python 3.12–3.14 (the three latest; the package supports 3.10+),
+  **100% coverage** (job runs on 3.14), and a Sphinx docs build with `-W` (any docs warning fails
+  the build — update `docs/` in the same PR when you change public API or docstrings referenced
+  there).
 - Deprecated modules: bugfixes only, no new features, nothing removed before 4.0.
 - `examples/`, `cookiecutter/`, and `AGENTS.md` must track the public API: if your change alters
   signatures or config conventions shown there, update them in the same PR.

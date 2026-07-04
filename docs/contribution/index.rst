@@ -111,12 +111,16 @@ Continuous integration
 
 GitHub Workflows run on every pull request:
 
-- **Tests** (``run-unittests.yml``) — the unit suite on a Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14
-  matrix, plus a coverage job enforcing the threshold.
+- **Tests** (``run-unittests.yml``) — the unit suite on a Python 3.12 / 3.13 / 3.14 matrix (the
+  three latest versions; the package itself supports 3.10+), plus a coverage job enforcing the
+  threshold on Python 3.14.
 - **Docs** (``docs-builder-action.yaml``) — strict Sphinx build; **any warning fails the build**.
 - **TestPyPI** (``publish-to-test-pypi.yml``) — publishes release candidates from ``X_Y_Z``
   staging branches.
 - **PyPI** (``publish-to-pypi.yml``) — publishes from ``master``.
+- **Publish Docs** (``publish-docs.yml``) — publishes the built docs to https://docs.sosw.app
+  automatically on every push to ``master`` (OIDC-assumed AWS role, no static keys); a manual
+  dispatch offers a dry-run mode.
 
 
 Building the docs
