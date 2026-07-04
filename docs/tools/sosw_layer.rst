@@ -39,13 +39,11 @@ Additionally, using layers promotes code reuse and helps maintain consistency ac
 SOSW Layer
 ========================
 
-SOSW layer encapsulates essential components implemented as AWS Lambda functions,
-facilitating the orchestration of asynchronous invocations of Lambda functions within
-the AWS ecosystem. The SOSW library simplifies the management of distributed tasks and workflows
-in serverless applications, offering features such as asynchronous invocation, fault tolerance,
-scalability, monitoring, and logging. By utilizing the SOSW layer, developers can efficiently
-orchestrate serverless workflows, streamline task execution, and enhance the resilience and scalability
-of their serverless applications.
+A shared ``sosw`` layer mounts the framework (and optionally its companions, e.g.
+``aws-lambda-powertools``) into every Lambda function of your account. Your deployment packages
+then contain only your own code: builds are faster, cold starts are shorter, and upgrading
+``sosw`` across the whole fleet is a single layer version bump instead of a redeployment of every
+function.
 
 ------------------
 How to start
@@ -136,6 +134,7 @@ Here's a basic CloudFormation template snippet demonstrating how to connect a la
                 - python3.11
                 - python3.12
                 - python3.13
+                - python3.14
 
         MyLambdaFunction:
             Type: AWS::Lambda::Function

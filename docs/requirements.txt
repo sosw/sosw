@@ -1,7 +1,7 @@
 # Requirements for building the documentation (see docs/conf.py and the Docs workflow).
-# boto3 is needed because conf.py imports sosw for autodoc, and sosw requires boto3.
+# boto3 is needed because autodoc imports the sosw modules, and sosw requires boto3.
 # The sphinx.ext.* extensions ship with Sphinx itself; docs.ext.hidden_code_block is local.
 boto3
 sphinx
-sphinx-rtd-theme
+furo
 sphinx-sitemap

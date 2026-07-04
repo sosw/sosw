@@ -12,136 +12,137 @@ Contribution Guidelines
     Documentation Convention <convention>
     Sprinting PyCon US 2019 <pycon-us-2019>
 
+Great that you are ready to contribute! Development happens on GitHub:
+`sosw/sosw <https://github.com/sosw/sosw>`_.
+
+
 Release cycle
 -------------
 
-- Master branch commits are automatically packaged and published to PyPI.
+- We follow both the `Semantic Versioning`_ pattern and PEP440_ recommendations where they comply.
+- Branches for planned staging versions follow the pattern ``X_Y_Z`` (Major_Minor_Micro),
+  e.g. ``3_0_1``.
+- Make your pull request against the closest staging branch — the one with the smallest version
+  after the latest release, of either the current or the next Minor.
+- Pushes to staging branches automatically publish release candidates to
+  `TestPyPI <https://test.pypi.org/project/sosw/>`_.
+- Merges to ``master`` are automatically packaged and published to
+  `PyPI <https://pypi.org/project/sosw/>`_ — ``master`` *is* the release.
+- Keep your branch up to date with the branch you are making a PR to.
 
-- We follow both `Semantic Versioning`_ pattern and PEP440_ recommendations where comply
-
-- Branches for planned staging versions follow the pattern: ``X_Y_Z`` (Major.Minor.Micro)
-
-- Make your pull requests go to the closest staging branch (with smallest after release number of either current or next Minor)
-
-- Make sure your branch is up to date with the branch you are making a PR to
-
-Example:
-
-  - Latest released version in PyPI ``0.7.31``
-  - Closest staging Minor branch in sosw/sosw ``0_7_33``
-  - Latest Minor staging branch in sosw/sosw ``0_7_35``
-  - Closest Next Minor branch in sosw/sosw ``0_9_1``
-
-Your PR should be to either ``0_7_33`` or ``0_9_1`` depending on the importance of changes.
+Example: the latest released version on PyPI is ``3.0.0``; the open staging branches are
+``3_0_1`` and ``3_1_0``. A bugfix PR goes to ``3_0_1``; a new feature to ``3_1_0``.
 
 .. _`Semantic Versioning`: https://semver.org/
 .. _PEP440: https://www.python.org/dev/peps/pep-0440/
 
-Code formatting
----------------
 
-- follow the PEP8_ with the following details:
-- both classes and functions are padded with 2 empty lines
+Development setup
+-----------------
+
+..  code-block:: bash
+
+    git clone https://github.com/YOUR_FORK/sosw.git && cd sosw
+
+    # Either pipenv:
+    pipenv sync --dev && pipenv shell
+
+    # ... or plain pip in any virtual environment:
+    pip install boto3 pytest pytest-cov -r docs/requirements.txt
+
+The package itself depends only on ``boto3``; everything else is for tests and docs.
+All metadata lives in ``pyproject.toml`` (there is no ``setup.py`` since 3.0.0).
+
+
+Code style
+----------
+
+We follow PEP8_ with the repository-specific details below. CI and review enforce them.
+
+- Maximum line width: 120 characters.
+- Both classes and functions/methods are padded with **two** empty lines.
+- Dictionary values are vertically aligned.
+- Single quotes for regular strings and keys; double quotes for logging and exception messages.
+- Logging uses ``%`` formatting, never f-strings: ``logger.info("Got %s", thing)``.
+- Imports at the top of the module, grouped: full core, full custom, partial core, partial custom;
+  alphabetical within each group.
+- No ``try/except: pass`` around business logic — fail fast and loud.
+- Data fields are ``snake_case``. Every file ends with exactly one trailing newline.
+- Docstrings in Sphinx-friendly reST (``:param x:``, ``:rtype:``) — see the
+  :ref:`Documentation Convention`.
 
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
-Initialization
---------------
 
-* Fork the repository: `<https://github.com/sosw/sosw>`_
+Tests
+-----
 
-* Register Account in AWS: `SignUp <https://portal.aws.amazon.com/billing/signup#/start>`_
-
-* Run ``pipenv sync --dev`` to setup your virtual environment and download the required dependencies
-
-* If you are not familiar with CloudFormation, we highly recommend at least learning the basics from `the tutorial`_.
-
-* Follow the :ref:`Installation Guidelines` to setup your environment.
-
-* Create some Sandbox Lambda.
-
-* Play with it.
-
-* Read the :ref:`Documentation convention`
-
-.. _the tutorial: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html
-
-Building the docs
-------------------
-
-To build the docs locally, run: ``sphinx-build -Wab html ./docs ./sosw-rtd``
-
-You can also use the built in python web server to view the html version directly from localhost
-in your preferred browser.
-
-..  code-block:: bash
-
-    sphinx-build -Wab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
-
-Coverage
-------------------------------------------------
-..  image:: ../_static/images/coverage.svg
-
-We use pytest-cov_ for calculating the test coverage.
-Currently there is no automatic blocker for untested code. In order to calculate the actual coverage you
-have to run it will all the integration tests, so this is mainly used during release.
-
-``.converagerc`` holds the configuration for Coverage module.
-
-..  code-block:: bash
-
-    pytest --cov=sosw sosw/
-    rm  docs/_static/images/coverage.svg; coverage-badge -o docs/_static/images/coverage.svg
-
-
-Pull Requests Checklist
------------------------
-
-Great that you are ready to contribute!
-
-* Make sure your fork is up to date with upstream
-
-..  code-block:: bash
-
-    # Clean everything
-    git reset --hard
-    git clean -fdx
-    git checkout master
-
-    # Fetch possible changes to YOUR master
-    git pull origin master
-
-    # Check if remote upstream is configured
-    git remote -v
-
-    # If missing upstream
-    git remote add upstream https://github.com/sosw/sosw
-
-    # Update your fork remote with the upstream changes
-    git pull upstream master
-    git push origin master
-
-* Make sure your code passes all the tests
+The unit suite is **explicitly registered** in ``sosw/test/suite_unit.py``: every new test file
+must be imported there and added to the suite, following the existing pattern — orphan test files
+do not run in CI.
 
 ..  code-block:: bash
 
     pytest sosw/test/suite_unit.py
 
-* Make sure the documentation builds correctly
+Rules of the suite:
+
+- Pure unit tests only: mock ``boto3`` (``patch('boto3.client')``,
+  ``patch.object(Processor, 'get_config')``) — no network, no real AWS. The whole suite runs in
+  a few seconds.
+- Set ``os.environ['STAGE'] = 'test'`` and ``os.environ['autotest'] = 'True'`` *before* importing
+  ``sosw`` modules in a test file.
+- Test files live in ``sosw/test/unit/``, ``sosw/components/test/unit/`` and
+  ``sosw/managers/test/unit/``.
+
+**Coverage bar: 100%.** CI runs the suite with ``--cov=sosw`` and fails below the enforced
+threshold (``.coveragerc`` excludes the test directories themselves):
 
 ..  code-block:: bash
 
-    sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+    pytest sosw/test/suite_unit.py --cov=sosw --cov-report=term-missing
 
-* Push the changes to your fork remote
+..  image:: /_static/images/coverage.svg
+    :alt: Test Coverage
+
+
+Continuous integration
+----------------------
+
+GitHub Workflows run on every pull request:
+
+- **Tests** (``run-unittests.yml``) — the unit suite on a Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14
+  matrix, plus a coverage job enforcing the threshold.
+- **Docs** (``docs-builder-action.yaml``) — strict Sphinx build; **any warning fails the build**.
+- **TestPyPI** (``publish-to-test-pypi.yml``) — publishes release candidates from ``X_Y_Z``
+  staging branches.
+- **PyPI** (``publish-to-pypi.yml``) — publishes from ``master``.
+
+
+Building the docs
+-----------------
 
 ..  code-block:: bash
 
-    git push origin master
+    pip install -r docs/requirements.txt
+    python -m sphinx -W -a -b html docs sosw-rtd
 
-* Make a PR to the upstream repository of sosw
+    # View at http://localhost:8000
+    (cd sosw-rtd && python -m http.server)
 
-Some guidelines of how to do create PRs from forks can be found in `GitHub documentation`_.
+The ``-W`` flag mirrors CI: warnings are errors. Fix them, do not silence them.
+
+
+Pull request checklist
+----------------------
+
+* Your branch is up to date with the staging branch you target.
+* ``pytest sosw/test/suite_unit.py`` passes, new code is covered, new test files are registered
+  in ``suite_unit.py``.
+* ``python -m sphinx -W -a -b html docs sosw-rtd`` passes if you touched docs or docstrings.
+* The code follows the style rules above.
+* Open the PR against the appropriate ``X_Y_Z`` staging branch (not ``master``).
+
+Guidelines for creating PRs from forks are in the `GitHub documentation`_.
 
 .. _GitHub documentation: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork
-.. _pytest-cov: https://github.com/pytest-dev/pytest-cov

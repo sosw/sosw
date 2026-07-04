@@ -6,92 +6,112 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs)](https://pypi.org/project/sosw/)
 [![PyPI - Licence](https://img.shields.io/pypi/l/sosw?color=blue)](https://github.com/sosw/sosw/blob/master/LICENSE)
 
-**sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
+**sosw** is a Python framework for bootstrapping AWS Lambda functions — formerly the *Serverless Orchestrator of Serverless Workers*.
 
----
+Every Lambda gets the same production-grade skeleton in a dozen lines: the `Processor` base class with layered configuration (code defaults + DynamoDB/SSM overrides), automatic initialization of AWS clients, statistics counters, and a generated handler that caches the Processor across warm invocations. On top of that: `LambdaApi` — a declarative router for functions behind API Gateway, optional [AWS durable execution](https://docs.sosw.app/durable.html) support, and a battle-tested library of components and helpers. The only runtime dependency is `boto3`.
 
-## Documentation
-[https://docs.sosw.app](https://docs.sosw.app)
+## Quick example
 
-## Essential Workflows
-![Essential sosw Workflow Schema](https://raw.githubusercontent.com/sosw/sosw/docme/docs/_static/images/simple-sosw.png)
+```python
+from sosw.app import LambdaGlobals, get_lambda_handler, Processor as SoswProcessor
 
-## Dependencies
-- Python 3.10 | 3.11 | 3.12 | 3.13
-- [boto3](https://github.com/boto/boto3) (AWS SDK for Python)
+
+class Processor(SoswProcessor):
+
+    DEFAULT_CONFIG = {
+        'init_clients': ['sts'],    # Automatically initialize `self.sts_client`.
+    }
+
+    sts_client = None
+
+
+    def __call__(self, event, **kwargs):
+        super().__call__(event)
+        return {'account': self.sts_client.get_caller_identity()['Account']}
+
+
+global_vars = LambdaGlobals()
+lambda_handler = get_lambda_handler(Processor, global_vars)
+```
+
+The Processor initializes once per Lambda container; warm invocations reuse it. Configuration can be overridden per function through the DynamoDB `config` table or SSM — no redeployment needed.
 
 ## Installation
-See the [Installation Guidelines](https://docs.sosw.app/installation.html) in the Documentation.
+
+```bash
+pip install sosw                # Python 3.10 - 3.14
+pip install sosw[durable]       # + AWS durable execution support (Python 3.11+)
+```
+
+## Documentation
+
+[https://docs.sosw.app](https://docs.sosw.app)
+
+- [Quickstart](https://docs.sosw.app/quickstart.html) — first Processor Lambda in minutes
+- [Concepts](https://docs.sosw.app/concepts/index.html) — Processor, warm start, configuration
+- [LambdaApi](https://docs.sosw.app/lambda_api.html) — HTTP APIs from a single Lambda
+- [Durable functions](https://docs.sosw.app/durable.html) — long-running checkpointed workflows
+- [Migration guide](https://docs.sosw.app/migration_3_0.html) — upgrading from 0.7.x to 3.0
+
+## Deprecation notice
+
+The original orchestration layer (`Orchestrator`, `Scheduler`, `Scavenger`, `Worker`, and their managers) is **deprecated since 3.0.0**: it stays fully functional through every 3.x release (instantiation emits a `DeprecationWarning`) and will be removed in 4.0. Use AWS Step Functions, EventBridge Scheduler, or durable functions instead — per-entity guidance lives in the [migration guide](https://docs.sosw.app/migration_3_0.html), and the preserved orchestration docs are under [Deprecated](https://docs.sosw.app/deprecated/index.html).
 
 ## Development
-### Getting Started
 
-Assuming you have Python 3.7+ and `pipenv` installed. Create a new virtual environment: 
+### Getting started
 
-```bash
-$ pipenv shell
-```
-
-Now install the required dependencies for development:
+Either `pipenv`:
 
 ```bash
-$ pipenv sync --dev
+pipenv sync --dev && pipenv shell
 ```
 
-### Running Tests
+or plain `pip` in any virtual environment:
 
-Running unit tests:
 ```bash
-$ pytest ./sosw/test/suite_unit.py
+pip install boto3 pytest pytest-cov -r docs/requirements.txt
 ```
 
-### Contribution Guidelines
+All package metadata lives in `pyproject.toml` (there is no `setup.py`).
 
-The latest [Contribution Guidelines](https://docs.sosw.app/contribution/index.html) with examples are in the documentation.
+### Running tests
+
+The unit suite is explicitly registered in `sosw/test/suite_unit.py` — new test files must be added there. It runs fully mocked (no AWS access) and is enforced at 100% line coverage in CI:
+
+```bash
+pytest ./sosw/test/suite_unit.py
+pytest ./sosw/test/suite_unit.py --cov=sosw --cov-report=term-missing
+```
+
+### Building the docs
+
+```bash
+pip install -r docs/requirements.txt
+python -m sphinx -W -a -b html docs sosw-rtd; (cd sosw-rtd && python -m http.server)
+```
+
+### Contribution guidelines
+
+The full [Contribution Guidelines](https://docs.sosw.app/contribution/index.html) with examples are in the documentation.
 
 #### Release cycle
 
-We follow both the [Semantic Versioning](https://semver.org/) pattern and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where they comply. The following are important notes about our release cycle:
+We follow both the [Semantic Versioning](https://semver.org/) pattern and [PEP440](https://www.python.org/dev/peps/pep-0440/) recommendations where they comply:
 
-- Master branch commits (merges) are automatically packaged and published to PyPI.
-- Branches for planned staging versions follow the pattern: `X_Y_Z` (Major.Minor.Micro).
-- Make your pull requests to the closest staging branch (with smallest after release number of either current or next Minor).
-- Make sure your branch is up to date with the branch you are making a PR to.
+- Branches for planned staging versions follow the pattern `X_Y_Z` (Major_Minor_Micro), e.g. `3_0_1`.
+- Make your pull request against the closest staging branch (the smallest version after the latest release, of either the current or the next Minor).
+- Pushes to staging branches automatically publish release candidates to [TestPyPI](https://test.pypi.org/project/sosw/).
+- `master` merges are automatically packaged and published to [PyPI](https://pypi.org/project/sosw/).
+- Keep your branch up to date with the branch you are making a PR to.
 
-Example:
-  - Latest released version in PyPI `0.7.31`
-  - Closest staging Minor branch in sosw/sosw `0_7_33`
-  - Latest Minor staging branch in sosw/sosw `0_7_35`
-  - Closest Next Minor branch in sosw/sosw `0_9_1`
+Example: the latest released version on PyPI is `3.0.0`; open staging branches are `3_0_1` and `3_1_0`. A bugfix PR targets `3_0_1`; a new feature targets `3_1_0`.
 
-Your PR should be to either `0_7_33` or `0_9_1` depending on the importance of changes. 
+#### Code style
 
-#### Code formatting
 Follow [PEP8](https://www.python.org/dev/peps/pep-0008/), with the following specifications:
 - both classes and functions are padded with 2 empty lines
 - dictionaries are value-aligned
-
-#### Initialization
-1. Fork the repository: https://github.com/sosw/sosw
-2. Register Account in AWS: [SignUp](https://portal.aws.amazon.com/billing/signup#/start)
-3. Run `pipenv sync –dev` to setup your virtual environment and download the required dependencies
-4. Create DynamoDB Tables: 
-    - You can find the CloudFormation template for the databases [in the example](https://raw.githubusercontent.com/sosw/sosw/docme/docs/yaml/sosw-shared-dynamodb.yaml).
-    - If you are not familiar with CloudFormation, we highly recommend at least learning the basics from [the tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html).
-5. Create Sandbox Lambda with Scheduler
-6. Play with it.
-7. Read the Documentation Convention.
-
-#### More
-See more guidelines for contribution [in the docs](https://docs.sosw.app/contribution/index.html).
-
-### Building the docs
-Sphinx is used for building documentation.
-You can build HTML documentation locally then use the built in Python web server to view the html version directly from `localhost` in your preferred browser.
-
-```bash
-$ sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
-```
 
 ## Copyright
 

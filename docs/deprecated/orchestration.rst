@@ -1,9 +1,18 @@
 .. title:: Orchestration with ``sosw``
 
+======================
+Orchestration overview
+======================
+
+..  warning::
+
+    **Deprecated since sosw 3.0.0.** The orchestration layer stays functional through 3.x and
+    will be removed in 4.0. For replacements see the :doc:`migration guide </migration_3_0>`.
+
 Essential Workflow Schema
 -------------------------
 
-.. figure:: _static/images/simple-sosw.png
+.. figure:: /_static/images/simple-sosw.png
    :alt: Simple sosw workflows
    :align: center
 

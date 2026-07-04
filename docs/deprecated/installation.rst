@@ -1,10 +1,15 @@
 .. _Installation Guidelines:
 
+===========================
+Installation of Essentials
+===========================
 
-============
-Installation
-============
+..  warning::
 
+    **Deprecated since sosw 3.0.0.** This guide provisions the Essentials of the deprecated
+    orchestration layer. It stays valid through 3.x and will be removed in 4.0 — see the
+    :doc:`migration guide </migration_3_0>`. To simply use the framework, ``pip install sosw``
+    is all you need: :doc:`/quickstart`.
 
 Steps
 -----
@@ -30,7 +35,7 @@ We shall require several services, but they are all supposed to fit in the
 CloudFormation, once you delete the stacks - the related resources will also be deleted
 automatically to avoid unnecessary charges.
 
-See :ref:`Cleanup` instructions in the :ref:`Tutorials` section.
+See the :ref:`Cleanup` instructions after you finish.
 
 
 Provision Required AWS Resources

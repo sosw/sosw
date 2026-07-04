@@ -3,6 +3,11 @@
 Cleanup after tutorials
 =======================
 
+..  warning::
+
+    **Deprecated since sosw 3.0.0.** This page serves the deprecated orchestration tutorials and
+    the :doc:`Essentials installation </deprecated/installation>`; it will be removed in 4.0.
+
 Most of the elements in the tutorials were created following Infrastructure as Code technique.
 Thus temoving AWS CloudFormation stacks will recursively remove all the resources that
 were created from them.
