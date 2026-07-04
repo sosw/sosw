@@ -1,4 +1,42 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools>=78.1.1"]
 build-backend = "setuptools.build_meta"
 
+
+[project]
+name = "sosw"
+version = "3.0.0"
+description = "Serverless framework for bootstrapping AWS Lambda functions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Nikolay Grishchenko", email = "ngr@sosw.app" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "boto3>=1.35.0",
+]
+
+[project.optional-dependencies]
+durable = [
+    "aws-durable-execution-sdk-python",
+]
+
+[project.urls]
+Homepage = "https://github.com/sosw/sosw"
+Documentation = "https://docs.sosw.app"
+
+
+[tool.setuptools.packages.find]
+include = ["sosw*"]
+exclude = ["*.test", "*.test.*"]

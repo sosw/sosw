@@ -385,6 +385,25 @@ class helpers_UnitTestCase(unittest.TestCase):
             self.assertEqual(recursive_matches_extract(payload, path, ignore_case=True), result)
 
 
+    def test_recursive_matches_extract__case_insensitive(self):
+        """
+        `case_insensitive` option contributed by @SHMaryana (#379).
+        """
+
+        TESTS = [
+            ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
+            ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
+            ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
+            (({"hEaDeRs": {"oRiGiN": "foo"}}, {"headers": {"origin": "foo"}}), "headers.origin", "foo")
+        ]
+
+        for payload, path, result in TESTS:
+            self.assertEqual(recursive_matches_extract(payload, path, case_insensitive=True), result)
+
+        # Without the flag the mixed-case path must not match.
+        self.assertIsNone(recursive_matches_extract({"HEADERS": {"Origin": "foo"}}, "headers.origin"))
+
+
     def test_chunks(self):
         list_input = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
         list_input_2 = [[1, 2, 3], ['a'], [True, False]]

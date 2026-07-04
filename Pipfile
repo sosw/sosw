@@ -6,11 +6,12 @@ verify_ssl = true
 [dev-packages]
 boto3 = "*"
 pytest = "*"
-sphinx = "*"
-sphinx_rtd_theme = "*"
-sphinx_sitemap = "*"
 pytest-cov = "*"
+sphinx = "*"
+furo = "*"
+sphinx_sitemap = "*"
 coverage-badge = "*"
+build = "*"
 
 [packages]
 boto3 = "*"
