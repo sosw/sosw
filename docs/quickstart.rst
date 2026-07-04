@@ -12,7 +12,7 @@ Install the latest stable version into your virtual environment:
 
     pip install sosw
 
-``sosw`` requires Python 3.10+ and depends only on ``boto3`` (which the AWS Lambda runtimes
+``sosw`` requires Python 3.12 – 3.14 and depends only on ``boto3`` (which the AWS Lambda runtimes
 already provide).
 
 
@@ -101,7 +101,7 @@ A minimal ``template.yaml``:
           FunctionName: my-first-sosw-function
           CodeUri: src/
           Handler: app.lambda_handler
-          Runtime: python3.13
+          Runtime: python3.14
           Timeout: 30
           MemorySize: 256
 

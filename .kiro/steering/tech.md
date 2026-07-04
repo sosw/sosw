@@ -2,7 +2,7 @@
 
 ## Language & dependencies
 
-- Python 3.10–3.14. Runtime dependency: `boto3` only. Optional extras: `sosw[durable]`.
+- Python 3.12–3.14. Runtime dependency: `boto3` only. Optional extras: `sosw[durable]`.
 - Never add a mandatory dependency without a maintainer decision recorded in an issue.
 - Packaging via `pyproject.toml` (PEP 621, setuptools backend). Version lives there.
 
@@ -33,8 +33,8 @@
 
 ## CI/CD
 
-- GitHub Workflows only (Travis is gone): Tests matrix 3.12–3.14 (the three latest; the package
-  supports 3.10+) + coverage job (100%, on 3.14), Docs build (Sphinx `-W`), TestPyPI RC publish on
+- GitHub Workflows only (Travis is gone): Tests matrix 3.12–3.14 (all the supported versions)
+  + coverage job (100%, on 3.14), Docs build (Sphinx `-W`), TestPyPI RC publish on
   staging branches (`X_Y_Z`), PyPI publish on push to `master`. Default CI runtime: Python 3.14.
 - Staging-branch flow: feature branches → PR into the current `X_Y_Z` staging branch → release PR
   `X_Y_Z → master`. Merging to master publishes to PyPI.

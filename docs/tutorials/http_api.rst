@@ -9,7 +9,7 @@ an **API Gateway HTTP API**, using :doc:`LambdaApi <../lambda_api>`. You will de
 first, verify the routing and the error contract with ``curl``, then switch on Cognito JWT
 authorization with one config change.
 
-Prerequisites: the same as in :doc:`first_lambda` (AWS account, SAM CLI, Python 3.10+).
+Prerequisites: the same as in :doc:`first_lambda` (AWS account, SAM CLI, Python 3.12+).
 
 
 1. Project layout
@@ -202,7 +202,7 @@ not in API Gateway:
           FunctionName: things-api
           CodeUri: src/
           Handler: app.lambda_handler
-          Runtime: python3.13
+          Runtime: python3.14
           Timeout: 30
           MemorySize: 256
           Events:

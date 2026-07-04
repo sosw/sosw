@@ -7,22 +7,25 @@ Tracker: SOSW HQ ticket HQ-692 · Target branch: `3_0_0` · Released from `maste
 sosw 3.0.0 repurposes the package from "Serverless Orchestrator of Serverless Workers" into a
 **framework for bootstrapping AWS Lambda functions**: the `Processor` base class (with warm-start
 container reuse), the AWS middleware components, and the helpers are the product. The legacy
-orchestration layer stays importable but is formally deprecated.
+orchestration layer is **removed** in this major release (baseline re-decided during release
+review — the initial deprecate-but-keep approach was superseded; 1.x/2.x were skipped on purpose).
 
 ## R1 — Packaging & version
 
 - WHEN the package is built, THE SYSTEM SHALL read all metadata from `pyproject.toml` (setup.py removed or reduced to a shim) with `version = "3.0.0"`.
-- THE SYSTEM SHALL declare support for Python 3.10, 3.11, 3.12, 3.13 and 3.14 in classifiers and `requires-python >= 3.10`.
+- THE SYSTEM SHALL declare support for Python 3.12, 3.13 and 3.14 in classifiers and `requires-python >= 3.12`.
 - THE SYSTEM SHALL keep `boto3` as the only mandatory runtime dependency.
 - THE SYSTEM SHALL expose optional extras: `sosw[durable]` for the AWS durable execution SDK.
 - WHEN dev dependencies are locked, THE SYSTEM SHALL NOT ship known-vulnerable pins (current Pipfile.lock carries 15 Dependabot alerts; regenerate or remove the lockfile).
 
-## R2 — Deprecation of the orchestration layer
+## R2 — Removal of the orchestration layer
 
-- WHEN a user imports or instantiates `Orchestrator`, `Scavenger`, `Scheduler`, `Worker`, `WorkerAssistant`, `Labourer`, `Essential`, `managers.task.TaskManager`, `managers.ecology.EcologyManager`, or `managers.meta_handler.MetaHandler`, THE SYSTEM SHALL emit a `DeprecationWarning` naming the replacement guidance and the removal horizon (4.0), exactly once per class per process.
-- THE SYSTEM SHALL keep every deprecated entity fully functional in 3.x (no behavior change beyond the warning).
-- `sosw/__init__.py` SHALL become a lazy façade (PEP 562 `__getattr__`) so that `import sosw` does not import orchestration modules or emit warnings, while `from sosw import Orchestrator` still works (with warning).
-- Internal cross-imports (`siblings.py`, `ecology → task`) SHALL NOT trigger the deprecation warnings during normal component use.
+*(Re-baselined during release review: the layer is deleted in 3.0, not deprecated.)*
+
+- THE SYSTEM SHALL NOT ship `Orchestrator`, `Scavenger`, `Scheduler`, `Worker`, `WorkerAssistant`, `Labourer`, `Essential`, or the `sosw.managers` package — modules, tests, examples and docs sections removed.
+- WHEN a user accesses a removed name through the package façade, THE SYSTEM SHALL raise `AttributeError` with guidance: pin `sosw<3` to keep the orchestration layer, or read the migration guide.
+- `sosw/__init__.py` SHALL remain a lazy façade (PEP 562 `__getattr__`): `import sosw` imports neither boto3 nor submodules and emits no warnings.
+- Orchestration SHALL NOT be mentioned in the shipped code or current docs, except the migration page (removal explanation) and the preserved previous-versions docs archive.
 
 ## R3 — Processor & warm start (core)
 
@@ -59,14 +62,14 @@ orchestration layer stays importable but is formally deprecated.
 
 ## R8 — CI (GitHub Workflows only)
 
-- PR checks SHALL run: unit tests on a 3.10–3.14 matrix, a coverage job failing under the enforced threshold (100 at release), and a docs build (`sphinx -W`).
+- PR checks SHALL run: unit tests on a 3.12–3.14 matrix, a coverage job failing under the enforced threshold (100 at release), and a docs build (`sphinx -W`).
 - The TestPyPI RC publish SHALL trigger for `X_Y_Z`-style staging branches (not only `0_*`) and patch the version wherever it lives after the pyproject migration.
 - Travis badges/references SHALL be removed from README and docs; badges point at GitHub Actions.
 - The stray repo-root `.aws/config` SHALL be removed; `.claude/` ignored.
 
 ## R9 — Documentation (humans)
 
-- Docs SHALL be rebuilt Sphinx-first with a modern theme, restructured as: quickstart (pip install → first Processor Lambda in minutes), framework concepts (Processor, config, stats, warm start), per-component guides, lambda_api guide, durable guide, tutorials, contribution guide, and a 0.x → 3.0 migration page (orchestration deprecation front and center).
+- Docs SHALL be rebuilt Sphinx-first with a modern theme, restructured as: quickstart (pip install → first Processor Lambda in minutes), framework concepts (Processor, config, stats, warm start), per-component guides, lambda_api guide, durable guide, tutorials, contribution guide, and a 0.x → 3.0 migration page (orchestration removal front and center, with a link to the preserved previous-versions docs).
 - Every documented example SHALL match the 3.0 API.
 
 ## R10 — Documentation (AI agents)
@@ -86,6 +89,6 @@ orchestration layer stays importable but is formally deprecated.
 
 ## Out of scope for 3.0.0
 
-- Removing any deprecated entity (that is 4.0).
+- Reintroducing any orchestration entity (users who need them pin `sosw<3`).
 - Async/await support, AthenaManager, and other KEEP-ROADMAP issues (filed/kept for 3.x).
 - Publishing to PyPI from this ticket: happens automatically when a human merges `3_0_0 → master`.

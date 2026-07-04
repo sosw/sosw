@@ -130,8 +130,6 @@ Here's a basic CloudFormation template snippet demonstrating how to connect a la
         Properties:
             ContentUri: my_sosw_layer.zip
             CompatibleRuntimes:
-                - python3.10
-                - python3.11
                 - python3.12
                 - python3.13
                 - python3.14
@@ -143,7 +141,7 @@ Here's a basic CloudFormation template snippet demonstrating how to connect a la
                S3Bucket: my_bucket
                S3Key: my_function.zip
             Handler: app.lambda_handler
-            Runtime: python3.13
+            Runtime: python3.14
             Layers:
                 - !Ref MyLambdaLayer
 

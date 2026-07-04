@@ -10,7 +10,7 @@ their own code and import `sosw` (and friends) from the layer.
 - default-on extras: [`aws-lambda-powertools`](https://docs.powertools.aws.dev/lambda/python/latest/)
   (sosw uses its `Logger` automatically when present) and `aws-xray-sdk`. Disable with `--no-extras`.
 
-**Compatible runtimes:** `python3.10`, `python3.11`, `python3.12`, `python3.13`, `python3.14`.
+**Compatible runtimes:** `python3.12`, `python3.13`, `python3.14`.
 
 ## Build
 
@@ -23,7 +23,7 @@ their own code and import `sosw` (and friends) from the layer.
 ```
 
 Build with the same Python minor version as your Lambda runtime when possible
-(override the interpreter with `PYTHON=python3.13 ./build.sh`). All bundled packages are
+(override the interpreter with `PYTHON=python3.14 ./build.sh`). All bundled packages are
 pure Python, so the zip is architecture- and platform-independent.
 
 ## Deploy
@@ -59,7 +59,7 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: app.lambda_handler
-      Runtime: python3.13
+      Runtime: python3.14
       Layers:
         - !Ref LambdaLayerSoswLatestArn
 ```

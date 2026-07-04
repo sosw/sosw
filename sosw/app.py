@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -72,9 +72,10 @@ def _derive_test_flag(explicit_flag=None):
 
 class Processor:
     """
-    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
-    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
-    `Worker` class in case you are running functions under `sosw` orchestration.
+    Core Processor class template. This is the base class of the framework: every Lambda built on
+    ``sosw`` subclasses it (directly, or through specializations like
+    :py:class:`~sosw.lambda_api.LambdaApi`). It provides layered configuration, automatic client
+    registration, statistics counters and a uniform entry point.
 
 
     ``get_ddbc(prefix: str) -> DynamoDbClient:``
@@ -170,8 +171,10 @@ class Processor:
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
 
-        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.
-        Name of the Class must be name of `client` with either of the suffixes ('Manager' or 'Client').
+        Clients are imported from the `components` or `managers` packages of your own Lambda, from
+        `sosw.components`, or fall back to a plain boto3 client. Name of the module must be
+        underscored name of Client. Name of the Class must be name of `client` with either of the
+        suffixes ('Manager' or 'Client').
 
         .. warning::
            To be implemented!
@@ -191,7 +194,6 @@ class Processor:
             lambda x: f"components.{x}",
             lambda x: f"managers.{x}",
             lambda x: f"sosw.components.{x}",
-            lambda x: f"sosw.managers.{x}",
         ]
 
         # # Initialize required clients
@@ -494,7 +496,7 @@ class LambdaGlobals:
     e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.
 
     This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.
-    See Worker examples in documentation for more info.
+    See the Processor examples in documentation for more info.
     """
 
 

@@ -12,7 +12,7 @@ sosw — bootstrap AWS Lambda functions
     :target: https://github.com/sosw/sosw/actions/workflows/docs-builder-action.yaml
 ..  image:: _static/images/coverage.svg
     :alt: Test Coverage
-    :target: https://docs.sosw.app/?badge=latest
+    :target: index.html
 ..  image:: https://img.shields.io/pypi/dm/sosw?color=blue&label=pypi%20installs
     :alt: PyPI - Installs / month
     :target: https://pypi.org/project/sosw/
@@ -36,16 +36,13 @@ It gives every Lambda in your account the same production-grade skeleton in a do
 * **components and helpers** — battle-tested middleware for DynamoDB, SNS, configuration sources,
   SigV4-signed requests, sibling invocations and a large :doc:`helpers library <components/helpers>`.
 
-The only mandatory runtime dependency is ``boto3``. Python 3.10 – 3.14 are supported.
+The only mandatory runtime dependency is ``boto3``. Python 3.12 – 3.14 are supported.
 
-..  warning::
+..  note::
 
-    ``sosw`` began life as the *Serverless Orchestrator of Serverless Workers*. Since version
-    **3.0.0** the self-hosted orchestration layer (``Orchestrator``, ``Scheduler``, ``Scavenger``,
-    ``Worker`` and their managers) is **deprecated**: it stays fully functional throughout 3.x and
-    will be removed in 4.0. New designs should use AWS Step Functions, EventBridge Scheduler or
-    durable functions instead. See the :doc:`migration guide <migration_3_0>` and the preserved
-    :doc:`orchestration documentation <deprecated/index>`.
+    Upgrading from the 0.7.x line? Read the :doc:`migration guide <migration_3_0>` first — the
+    major release removed a whole layer of the package. The documentation of the previous
+    versions is preserved: `0.7.51 docs <previous/0.7.51/index.html>`__.
 
 Install it and build your first function in minutes:
 
@@ -71,7 +68,13 @@ Install it and build your first function in minutes:
     migration_3_0
 
     contribution/index
-    deprecated/index
+
+
+Previous versions
+=================
+
+* `sosw 0.7.51 documentation <previous/0.7.51/index.html>`__ — the archived documentation of
+  the 0.7.x line (covering everything this major release removed from the package).
 
 
 Indices and tables

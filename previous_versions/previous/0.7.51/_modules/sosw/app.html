@@ -1,0 +1,716 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.app &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/app.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.app</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.app</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Processor&#39;</span><span class="p">,</span> <span class="s1">&#39;LambdaGlobals&#39;</span><span class="p">,</span> <span class="s1">&#39;get_lambda_handler&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Nikolay Grishchenko, Gil Halperin&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">aws_lambda_powertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_module</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.benchmark</span><span class="w"> </span><span class="kn">import</span> <span class="n">benchmark</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.dynamo_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynamoDbClient</span>
+
+
+<div class="viewcode-block" id="Processor">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Processor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.</span>
+<span class="sd">    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use</span>
+<span class="sd">    `Worker` class in case you are running functions under `sosw` orchestration.</span>
+
+
+<span class="sd">    ``get_ddbc(prefix: str) -&gt; DynamoDbClient:``</span>
+
+<span class="sd">    Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.</span>
+
+<span class="sd">    This method initializes custom DynamoDB clients based on the provided prefix. If a client with the</span>
+<span class="sd">    specified prefix has already been initialized, it returns the existing client. If not, it looks in the</span>
+<span class="sd">    Processor config for a prefixed dynamodb config (e.g. for prefix ``project_a`` -&gt; ``project_a_dynamo_db_config``).</span>
+<span class="sd">    The dynamo_db client will be initialized as ``self.project_a_dynamo_db_client``.</span>
+
+<span class="sd">    This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB</span>
+<span class="sd">    syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.</span>
+
+<span class="sd">    :param str prefix:  The prefix for the DynamoDB client configuration and naming.</span>
+<span class="sd">    :raises ValueError: If the provided prefix is not supported by the available configuration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">aws_account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">aws_region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_REGION&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">ddb_names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">custom_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the Processor.</span>
+<span class="sd">        Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;autotest&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">invoked_function_arn</span> <span class="o">:=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="p">,</span> <span class="s1">&#39;invoked_function_arn&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">aws_account</span> <span class="o">=</span> <span class="n">trim_arn_to_account</span><span class="p">(</span><span class="n">invoked_function_arn</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting self.aws_account from Lambda context to: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_account</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_config</span><span class="p">(</span><span class="n">custom_config</span><span class="o">=</span><span class="n">custom_config</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Final </span><span class="si">%s</span><span class="s2"> processor config&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_clients</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;init_clients&#39;</span><span class="p">,</span> <span class="p">[]))</span>
+
+
+<div class="viewcode-block" id="Processor.init_config">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor.init_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">custom_config</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        By default, tries to initialize config from ``DEFAULT_CONFIG`` or as an empty dictionary.</span>
+<span class="sd">        After that, a specific custom config of the Lambda will recursively update the existing one.</span>
+<span class="sd">        The last step is update config recursively with a passed custom_config.</span>
+
+<span class="sd">        Overwrite this method if custom logic of recursive updates in configs is required.</span>
+
+<span class="sd">        ..  note:: Read more about :ref:`Config_Sourse`</span>
+
+<span class="sd">        :param Dict custom_config: dict with custom configurations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Initialize config from default config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_CONFIG</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="c1"># Update config recursively from any existing lambda function config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">recursive_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;AWS_LAMBDA_FUNCTION_NAME&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_config&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="c1"># Update config recursively from custom config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">recursive_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">custom_config</span> <span class="ow">or</span> <span class="p">{})</span></div>
+
+
+
+    <span class="nd">@benchmark</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_clients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clients</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the given `clients` and assign them to self with suffix `_client`.</span>
+
+<span class="sd">        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.</span>
+<span class="sd">        Name of the Class must be name of `client` with either of the suffixes (&#39;Manager&#39; or &#39;Client&#39;).</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">           To be implemented!</span>
+
+<span class="sd">           If you follow these rules and put the module in package `components` of your Lambda,</span>
+<span class="sd">           you can just provide the `clients` in custom_config when initializing the Processor.</span>
+
+<span class="sd">        TODO This method supports a too many ways of class initialization for backwards compatibility</span>
+<span class="sd">        that it becomes a mess soon. Need to describe best practices and start deprecation in future versions.</span>
+
+<span class="sd">        :param list clients:    List of names of clients.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">client_suffixes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Manager&#39;</span><span class="p">,</span> <span class="s1">&#39;Client&#39;</span><span class="p">]</span>
+
+        <span class="n">import_paths</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;components.</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;managers.</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;sosw.components.</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;sosw.managers.</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># # Initialize required clients</span>
+        <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">clients</span><span class="p">:</span>
+            <span class="n">module_name</span> <span class="o">=</span> <span class="n">camel_case_to_underscore</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">import_paths</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">some_module</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="n">path</span><span class="p">(</span><span class="n">module_name</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Imported </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">service</span><span class="p">,</span> <span class="n">path</span><span class="p">(</span><span class="n">module_name</span><span class="p">))</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># The other supported option is to load boto3 client if it exists.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">_client&quot;</span><span class="p">,</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="n">module_name</span><span class="p">))</span>
+                    <span class="k">continue</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import for service </span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">. Component naming problem.&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="n">client_suffixes</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">some_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">some_module</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">service</span><span class="si">}{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Didn&#39;t find </span><span class="si">%s</span><span class="s2"> with suffix </span><span class="si">%s</span><span class="s2"> in module </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">suffix</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="n">some_client_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">_config&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found config for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">some_client_config</span><span class="p">)</span>
+
+                <span class="c1"># Send configs one of the two ways as `config` or `custom_config` for some backwards compatibility</span>
+                <span class="k">if</span> <span class="n">some_client_config</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">suffix</span> <span class="o">==</span> <span class="s1">&#39;Manager&#39;</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">_client&quot;</span><span class="p">,</span> <span class="n">some_class</span><span class="p">(</span><span class="n">custom_config</span><span class="o">=</span><span class="n">some_client_config</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">suffix</span> <span class="o">==</span> <span class="s1">&#39;Client&#39;</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">_client&quot;</span><span class="p">,</span> <span class="n">some_class</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">some_client_config</span><span class="p">))</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">_client&quot;</span><span class="p">,</span> <span class="n">some_class</span><span class="p">())</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Successfully registered </span><span class="si">%s</span><span class="s2">_client&quot;</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">some_module</span><span class="si">}</span><span class="s2">. &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;Tried suffixes for class: </span><span class="si">{</span><span class="n">client_suffixes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">reset_result</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Call the Processor.</span>
+<span class="sd">        You can either call super() at the end of your child function or completely overwrite this function.</span>
+
+<span class="sd">        :param reset_result: Whether to reset the result after the processor call. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Update the stats for number of calls.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;processor_calls&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">reset_result</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__pre_call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset the result of the processor.</span>
+<span class="sd">        Cleans statistics other than specified for the lifetime of processor.</span>
+<span class="sd">        Makes sense for Processors initialized outside the scope of `lambda_handler`.</span>
+<span class="sd">        Call this before actually calling the processor.</span>
+
+<span class="sd">        Be careful about circular get_stats() calls from child classes.</span>
+<span class="sd">        If required overwrite get_stats() with recursive = False.</span>
+<span class="sd">        :param recursive:   Merge stats from self.***_client.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_stats</span><span class="p">(</span><span class="n">recursive</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Processor.get_config">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor.get_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns config by name from DynamoDB config or SSM. Override this to provide your config handling method.</span>
+
+<span class="sd">        :param name: Name of the config</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">get_config</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_account</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get current AWS Account to construct different ARNs.</span>
+
+<span class="sd">        We don&#39;t have this parameter in Environmental variables, only can parse from Context. It is stored</span>
+<span class="sd">        in ``global_vars`` and is supposed to be passed by your `lambda_handler` during initialization.</span>
+
+<span class="sd">        As a fallback for cases when we use ``Processor`` not in the Lambda environment, we have a lazy autodetection</span>
+<span class="sd">        mechanism using STS, but it is pretty heavy (~0.3 seconds).</span>
+
+<span class="sd">        Some things to note:</span>
+<span class="sd">         - We store this value in class variable for fast access</span>
+<span class="sd">         - It uses Lazy initialization.</span>
+<span class="sd">         - We first try from context and only if not provided - use the autodetection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_account</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_account</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;sts&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_caller_identity</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Account&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_account</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_region</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Property fetched from AWS Lambda Environmental variables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_region</span>
+
+
+<div class="viewcode-block" id="Processor._c">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor._c">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shortcut to access values from the Processor config.</span>
+
+<span class="sd">        E.g. ``val = self._c(&#39;path.to.param&#39;)``</span>
+
+<span class="sd">        Is similar to: ``val = self.config.get(&#39;path&#39;, {}).get(&#39;to&#39;, {}).get(&#39;param&#39;, default)``</span>
+
+<span class="sd">        The value specified in `default` or None is returned if the path is not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">recursive_matches_extract</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default</span></div>
+
+
+
+    <span class="nd">@benchmark</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ddbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DynamoDbClient</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.</span>
+
+<span class="sd">        This method initializes custom DynamoDB clients based on the provided prefix. If a client with the</span>
+<span class="sd">        specified prefix has already been initialized, it returns the existing client. If not, it looks in the</span>
+<span class="sd">        Processor config for a prefixed dynamodb config (e.g. for prefix ``project_a`` -&gt; ``project_a_dynamo_db_config``).</span>
+<span class="sd">        The dynamo_db client will be initialized as ``self.project_a_dynamo_db_client``.</span>
+
+<span class="sd">        This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB</span>
+<span class="sd">        syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.</span>
+
+<span class="sd">        :param str prefix:  The prefix for the DynamoDB client configuration and naming.</span>
+<span class="sd">        :raises ValueError: If the provided prefix is not supported by the available configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddb_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ddb_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_dynamo_db_config&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span>
+                                   <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_dynamo_db_config&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)])</span>
+
+        <span class="k">if</span> <span class="n">prefix</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddb_names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;get_ddbc() method supports only prefixes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ddb_names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_dynamo_db_client&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">DynamoDbClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">_dynamo_db_config&#39;</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Processor.get_stats">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor.get_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return statistics of operations performed by current instance of the Class.</span>
+
+<span class="sd">        Statistics of custom clients existing in the Processor is also aggregated by default.</span>
+<span class="sd">        Clients must be initialized as `self.some_client` ending with `_client` suffix (e.g. self.dynamo_db_client).</span>
+<span class="sd">        Clients must also have their own get_stats() methods implemented.</span>
+
+<span class="sd">        Be careful about circular get_stats() calls from child classes.</span>
+<span class="sd">        If required overwrite get_stats() with recursive = False.</span>
+
+<span class="sd">        .. code-block::python</span>
+
+<span class="sd">           def get_stats(self, recursive=False):</span>
+<span class="sd">               return super().get_stats(recursive=False)</span>
+
+<span class="sd">        :param recursive:   Merge stats from self.***_client.</span>
+<span class="sd">        :rtype:     dict</span>
+<span class="sd">        :return:    Statistics counter of current Processor instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">some_client</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_client&#39;</span><span class="p">)]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_client</span><span class="p">)</span><span class="o">.</span><span class="n">get_stats</span><span class="p">())</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updated Processor stats with stats of </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">some_client</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> doesn&#39;t have get_stats() implemented. Recommended to fix this.&quot;</span><span class="p">,</span> <span class="n">some_client</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Processor.reset_stats">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor.reset_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cleans statistics other than specified for the lifetime of processor.</span>
+<span class="sd">        All the parameters with prefix *&#39;total_&#39;* are also preserved.</span>
+
+<span class="sd">        The function makes sense if your Processor lives outside the scope of `lambda_handler`.</span>
+
+<span class="sd">        Be careful about circular get_stats() calls from child classes.</span>
+<span class="sd">        If required overwrite reset_stats() with recursive = False.</span>
+
+<span class="sd">        .. code-block::python</span>
+
+<span class="sd">           def reset_stats(self, recursive=False):</span>
+<span class="sd">               return super().reset_stats(recursive=False)</span>
+
+<span class="sd">        :param recursive:   Reset stats from self.***_client.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Temporary save values that are supposed to survive reset_stats().</span>
+        <span class="n">preserved</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">preserved</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lifetime_stats_params&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;total_&#39;</span><span class="p">)})</span>
+
+        <span class="c1"># Update them with current values</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lifetime_stats_params&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;total_&#39;</span><span class="p">)):</span>
+                <span class="n">preserved</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;total_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
+
+        <span class="c1"># Recreate a new version of stats to avoid mess in the memory between dictionaries.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">preserved</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">some_client</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_client&#39;</span><span class="p">)]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_client</span><span class="p">)</span><span class="o">.</span><span class="n">reset_stats</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Processor.die">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.Processor.die">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">die</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Unknown Failure&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Logs current Processor stats and `message`. Then raises RuntimeError with `message`.</span>
+
+<span class="sd">        If there is access to publish SNS messages, the method will also try to publish to the topic configured as</span>
+<span class="sd">        `dead_sns_topic` or `&#39;SoswWorkerErrors&#39;`.</span>
+
+<span class="sd">        :param str message: Description of failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;failed&#39;</span><span class="p">}</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_stats</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sns_recipient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dead_sns_topic&#39;</span><span class="p">,</span> <span class="s1">&#39;SoswWorkerErrors&#39;</span><span class="p">)</span>
+            <span class="n">sns_topic_arn</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;arn:aws:sns:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_region</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_account</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">sns_recipient</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">sns_subject</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;AWS_LAMBDA_FUNCTION_NAME&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Some Function&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> died&quot;</span>
+
+            <span class="n">sns</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;sns&#39;</span><span class="p">)</span>
+            <span class="n">sns</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">TopicArn</span><span class="o">=</span><span class="n">sns_topic_arn</span><span class="p">,</span> <span class="n">Subject</span><span class="o">=</span><span class="n">sns_subject</span><span class="p">,</span> <span class="n">Message</span><span class="o">=</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to send SNS message to Alarms.&quot;</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Destructor.</span>
+
+<span class="sd">        Close SQLAlchemy session if exists.</span>
+<span class="sd">        Flask-SQLAlchemy does this for you, but the `self.sql` can also be a pointer to the global in the container</span>
+<span class="sd">        of some functions (scope outside of lambda_handler). In this case we try to reset the session manually.</span>
+
+<span class="sd">        Other database connections are also closed if found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">sqldb</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+
+<span class="c1"># Global lambda processor placeholder</span>
+<span class="n">_processor</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># Global lambda context placeholder</span>
+<span class="n">_lambda_context</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="LambdaGlobals">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.LambdaGlobals">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LambdaGlobals</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Global placeholder for global_vars that we want to preserve in the lifetime of the Lambda Container.</span>
+<span class="sd">    e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.</span>
+
+<span class="sd">    This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.</span>
+<span class="sd">    See Worker examples in documentation for more info.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset the lambda context for every reinitialization.</span>
+<span class="sd">        The Processor may stay alive in the scope of Lambda container, but the context is unique per invocation.</span>
+<span class="sd">        The Lambda Globals should also be reset by `get_lambda_handler` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">_lambda_context</span>
+        <span class="n">_lambda_context</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_lambda_context</span>
+        <span class="k">return</span> <span class="n">_lambda_context</span>
+
+
+    <span class="nd">@lambda_context</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_lambda_context</span>
+        <span class="n">_lambda_context</span> <span class="o">=</span> <span class="n">val</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">processor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_processor</span>
+        <span class="k">return</span> <span class="n">_processor</span>
+
+
+    <span class="nd">@processor</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">processor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_processor</span>
+        <span class="n">_processor</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+
+<div class="viewcode-block" id="get_lambda_handler">
+<a class="viewcode-back" href="../../essentials/processor.html#sosw.app.get_lambda_handler">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_lambda_handler</span><span class="p">(</span><span class="n">processor_class</span><span class="p">,</span> <span class="n">global_vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a reference to the entry point of the lambda function.</span>
+
+<span class="sd">    :param processor_class:  Callable processor class.</span>
+<span class="sd">    :param global_vars:      Lambda&#39;s global variables (processor, context).</span>
+<span class="sd">    :param custom_config:    Custom configuration to pass the processor constructor.</span>
+<span class="sd">    :return: Function reference for the lambda handler.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">global_vars</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Your Lambda did not pass global_vars. It should be an instance of LambdaGlobals class, &quot;</span>
+                     <span class="s2">&quot;initialised in your Lambda function at the root level. Some functionality will break soon.&quot;</span><span class="p">)</span>
+        <span class="n">global_vars</span> <span class="o">=</span> <span class="n">LambdaGlobals</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entry point for the lambda function.</span>
+
+<span class="sd">        :param dict event:      Lambda function event.</span>
+<span class="sd">        :param object context:  Lambda function context.</span>
+<span class="sd">        :return: Result of the lambda function call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">level</span> <span class="o">:=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logging_level&#39;</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The payload is not dict&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Called </span><span class="si">%s</span><span class="s2"> lambda of version </span><span class="si">%s</span><span class="s2"> with __name__: </span><span class="si">%s</span><span class="s2">, context: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;AWS_LAMBDA_FUNCTION_NAME&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;AWS_LAMBDA_FUNCTION_VERSION&#39;</span><span class="p">),</span>
+                    <span class="vm">__name__</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+        <span class="n">test</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;STAGE&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;autotest&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="kc">False</span>
+
+        <span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span> <span class="o">=</span> <span class="n">context</span>
+
+        <span class="k">if</span> <span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">processor_class</span><span class="p">(</span><span class="n">custom_config</span><span class="o">=</span><span class="n">custom_config</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">get_stats</span><span class="p">())</span>
+
+        <span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">reset_stats</span><span class="p">()</span>
+        <span class="n">global_vars</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">reset_stats</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+
+    <span class="k">return</span> <span class="n">lambda_handler</span></div>
+
+
+
+<span class="c1"># Global placeholder for global_vars.</span>
+<span class="n">global_vars</span> <span class="o">=</span> <span class="n">LambdaGlobals</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

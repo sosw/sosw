@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -249,7 +249,7 @@ class DynamoDbClient:
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
         """
         Returns description of the table from AWS. Response like: `DynamoDB.Client.describe_table
-        <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table>`_
+        <https://docs.aws.amazon.com/boto3/latest/reference/services/dynamodb/client/describe_table.html>`_
 
         :return: Description of the table
         """

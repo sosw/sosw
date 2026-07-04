@@ -4,16 +4,8 @@ Config processor
 
 Universal helper for playing with configs. Should probably upgrade it and move to components or core helpers.
 
-Option 1
---------
-If called without args - reads the core configurations of example Essentials and resets with them all current configs.
-
-Option 2
---------
-If called with a single arg treats it as a name of a worker and inserts the config of `some_worker/config/labourer.json`
-into all the configs of essentials. This literally means "register as Labourer".
-
-And the second action here - take config of `some_worker/config/self.json` and save it as `some_worker_config`.
+Reads the JSON config files from the directory in `DEFAULT_CONFIGS` and uploads each of them to the
+DynamoDB `config` table as `config_name` = file name (without extension), `config_value` = file contents.
 
 The file is supposed to be executed from the directory `examples` and on some EC2 machine in the same account
 as DynamoDB you are writing to. The AccountId is then substituted to the placeholders in configs.
@@ -25,7 +17,6 @@ P.S. This is not dry, not sosw-style. Just a helper for tutorials, so feel free 
 import json
 import os
 import re
-import sys
 
 from pathlib import Path
 from urllib import request
@@ -33,7 +24,7 @@ from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 
 
-DEFAULT_CONFIGS = 'essentials/.config'
+DEFAULT_CONFIGS = '.config'
 
 
 class ConfigUploader(Processor):
@@ -51,7 +42,6 @@ class ConfigUploader(Processor):
     }
 
     dynamo_db_client = None
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -89,7 +79,7 @@ class ConfigUploader(Processor):
                     }
                 # print(f"Uploading {data}")
                 self.dynamo_db_client.put(row=data)
-        os.chdir('../..')
+        os.chdir('..')
 
 
     def fetch_config(self, name):
@@ -118,35 +108,6 @@ class ConfigUploader(Processor):
         self.dynamo_db_client.put(row=data, overwrite_existing=True)
 
 
-    def insert_labourer(self, name):
-
-        for essential in [x for x in os.listdir('essentials') if not x.startswith('.')]:
-            print(f"Updating config of {essential} with labourer {name}")
-
-            new_config = os.path.join('workers', name, 'config', 'labourer.json')
-            print(f"New config path is {new_config}")
-
-            with open(new_config, 'r') as f:
-                data = f.read()
-            data = data.replace('000000000000', self.aws_account)
-            # print(data)
-            self.update_config(f'{essential}_config', data)
-
-            # Register self config as well.
-            self_config = os.path.join('workers', name, 'config', 'self.json')
-            with open(self_config, 'r') as f:
-                data = f.read()
-            data = data.replace('000000000000', self.aws_account)
-            # print(data)
-            self.update_config(f'{name}_config', data)
-
-
 if __name__ == "__main__":
     uploader = ConfigUploader()
-
-    args = sys.argv[1:]
-    if args:
-        for arg in args:
-            uploader.insert_labourer(name=arg)
-    else:
-        uploader.upload_from_files()
+    uploader.upload_from_files()

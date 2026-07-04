@@ -4,7 +4,7 @@
 Tutorials
 =========
 
-End-to-end walkthroughs building real functions on ``sosw`` 3.0:
+End-to-end walkthroughs building real functions on ``sosw``:
 
 * :doc:`first_lambda` — scaffold, implement, unit-test, deploy and invoke a Processor-based
   Lambda with AWS SAM.
@@ -17,9 +17,3 @@ End-to-end walkthroughs building real functions on ``sosw`` 3.0:
 
     first_lambda
     http_api
-
-..  note::
-
-    The historical tutorials of the deprecated orchestration layer (pulling Twitter hashtags with
-    Workers, Essentials cleanup) are preserved under
-    :doc:`Deprecated: orchestration <../deprecated/index>`.

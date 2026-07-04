@@ -2,7 +2,7 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
     Copyright (C) 2025  sosw core contributors <info@sosw.app>
@@ -310,7 +310,7 @@ class SSMConfig:
         """
         Retrieve the credentials with given `prefix` from AWS SSM ParameterStore and return as a dictionary.
 
-        In ParameterStore the values `Name` must begin with `prefix_` and they must have Tag:Environment `(production|dev)`.
+        In ParameterStore the values `Name` must begin with `prefix_` and they must have the Tag ``Environment`` `(production|dev)`.
         The type of elements is expected to be SecureString. Regular strings could work, but not guaranteed.
 
         :param str prefix:  prefix of records to extract

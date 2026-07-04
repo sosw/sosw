@@ -19,7 +19,7 @@ Prerequisites
 * An AWS account and credentials configured for the AWS CLI.
 * `SAM CLI <https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html>`_
   installed.
-* Python 3.10+ (the examples use 3.13, matching the Lambda runtime).
+* Python 3.12+ (the examples use 3.14, matching the Lambda runtime).
 
 
 1. Project layout
@@ -187,7 +187,7 @@ Create ``template.yaml``:
           FunctionName: hello-sosw
           CodeUri: src/
           Handler: app.lambda_handler
-          Runtime: python3.13
+          Runtime: python3.14
           Timeout: 30
           MemorySize: 256
           Environment:

@@ -8,22 +8,21 @@
 | `sosw/lambda_api.py` | NEW CORE | `LambdaApi(Processor)` declarative API Gateway base |
 | `sosw/durable.py` | NEW CORE | `get_durable_lambda_handler` + SDK-optional helpers |
 | `sosw/components/*` (config, dynamo_db, helpers, sns, siblings, sigv4, exceptions, decorators, benchmark) | COMPONENT | kept, tidied, 100% covered; `exceptions` gains `ApiError` hierarchy |
-| `sosw/orchestrator.py`, `scavenger.py`, `scheduler.py`, `worker.py`, `worker_assistant.py`, `labourer.py`, `essential.py`, `managers/task.py`, `managers/ecology.py`, `managers/meta_handler.py` | DEPRECATED | functional through 3.x, removed in 4.0 |
+| `sosw/orchestrator.py`, `scavenger.py`, `scheduler.py`, `worker.py`, `worker_assistant.py`, `labourer.py`, `essential.py`, `managers/*` | REMOVED | deleted in 3.0 (re-baselined during release review from the earlier deprecate-and-keep plan); users pin `sosw<3` |
 
-## 2. Deprecation mechanics
+## 2. Removal mechanics
 
-- One shared helper (`sosw/components/decorators.py` or a tiny `sosw/_deprecation.py`) emits
-  `DeprecationWarning` with a per-class once-guard; message template:
-  `"<Name> is deprecated since sosw 3.0.0 and will be removed in 4.0. sosw is now a Lambda bootstrapping framework; see the migration guide: <docs url>."`
-- Warning is emitted from `__init__` of each deprecated class (module import stays silent — module-level
-  warnings would fire on internal imports and on `from sosw import X` re-exports).
-- `sosw/__init__.py` becomes a **lazy façade** via module `__getattr__` (PEP 562): `import sosw` imports
-  nothing heavy; `sosw.Processor`, `sosw.LambdaApi` resolve lazily without warnings; `sosw.Orchestrator`
-  etc. resolve lazily (their `__init__` warns on instantiation).
-- `siblings.py` drops its `from sosw import Processor` package-level import in favor of
-  `from sosw.app import Processor` (avoids the façade round-trip).
-- The docs migration page maps every deprecated entity to its guidance (self-hosted orchestration →
-  Step Functions / EventBridge / durable functions).
+*(Re-baselined during release review — the initially designed DeprecationWarning approach shipped
+first and was then superseded by full removal in the same release cycle.)*
+
+- The orchestration modules, their tests, fixtures, examples and docs sections are deleted.
+- `sosw/__init__.py` stays a **lazy façade** via module `__getattr__` (PEP 562): `import sosw` imports
+  nothing heavy; `sosw.Processor`, `sosw.LambdaApi` resolve lazily. The seven removed public names
+  raise `AttributeError` with guidance (pin `sosw<3`, migration guide link).
+- `siblings.py` imports `Processor` from `sosw.app` directly (no façade round-trip).
+- The docs migration page explains the removal, maps orchestration to AWS-native services
+  (Step Functions / EventBridge / durable functions), and links the preserved 0.7.x docs archive
+  (`previous/0.7.51/`, compiled artifacts committed under `previous_versions/`).
 
 ## 3. Warm start
 
@@ -82,7 +81,7 @@ Top-level `sosw/lambda_api.py` (a peer of the handler factories, not a `componen
 
 ## 7. CI/CD
 
-- `run-unittests.yml`: matrix 3.10/3.11/3.12/3.13/3.14 → pytest suite; separate `coverage` job (3.13)
+- `run-unittests.yml`: matrix 3.12/3.13/3.14 → pytest suite; separate `coverage` job (3.14)
   with `--cov-fail-under`.
 - `docs-builder-action.yaml`: pip-based install (no pipenv), `sphinx-build -W`.
 - `publish-to-test-pypi.yml`: RC trigger pattern covers `[0-9]+_[0-9]+_[0-9]+` branches; version patch
@@ -95,7 +94,8 @@ Top-level `sosw/lambda_api.py` (a peer of the handler factories, not a `componen
 - Sphinx + `furo` theme (modern, dark-mode, mobile-friendly; replaces RTD theme), strict `-W` builds.
 - Structure: `index` (framework pitch) → `quickstart` → `concepts/` (processor, config, stats,
   warm-start) → `components/` → `lambda_api` → `durable` → `tutorials/` → `migration_3_0` →
-  `contribution/` → `deprecated/` (legacy orchestration docs, clearly banner-marked).
+  `contribution/`; legacy orchestration docs are NOT part of the current docs — the compiled 0.7.x
+  site is preserved verbatim under `previous/0.7.51/` (re-baselined during release review).
 - `AGENTS.md` at repo root for coding agents; `.kiro/steering/{product,tech,structure}.md` for
   spec-driven sessions.
 

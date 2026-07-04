@@ -4,7 +4,7 @@ Each numbered task = one PR into `3_0_0` unless noted. Requirements references i
 
 - [x] 1. CI & repo hygiene (`hq-692-ci-workflows`) [R8, R10-part]
   - [x] 1.1 Commit spec (`.kiro/specs/hq-692-sosw-3-0-0/`) and initial `.kiro/steering/` docs
-  - [x] 1.2 `run-unittests.yml`: 3.10–3.14 matrix + coverage job (`--cov-fail-under`, staged threshold)
+  - [x] 1.2 `run-unittests.yml`: 3.12–3.14 matrix + coverage job (`--cov-fail-under`, staged threshold)
   - [x] 1.3 `docs-builder-action.yaml`: pip-based, `sphinx-build -W`
   - [x] 1.4 `publish-to-test-pypi.yml`: staging-branch pattern `X_Y_Z`, version patch step
   - [x] 1.5 README badges → GitHub Actions; remove Travis; drop stray `.aws/config`; gitignore `.claude/`
@@ -60,4 +60,4 @@ All PRs merged into `3_0_0`, except the task 10 release PR which is open pending
 | 10   | PR #407 (`3_0_0 → master`, open — human merge gate) |
 
 Post-review polish (release-PR review): CI now runs on the three latest Pythons (3.12–3.14 matrix)
-with 3.14 as the default runtime for all CI/CD jobs; the package itself still supports 3.10+.
+with 3.14 as the default runtime for all CI/CD jobs; the package supports 3.12–3.14.

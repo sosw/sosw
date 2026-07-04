@@ -9,7 +9,7 @@ let a single handler orchestrate long-running workflows (up to a year) with **ch
 and compute-free **waits**: on every resume the code replays from the top and completed operations
 return their stored results instead of re-executing.
 
-``sosw`` 3.0.0 integrates this natively: ``sosw.durable.get_durable_lambda_handler`` is the
+``sosw`` integrates this natively: ``sosw.durable.get_durable_lambda_handler`` is the
 durable twin of :py:func:`sosw.app.get_lambda_handler` — the exact same Processor lifecycle and
 :ref:`warm start <Warm Start>` behavior, wrapped with the ``durable_execution`` decorator of the
 `AWS Durable Execution SDK <https://pypi.org/project/aws-durable-execution-sdk-python/>`_.
@@ -20,8 +20,8 @@ durable twin of :py:func:`sosw.app.get_lambda_handler` — the exact same Proces
 
 ..  important::
 
-    * The durable SDK requires **Python >= 3.11**, so the ``sosw[durable]`` extra is effectively
-      3.11+ even though ``sosw`` itself supports 3.10.
+    * Every Python version supported by ``sosw`` (3.12 – 3.14) satisfies the durable SDK's own
+      minimum Python requirement.
     * The SDK is an *optional* dependency: plain ``import sosw`` / ``import sosw.app`` never
       import it, so regular functions pay zero overhead. Only
       ``get_durable_lambda_handler`` requires it and raises a helpful ``ImportError`` mentioning
@@ -95,7 +95,7 @@ Durability is per-function configuration — ``DurableConfig`` on ``AWS::Serverl
         FunctionName: my-durable-function
         CodeUri: src/
         Handler: app.lambda_handler        # returned by get_durable_lambda_handler
-        Runtime: python3.13                # the durable SDK needs >= 3.11
+        Runtime: python3.14
         Timeout: 900                       # per-invocation compute timeout
         MemorySize: 512
         DurableConfig:
@@ -192,10 +192,8 @@ from production experience; violating them produces bugs that only show up on re
 
 ..  note::
 
-    The deprecated orchestration classes (``Scheduler``, ``Orchestrator``, ``Worker``...) are not
-    supported under durable execution: they rely on parts of the Lambda context surface that the
-    ``DurableContext`` does not guarantee. Durable functions are a *replacement* for that layer,
-    not a host for it — see the :doc:`migration guide <migration_3_0>`.
+    Durable functions are the in-process successor of the self-hosted task queue that the 0.7.x
+    line of ``sosw`` shipped — see the :doc:`migration guide <migration_3_0>`.
 
 
 API reference

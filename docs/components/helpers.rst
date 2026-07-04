@@ -10,7 +10,7 @@ datetime parsing, chunking, type validation and more. Helpers are plain function
 
 ..  note::
 
-    New in 3.0.0: :py:func:`~sosw.components.helpers.recursive_matches_extract` supports the
+    :py:func:`~sosw.components.helpers.recursive_matches_extract` supports the
     ``case_insensitive`` option — contributed by `@SHMaryana <https://github.com/SHMaryana>`_
     (`#379 <https://github.com/sosw/sosw/pull/379>`_).
 
