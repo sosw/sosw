@@ -663,12 +663,16 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     :param str exclude_key:     Key to check in last level element to exclude.
     :param str exclude_val:     Value to match in last level element to exclude.
 
+    :param bool case_insensitive:   If True, performs case-insensitive matching for keys in the path.
+                                    The legacy alias `ignore_case` is still supported.
+                                    `case_insensitive` option contributed by @SHMaryana (#379).
+
     :return:    Value from structure extracted by specified path
     """
 
-    ignore_case = kwargs.get("ignore_case", False)
+    case_insensitive = kwargs.get('case_insensitive') or kwargs.get('ignore_case', False)
 
-    if ignore_case:
+    if case_insensitive:
         key = key.lower()
         src = ignore_case_copy(src) if isinstance(src, dict) else [ignore_case_copy(s) for s in src]
 

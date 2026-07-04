@@ -600,7 +600,7 @@ class Scheduler(Essential):
         Get a dictionary with settings for isolation from data.
         """
 
-        return {k: v for k, v in data.items() if re.match('isolate_[\w]*|max_[\w]*_per_batch', k)}
+        return {k: v for k, v in data.items() if re.match(r'isolate_[\w]*|max_[\w]*_per_batch', k)}
 
 
     def needs_chunking(self, attr: str, data: Dict) -> bool:
