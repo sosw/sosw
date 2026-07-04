@@ -1,6 +1,13 @@
 Tutorial Pull Tweeter Hashtags
 ==============================
 
+..  warning::
+
+    **Deprecated since sosw 3.0.0.** This tutorial demonstrates the deprecated orchestration
+    layer (Scheduler / Orchestrator / Workers); it will be removed in 4.0 together with that
+    layer. For current tutorials see :doc:`/tutorials/index`; for replacements see the
+    :doc:`migration guide </migration_3_0>`.
+
 In this tutorial we are going to pull the data about popularity of several different topics in the hash tags of tweets.
 Imagine that we have already classified some popular hashtags to several specific groups. Now we want to pull the data
 about their usage in the last day. 

@@ -4,11 +4,16 @@
 Scheduler
 ---------
 
+..  warning::
+
+    **Deprecated since sosw 3.0.0**; removed in 4.0. EventBridge Scheduler and Step Functions
+    ``Map`` states replace it — see the :doc:`migration guide </migration_3_0>`.
+
 Scheduler is the public interface of ``sosw`` for any applications who want to invoke some orchestrated Lambdas.
 It's main role is to transform some business job to the actual payload of Lambda invocations. It respects the
 configurable rules for chunking specific for different workers.
 
-.. figure:: ../_static/images/scheduler.png
+.. figure:: /_static/images/scheduler.png
    :alt: sosw Scheduler Workflow
    :align: center
 

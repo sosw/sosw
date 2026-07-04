@@ -3,6 +3,12 @@
 MetaHandler
 -----------
 
+..  warning::
+
+    **Deprecated since sosw 3.0.0**; removed in 4.0. Step Functions execution history or your
+    own DynamoDB journal replace the task audit trail — see the
+    :doc:`migration guide </migration_3_0>`.
+
 Meta Handler is an optional collector of all the events that were happening to the task while being orchestrated by
 ``sosw``. In case you create a DynamoDB table ``sosw_tasks_meta`` in your environment, ``sosw`` will start collecting
 the meta data  automatically. The required schema for the table is described in

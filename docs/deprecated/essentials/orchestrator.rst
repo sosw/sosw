@@ -3,14 +3,19 @@
 Orchestrator
 ------------
 
+..  warning::
+
+    **Deprecated since sosw 3.0.0**; removed in 4.0. AWS Step Functions and EventBridge replace
+    it — see the :doc:`migration guide </migration_3_0>`.
+
 Orchestrator does the ... Orchestration.
 
 You can use the class in your Lambda as is, just configure some settings using one of the
-supported ways in :ref:`Config <components-config>`
+supported ways in :ref:`Configuration <Configuration>`.
 
 The following diagram represents the basic Task Workflow initiated by the Orchestrator.
 
-.. figure:: ../_static/images/orchestrator-invocation.png
+.. figure:: /_static/images/orchestrator-invocation.png
    :alt: Invocation Process
    :align: center
 
