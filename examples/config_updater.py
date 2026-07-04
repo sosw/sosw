@@ -29,7 +29,7 @@ import sys
 
 from pathlib import Path
 from urllib import request
-from sosw import Processor
+from sosw.app import Processor
 from sosw.components.helpers import recursive_update
 
 
@@ -76,7 +76,7 @@ class ConfigUploader(Processor):
                 config_name = entry.path[2:-5]
 
                 # Clean out of extra word separators.
-                config_value = re.sub('\s+', '', Path(entry.path).read_text())
+                config_value = re.sub(r'\s+', '', Path(entry.path).read_text())
 
                 # Substitute your account
                 config_value = config_value.replace('000000000000', self.aws_account)

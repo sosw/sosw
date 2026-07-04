@@ -24,7 +24,8 @@ Processor, components, helpers — is the product.
 ## Users
 
 - Engineering teams standardizing many small Lambdas on one config/stats/testing pattern.
-- AI coding agents scaffolding new Lambdas (see `AGENTS.md` and the cookiecutter template).
+- AI coding agents scaffolding new Lambdas — entry points: `AGENTS.md` (agent instructions),
+  `cookiecutter/` (project template), `examples/layers/sosw/` (Lambda layer build/deploy scripts).
 
 ## Quality bars
 

@@ -22,7 +22,9 @@ sosw/                     # the package
     └── variables.py, helpers_test*.py  # shared fixtures/mocks
 
 docs/                     # Sphinx documentation (docs.sosw.app), built with -W in CI
-examples/                 # runnable examples (SAM, workers, layers, cookiecutter usage)
+examples/                 # runnable examples (SAM, essentials, workers, yaml)
+│   └── layers/sosw/      # Lambda layer: build.sh + deploy.sh + README (SSM: lambda-layer-sosw-latest)
+cookiecutter/             # cookiecutter template for a new sosw-based Lambda (Processor / LambdaApi)
 .github/workflows/        # Tests / Docs / TestPyPI RC / PyPI release
 .kiro/specs/              # feature specs (requirements/design/tasks) — committed
 .kiro/steering/           # this steering set
@@ -35,3 +37,5 @@ AGENTS.md                 # instructions for AI coding agents working on/with so
 - Deprecated modules: bugfixes only; no new features; do not remove before 4.0.
 - Public API changes require a spec under `.kiro/specs/` and a docs update in the same release.
 - `examples/` content must actually run against the published package version it ships with.
+- `AGENTS.md` and `cookiecutter/` mirror the public API and conventions — update them in the same
+  PR that changes signatures or config behavior (the generated project's tests must keep passing).

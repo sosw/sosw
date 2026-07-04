@@ -1,0 +1,12 @@
+{
+    "project_slug":      "my_sosw_lambda",
+    "function_name":     "{{ cookiecutter.project_slug | replace('_', '-') }}",
+    "description":       "AWS Lambda function built on the sosw framework.",
+    "python_version":    ["3.13", "3.10", "3.11", "3.12", "3.14"],
+    "use_lambda_api":    ["no", "yes"],
+    "aws_region":        "us-east-1",
+    "_jinja2_env_vars":  {
+        "trim_blocks":   true,
+        "lstrip_blocks": true
+    }
+}

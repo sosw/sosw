@@ -33,7 +33,16 @@
 
 ## CI/CD
 
-- GitHub Workflows only (Travis is gone): Tests matrix 3.10–3.14 + coverage job, Docs build (Sphinx),
-  TestPyPI RC publish on staging branches (`X_Y_Z`), PyPI publish on push to `master`.
+- GitHub Workflows only (Travis is gone): Tests matrix 3.10–3.14 + coverage job (100%), Docs build
+  (Sphinx `-W`), TestPyPI RC publish on staging branches (`X_Y_Z`), PyPI publish on push to `master`.
 - Staging-branch flow: feature branches → PR into the current `X_Y_Z` staging branch → release PR
   `X_Y_Z → master`. Merging to master publishes to PyPI.
+
+## Bootstrap artifacts (ship with the repo, must track the API)
+
+- `AGENTS.md` — coding-agent instructions; encodes the build/test/debug/style conventions.
+- `cookiecutter/` — project template scaffolding a sosw-based Lambda (plain Processor or LambdaApi
+  variant); generated projects' unit tests must pass against the current package.
+- `examples/layers/sosw/` — Lambda layer build/deploy scripts (sosw + boto3, default-on
+  powertools/xray extras; SSM pointer `lambda-layer-sosw-latest`).
+- A PR changing public API signatures or config conventions updates these in the same PR.
