@@ -250,23 +250,6 @@ class dynamodb_client_UnitTestCase(unittest.TestCase):
                       kwargs['KeyConditionExpression'])
 
 
-    @unittest.skip('Deprecated')
-    def test_get_by_query__return_count(self):
-
-        # Make sure dynamo paginator is mocked.
-        self.paginator_mock.paginate.return_value = [{'Count': 24, 'LastEvaluatedKey': 'bzz'}, {'Count': 12}]
-        self.dynamo_client.dynamo_client.get_paginator.return_value = self.paginator_mock
-
-        # Call the manager
-        result = self.dynamo_client.get_by_query(keys={'a': 'b'}, return_count=True)
-
-        # Validate result
-        self.assertEqual(result, 36, f"Result from 2 pages should be 24 + 12, but we received: {result}")
-
-        # Make sure the paginator was called
-        self.dynamo_client.dynamo_client.get_paginator.assert_called()
-
-
     def test_get_by_query__expr_attr(self):
         keys = {'st_between_range_col': '3', 'en_between_range_col': '6', 'session': 'ses1'}
         expr_attrs_names = ['range_col', 'session']
