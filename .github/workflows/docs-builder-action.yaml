@@ -1,9 +1,12 @@
-name: Docs Builder
+# Builds the Sphinx documentation on every pull request with warnings treated as errors (-W).
+# Verified locally against the current docs: the build passes -W with zero warnings.
+
+name: Docs
 
 on:
   pull_request:
     branches:
-      - "**"
+      - '**'
 
 jobs:
   build:
@@ -15,18 +18,12 @@ jobs:
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: 3.13
+        python-version: '3.13'
 
-
-    - name: Install packages
-      run: sudo apt-get install python3-sphinx; pip install pipenv; pipenv install --dev
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r docs/requirements.txt
 
     - name: Build docs
-      run: pipenv run sphinx-build -Wab html ./docs ./sosw-rtd
-
-#    - name: Configure AWS secrets
-#      run: aws configure set aws_access_key_id ${{secrets.AWS_ACCESS_KEY_ID}}; aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}; aws configure set default.region us-west-2
-#
-#    - name: Synchronise sample docs
-#      run: VERSION=`cat setup.py | grep version | awk -F\' '{print $2}'`; cd sosw-rtd; aws s3 sync . s3://sosw-documentation-${{secrets.ACCOUNT_ID}}/junkyard/${{github.ref.name}} --acl public-read
-
+      run: python -m sphinx -W -a -b html docs sosw-rtd
