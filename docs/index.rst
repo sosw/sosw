@@ -4,12 +4,12 @@
 Serverless Orchestrator of Serverless Workers
 =============================================
 
-..  image:: https://travis-ci.com/sosw/sosw.svg?branch=master
-    :alt: Travis - Build
-    :target: https://travis-ci.com/sosw/sosw
-..  image:: https://img.shields.io/docsrs/docs
-    :alt: Documentation Status
-    :target: https://docs.sosw.app/?badge=latest
+..  image:: https://github.com/sosw/sosw/actions/workflows/run-unittests.yml/badge.svg
+    :alt: Tests
+    :target: https://github.com/sosw/sosw/actions/workflows/run-unittests.yml
+..  image:: https://github.com/sosw/sosw/actions/workflows/docs-builder-action.yaml/badge.svg
+    :alt: Docs
+    :target: https://github.com/sosw/sosw/actions/workflows/docs-builder-action.yaml
 ..  image:: _static/images/coverage.svg
     :alt: Test Coverage
     :target: https://docs.sosw.app/?badge=latest

@@ -8,12 +8,13 @@ name: Publish RC to TestPyPI
 
 on:
   push:
-    # GitHub branch-filter glob semantics: '[0-9]' matches exactly one digit, '*' matches
-    # any characters except '/'. So '[0-9]*_*' matches staging version branches named per
-    # the X_Y_Z convention — e.g. 0_7_51, 3_0_0, 10_2_1 — and does not match master,
-    # docme or feature branches.
+    # GitHub branch-filter glob semantics: '[0-9]' matches one digit, '+' matches one or
+    # more of the preceding character, and the pattern must match the whole branch name.
+    # So '[0-9]+_[0-9]+_[0-9]+' matches exactly the X_Y_Z staging convention — e.g.
+    # 0_7_51, 3_0_0, 10_2_1 — and does not match master, docme, feature branches, or
+    # loose names like 3_0_0_backup.
     branches:
-      - '[0-9]*_*'
+      - '[0-9]+_[0-9]+_[0-9]+'
 
 jobs:
   build-n-publish:
