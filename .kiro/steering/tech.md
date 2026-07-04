@@ -33,8 +33,9 @@
 
 ## CI/CD
 
-- GitHub Workflows only (Travis is gone): Tests matrix 3.10–3.14 + coverage job (100%), Docs build
-  (Sphinx `-W`), TestPyPI RC publish on staging branches (`X_Y_Z`), PyPI publish on push to `master`.
+- GitHub Workflows only (Travis is gone): Tests matrix 3.12–3.14 (the three latest; the package
+  supports 3.10+) + coverage job (100%, on 3.14), Docs build (Sphinx `-W`), TestPyPI RC publish on
+  staging branches (`X_Y_Z`), PyPI publish on push to `master`. Default CI runtime: Python 3.14.
 - Staging-branch flow: feature branches → PR into the current `X_Y_Z` staging branch → release PR
   `X_Y_Z → master`. Merging to master publishes to PyPI.
 
