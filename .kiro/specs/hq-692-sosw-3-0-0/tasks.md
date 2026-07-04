@@ -1,0 +1,43 @@
+# sosw 3.0.0 — Tasks
+
+Each numbered task = one PR into `3_0_0` unless noted. Requirements references in brackets.
+
+- [ ] 1. CI & repo hygiene (`hq-692-ci-workflows`) [R8, R10-part]
+  - [ ] 1.1 Commit spec (`.kiro/specs/hq-692-sosw-3-0-0/`) and initial `.kiro/steering/` docs
+  - [ ] 1.2 `run-unittests.yml`: 3.10–3.14 matrix + coverage job (`--cov-fail-under`, staged threshold)
+  - [ ] 1.3 `docs-builder-action.yaml`: pip-based, `sphinx-build -W`
+  - [ ] 1.4 `publish-to-test-pypi.yml`: staging-branch pattern `X_Y_Z`, version patch step
+  - [ ] 1.5 README badges → GitHub Actions; remove Travis; drop stray `.aws/config`; gitignore `.claude/`
+- [ ] 2. Deprecations (`hq-692-deprecations`) [R2]
+  - [ ] 2.1 Deprecation helper + warnings in all 10 deprecated classes
+  - [ ] 2.2 `sosw/__init__.py` lazy façade (PEP 562), `siblings.py` import fix
+  - [ ] 2.3 Unit tests: warning emitted once per class, façade lazy, components silent
+- [ ] 3. lambda_api (`hq-692-lambda-api`) [R4]
+  - [ ] 3.1 `ApiError` hierarchy in `components/exceptions.py`
+  - [ ] 3.2 `sosw/lambda_api.py` LambdaApi with router/auth/CORS/encoder/envelope
+  - [ ] 3.3 Full unit test matrix (v1+v2 events, auth paths, errors, CORS, encoder)
+- [ ] 4. Warm start + durable (`hq-692-durable`) [R3, R5]
+  - [ ] 4.1 Extract shared `_make_lambda_handler`; fix `test` precedence; single `reset_stats`; `disable_ddb_config`
+  - [ ] 4.2 `sosw/durable.py` + helpers, import guards
+  - [ ] 4.3 Unit tests incl. fake-SDK injection and no-SDK-leak assertions
+- [ ] 5. Packaging + helpers tidy (`hq-692-packaging`) [R1, R6]
+  - [ ] 5.1 `pyproject.toml` full metadata, version 3.0.0, extras `[durable]`, 3.14 classifier
+  - [ ] 5.2 Pipfile/lock refresh or removal (kill the 15 Dependabot alerts)
+  - [ ] 5.3 `case_insensitive` for `recursive_matches_extract` (PR #379, credited); scheduler raw-string fix
+- [ ] 6. Coverage 100% (`hq-692-coverage`) [R7]
+  - [ ] 6.1 Register orphan tests; retire duplicate legacy test_config
+  - [ ] 6.2 Per-module test authoring to 100% (incl. decorators.py from 0%)
+  - [ ] 6.3 Powertools import-guard branch coverage via module reload technique
+  - [ ] 6.4 Raise CI gate to `--cov-fail-under=100`
+- [ ] 7. Docs rebuild (`hq-692-docs`) [R9]
+  - [ ] 7.1 Theme + structure + quickstart + concepts + component guides
+  - [ ] 7.2 lambda_api + durable guides, tutorials refresh, migration_3_0 page
+  - [ ] 7.3 Deprecated section banner-marked; all examples on 3.0 API
+- [ ] 8. Agent docs & bootstrap tooling (`hq-692-agent-docs`) [R10, R11]
+  - [ ] 8.1 `AGENTS.md` (closes #388) + steering refinement
+  - [ ] 8.2 Cookiecutter template + docs
+  - [ ] 8.3 Layer example with autobuild/autodeploy scripts (powertools/xray default-on)
+- [ ] 9. GitHub triage (no PR) [R12]
+  - [ ] 9.1 Triage comments on all open issues/PRs as bender-sosw; close obsolete
+  - [ ] 9.2 File new improvement issues
+- [ ] 10. Release PR `3_0_0 → master` — open, changelog, DO NOT merge (human gate)

@@ -1,12 +1,24 @@
-name: Publish release to PyPI and RCs to TestPyPI
+# Publishes a release candidate to TestPyPI on every push to a staging version branch.
+#
+# Fixes GitHub issue #267: the old `pull_request` trigger combined with
+# `if: startsWith(github.ref, 'refs/heads/0_')` never fired, because pull_request events
+# run on `refs/pull/<N>/merge`, so the publish steps were always skipped.
+
+name: Publish RC to TestPyPI
+
 on:
-  pull_request:
+  push:
+    # GitHub branch-filter glob semantics: '[0-9]' matches one digit, '+' matches one or
+    # more of the preceding character, and the pattern must match the whole branch name.
+    # So '[0-9]+_[0-9]+_[0-9]+' matches exactly the X_Y_Z staging convention — e.g.
+    # 0_7_51, 3_0_0, 10_2_1 — and does not match master, docme, feature branches, or
+    # loose names like 3_0_0_backup.
     branches:
-      - "master"
+      - '[0-9]+_[0-9]+_[0-9]+'
 
 jobs:
   build-n-publish:
-    name: Build and publish distribution
+    name: Build and publish RC distribution
     runs-on: ubuntu-latest
 
     steps:
@@ -15,22 +27,51 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.13
+        python-version: '3.13'
 
     - name: Install pypa/build
       run: python3 -m pip install build --user
 
-    - name: Patch the RC version number with the current timestamp. Need this to avoid duplication
-      if: startsWith(github.ref, 'refs/heads/0_')
-      run: >-
-        sed -i -E "s/version='([0-9].[0-9]+.[0-9]+)/version='\1_`date +%s`/" setup.py
+    # The trigger above already restricts this workflow to staging version branches, so the
+    # steps below run unconditionally: the old `startsWith(github.ref, 'refs/heads/0_')`
+    # guards are replaced by the branch filter itself.
+    - name: Patch the RC version with the current timestamp to avoid duplicates on TestPyPI
+      run: |
+        python3 - <<'EOF'
+        """Append rc<unix-ts> to the package version, PEP 440 style (e.g. 3.0.0rc1751581234).
+
+        Works both before and after the pyproject.toml migration: patches the version
+        string in pyproject.toml if it carries one, otherwise falls back to setup.py.
+        """
+        import re
+        import time
+
+        from pathlib import Path
+
+        SUFFIX = 'rc%d' % int(time.time())
+        PATTERNS = {
+            'pyproject.toml': r'(?m)^(version\s*=\s*[\'"])([^\'"]+)',
+            'setup.py':       r'(version\s*=\s*[\'"])([^\'"]+)',
+        }
+
+        for filename, pattern in PATTERNS.items():
+            path = Path(filename)
+            if not path.exists():
+                continue
+            patched, count = re.subn(pattern, r'\g<1>\g<2>' + SUFFIX, path.read_text(), count=1)
+            if count:
+                path.write_text(patched)
+                print('Patched %s with RC version suffix %s' % (filename, SUFFIX))
+                break
+        else:
+            raise SystemExit('No version string found in pyproject.toml or setup.py')
+        EOF
 
     - name: Build a binary wheel and a source tarball
       run: >-
         python3 -m build --sdist --wheel --outdir dist/ .
 
     - name: Publish distribution 📦 to Test PyPI
-      if: startsWith(github.ref, 'refs/heads/0_')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         skip-existing: true
