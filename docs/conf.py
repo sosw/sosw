@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # -- Project information ---------------------------------------------------
 
 project = 'sosw'
-copyright = '2025, sosw core contributors'
+copyright = '2026, sosw core contributors'
 author = 'Nikolay Grishchenko'
 
 try:
