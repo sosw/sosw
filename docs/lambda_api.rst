@@ -18,6 +18,8 @@ Minimal example
 
 ..  code-block:: python
 
+    import json
+
     from sosw.app import LambdaGlobals, get_lambda_handler
     from sosw.components.exceptions import NotFoundError
     from sosw.lambda_api import LambdaApi
@@ -51,7 +53,6 @@ Minimal example
 
 
         def create_thing(self, event, **kwargs):
-            import json
             thing = json.loads(event.get('body') or '{}')
             self.get_ddbc('things').put(thing)
             return self.make_response({'created': thing['thing_id']}, status_code=201)

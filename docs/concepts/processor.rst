@@ -16,7 +16,7 @@ Processor
     class Processor(SoswProcessor):
 
         DEFAULT_CONFIG = {
-            'init_clients': ['dynamo_db'],
+            'init_clients': ['DynamoDb'],
             'dynamo_db_config': {
                 'table_name': 'things',
                 'row_mapper': {'thing_id': 'S'},
@@ -89,8 +89,8 @@ Client registration
 assigns them to the Processor with the ``_client`` suffix. For every name it tries, in order:
 
 #.  a module in the ``components`` or ``managers`` package of *your* Lambda;
-#.  a module in ``sosw.components`` or ``sosw.managers`` — e.g. ``'dynamo_db'`` →
-    :ref:`DynamoDbClient <DynamoDB_Client>`, ``'Siblings'`` → ``SiblingsManager``;
+#.  a module in ``sosw.components`` or ``sosw.managers`` — names are the CamelCase class stem,
+    e.g. ``'DynamoDb'`` → :ref:`DynamoDbClient <DynamoDB_Client>`, ``'Siblings'`` → ``SiblingsManager``;
 #.  a plain ``boto3.client()`` — e.g. ``'sts'`` → ``self.sts_client = boto3.client('sts')``.
 
 Class-based clients receive their config from the ``{module_name}_config`` key of the Processor

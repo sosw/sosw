@@ -59,7 +59,7 @@ invocation: use its ``step()`` / ``wait()`` operations for checkpointed work.
 
         @durable_step
         def fetch_data(step_context, self, key):
-            step_context.logger.info(f"Fetching {key}")
+            step_context.logger.info("Fetching %s", key)
             return {'key': key, 'rows': 42}
 
 
