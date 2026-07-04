@@ -534,7 +534,12 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
                     __name__, context)
         logger.info(event)
 
-        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        # `event` is not guaranteed to be a dict: a top-level JSON list is a valid Lambda payload.
+        # Guard the .get() so a non-dict payload does not raise AttributeError in test/autotest stages.
+        if os.environ.get('STAGE') in ['test', 'autotest']:
+            test = (event.get('test') if isinstance(event, dict) else None) or True
+        else:
+            test = False
 
         global_vars.lambda_context = context
 

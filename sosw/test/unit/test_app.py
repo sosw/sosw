@@ -138,6 +138,49 @@ class app_UnitTestCase(unittest.TestCase):
             self.assertEqual(global_vars.processor.stats['total_calls_register_clients'], 1)
 
 
+    def test_lambda_handler__list_payload_does_not_crash(self):
+        """
+        Regression for #286: a top-level JSON list is a valid Lambda payload.
+        Under STAGE=test/autotest the handler calls event.get('test'); a list has no .get(),
+        which previously raised AttributeError. The handler must not crash on a non-dict event.
+        """
+
+        class ListTolerantChild(Processor):
+            # Processor that accepts any event type (does not assume dict), so this test
+            # isolates the lambda_handler guard rather than the user's processor logic.
+            def __call__(self, event):
+                super().__call__(event)
+                return 'ok'
+
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+
+        for stage in ('test', 'autotest'):
+            os.environ['STAGE'] = stage
+            global_vars = LambdaGlobals()
+            global_vars.processor = None
+            lambda_handler = get_lambda_handler(ListTolerantChild, global_vars, self.TEST_CONFIG)
+            try:
+                result = lambda_handler(event=[], context=mock_context)
+            except AttributeError as e:
+                self.fail(f"lambda_handler crashed on list payload in STAGE={stage}: {e}")
+            self.assertEqual(result, 'ok')
+
+        os.environ['STAGE'] = 'test'
+
+
+    def test_lambda_handler__dict_behavior_unchanged(self):
+        """#286 guard must not change existing dict-event behavior."""
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+        lambda_handler = get_lambda_handler(self.Child, global_vars, self.TEST_CONFIG)
+        result = lambda_handler(event={'k': 'success'}, context=mock_context)
+        self.assertEqual(result, 'success')
+
+
     def test_property_account__initialized_from_context(self):
         mock_context = MagicMock()
         mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789000:function:example:42'
