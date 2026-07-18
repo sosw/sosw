@@ -21,6 +21,22 @@ jobs:
     name: Build and publish RC distribution
     runs-on: ubuntu-latest
 
+    # Trusted Publishing (OIDC, GitHub issue #399): TestPyPI trusts this exact
+    # repo + workflow file + environment instead of a long-lived API token.
+    # Requires a one-time Trusted Publisher registration on test.pypi.org for the
+    # `sosw` project (owner: sosw, repo: sosw, workflow: publish-to-test-pypi.yml,
+    # environment: testpypi) — human-only step. Also unblocks the 2026-07-04
+    # RC-publishing failure (test.pypi `ngr` account lacked 2FA for token auth).
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/sosw
+
+    permissions:
+      # Mandatory for OIDC Trusted Publishing.
+      id-token: write
+      # An explicit permissions block resets the defaults, so restore checkout access.
+      contents: read
+
     steps:
     - uses: actions/checkout@v4
 
@@ -75,5 +91,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         skip-existing: true
-        password: ${{ secrets.TEST_PYPI_TOKEN }}
         repository-url: https://test.pypi.org/legacy/

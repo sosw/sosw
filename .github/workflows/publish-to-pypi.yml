@@ -9,6 +9,21 @@ jobs:
     name: Build and publish distribution
     runs-on: ubuntu-latest
 
+    # Trusted Publishing (OIDC, GitHub issue #399): PyPI trusts this exact
+    # repo + workflow file + environment instead of a long-lived API token.
+    # Requires a one-time Trusted Publisher registration on pypi.org for the
+    # `sosw` project (owner: sosw, repo: sosw, workflow: publish-to-pypi.yml,
+    # environment: pypi) — human-only step.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sosw
+
+    permissions:
+      # Mandatory for OIDC Trusted Publishing.
+      id-token: write
+      # An explicit permissions block resets the defaults, so restore checkout access.
+      contents: read
+
     steps:
     - uses: actions/checkout@v4
 
@@ -27,5 +42,3 @@ jobs:
     - name: Publish distribution 📦 to PyPI
       if: startsWith(github.ref, 'refs/heads/master')
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_TOKEN }}
