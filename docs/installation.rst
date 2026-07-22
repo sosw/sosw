@@ -304,3 +304,9 @@ the ``Orchestrator`` and ``Scavenger`` every minute.
         --targets \
             "Id"="1","Arn"="arn:aws:lambda:us-west-2:$ACCOUNT:function:sosw_orchestrator" \
             "Id"="2","Arn"="arn:aws:lambda:us-west-2:$ACCOUNT:function:sosw_scavenger"
+
+
+..  note::
+
+    Putting ``sosw`` into production? SOSW LTD offers commercial support and
+    production hardening — see :doc:`support`.

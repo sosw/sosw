@@ -8,6 +8,8 @@
 
 **sosw** is a set of serverless tools for orchestrating asynchronous invocations of AWS Lambda Functions (Workers).
 
+*Built and maintained by [SOSW LTD](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss) — we design AI-native serverless systems for production. [Enterprise support & consulting →](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss)*
+
 ---
 
 ## Documentation
@@ -22,6 +24,14 @@
 
 ## Installation
 See the [Installation Guidelines](https://docs.sosw.app/installation.html) in the Documentation.
+
+## Commercial support
+
+sosw is open source (MIT) and built by [SOSW LTD](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss), the team that runs this pattern in production every day.
+
+If your company is putting serverless Lambda systems into production and wants help — an architecture review, production hardening, a custom Lambda platform, or retained support — **[hire us](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss)**.
+
+We don't sell hype. We build systems that work.
 
 ## Development
 ### Getting Started

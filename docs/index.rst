@@ -46,6 +46,8 @@ Essential components of **`sosw`** orchestration are implemented as AWS Lambda f
 
 	contribution/index
 
+	support
+
 
 Indices and tables
 ==================

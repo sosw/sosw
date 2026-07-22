@@ -114,6 +114,13 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# One-line commercial-support footer appended to every documentation page (HQ-875).
+rst_epilog = """
+----
+
+Running this in production? `SOSW LTD <https://sosw.app?utm_source=github&utm_medium=docs&utm_campaign=sosw-oss>`__ offers commercial support — see :doc:`Commercial Support </support>`.
+"""
+
 
 
 # -- Options for HTML output ----------------------------------------------
