@@ -48,4 +48,9 @@ Useful tools
 ------------
 Create a sosw Lambda Layer for faster mounting: :ref:`SOSW Layer`
 
+..  note::
+
+    Running ``sosw`` in production? SOSW LTD offers commercial support and
+    consulting — see :doc:`support`.
+
 
