@@ -1,8 +1,0 @@
-{
-  "credentials": {
-    "consumer_key": "YOUR_CREDENTIALS",
-    "consumer_secret": "YOUR_CREDENTIALS",
-    "access_token_key": "YOUR_CREDENTIALS",
-    "access_token_secret": "YOUR_CREDENTIALS"
-  }
-}

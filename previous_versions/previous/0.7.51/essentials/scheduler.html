@@ -1,0 +1,477 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduler &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/essentials/scheduler.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Scavenger" href="scavenger.html" />
+    <link rel="prev" title="Orchestrator" href="orchestrator.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Essentials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="processor.html">Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker.html">Worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essential.html">Essential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orchestrator.html">Orchestrator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scavenger.html">Scavenger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker_assistant.html">Worker Assitant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Essentials</a></li>
+      <li class="breadcrumb-item active">Scheduler</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/essentials/scheduler.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scheduler">
+<span id="id1"></span><h1>Scheduler<a class="headerlink" href="#scheduler" title="Link to this heading"></a></h1>
+<p>Scheduler is the public interface of <code class="docutils literal notranslate"><span class="pre">sosw</span></code> for any applications who want to invoke some orchestrated Lambdas.
+It’s main role is to transform some business job to the actual payload of Lambda invocations. It respects the
+configurable rules for chunking specific for different workers.</p>
+<figure class="align-center" id="id2">
+<img alt="sosw Scheduler Workflow" src="../_images/scheduler.png" />
+<figcaption>
+<p><span class="caption-text">Scheduler Workflow</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">TASKS_TABLE_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;row_mapper&#39;</span><span class="p">:</span>       <span class="p">{</span>
+        <span class="s1">&#39;task_id&#39;</span><span class="p">:</span>             <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span>         <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;greenfield&#39;</span><span class="p">:</span>          <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;attempts&#39;</span><span class="p">:</span>            <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;closed_at&#39;</span><span class="p">:</span>           <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span>        <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;desired_launch_time&#39;</span><span class="p">:</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;arn&#39;</span><span class="p">:</span>                 <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;payload&#39;</span><span class="p">:</span>             <span class="s1">&#39;S&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;required_fields&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;task_id&#39;</span><span class="p">,</span> <span class="s1">&#39;labourer_id&#39;</span><span class="p">,</span> <span class="s1">&#39;created_at&#39;</span><span class="p">,</span> <span class="s1">&#39;greenfield&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;table_name&#39;</span><span class="p">:</span>       <span class="s1">&#39;sosw_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;index_greenfield&#39;</span><span class="p">:</span> <span class="s1">&#39;sosw_tasks_greenfield&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;field_names&#39;</span><span class="p">:</span>      <span class="p">{</span>
+        <span class="s1">&#39;task_id&#39;</span><span class="p">:</span>     <span class="s1">&#39;task_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span> <span class="s1">&#39;labourer_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;greenfield&#39;</span><span class="p">:</span>  <span class="s1">&#39;greenfield&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">TASK_CLIENT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;dynamo_db_config&#39;</span><span class="p">:</span>                  <span class="n">TASKS_TABLE_CONFIG</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_closed_tasks_table&#39;</span><span class="p">:</span>           <span class="s1">&#39;sosw_closed_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_retry_tasks_table&#39;</span><span class="p">:</span>            <span class="s1">&#39;sosw_retry_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_retry_tasks_greenfield_index&#39;</span><span class="p">:</span> <span class="s1">&#39;labourer_id_greenfield&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ecology_config&#39;</span><span class="p">:</span>             <span class="p">{},</span>
+    <span class="s1">&#39;labourers&#39;</span><span class="p">:</span>                         <span class="p">{</span>
+        <span class="s1">&#39;some_function&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;arn&#39;</span><span class="p">:</span>                          <span class="s1">&#39;arn:aws:lambda:us-west-2:0000000000:function:some_function&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;max_simultaneous_invocations&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">SCHEDULER_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+
+    <span class="s1">&#39;queue_bucket&#39;</span><span class="p">:</span>       <span class="s1">&#39;some-bucket&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;task_config&#39;</span><span class="p">:</span> <span class="n">TASK_CLIENT_CONFIG</span><span class="p">,</span>
+    <span class="s1">&#39;job_schema&#39;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s1">&#39;job_schema_variants&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;chunkable_attrs&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="c1"># (&#39;section&#39;, {}),</span>
+                <span class="c1"># (&#39;store&#39;, {}),</span>
+                <span class="c1"># (&#39;product&#39;, {}),</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<section id="job-schema">
+<h2>Job Schema<a class="headerlink" href="#job-schema" title="Link to this heading"></a></h2>
+<p>After the Scheduler has parsed and validated the job from the event, it provides <cite>custom_config</cite> from this job.
+In case the <cite>job_schema_name</cite> is passed, a certain <cite>job_schema</cite> type will be applied from <cite>job_schema_variants</cite>,
+otherwise it takes the default one.
+Each time the Scheduler is called it overwrites the <cite>custom_config</cite> and use new specified <cite>job_schema</cite> type.</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock12'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock12" style="display: none"><div class="highlight-text notranslate" id="module-sosw.scheduler"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.scheduler.</span></span><span class="sig-name descname"><span class="pre">Scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler" title="Link to this definition"></a></dt>
+<dd><p>Scheduler is converting business jobs to one or multiple Worker tasks.</p>
+<p>Job supports a lot of dynamic settings that will coordinate the chunking.</p>
+<p>Parameters:</p>
+<p><cite>max_YOURATTRs_per_batch</cite>: int</p>
+<p>This is applicable only to the lowest level of chunking.  If isolation of this parameters is not required, and all
+values of this parameter are simple strings/integers the scheduler shall chunk them in batches of given size.
+By default will chunk to 1kk objects in a list.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.apply_job_schema">
+<span class="sig-name descname"><span class="pre">apply_job_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.apply_job_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.apply_job_schema" title="Link to this definition"></a></dt>
+<dd><p>Apply a job_schema from job_schema_variants by the name or apply the default one.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.chunk_dates">
+<span class="sig-name descname"><span class="pre">chunk_dates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skeleton</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.chunk_dates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.chunk_dates" title="Link to this definition"></a></dt>
+<dd><p>There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.chunk_job">
+<span class="sig-name descname"><span class="pre">chunk_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skeleton</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.chunk_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.chunk_job" title="Link to this definition"></a></dt>
+<dd><p>Recursively parses a job, validates everything and chunks to simple tasks what should be chunked.
+The Scenario of chunking and isolation is worth another story, so you should put a link here once it is ready.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.construct_job_data">
+<span class="sig-name descname"><span class="pre">construct_job_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skeleton</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.construct_job_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.construct_job_data" title="Link to this definition"></a></dt>
+<dd><p>Chunks the job to tasks using several layers. Each layer is represented with a <cite>chunker</cite> method.
+All chunkers should accept <cite>job</cite> and optional <cite>skeleton</cite> for tasks and return a list of tasks.
+If there is nothing to chunk for some chunker, return same <cite>job</cite> (with injected <cite>skeleton</cite>) wrapped in a list.</p>
+<p>Default chunkers:</p>
+<ul class="simple">
+<li><p>Date list chunking</p></li>
+<li><p>Recursive chunking for <cite>chunkable_attrs</cite></p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.extract_job_from_payload">
+<span class="sig-name descname"><span class="pre">extract_job_from_payload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.extract_job_from_payload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.extract_job_from_payload" title="Link to this definition"></a></dt>
+<dd><p>Parse and basically validate job from the event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.get_and_lock_queue_file">
+<span class="sig-name descname"><span class="pre">get_and_lock_queue_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.get_and_lock_queue_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.get_and_lock_queue_file" title="Link to this definition"></a></dt>
+<dd><p>Either take a new (recently created) file in local /tmp/, or download the version of queue file from S3.
+We move the file in S3 to <cite>locked_</cite> by prefix state or simply upload the new one there in <cite>locked_</cite> state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Local path to the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.get_db_field_name">
+<span class="sig-name descname"><span class="pre">get_db_field_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.get_db_field_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.get_db_field_name" title="Link to this definition"></a></dt>
+<dd><p>Could be useful if you overwrite field names with your own ones (e.g. for tests).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.get_index_from_list">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_index_from_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.get_index_from_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.get_index_from_list" title="Link to this definition"></a></dt>
+<dd><p>Finds the index ignoring the ‘s’ at the end of attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.get_isolate_attributes_from_job">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_isolate_attributes_from_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.get_isolate_attributes_from_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.get_isolate_attributes_from_job" title="Link to this definition"></a></dt>
+<dd><p>Get a dictionary with settings for isolation from data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.get_next_chunkable_attr">
+<span class="sig-name descname"><span class="pre">get_next_chunkable_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.get_next_chunkable_attr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.get_next_chunkable_attr" title="Link to this definition"></a></dt>
+<dd><p>Return the next by order after <cite>attr</cite> chunkable attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.initialize_from_job_schema">
+<span class="sig-name descname"><span class="pre">initialize_from_job_schema</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.initialize_from_job_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.initialize_from_job_schema" title="Link to this definition"></a></dt>
+<dd><p>Initialize attributes that are mapped to the <cite>job_schema</cite> in self.config</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.last_week">
+<span class="sig-name descname"><span class="pre">last_week</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'last_week'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.last_week"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.last_week" title="Link to this definition"></a></dt>
+<dd><p>Returns list of dates (YYYY-MM-DD) as strings for last week (Sunday - Saturday)
+:param pattern:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.last_x_days">
+<span class="sig-name descname"><span class="pre">last_x_days</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.last_x_days"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.last_x_days" title="Link to this definition"></a></dt>
+<dd><p>Constructs the list of date strings for chunking.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.needs_chunking">
+<span class="sig-name descname"><span class="pre">needs_chunking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.needs_chunking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.needs_chunking" title="Link to this definition"></a></dt>
+<dd><p>Recursively analyses the data and identifies if the current level of data should be chunked.
+This could happen if either isolate_attr marker in the current scope or recursively in any of sub-elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attr</strong> – Name of attribute you want to check for chunking.</p></li>
+<li><p><strong>data</strong> – Input dictionary to analyse.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.parse_job_to_file">
+<span class="sig-name descname"><span class="pre">parse_job_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.parse_job_to_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.parse_job_to_file" title="Link to this definition"></a></dt>
+<dd><p>Splits the Job to multiple tasks and writes them down in self.local_queue_file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>job</strong> (<em>dict</em>) – Payload from Scheduled Rule.
+Should be already parsed from whatever payload to dict and contain the raw <cite>job</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.pop_rows_from_file">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pop_rows_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.pop_rows_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.pop_rows_from_file" title="Link to this definition"></a></dt>
+<dd><p>Reads the rows from the top of file. Along the way removes them from original file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – File to read.</p></li>
+<li><p><strong>rows</strong> (<em>int</em>) – Number of rows to read. Default: 1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of strings read from file top.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.previous_x_days">
+<span class="sig-name descname"><span class="pre">previous_x_days</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.previous_x_days"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.previous_x_days" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of string dates from today - x - x</p>
+<p>For example, consider today’s date as 2019-04-30.
+If I call for previous_x_days(pattern=’previous_2_days’), I will receive a list of string dates equal to:
+[‘2019-04-26’, ‘2019-04-27’]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.process_file">
+<span class="sig-name descname"><span class="pre">process_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.process_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.process_file" title="Link to this definition"></a></dt>
+<dd><p>Process a file for creating tasks, then uploading it to S3.
+In case of execution time reached its limit, spawning a new sibling to continue the processing.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.remote_queue_file">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">remote_queue_file</span></span><a class="headerlink" href="#sosw.scheduler.Scheduler.remote_queue_file" title="Link to this definition"></a></dt>
+<dd><p>Full S3 Key of file with queue of tasks not yet in DynamoDB.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.remote_queue_locked_file">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">remote_queue_locked_file</span></span><a class="headerlink" href="#sosw.scheduler.Scheduler.remote_queue_locked_file" title="Link to this definition"></a></dt>
+<dd><p>Full S3 Key of file with queue of tasks not yet in DynamoDB in the <cite>locked</cite> state.
+Concurrent processes should not touch it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.set_queue_file">
+<span class="sig-name descname"><span class="pre">set_queue_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.set_queue_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.set_queue_file" title="Link to this definition"></a></dt>
+<dd><p>Initialize a unique file_name to store the queue of tasks to write.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.sufficient_execution_time_left">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sufficient_execution_time_left</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#sosw.scheduler.Scheduler.sufficient_execution_time_left" title="Link to this definition"></a></dt>
+<dd><p>Return if there is a sufficient execution time for processing (‘shutdown period’ is in seconds).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.today">
+<span class="sig-name descname"><span class="pre">today</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'today'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.today"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.today" title="Link to this definition"></a></dt>
+<dd><p>Returns list with one datetime string (YYYY-MM-DD) equal to today’s date.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.upload_and_unlock_queue_file">
+<span class="sig-name descname"><span class="pre">upload_and_unlock_queue_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.upload_and_unlock_queue_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.upload_and_unlock_queue_file" title="Link to this definition"></a></dt>
+<dd><p>Upload the local queue file to S3 and remove the <cite>locked_</cite> by prefix copy if it exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.validate_list_of_vals">
+<span class="sig-name descname"><span class="pre">validate_list_of_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.validate_list_of_vals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.validate_list_of_vals" title="Link to this definition"></a></dt>
+<dd><p>Supported resulting values: str, int, float.</p>
+<p>Expects a simple iterable of supported values or a dictionary with values = None.
+The keys then are treated as resulting values and if they validate, are returned as a list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.x_days_back">
+<span class="sig-name descname"><span class="pre">x_days_back</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.x_days_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.x_days_back" title="Link to this definition"></a></dt>
+<dd><p>Finds the exact date X days back from now.
+Returns it as a <cite>str</cite> in a <cite>list</cite> following the interface requirements of <cite>chunk_dates</cite>.</p>
+<p>e.g. <cite>1_days_back</cite> - yesterday, <cite>7_days_back</cite> - same day as today last week</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.scheduler.Scheduler.yesterday">
+<span class="sig-name descname"><span class="pre">yesterday</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'yesterday'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/scheduler.html#Scheduler.yesterday"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.scheduler.Scheduler.yesterday" title="Link to this definition"></a></dt>
+<dd><p>Simple wrapper for x_days_back() to return yesterday’s date.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="orchestrator.html" class="btn btn-neutral float-left" title="Orchestrator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scavenger.html" class="btn btn-neutral float-right" title="Scavenger" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -52,11 +52,30 @@ from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient
 
 
+def _derive_test_flag(explicit_flag=None):
+    """
+    Resolve the effective ``test`` flag of the Processor or the lambda handler.
+
+    An explicitly provided flag (the ``test`` keyword of the Processor constructor, or the ``test`` key
+    of the Lambda event) always wins. When no flag is provided (``None``), the flag is derived from the
+    ``STAGE`` environment variable: the ``test`` and ``autotest`` stages run in test mode.
+
+    :param explicit_flag:   Explicitly provided value of the flag or None when not provided.
+    :return:                The effective test flag.
+    """
+
+    if explicit_flag is not None:
+        return explicit_flag
+
+    return os.environ.get('STAGE') in ['test', 'autotest']
+
+
 class Processor:
     """
-    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
-    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
-    `Worker` class in case you are running functions under `sosw` orchestration.
+    Core Processor class template. This is the base class of the framework: every Lambda built on
+    ``sosw`` subclasses it (directly, or through specializations like
+    :py:class:`~sosw.lambda_api.LambdaApi`). It provides layered configuration, automatic client
+    registration, statistics counters and a uniform entry point.
 
 
     ``get_ddbc(prefix: str) -> DynamoDbClient:``
@@ -78,6 +97,10 @@ class Processor:
 
     DEFAULT_CONFIG = {}
 
+    # Set to True in a subclass to skip the lookup of the per-function config in DynamoDB / SSM.
+    # See `init_config()` for details.
+    DISABLE_DDB_CONFIG = False
+
     aws_account: str = None
     aws_region: str = os.getenv('AWS_REGION', None)
     ddb_names: list = None
@@ -91,7 +114,7 @@ class Processor:
         Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.
         """
 
-        self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        self.test = _derive_test_flag(kwargs.get('test'))
 
         if global_vars.lambda_context:
             if invoked_function_arn := getattr(global_vars.lambda_context, 'invoked_function_arn', None):
@@ -114,6 +137,12 @@ class Processor:
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
+        The lookup of the specific custom config of the Lambda (``{AWS_LAMBDA_FUNCTION_NAME}_config``
+        from DynamoDB / SSM) can be skipped either by setting the class attribute
+        ``DISABLE_DDB_CONFIG = True`` in your Processor, or by passing a truthy ``disable_ddb_config``
+        key in the ``DEFAULT_CONFIG`` or ``custom_config``. ``DEFAULT_CONFIG`` and ``custom_config``
+        are still applied in this case.
+
         Overwrite this method if custom logic of recursive updates in configs is required.
 
         ..  note:: Read more about :ref:`Config_Sourse`
@@ -121,13 +150,20 @@ class Processor:
         :param Dict custom_config: dict with custom configurations
         """
 
+        custom_config = custom_config or {}
+
         # Initialize config from default config
         self.config = self.DEFAULT_CONFIG or {}
-        # Update config recursively from any existing lambda function config
-        self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+
+        # Update config recursively from any existing lambda function config, unless explicitly disabled.
+        disable_ddb_config = (self.DISABLE_DDB_CONFIG or self.config.get('disable_ddb_config')
+                              or custom_config.get('disable_ddb_config'))
+        if not disable_ddb_config:
+            self.config = recursive_update(
+                    self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+
         # Update config recursively from custom config
-        self.config = recursive_update(self.config, custom_config or {})
+        self.config = recursive_update(self.config, custom_config)
 
 
     @benchmark
@@ -135,8 +171,10 @@ class Processor:
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
 
-        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.
-        Name of the Class must be name of `client` with either of the suffixes ('Manager' or 'Client').
+        Clients are imported from the `components` or `managers` packages of your own Lambda, from
+        `sosw.components`, or fall back to a plain boto3 client. Name of the module must be
+        underscored name of Client. Name of the Class must be name of `client` with either of the
+        suffixes ('Manager' or 'Client').
 
         .. warning::
            To be implemented!
@@ -156,7 +194,6 @@ class Processor:
             lambda x: f"components.{x}",
             lambda x: f"managers.{x}",
             lambda x: f"sosw.components.{x}",
-            lambda x: f"sosw.managers.{x}",
         ]
 
         # # Initialize required clients
@@ -459,7 +496,7 @@ class LambdaGlobals:
     e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.
 
     This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.
-    See Worker examples in documentation for more info.
+    See the Processor examples in documentation for more info.
     """
 
 
@@ -497,9 +534,13 @@ class LambdaGlobals:
         _processor = val
 
 
-def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
+def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
-    Return a reference to the entry point of the lambda function.
+    Build the ``lambda_handler`` closure over the given Processor class.
+
+    This is the shared internal builder used by :func:`get_lambda_handler` and by the optional
+    durable functions wrapper (``sosw.durable.get_durable_lambda_handler``). It has no knowledge
+    of any optional SDKs and must stay this way.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
@@ -534,7 +575,7 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
                     __name__, context)
         logger.info(event)
 
-        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        test = _derive_test_flag(event.get('test') if isinstance(event, dict) else None)
 
         global_vars.lambda_context = context
 
@@ -545,7 +586,6 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         logger.info(global_vars.processor.get_stats())
 
-        global_vars.processor.reset_stats()
         global_vars.processor.reset_stats(recursive=True)
 
         logger.info(result)
@@ -554,6 +594,25 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
 
     return lambda_handler
+
+
+def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
+    """
+    Return a reference to the entry point of the lambda function.
+
+    The handler caches the initialized Processor in `global_vars` and reuses it in the warm
+    invocations for the lifetime of the Lambda container. Per-invocation state belongs to
+    ``processor.result`` (reset on every call), while ``processor.stats`` carries the counters
+    of the container lifetime: ``reset_stats()`` runs once after every invocation and preserves
+    the ``total_*`` counters and the ones configured in ``lifetime_stats_params``.
+
+    :param processor_class:  Callable processor class.
+    :param global_vars:      Lambda's global variables (processor, context).
+    :param custom_config:    Custom configuration to pass the processor constructor.
+    :return: Function reference for the lambda handler.
+    """
+
+    return _make_lambda_handler(processor_class, global_vars, custom_config)
 
 
 # Global placeholder for global_vars.

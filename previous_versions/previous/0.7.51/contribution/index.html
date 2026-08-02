@@ -1,0 +1,286 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contribution Guidelines &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/contribution/index.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Documentation Convention" href="convention.html" />
+    <link rel="prev" title="Cleanup after tutorials" href="../tutorials/cleanup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contribution Guidelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="convention.html">Documentation Convention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycon-us-2019.html">Sprinting PyCon US 2019</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contribution Guidelines</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/contribution/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contribution-guidelines">
+<span id="id1"></span><h1><a class="toc-backref" href="#id2" role="doc-backlink">Contribution Guidelines</a><a class="headerlink" href="#contribution-guidelines" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#contribution-guidelines" id="id2">Contribution Guidelines</a></p>
+<ul>
+<li><p><a class="reference internal" href="#release-cycle" id="id3">Release cycle</a></p></li>
+<li><p><a class="reference internal" href="#code-formatting" id="id4">Code formatting</a></p></li>
+<li><p><a class="reference internal" href="#initialization" id="id5">Initialization</a></p></li>
+<li><p><a class="reference internal" href="#building-the-docs" id="id6">Building the docs</a></p></li>
+<li><p><a class="reference internal" href="#coverage" id="id7">Coverage</a></p></li>
+<li><p><a class="reference internal" href="#pull-requests-checklist" id="id8">Pull Requests Checklist</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="convention.html">Documentation Convention</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#basics">Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#imports">Imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#building-the-docs">Building the docs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#common-sense-boosters">Common Sense Boosters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#structure">Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#example-of-docstring">Example of Docstring</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="convention.html#docs.hello.hello"><code class="docutils literal notranslate"><span class="pre">hello()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="convention.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pycon-us-2019.html">Sprinting PyCon US 2019</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycon-us-2019.html#initialization">Initialization</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="release-cycle">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Release cycle</a><a class="headerlink" href="#release-cycle" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Master branch commits are automatically packaged and published to PyPI.</p></li>
+<li><p>We follow both <a class="reference external" href="https://semver.org/">Semantic Versioning</a> pattern and <a class="reference external" href="https://www.python.org/dev/peps/pep-0440/">PEP440</a> recommendations where comply</p></li>
+<li><p>Branches for planned staging versions follow the pattern: <code class="docutils literal notranslate"><span class="pre">X_Y_Z</span></code> (Major.Minor.Micro)</p></li>
+<li><p>Make your pull requests go to the closest staging branch (with smallest after release number of either current or next Minor)</p></li>
+<li><p>Make sure your branch is up to date with the branch you are making a PR to</p></li>
+</ul>
+<p>Example:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Latest released version in PyPI <code class="docutils literal notranslate"><span class="pre">0.7.31</span></code></p></li>
+<li><p>Closest staging Minor branch in sosw/sosw <code class="docutils literal notranslate"><span class="pre">0_7_33</span></code></p></li>
+<li><p>Latest Minor staging branch in sosw/sosw <code class="docutils literal notranslate"><span class="pre">0_7_35</span></code></p></li>
+<li><p>Closest Next Minor branch in sosw/sosw <code class="docutils literal notranslate"><span class="pre">0_9_1</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>Your PR should be to either <code class="docutils literal notranslate"><span class="pre">0_7_33</span></code> or <code class="docutils literal notranslate"><span class="pre">0_9_1</span></code> depending on the importance of changes.</p>
+</section>
+<section id="code-formatting">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Code formatting</a><a class="headerlink" href="#code-formatting" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>follow the <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP8</a> with the following details:</p></li>
+<li><p>both classes and functions are padded with 2 empty lines</p></li>
+</ul>
+</section>
+<section id="initialization">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Initialization</a><a class="headerlink" href="#initialization" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Fork the repository: <a class="reference external" href="https://github.com/sosw/sosw">https://github.com/sosw/sosw</a></p></li>
+<li><p>Register Account in AWS: <a class="reference external" href="https://portal.aws.amazon.com/billing/signup#/start">SignUp</a></p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">pipenv</span> <span class="pre">sync</span> <span class="pre">--dev</span></code> to setup your virtual environment and download the required dependencies</p></li>
+<li><p>If you are not familiar with CloudFormation, we highly recommend at least learning the basics from <a class="reference external" href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.Walkthrough.html">the tutorial</a>.</p></li>
+<li><p>Follow the <a class="reference internal" href="../installation.html#installation-guidelines"><span class="std std-ref">Installation</span></a> to setup your environment.</p></li>
+<li><p>Create some Sandbox Lambda.</p></li>
+<li><p>Play with it.</p></li>
+<li><p>Read the <a class="reference internal" href="convention.html#documentation-convention"><span class="std std-ref">Documentation Convention</span></a></p></li>
+</ul>
+</section>
+<section id="building-the-docs">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Building the docs</a><a class="headerlink" href="#building-the-docs" title="Link to this heading"></a></h2>
+<p>To build the docs locally, run: <code class="docutils literal notranslate"><span class="pre">sphinx-build</span> <span class="pre">-Wab</span> <span class="pre">html</span> <span class="pre">./docs</span> <span class="pre">./sosw-rtd</span></code></p>
+<p>You can also use the built in python web server to view the html version directly from localhost
+in your preferred browser.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sphinx-build<span class="w"> </span>-Wab<span class="w"> </span>html<span class="w"> </span>./docs<span class="w"> </span>./sosw-rtd<span class="p">;</span><span class="w"> </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span>sosw-rtd<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>http.server<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="coverage">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Coverage</a><a class="headerlink" href="#coverage" title="Link to this heading"></a></h2>
+<img alt="../_images/coverage.svg" src="../_images/coverage.svg" />
+<p>We use <a class="reference external" href="https://github.com/pytest-dev/pytest-cov">pytest-cov</a> for calculating the test coverage.
+Currently there is no automatic blocker for untested code. In order to calculate the actual coverage you
+have to run it will all the integration tests, so this is mainly used during release.</p>
+<p><code class="docutils literal notranslate"><span class="pre">.converagerc</span></code> holds the configuration for Coverage module.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>sosw<span class="w"> </span>sosw/
+rm<span class="w">  </span>docs/_static/images/coverage.svg<span class="p">;</span><span class="w"> </span>coverage-badge<span class="w"> </span>-o<span class="w"> </span>docs/_static/images/coverage.svg
+</pre></div>
+</div>
+</section>
+<section id="pull-requests-checklist">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Pull Requests Checklist</a><a class="headerlink" href="#pull-requests-checklist" title="Link to this heading"></a></h2>
+<p>Great that you are ready to contribute!</p>
+<ul class="simple">
+<li><p>Make sure your fork is up to date with upstream</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clean everything</span>
+git<span class="w"> </span>reset<span class="w"> </span>--hard
+git<span class="w"> </span>clean<span class="w"> </span>-fdx
+git<span class="w"> </span>checkout<span class="w"> </span>master
+
+<span class="c1"># Fetch possible changes to YOUR master</span>
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>master
+
+<span class="c1"># Check if remote upstream is configured</span>
+git<span class="w"> </span>remote<span class="w"> </span>-v
+
+<span class="c1"># If missing upstream</span>
+git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>https://github.com/sosw/sosw
+
+<span class="c1"># Update your fork remote with the upstream changes</span>
+git<span class="w"> </span>pull<span class="w"> </span>upstream<span class="w"> </span>master
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>master
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Make sure your code passes all the tests</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>sosw/test/suite_unit.py
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Make sure the documentation builds correctly</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sphinx-build<span class="w"> </span>-ab<span class="w"> </span>html<span class="w"> </span>./docs<span class="w"> </span>./sosw-rtd<span class="p">;</span><span class="w"> </span><span class="o">(</span><span class="nb">cd</span><span class="w"> </span>sosw-rtd<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>http.server<span class="o">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Push the changes to your fork remote</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>master
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Make a PR to the upstream repository of sosw</p></li>
+</ul>
+<p>Some guidelines of how to do create PRs from forks can be found in <a class="reference external" href="https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork">GitHub documentation</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../tutorials/cleanup.html" class="btn btn-neutral float-left" title="Cleanup after tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="convention.html" class="btn btn-neutral float-right" title="Documentation Convention" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

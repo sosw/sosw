@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ def logging_wrapper(level: int = None):
         level = logging.INFO
 
     def decorator(method):
+        @wraps(method)
         def wrapper(*args, **kwargs):
             try:
                 var_names = method.__code__.co_varnames[:method.__code__.co_argcount]

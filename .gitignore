@@ -24,6 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+Pipfile.lock
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -106,3 +107,6 @@ venv.bak/
 
 # PyCharm
 .idea/
+
+# Claude Code (worktrees, local settings); .kiro/ stays tracked
+.claude/

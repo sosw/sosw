@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Config Source &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/components/config.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DynamoDB Client" href="dynamo_db.html" />
+    <link rel="prev" title="Benchmark" href="benchmark.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Config Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamo_db.html">DynamoDB Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="siblings.html">Siblings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigv4.html">SigV4 Request Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sns.html">SNS Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Components</a></li>
+      <li class="breadcrumb-item active">Config Source</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/components/config.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-sosw.components.config">
+<span id="config-source"></span><span id="config-sourse"></span><h1>Config Source<a class="headerlink" href="#module-sosw.components.config" title="Link to this heading"></a></h1>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock2'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock2" style="display: none"><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><p>Config manager component. Has methods for getting configuration for Lambdas.</p>
+<p>The default is <code class="docutils literal notranslate"><span class="pre">DynamoConfig</span></code>. It is automatically called from the <code class="docutils literal notranslate"><span class="pre">app.Processor.__init__</span></code> and if your Lambda
+has permissions to access  the <code class="docutils literal notranslate"><span class="pre">config</span></code> table, the Processor will look for the record: <code class="docutils literal notranslate"><span class="pre">YOUR_FUNCTION_NAME_config</span></code>,
+and recursively  update the <code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIG</span></code> with it.</p>
+<p>You can also import and use the following functions.
+They can be directly imported from this module and will be automatically switched to DDB / SSM / Secrets manager.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#get-config">get_config</a></p></li>
+<li><p><a class="reference internal" href="#get-credentials-by-prefix">get_credentials_by_prefix</a></p></li>
+<li><p><a class="reference internal" href="#get-secrets-credentials">get_secrets_credentials</a></p></li>
+<li><p><a class="reference internal" href="#update-config">update_config</a></p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using these methods requires the Role to have relevant permissions to access DynamoDB / SSM Parameter Store /
+AWS Secrets.</p>
+</div>
+<p>Usage example <cite>(pseudo code)</cite>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SOME_DB_DRIVER</span><span class="w"> </span><span class="kn">import</span> <span class="n">connect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_secrets_credentials</span><span class="p">,</span> <span class="n">get_config</span><span class="p">,</span> <span class="n">update_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">Processor</span> <span class="k">as</span> <span class="n">SoswProcessor</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Processor</span><span class="p">(</span><span class="n">SoswProcessor</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">work_with_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">db_settings</span> <span class="o">=</span> <span class="n">get_credentials_by_prefix</span><span class="p">(</span><span class="s1">&#39;db_&#39;</span><span class="p">)</span>
+        <span class="n">db_password</span> <span class="o">=</span> <span class="n">get_secrets_credentials</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;db_password&#39;</span><span class="p">)[</span><span class="s1">&#39;db_password&#39;</span><span class="p">]</span>
+
+        <span class="n">connection</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="o">**</span><span class="n">db_settings</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">db_password</span><span class="p">)</span>
+
+        <span class="n">last_processed_row</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">(</span><span class="s1">&#39;last_row&#39;</span><span class="p">)</span>
+
+        <span class="n">db_result</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SOME QUERY LIMIT last_processed_row, 10;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_something</span><span class="p">(</span><span class="n">db_result</span><span class="p">)</span>
+
+        <span class="n">update_config</span><span class="p">(</span><span class="s1">&#39;last_row&#39;</span><span class="p">,</span> <span class="n">last_processed_row</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.config.ConfigSource">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.config.</span></span><span class="sig-name descname"><span class="pre">ConfigSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#ConfigSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.ConfigSource" title="Link to this definition"></a></dt>
+<dd><p>A strategy adapter for config. Returns config from the selected config source.
+You can implement your own functions using these clients, and they can even call different configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sources</strong> (<em>str</em>) – Config clients to initialize. Supported: <cite>SSM</cite> and <cite>Dynamo</cite> (default).
+Could be both, comma-separated. The first one then becomes default.</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – Custom configurations for clients. Should be in <cite>ssm_config</cite>, <cite>dynamo_config</cite>, etc.
+Don’t be confused, but sometimes configs also need their own configs. :)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.config.DynamoConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.config.</span></span><span class="sig-name descname"><span class="pre">DynamoConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#DynamoConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.DynamoConfig" title="Link to this definition"></a></dt>
+<dd><p>This is a manager to operate with custom configurations for Lambdas stored in the <code class="docutils literal notranslate"><span class="pre">config</span></code> DynamoDB table.
+It tries to find the table <code class="docutils literal notranslate"><span class="pre">config</span></code> in the same region where the Lambda runs with the following structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;env&#39;</span><span class="p">:</span>          <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+<span class="s1">&#39;config_name&#39;</span><span class="p">:</span>  <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+<span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+</pre></div>
+</div>
+<p>If the table exists and the Lambda has permissions to access it, the class will look for the record:
+<code class="docutils literal notranslate"><span class="pre">YOUR_FUNCTION_config</span></code>, and recursively update the <code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIG</span></code> with it.</p>
+<dl class="py method" id="get-config">
+<dt class="sig sig-object py" id="sosw.components.config.DynamoConfig.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'production'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#DynamoConfig.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.DynamoConfig.get_config" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the Config from DynamoDB <code class="docutils literal notranslate"><span class="pre">config</span></code> table and return as a JSON parsed dictionary.
+If not in JSON format, returns a string.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In case the environment is <code class="docutils literal notranslate"><span class="pre">test</span></code> the table name will be automatically changed to <code class="docutils literal notranslate"><span class="pre">autotest_config</span></code>.
+This might be relevant only for complex integration tests.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Name of config to extract</p></li>
+<li><p><strong>env</strong> (<em>str</em>) – Environment name, usually: ‘production’ or ‘dev’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict|string</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Configuration</p>
+</dd>
+</dl>
+<span class="target" id="update-config"></span></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.DynamoConfig.get_credentials_by_prefix">
+<span class="sig-name descname"><span class="pre">get_credentials_by_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'production'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/config.html#DynamoConfig.get_credentials_by_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.DynamoConfig.get_credentials_by_prefix" title="Link to this definition"></a></dt>
+<dd><p>Fetches multiple records from the <code class="docutils literal notranslate"><span class="pre">config</span></code> table. Filters rows that start with the prefix and returns them
+as a dict with this prefix trimmed.</p>
+<p>Example in <code class="docutils literal notranslate"><span class="pre">config</span></code> DDB:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="s1">&#39;production&#39;</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="s1">&#39;project_a_db_username&#39;</span><span class="p">,</span> <span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="s1">&#39;john&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="s1">&#39;production&#39;</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="s1">&#39;project_a_db_port&#39;</span><span class="p">,</span> <span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="s1">&#39;27019&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="s1">&#39;production&#39;</span><span class="p">,</span> <span class="s1">&#39;config_name&#39;</span><span class="p">:</span> <span class="s1">&#39;another_db_username&#39;</span><span class="p">,</span> <span class="s1">&#39;config_value&#39;</span><span class="p">:</span> <span class="s1">&#39;silver&#39;</span><span class="p">}</span>
+
+
+<span class="n">credentials</span> <span class="o">=</span> <span class="n">get_credentials_by_prefix</span><span class="p">(</span><span class="s1">&#39;project_a_db&#39;</span><span class="p">)</span>
+
+<span class="c1"># {&#39;username&#39;: &#39;john&#39;, &#39;port&#39;: &#39;27019&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.DynamoConfig.update_config">
+<span class="sig-name descname"><span class="pre">update_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#DynamoConfig.update_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.DynamoConfig.update_config" title="Link to this definition"></a></dt>
+<dd><p>Update a field in the DynamoDB <code class="docutils literal notranslate"><span class="pre">config</span></code> table with a new value. May be used to store not sensitive tokens.</p>
+<dl class="field-list simple" id="get-credentials-by-prefix">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Field name to address.</p></li>
+<li><p><strong>val</strong> (<em>object</em>) – Field value to update.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.config.SecretsManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.config.</span></span><span class="sig-name descname"><span class="pre">SecretsManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#SecretsManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SecretsManager" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SecretsManager.call_boto_secrets_with_pagination">
+<span class="sig-name descname"><span class="pre">call_boto_secrets_with_pagination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/sosw/components/config.html#SecretsManager.call_boto_secrets_with_pagination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SecretsManager.call_boto_secrets_with_pagination" title="Link to this definition"></a></dt>
+<dd><p>Invoke SecretsManager functions with the ability to paginate results.</p>
+<dl class="field-list simple" id="get-secrets-credentials">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – SecretsManager function to invoke.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>If the function can be the paginate the response will return as paginate iterator.
+Else it will return as a list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SecretsManager.get_secrets_credentials">
+<span class="sig-name descname"><span class="pre">get_secrets_credentials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/config.html#SecretsManager.get_secrets_credentials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SecretsManager.get_secrets_credentials" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the credentials with given name or tag from AWS SecretsManager and return as a dictionary.</p>
+<p>Must provide <code class="docutils literal notranslate"><span class="pre">type</span></code> and <code class="docutils literal notranslate"><span class="pre">value</span></code> to search. Type is either <code class="docutils literal notranslate"><span class="pre">'tag'</span></code> or <code class="docutils literal notranslate"><span class="pre">'name'</span></code>. <code class="docutils literal notranslate"><span class="pre">value</span></code> is a string.</p>
+<p>Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">my_secret</span> <span class="o">=</span>  <span class="n">get_secrets_credentials</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;my_secret_name&#39;</span><span class="p">)</span>
+
+<span class="n">my_secrets_by_tag</span> <span class="o">=</span> <span class="n">get_secrets_credentials</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;tag&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;project_a_credentials&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.config.SSMConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.config.</span></span><span class="sig-name descname"><span class="pre">SSMConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#SSMConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SSMConfig" title="Link to this definition"></a></dt>
+<dd><p>Methods to access some configurations and/or credentials stored in AWS SSM ParameterStore.
+Please note that SSM has a pretty low limit of concurrent calls and it THROTTLES.
+For high load Lambdas it is recommended to use DynamoConfig instead.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SSMConfig.call_boto_with_pagination">
+<span class="sig-name descname"><span class="pre">call_boto_with_pagination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/sosw/components/config.html#SSMConfig.call_boto_with_pagination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SSMConfig.call_boto_with_pagination" title="Link to this definition"></a></dt>
+<dd><p>Invoke SSM functions with the ability to paginate results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>str</em>) – SSM function to invoke.</p></li>
+<li><p><strong>kwargs</strong> (<em>object</em>) – Keyword arguments for the function to invoke.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SSMConfig.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#SSMConfig.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SSMConfig.get_config" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the Config from AWS SSM ParameterStore and return as a JSON parsed dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of config to extract</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Config of some Controller</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SSMConfig.get_credentials_by_prefix">
+<span class="sig-name descname"><span class="pre">get_credentials_by_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#SSMConfig.get_credentials_by_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SSMConfig.get_credentials_by_prefix" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the credentials with given <cite>prefix</cite> from AWS SSM ParameterStore and return as a dictionary.</p>
+<p>In ParameterStore the values <cite>Name</cite> must begin with <cite>prefix_</cite> and they must have <a class="reference external" href="Tag:Environment">Tag:Environment</a> <cite>(production|dev)</cite>.
+The type of elements is expected to be SecureString. Regular strings could work, but not guaranteed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>prefix</strong> (<em>str</em>) – prefix of records to extract</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Some credentials</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.config.SSMConfig.update_config">
+<span class="sig-name descname"><span class="pre">update_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/config.html#SSMConfig.update_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.config.SSMConfig.update_config" title="Link to this definition"></a></dt>
+<dd><p>Update a parameter in SSM ParameterStore with a new value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Parameter name to address.</p></li>
+<li><p><strong>val</strong> (<em>object</em>) – Parameter value to update.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="benchmark.html" class="btn btn-neutral float-left" title="Benchmark" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dynamo_db.html" class="btn btn-neutral float-right" title="DynamoDB Client" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

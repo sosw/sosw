@@ -4,9 +4,16 @@
 Tutorials
 =========
 
+End-to-end walkthroughs building real functions on ``sosw``:
+
+* :doc:`first_lambda` — scaffold, implement, unit-test, deploy and invoke a Processor-based
+  Lambda with AWS SAM.
+* :doc:`http_api` — put a declarative :doc:`LambdaApi <../lambda_api>` behind an API Gateway
+  HTTP API with a Cognito JWT authorizer, and verify the whole error contract with ``curl``.
+
 ..  toctree::
     :titlesonly:
-    :caption: Sample functions:
+    :caption: Tutorials:
 
-    sosw_tutorial_pull_tweeter_hashtags
-    cleanup
+    first_lambda
+    http_api
