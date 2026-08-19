@@ -324,6 +324,15 @@ class sns_TestCase(unittest.TestCase):
                 Protocol='email',
                 Endpoint='test@sosw.app')
 
+    def test_send_message_with_subject_when_self_subject_is_none(self):
+        """When self.subject is None but subject kwarg is passed, the subject is set and the message is queued."""
+        sns = SnsManager(test=True)  # No default subject
+        sns.commit = MagicMock()
+        sns.send_message("test message", subject="My Subject")
+        self.assertEqual(sns.subject, "My Subject", "subject should be set from kwarg")
+        self.assertEqual(len(sns.queue), 1, "Message should be queued")
+        sns.commit.assert_not_called()  # set_subject does not call commit
+
 
 if __name__ == '__main__':
     unittest.main()

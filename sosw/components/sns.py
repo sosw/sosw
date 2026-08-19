@@ -235,8 +235,10 @@ class SnsManager():
             raise RuntimeError("You must have specified subject for self.sns.send_message() either "
                                "during __init__() of the class, or in the first send_message in kwargs.")
 
-        if all([self.subject, subject]) and not self.subject == subject:
-            logger.info("Change of subject detected. We commit (send) the current queue.")
+        # If self.subject is None/missing but a subject was provided, set it now.
+        # Also handle the case where both are set but differ (existing behavior).
+        if (not self.subject and subject) or (self.subject and subject and not self.subject == subject):
+            logger.info("Subject set or changed. Committing the current queue.")
             self.set_subject(subject)  # This will also commit existing messages automatically.
 
         self.compare_message_attributtes(message_attributes)  # This will also commit existing messages automatically.
