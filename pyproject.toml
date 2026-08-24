@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sosw"
-version = "3.0.0"
+version = "3.0.1"
 description = "Serverless framework for bootstrapping AWS Lambda functions"
 readme = "README.md"
 requires-python = ">=3.12"
