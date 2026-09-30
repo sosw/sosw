@@ -14,8 +14,9 @@ receiving the original event and the caller the original result.
   THE SYSTEM SHALL replace its value with `LOG_REDACTED_VALUE` in the logged copy.
 - THE SYSTEM SHALL keep `None` and boolean values of sensitive keys as they are.
 - THE SYSTEM SHALL keep a numeric value (`int`, `float`, `Decimal`, booleans excepted) when the
-  key also matches `LOG_COUNTER_KEY_PARTS` (counter-like keys, e.g. token quotas); numeric values
-  of other sensitive keys SHALL be masked.
+  key has a whole word of `LOG_COUNTER_KEY_WORDS` (`tokens`, `count`; words are the key split on
+  non-alphanumerics and camelCase — e.g. token quotas); numeric values of other sensitive keys
+  (e.g. `password`, `otp_token`, `account_password`) SHALL be masked.
 - The redaction SHALL recurse into dicts, lists and tuples and SHALL NOT mutate its input.
 
 ## R2 — Raw query string and bodies
@@ -23,10 +24,14 @@ receiving the original event and the caller the original result.
 - WHEN a dict has a `rawQueryString` key with a string value, THE SYSTEM SHALL mask the values of
   the query parameters whose names match `LOG_SENSITIVE_KEY_PARTS` and keep the other parameters
   (and an empty string) intact.
-- WHEN a dict has a `body` key with a string value and no truthy `isBase64Encoded` in the same
-  dict, THE SYSTEM SHALL parse a body that looks like a JSON object or array, redact it
-  recursively and re-serialize it for the log; unparsable, non-JSON (e.g. form-encoded) and
-  base64-encoded bodies SHALL be logged unchanged.
+- WHEN a dict has a `body` key with a string value, THE SYSTEM SHALL prepare its logged copy as
+  follows, in order: the marker, when the same dict has a truthy `isBase64Encoded`; redacted and
+  re-serialized JSON (`ensure_ascii=False`), when the stripped body starts with `{` or `[` and
+  parses; the marker, when such a body is too deeply nested to redact; redacted like a query
+  string, when the body is form-encoded — a sibling `headers` dict (any key case) carries a
+  `content-type` (any key case) starting with `application/x-www-form-urlencoded`, or the body
+  matches the `k=v&k=v` shape; unchanged otherwise (e.g. plain text, or unparsable JSON that is
+  not form-shaped).
 
 ## R3 — Extensibility and pass-through guarantees
 
@@ -34,6 +39,8 @@ receiving the original event and the caller the original result.
   deployments may extend the matching.
 - The Processor SHALL receive the original event object and the caller SHALL receive the original
   result object; redaction applies to the logged copies only.
+- Log redaction SHALL NOT fail an invocation: a value too deeply nested to redact SHALL be logged
+  as `LOG_REDACTED_VALUE`.
 
 ## Out of scope
 
