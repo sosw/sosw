@@ -26,7 +26,8 @@
     SOFTWARE.
 """
 
-__all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
+__all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler', 'LOG_REDACTED_VALUE', 'LOG_SENSITIVE_KEY_PARTS',
+           'LOG_COUNTER_KEY_PARTS']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
 try:
@@ -41,51 +42,115 @@ except ImportError:
     logger.setLevel(logging.INFO)
 
 import boto3
+import json
 import os
 
 from collections import defaultdict
+from decimal import Decimal
 from importlib import import_module
 from typing import Dict, Any
+from urllib.parse import parse_qsl, urlencode
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient
 
 
-# Value substituted in logs for anything a sensitive key holds. See `_redact_for_logging`.
+#: Value substituted in logs for anything a sensitive key holds. See ``_redact_for_logging``.
 LOG_REDACTED_VALUE = '***REDACTED***'
 
-# A key of a dict is considered sensitive (and its value is redacted in logs) when the lowercase
-# form of the key contains any of these substrings. Consumers may extend the matching by reassigning
-# `sosw.app.LOG_SENSITIVE_KEY_PARTS` (read from the module globals at call time).
+#: A key of a dict is considered sensitive (and its value is redacted in logs) when the lowercase
+#: form of the key contains any of these substrings. Consumers may extend the matching by reassigning
+#: ``sosw.app.LOG_SENSITIVE_KEY_PARTS`` (read from the module globals at call time).
 LOG_SENSITIVE_KEY_PARTS = (
     'authorization', 'cookie', 'token', 'secret', 'password', 'passwd', 'api-key', 'api_key', 'apikey',
     'x-origin-verify', 'credential', 'signature', 'private-key', 'private_key',
 )
+
+#: A sensitive key whose lowercase form also contains one of these substrings keeps a numeric value:
+#: counters like ``max_tokens`` or ``token_count`` are useful in logs and carry no secret. Reassign
+#: ``sosw.app.LOG_COUNTER_KEY_PARTS`` to extend the matching (read at call time, like the others).
+LOG_COUNTER_KEY_PARTS = ('tokens', 'count')
+
+
+def _redact_query_string(query):
+    """
+    Return a copy of a raw URL query string with the values of sensitive parameters masked.
+
+    Parameter names are matched against :py:data:`LOG_SENSITIVE_KEY_PARTS` exactly like dict keys;
+    parameters with non-sensitive names keep their values, and blank values are preserved.
+
+    :param str query:   Raw query string of the request.
+    :return:            The query string with sensitive parameter values replaced by
+                        :py:data:`LOG_REDACTED_VALUE`.
+    :rtype:             str
+    """
+    pairs = []
+    for name, value in parse_qsl(query, keep_blank_values=True):
+        sensitive = any(part in name.lower() for part in LOG_SENSITIVE_KEY_PARTS)
+        pairs.append((name, LOG_REDACTED_VALUE if sensitive else value))
+    return urlencode(pairs, safe='*')
+
+
+def _redact_json_body(body):
+    """
+    Return a log-safe copy of a string request or response body.
+
+    A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON, redacted recursively
+    and re-serialized; a body that fails to parse, and any other string (e.g. a form-encoded body),
+    is returned unchanged.
+
+    :param str body:    Raw body of the request or response.
+    :return:            The redacted JSON body, or the original string when it is not parsable JSON.
+    :rtype:             str
+    """
+    if body.strip()[:1] not in ('{', '['):
+        return body
+
+    try:
+        parsed = json.loads(body)
+    except ValueError:
+        return body
+
+    return json.dumps(_redact_for_logging(parsed))
 
 
 def _redact_for_logging(data):
     """
     Return a redacted copy of ``data`` suitable for logging. Never mutates the input.
 
-    Values of sensitive keys are replaced with :py:data:`LOG_REDACTED_VALUE` whatever their type
-    (string, list, dict; numeric, boolean and None values are kept); a key is sensitive when its
-    lowercase form contains any substring from
-    :py:data:`LOG_SENSITIVE_KEY_PARTS`. Dicts, lists and tuples are copied and processed
-    recursively; anything else is returned as is. Both constants are looked up in the module
-    globals at call time, so reassigning them changes the behaviour.
+    A key of a dict is sensitive when its lowercase form contains any substring from
+    :py:data:`LOG_SENSITIVE_KEY_PARTS`. The value of a sensitive key is replaced with
+    :py:data:`LOG_REDACTED_VALUE`, except for ``None`` and booleans, and for numbers (``int``,
+    ``float``, ``Decimal``) whose key also matches :py:data:`LOG_COUNTER_KEY_PARTS` — counter values
+    are useful in logs and carry no secret. Two non-sensitive keys get special handling: a string
+    ``rawQueryString`` has the values of its sensitive parameters masked, and a string ``body``
+    (when the same dict has no truthy ``isBase64Encoded``) is redacted as JSON when it looks like a
+    JSON object or array; non-JSON bodies (e.g. form-encoded) are logged as is. Dicts, lists and
+    tuples are copied and processed recursively; anything else is returned as is. All constants are
+    looked up in the module globals at call time, so reassigning them changes the behaviour.
 
     :param data:    Dict, list, tuple or scalar value to prepare for logging.
-    :rtype:         Redacted copy of ``data`` of the same shape; scalars are returned unchanged.
+    :return:        Redacted copy of ``data`` with the values of sensitive keys masked.
+    :rtype:         dict | list | tuple | object
     """
     if isinstance(data, dict):
         redacted = {}
         for key, value in data.items():
-            if any(part in str(key).lower() for part in LOG_SENSITIVE_KEY_PARTS):
-                # Numeric, boolean and None values of sensitive keys are kept: keys like `max_tokens`
-                # or `usage.input_tokens` carry counters, not secrets.
-                redacted[key] = value if isinstance(value, (bool, int, float)) or value is None \
-                    else LOG_REDACTED_VALUE
+            key_lower = str(key).lower()
+            if any(part in key_lower for part in LOG_SENSITIVE_KEY_PARTS):
+                # None and booleans are kept as is, numbers only for counter-like keys; everything
+                # else a sensitive key holds (str, list, dict, bytes, a plain number) is masked.
+                if value is None or isinstance(value, bool) or (
+                        isinstance(value, (int, float, Decimal))
+                        and any(part in key_lower for part in LOG_COUNTER_KEY_PARTS)):
+                    redacted[key] = value
+                else:
+                    redacted[key] = LOG_REDACTED_VALUE
+            elif key_lower == 'rawquerystring' and isinstance(value, str):
+                redacted[key] = _redact_query_string(value)
+            elif key_lower == 'body' and isinstance(value, str) and not data.get('isBase64Encoded'):
+                redacted[key] = _redact_json_body(value)
             else:
                 redacted[key] = _redact_for_logging(value)
         return redacted
@@ -653,11 +718,12 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     of the container lifetime: ``reset_stats()`` runs once after every invocation and preserves
     the ``total_*`` counters and the ones configured in ``lifetime_stats_params``.
 
-    The logged copies of the event and the result are redacted: values of keys whose lowercase
-    name contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``,
-    ``Cookie``, ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` (numeric, boolean
-    and None values are kept). The Processor still
-    receives the original event, and the original result object is returned to the caller.
+    The logged copies of the event and the result are redacted: values of keys whose lowercase name
+    contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``, ``Cookie``,
+    ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and
+    counter-like numeric values are kept — and sensitive parameters of ``rawQueryString`` and
+    secrets inside JSON ``body`` strings are masked as well. The Processor still receives the
+    original event, and the original result object is returned to the caller.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
