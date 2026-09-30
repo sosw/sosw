@@ -41,16 +41,18 @@ except ImportError:
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-import boto3
 import json
 import os
 import re
+
+import boto3
 
 from collections import defaultdict
 from decimal import Decimal
 from importlib import import_module
 from typing import Dict, Any
 from urllib.parse import parse_qsl, urlencode
+
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
@@ -112,6 +114,29 @@ def _redact_query_string(query):
     return urlencode(pairs, safe='*')
 
 
+def _content_type_starts_with(container, prefix):
+    """
+    Check whether a sibling ``headers`` dict carries a ``content-type`` header starting with a prefix.
+
+    The ``headers`` key of the container and the header name itself match in any case, and the
+    prefix compares against the lowercase header value. See ``_body_is_form_encoded`` and
+    ``_redact_body``.
+
+    :param dict container:  Dict holding the ``body`` key.
+    :param str prefix:      Lowercase content-type prefix, e.g. ``multipart/``.
+    :return:                True when a sibling headers dict has such a content-type header.
+    :rtype:                 bool
+    """
+    for key, headers in container.items():
+        if str(key).lower() != 'headers' or not isinstance(headers, dict):
+            continue
+        for name, value in headers.items():
+            if str(name).lower() == 'content-type' and isinstance(value, str) and value.lower().startswith(prefix):
+                return True
+
+    return False
+
+
 def _body_is_form_encoded(body, container):
     """
     Check whether a string body should be treated as ``application/x-www-form-urlencoded``.
@@ -125,15 +150,8 @@ def _body_is_form_encoded(body, container):
     :return:                True when the body should be redacted as a form.
     :rtype:                 bool
     """
-    for key, headers in container.items():
-        if str(key).lower() != 'headers' or not isinstance(headers, dict):
-            continue
-        for name, value in headers.items():
-            if (str(name).lower() == 'content-type' and isinstance(value, str)
-                    and value.lower().startswith('application/x-www-form-urlencoded')):
-                return True
-
-    return _FORM_BODY_PATTERN.match(body) is not None
+    return (_content_type_starts_with(container, 'application/x-www-form-urlencoded')
+            or _FORM_BODY_PATTERN.match(body) is not None)
 
 
 def _redact_body(body, container):
@@ -142,10 +160,13 @@ def _redact_body(body, container):
 
     A body of a dict with a truthy ``isBase64Encoded`` sibling is replaced with
     :py:data:`LOG_REDACTED_VALUE` — base64 is reversible, so it is never logged. A body whose
-    stripped form starts with ``{`` or ``[`` is parsed as JSON, redacted recursively and
-    re-serialized (``ensure_ascii=False``); a body too deeply nested to redact is replaced with
-    :py:data:`LOG_REDACTED_VALUE` as well. Any other string that ``_body_is_form_encoded`` accepts
-    is redacted like a query string; everything else is returned unchanged.
+    sibling ``headers`` declare a ``multipart/`` content type is replaced with the marker as well.
+    A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON, redacted recursively
+    and re-serialized (``ensure_ascii=False``); a body too deeply nested to redact, or one that
+    looks like JSON but fails to parse and is not form-encoded, is replaced with the marker as
+    well — it may be a truncated payload still carrying secrets. Any other string that
+    ``_body_is_form_encoded`` accepts is redacted like a query string; everything else is returned
+    unchanged.
 
     :param str body:        Raw body of the request or response.
     :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
@@ -155,11 +176,16 @@ def _redact_body(body, container):
     if container.get('isBase64Encoded'):
         return LOG_REDACTED_VALUE
 
+    if _content_type_starts_with(container, 'multipart/'):
+        return LOG_REDACTED_VALUE
+
     if body.strip()[:1] in ('{', '['):
         try:
             return json.dumps(_redact_for_logging(json.loads(body)), ensure_ascii=False)
         except ValueError:
-            pass    # Not JSON after all - maybe a form body, checked below.
+            # Not JSON after all: only a form-shaped body is still worth redacting as a form.
+            if not _body_is_form_encoded(body, container):
+                return LOG_REDACTED_VALUE
         except RecursionError:
             # Too deeply nested to redact - and it may still hold secrets.
             return LOG_REDACTED_VALUE
@@ -182,8 +208,9 @@ def _redact_for_logging(data):
     camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
     ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
     has the values of its sensitive parameters masked, and a string ``body`` is redacted by
-    ``_redact_body`` (JSON parsed and re-serialized, form-encoded values masked, base64-encoded
-    bodies replaced with the marker). Dicts, lists and tuples are copied and processed recursively;
+    ``_redact_body`` (JSON parsed and re-serialized, form-encoded values masked, base64-encoded,
+    multipart and JSON-looking-but-unparsable bodies replaced with the marker). Dicts, lists and
+    tuples are copied and processed recursively;
     anything else is returned as is. All constants are looked up in the module globals at call
     time, so reassigning them changes the behaviour.
 
@@ -225,8 +252,10 @@ def _log_redacted(value):
     """
     Return the redacted copy of ``value`` for a handler log line, or the redaction marker.
 
-    A guard around ``_redact_for_logging`` for values too deeply nested to copy: logging must
-    never fail an invocation, so :py:data:`LOG_REDACTED_VALUE` is returned instead.
+    A guard around ``_redact_for_logging``: logging must never fail an invocation, so when the
+    redacted copy cannot be built — a value too deeply nested to copy, a query string that cannot
+    be re-encoded — a warning naming only the exception type is logged and
+    :py:data:`LOG_REDACTED_VALUE` is returned instead.
 
     :param value:   Event or result object to prepare for logging.
     :return:        Redacted copy of ``value``, or the marker when it cannot be built.
@@ -234,7 +263,9 @@ def _log_redacted(value):
     """
     try:
         return _redact_for_logging(value)
-    except RecursionError:
+    except Exception as exc:
+        logger.warning("Could not redact the value for logging (%s), logging the redaction marker instead",
+                       type(exc).__name__)
         return LOG_REDACTED_VALUE
 
 
@@ -797,9 +828,10 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
     Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings and
-    form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded`` is
-    replaced with the marker (base64 is reversible). The Processor still receives the original
-    event, and the original result object is returned to the caller.
+    form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded``, a
+    ``multipart/`` body or one that looks like JSON but does not parse is replaced with the marker
+    (base64 is reversible, and an unparsable payload may still carry secrets). The Processor still
+    receives the original event, and the original result object is returned to the caller.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).

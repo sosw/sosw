@@ -13,8 +13,8 @@ os.environ['STAGE'] = 'test'
 os.environ['autotest'] = 'True'
 
 import sosw.app
-from sosw.app import (LOG_REDACTED_VALUE, Processor, LambdaGlobals, _redact_for_logging, get_lambda_handler,
-                      logger)
+from sosw.app import (LOG_REDACTED_VALUE, Processor, LambdaGlobals, _log_redacted, _redact_for_logging,
+                      get_lambda_handler, logger)
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
@@ -476,6 +476,53 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIn(call(LOG_REDACTED_VALUE), mock_logger_info.call_args_list)
 
 
+    @patch.object(logger, 'warning')
+    def test__log_redacted__unredactable_value_logs_marker_and_warns(self, mock_logger_warning):
+        """
+        The handler-level redaction guard catches more than recursion: a raw query string with a
+        lone surrogate cannot be re-encoded, `_redact_for_logging` raises `UnicodeEncodeError`,
+        and `_log_redacted` returns the marker and warns naming only the exception type.
+        """
+
+        event = {'rawQueryString': 'x=' + chr(0xD800)}
+
+        with self.assertRaises(UnicodeEncodeError):
+            _redact_for_logging(event)
+
+        self.assertEqual(_log_redacted(event), LOG_REDACTED_VALUE)
+        mock_logger_warning.assert_called_once_with(
+            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'UnicodeEncodeError')
+
+
+    @patch.object(logger, 'warning')
+    @patch.object(logger, 'info')
+    def test_lambda_handler__unredactable_event_still_calls_processor(self, mock_logger_info,
+                                                                      mock_logger_warning):
+        """
+        An event whose redacted copy cannot be built (the lone surrogate of the test above) never
+        fails the invocation: the handler logs the marker, the Processor is still called with the
+        original event object and its result object is returned to the caller as is.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        event = {'rawQueryString': 'x=' + chr(0xD800)}
+        result = lambda_handler(event=event, context=MagicMock())
+
+        processor_class.assert_called_once()
+        processor_class.return_value.assert_called_once_with(event)
+        self.assertIs(result, processor_class.return_value.return_value)
+        self.assertIn(call(LOG_REDACTED_VALUE), mock_logger_info.call_args_list)
+        mock_logger_warning.assert_called_once_with(
+            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'UnicodeEncodeError')
+
+
     def test__redact_for_logging__api_gateway_v1_proxy_event(self):
         """
         REST API (v1) proxy event: headers, multiValueHeaders, query params and nested authorizer
@@ -710,15 +757,13 @@ class app_UnitTestCase(unittest.TestCase):
                          [{'api_key': LOG_REDACTED_VALUE}, {'path': '/things'}])
 
 
-    def test__redact_for_logging__non_redactable_body_kept_as_is(self):
+    def test__redact_for_logging__plain_text_body_kept_as_is(self):
         """
-        Bodies with nothing to redact are logged unchanged: invalid JSON that is not form-shaped,
-        plain text (spaces make the form shape fail), and an empty body.
+        Bodies with nothing to redact are logged unchanged: plain text (spaces make both the JSON
+        and the form shape fail) and an empty body.
         """
 
         matrix = [
-            {'body': '{"password": "test-password-value", oops'},
-            {'body': '{"password": "test-password-value", oops', 'headers': {'Content-Type': 'application/json'}},
             {'body': 'some plain text with spaces'},
             {'body': 'some plain text', 'headers': {'Content-Type': 'application/json'}},
             {'body': ''},
@@ -734,12 +779,68 @@ class app_UnitTestCase(unittest.TestCase):
                 self.assertEqual(redacted['body'], data['body'])
 
 
+    def test__redact_for_logging__malformed_json_body_masked(self):
+        """
+        A body that looks like JSON (stripped form starts with `{` or `[`) but does not parse is
+        replaced with the marker instead of being logged verbatim — a truncated payload may still
+        carry secrets. The declared content type and the headers key case make no difference.
+        """
+
+        matrix = [
+            {'body': '{"password": "test-password-value", oops'},
+            {'body': '{"password": "test-password-value", oops', 'headers': {'Content-Type': 'application/json'}},
+            {'body': '["password", "test-password-value"'},
+            {'body': '["password", "test-password-value"', 'Headers': {'Content-Type': 'APPLICATION/JSON'}},
+        ]
+
+        for data in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+
+
+    def test__redact_for_logging__multipart_body_masked(self):
+        """
+        A body whose sibling headers declare a `multipart/` content type (any headers-key or
+        header-name case, value with parameters) is replaced with the marker entirely — the
+        payload is opaque to the redactor, even when it happens to be parseable JSON.
+        """
+
+        multipart_body = ('--boundary\r\n'
+                          'Content-Disposition: form-data; name="password"\r\n\r\n'
+                          'test-multipart-password\r\n'
+                          '--boundary--')
+        matrix = [
+            {'body': multipart_body, 'headers': {'Content-Type': 'multipart/form-data; boundary=boundary'}},
+            {'body': multipart_body, 'headers': {'content-type': 'MULTIPART/MIXED'}},
+            {'body': multipart_body, 'Headers': {'CONTENT-TYPE': 'multipart/related'}},
+            {'body': json.dumps({'password': 'test-password-value'}),
+             'headers': {'Content-Type': 'multipart/form-data'}},
+        ]
+
+        for data in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+                self.assertEqual({k: v for k, v in redacted.items() if k != 'body'},
+                                 {k: v for k, v in data.items() if k != 'body'})
+
+
     def test__redact_for_logging__form_body_redacted(self):
         """
         Form-encoded bodies are redacted like query strings: when the sibling headers declare the
         `application/x-www-form-urlencoded` content type (any key or header-name case, value with
         parameters), when the body has the `k=v&k=v` shape on its own, and even when a sibling
-        content type says otherwise.
+        content type says otherwise. A body that looks like JSON but does not parse keeps this
+        treatment too, as long as it is form-shaped.
         """
 
         form_body = 'grant_type=password&password=test-form-password'
@@ -754,6 +855,8 @@ class app_UnitTestCase(unittest.TestCase):
             ({'body': form_body}, redacted_form),
             ({'body': 'password=secret-value', 'headers': {'Content-Type': 'application/json'}},
              f'password={LOG_REDACTED_VALUE}'),
+            ({'body': '[password=test-form-password&x=1', 'headers': {'Content-Type': 'application/json'}},
+             f'%5Bpassword={LOG_REDACTED_VALUE}&x=1'),
         ]
 
         for data, expected in matrix:
