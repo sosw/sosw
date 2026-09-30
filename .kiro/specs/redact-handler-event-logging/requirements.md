@@ -25,13 +25,14 @@ receiving the original event and the caller the original result.
   the query parameters whose names match `LOG_SENSITIVE_KEY_PARTS` and keep the other parameters
   (and an empty string) intact.
 - WHEN a dict has a `body` key with a string value, THE SYSTEM SHALL prepare its logged copy as
-  follows, in order: the marker, when the same dict has a truthy `isBase64Encoded`; redacted and
-  re-serialized JSON (`ensure_ascii=False`), when the stripped body starts with `{` or `[` and
-  parses; the marker, when such a body is too deeply nested to redact; redacted like a query
-  string, when the body is form-encoded — a sibling `headers` dict (any key case) carries a
-  `content-type` (any key case) starting with `application/x-www-form-urlencoded`, or the body
-  matches the `k=v&k=v` shape; unchanged otherwise (e.g. plain text, or unparsable JSON that is
-  not form-shaped).
+  follows, in order: the marker, when the same dict has a truthy `isBase64Encoded` or a sibling
+  `headers` dict (any key case) carries a `content-type` (any key case) starting with
+  `multipart/`; redacted and re-serialized JSON (`ensure_ascii=False`), when the stripped body
+  starts with `{` or `[` and parses; the marker, when such a body is too deeply nested to redact
+  or fails to parse and is not form-encoded; redacted like a query string, when the body is
+  form-encoded — a sibling `headers` dict carries a `content-type` starting with
+  `application/x-www-form-urlencoded`, or the body matches the `k=v&k=v` shape; unchanged
+  otherwise (e.g. plain text).
 
 ## R3 — Extensibility and pass-through guarantees
 
@@ -39,8 +40,9 @@ receiving the original event and the caller the original result.
   deployments may extend the matching.
 - The Processor SHALL receive the original event object and the caller SHALL receive the original
   result object; redaction applies to the logged copies only.
-- Log redaction SHALL NOT fail an invocation: a value too deeply nested to redact SHALL be logged
-  as `LOG_REDACTED_VALUE`.
+- Log redaction SHALL NOT fail an invocation: when the redacted copy cannot be built (e.g. a
+  value too deeply nested to copy), THE SYSTEM SHALL log `LOG_REDACTED_VALUE` and a warning
+  naming only the exception type.
 
 ## Out of scope
 

@@ -85,9 +85,10 @@ Rules that follow from the warm-start contract:
 - The handler's event/result log lines are redacted: values of keys matching
   `sosw.app.LOG_SENSITIVE_KEY_PARTS` (`Authorization`, cookies, tokens, ...) are masked in
   CloudWatch, together with sensitive parameters of `rawQueryString`, secrets inside JSON `body`
-  strings, form-encoded bodies and whole base64-flagged bodies; numeric values of counter-like
-  keys (`max_tokens`, `tokenCount`, ... — whole words of `LOG_COUNTER_KEY_WORDS`) are kept — the
-  Processor still receives the original event. Constants and known limits: section "Logging of
+  strings, form-encoded bodies and whole base64-flagged, `multipart/` and JSON-looking but
+  unparsable bodies; numeric values of counter-like keys (`max_tokens`, `tokenCount`, ... —
+  whole words of `LOG_COUNTER_KEY_WORDS`) are kept — the Processor still receives the original
+  event. Constants and known limits: section "Logging of
   the event and the result" in `docs/concepts/processor.rst`.
 
 ### Configuration

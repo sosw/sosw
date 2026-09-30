@@ -163,9 +163,10 @@ What is redacted:
 -   **Bodies.** A string ``body`` is redacted when it carries JSON (parsed, redacted recursively
     and re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the
     sibling ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case)
-    or by its ``k=v&k=v`` shape — it is redacted like a query string; and when the sibling
-    ``isBase64Encoded`` flag is set it is replaced with the marker entirely (base64 is
-    reversible).
+    or by its ``k=v&k=v`` shape — it is redacted like a query string; and it is replaced with the
+    marker entirely when the sibling ``isBase64Encoded`` flag is set (base64 is reversible), when
+    the ``content-type`` starts with ``multipart/``, or when it looks like JSON but fails to
+    parse and is not form-shaped (a truncated payload may still carry secrets).
 
 All three constants are plain module globals read at call time, so a deployment can extend the
 matching without touching ``sosw`` code:
@@ -181,7 +182,8 @@ for the logs by design. Tokens nested inside the *values* of non-sensitive param
 fields (e.g. a redirect URL carrying an ``access_token``) are not masked; JSON strings under keys
 other than ``body`` (e.g. an SNS ``Records[].Sns.Message`` payload) are not parsed; header names
 outside ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``X-Auth-Key``, ``X-Session-Id``) are kept; a value too
-deeply nested to redact is logged as the marker instead — logging never fails the invocation.
+deeply nested to redact — or that fails to redact for any other reason — is logged as the marker
+with a warning instead: logging never fails the invocation.
 
 
 Failing loudly

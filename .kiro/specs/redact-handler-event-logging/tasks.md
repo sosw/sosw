@@ -1,7 +1,7 @@
 # Handler log redaction — Tasks
 
 - [x] 1. Redaction helper: sensitive-key matching, `None`/bool kept, counter-like numerics kept
-  (`LOG_COUNTER_KEY_PARTS`), recursive, non-mutating.
+  (`LOG_COUNTER_KEY_WORDS`), recursive, non-mutating.
 - [x] 2. `rawQueryString`: mask values of sensitive query parameters, keep the rest readable.
 - [x] 3. String `body`: redact parsable JSON recursively, skip base64, keep other bodies as is.
 - [x] 4. Handler logs redacted copies of event and result; original objects pass through.
@@ -13,3 +13,6 @@
   never fails because of logging (round-2 review).
 - [x] 9. Docs section "Logging of the event and the result" in `docs/concepts/processor.rst`;
   remaining gaps listed as trade-offs here and in the docs.
+- [x] 10. Round-4 review: `_log_redacted` catches any exception and warns naming only the type
+  (e.g. a lone surrogate in `rawQueryString`); JSON-looking bodies that do not parse and
+  `multipart/` bodies log the marker; full core imports before `boto3` in `sosw/app.py`.
