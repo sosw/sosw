@@ -8,7 +8,7 @@ import os
 import csv
 
 from collections import defaultdict
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from sosw.components.sns import *
 
 
@@ -147,6 +147,182 @@ class sns_TestCase(unittest.TestCase):
         self.sns.send_message("test message", message_attributes={'price': 100, 'cancellation': True})
         self.assertEqual(len(self.sns.queue), 1, "On sending message with different message_attributes, old messages "
                                                  "should be committed. New one should be queued.")
+
+
+    def test_init__explicit_test_false_wins_over_stage(self):
+        """
+        An explicitly passed `test=False` must win even when STAGE=test: a real boto3 session is initialized
+        and the recipient is not overridden with the autotest topic.
+        """
+
+        with patch('boto3.Session') as mock_session:
+            sns = SnsManager(test=False, subject='subj', recipient='arn:aws:sns:us-west-2:000000000000:real_topic')
+
+        self.assertFalse(sns.test)
+        self.assertEqual(sns.recipient, 'arn:aws:sns:us-west-2:000000000000:real_topic',
+                         "Recipient must not be overridden with autotest topic in non-test mode")
+        mock_session.assert_called_once_with(region_name='us-west-2')
+        mock_session.return_value.client.assert_called_once_with('sns')
+        self.assertIs(sns.client, mock_session.return_value.client.return_value)
+
+
+    def test_init__explicit_test_true_wins_over_stage(self):
+        """
+        An explicitly passed `test=True` must win even when STAGE is not test: no real clients initialized.
+        """
+
+        with patch.dict(os.environ, {'STAGE': 'production'}):
+            with patch('boto3.Session') as mock_session:
+                sns = SnsManager(test=True, subject='subj')
+
+        self.assertTrue(sns.test)
+        self.assertEqual(sns.recipient, 'arn:aws:sns:us-west-2:000000000000:autotest_topic')
+        mock_session.assert_not_called()
+
+
+    def test_init__test_flag_derived_from_stage(self):
+        """
+        Without the explicit `test` flag the mode is derived from STAGE.
+        """
+
+        sns = SnsManager(subject='subj')
+        self.assertTrue(sns.test, "STAGE=test in the environment of unit tests must derive test mode")
+
+        with patch.dict(os.environ, {'STAGE': 'production'}):
+            with patch('boto3.Session') as mock_session:
+                sns = SnsManager(subject='subj', region='eu-west-1')
+
+        self.assertFalse(sns.test)
+        mock_session.assert_called_once_with(region_name='eu-west-1')
+
+
+    def test_del__commits_queued_messages(self):
+        self.sns.queue = ['unsent message']
+        self.sns.__del__()
+        self.sns.commit.assert_called_once()
+
+
+    def test_del__empty_queue_not_committed(self):
+        self.sns.queue = []
+        self.sns.__del__()
+        self.sns.commit.assert_not_called()
+
+
+    def test_set_separator(self):
+        self.sns.set_separator('\n---\n')
+        self.assertEqual(self.sns.separator, '\n---\n')
+
+
+    def test_set_separator__invalid(self):
+        self.assertRaises(AssertionError, self.sns.set_separator, 42)
+
+
+    def test_commit__publishes_combined_message(self):
+        sns = SnsManager(test=True, subject='Autotest SNS Subject')
+        sns.client = MagicMock()
+        sns.queue = ['first', 'second']
+
+        sns.commit()
+
+        sns.client.publish.assert_called_once_with(
+                TopicArn='arn:aws:sns:us-west-2:000000000000:autotest_topic',
+                Subject='Autotest SNS Subject',
+                Message=f"first{sns.separator}second")
+        self.assertEqual(sns.queue, [], "Queue must be cleaned after commit")
+        self.assertIsNone(sns.message_attributes, "MessageAttributes must be reset after commit")
+
+
+    def test_commit__with_message_attributes(self):
+        sns = SnsManager(test=True, subject='Autotest SNS Subject')
+        sns.client = MagicMock()
+        sns.queue = ['some message']
+        sns.message_attributes = {'price': 100, 'tag': 'sale'}
+
+        sns.commit()
+
+        args, kwargs = sns.client.publish.call_args
+        self.assertEqual(kwargs['MessageAttributes'],
+                         {
+                             'price': {'DataType': 'Number', 'StringValue': '100'},
+                             'tag':   {'DataType': 'String', 'StringValue': 'sale'},
+                         })
+        self.assertIsNone(sns.message_attributes)
+
+
+    def test_commit__empty_queue_does_not_publish(self):
+        sns = SnsManager(test=True, subject='Autotest SNS Subject')
+        sns.client = MagicMock()
+
+        sns.commit()
+
+        sns.client.publish.assert_not_called()
+        self.assertEqual(sns.queue, [])
+
+
+    def test_commit__raises_without_recipient(self):
+        sns = SnsManager(test=True, subject='Autotest SNS Subject')
+        sns.recipient = None
+        sns.queue = ['some message']
+
+        with self.assertRaises(RuntimeError) as exc:
+            sns.commit()
+
+        self.assertIn("did not specify ARN of recipient", str(exc.exception))
+        sns.queue = []  # Keep the destructor quiet.
+
+
+    def test_commit__raises_without_subject(self):
+        sns = SnsManager(test=True)
+        sns.queue = ['some message']
+
+        with self.assertRaises(RuntimeError) as exc:
+            sns.commit()
+
+        self.assertIn("did not specify Subject", str(exc.exception))
+        sns.queue = []  # Keep the destructor quiet.
+
+
+    def test_get_message_attribute__unsupported_type(self):
+        with self.assertRaises(TypeError) as exc:
+            SnsManager.get_message_attribute(None)
+
+        self.assertIn("Unsupported message_attribute value", str(exc.exception))
+
+
+    def test_send_message__raises_without_any_subject(self):
+        sns = SnsManager(test=True)
+
+        with self.assertRaises(RuntimeError) as exc:
+            sns.send_message('some message')
+
+        self.assertIn("must have specified subject", str(exc.exception))
+
+
+    def test_send_message__forse_commit__sets_missing_subject(self):
+        sns = SnsManager(test=True)
+        sns.commit = MagicMock(side_effect=lambda: setattr(sns, 'queue', []))
+
+        sns.send_message('some message', subject='New Subject', forse_commit=True)
+
+        self.assertEqual(sns.subject, 'New Subject')
+        sns.commit.assert_called_once()
+
+
+    def test_send_message__forse_commit__with_existing_subject(self):
+        self.sns.send_message('some message', forse_commit=True)
+        self.sns.commit.assert_called_once()
+        self.assertEqual(self.sns.subject, 'Autotest SNS Subject')
+
+
+    def test_create_subscription(self):
+        self.sns.client = MagicMock()
+
+        self.sns.create_subscription('arn:aws:sns:us-west-2:000000000000:topic', 'email', 'test@sosw.app')
+
+        self.sns.client.subscribe.assert_called_once_with(
+                TopicArn='arn:aws:sns:us-west-2:000000000000:topic',
+                Protocol='email',
+                Endpoint='test@sosw.app')
 
 
 if __name__ == '__main__':

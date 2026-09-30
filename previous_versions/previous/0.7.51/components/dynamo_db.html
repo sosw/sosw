@@ -1,0 +1,667 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DynamoDB Client &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/components/dynamo_db.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Helpers" href="helpers.html" />
+    <link rel="prev" title="Config Source" href="config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Config Source</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">DynamoDB Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="siblings.html">Siblings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigv4.html">SigV4 Request Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sns.html">SNS Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Components</a></li>
+      <li class="breadcrumb-item active">DynamoDB Client</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/components/dynamo_db.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-sosw.components.dynamo_db">
+<span id="id1"></span><span id="dynamodb-client"></span><h1>DynamoDB Client<a class="headerlink" href="#module-sosw.components.dynamo_db" title="Link to this heading"></a></h1>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock3'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock3" style="display: none"><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.dynamo_db.</span></span><span class="sig-name descname"><span class="pre">DynamoDbClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glue_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">client</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient" title="Link to this definition"></a></dt>
+<dd><p>Has default methods for different types of DynamoDB tables.</p>
+<p>The current implementation supports only one fixed table during initialization,
+but you are free to initialize multiple simultaneous dynamo_clients in your Lambda with different configs.</p>
+<p>Config should have a mapping for the field types and required fields.
+Config example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;row_mapper&#39;</span><span class="p">:</span>     <span class="p">{</span>
+        <span class="s1">&#39;col_name_1&#39;</span><span class="p">:</span>      <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="c1"># Number</span>
+        <span class="s1">&#39;col_name_2&#39;</span><span class="p">:</span>      <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="c1"># String</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;required_fields&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;col_name_1&#39;</span><span class="p">]</span>
+    <span class="s1">&#39;table_name&#39;</span><span class="p">:</span> <span class="s1">&#39;some_table_name&#39;</span><span class="p">,</span>  <span class="c1"># If a table is not specified, this table will be used.</span>
+    <span class="s1">&#39;hash_key&#39;</span><span class="p">:</span> <span class="s1">&#39;the_hash_key&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dont_json_loads_results&#39;</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Use this if you don&#39;t want to convert json strings into json</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient._describe_table">
+<span class="sig-name descname"><span class="pre">_describe_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient._describe_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient._describe_table" title="Link to this definition"></a></dt>
+<dd><p>Returns description of the table from AWS. Response like: <a class="reference external" href="https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table">DynamoDB.Client.describe_table</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description of the table</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient._parse_filter_expression">
+<span class="sig-name descname"><span class="pre">_parse_filter_expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient._parse_filter_expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient._parse_filter_expression" title="Link to this definition"></a></dt>
+<dd><p>Converts FilterExpression to Dynamo syntax. We still do not support some operators. Feel free to implement:
+<a class="reference external" href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html">Expressions.OperatorsAndFunctions.html</a></p>
+<p>Supported: regular comparators, between, attribute_exists, attribute_not_exists</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Returns a tuple of the transformed expression and extracted variables already Dynamo formatted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient._query_constructor">
+<span class="sig-name descname"><span class="pre">_query_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comparisons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_all_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expr_attrs_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consistent_read</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient._query_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient._query_constructor" title="Link to this definition"></a></dt>
+<dd><p id="query-constructor">Constructs a query to retrieve items from a DynamoDB table based on specified parameters.
+Can specify an index. If an index is not specified, will query the table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keys</strong> (<em>dict</em>) – Keys and values to use in query.
+You must specify the hash key, and can optionally also add the range key.</p>
+</dd>
+</dl>
+<p>Optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>str</em>) – Name of the dynamo table. If not specified, will use table_name from the config.</p></li>
+<li><p><strong>index_name</strong> (<em>str</em>) – Name of the secondary index in the table. If not specified, will query the table itself.</p></li>
+<li><p><strong>comparisons</strong> (<em>dict</em>) – Type of comparison for each key. If a key is not mentioned, comparison type will be =.
+Valid values: <code class="docutils literal notranslate"><span class="pre">=</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&gt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">begins_with</span></code>.
+Comparisons only work for the range key.
+Example: if <code class="docutils literal notranslate"><span class="pre">keys={'hk':</span> <span class="pre">'cat',</span> <span class="pre">'rk':</span> <span class="pre">100}</span> <span class="pre">and</span> <span class="pre">comparisons={'rk':</span> <span class="pre">'&lt;='}</span></code> -&gt; will get items where
+<code class="docutils literal notranslate"><span class="pre">rk</span> <span class="pre">&lt;=</span> <span class="pre">100</span></code></p></li>
+<li><p><strong>max_items</strong> (<em>int</em>) – Limit the number of items to fetch.</p></li>
+<li><p><strong>filter_expression</strong> (<em>str</em>) – Supports regular comparisons and <cite>between</cite>. Input must be a regular human string
+e.g. <code class="docutils literal notranslate"><span class="pre">'key</span> <span class="pre">&lt;=</span> <span class="pre">42',</span> <span class="pre">'name</span> <span class="pre">=</span> <span class="pre">marta',</span> <span class="pre">'foo</span> <span class="pre">between</span> <span class="pre">10</span> <span class="pre">and</span> <span class="pre">20'</span></code>, etc.</p></li>
+<li><p><strong>desc</strong> (<em>bool</em>) – By default, (False) the values will be sorted ascending by the SortKey.
+To reverse the order set the argument <code class="docutils literal notranslate"><span class="pre">desc=True</span></code>.</p></li>
+<li><p><strong>fetch_all_fields</strong> (<em>bool</em>) – If False, will only get the attributes specified in the row mapper.
+If True, will get all attributes. Default is False.</p></li>
+<li><p><strong>expr_attrs_names</strong> (<em>list</em>) – List of attributes names, in case if an attribute name begins with a number or
+contains a space, a special character, or a reserved word, you must use an expression attribute name to
+replace that attribute’s name in the expression.
+Example, if the list [‘session’, ‘key’] is received, then a new dict will be assigned to
+<code class="docutils literal notranslate"><span class="pre">ExpressionAttributeNames</span></code>:
+<code class="docutils literal notranslate"><span class="pre">{'#session':</span> <span class="pre">'session',</span> <span class="pre">'#key':</span> <span class="pre">'key'}</span></code></p></li>
+<li><p><strong>consistent_read</strong> (<em>bool</em>) – If True , then the operation uses strongly consistent reads;
+otherwise, the operation uses eventually consistent reads. Default is False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Query parameters for boto3 Dynamo DB query</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.batch_get_items_one_table">
+<span class="sig-name descname"><span class="pre">batch_get_items_one_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_wait_base_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_all_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consistent_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.batch_get_items_one_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.batch_get_items_one_table" title="Link to this definition"></a></dt>
+<dd><p>Gets a batch of items from a single dynamo table.
+Only accepts keys, can’t query by other columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keys_list</strong> (<em>list</em>) – A list of the keys of the items we want to get. Gets the items that match the given keys.
+If some key doesn’t exist - it just skips it and gets the others.
+e.g. [{‘hash_col’: ‘1, ‘range_col’: 2}, {‘hash_col’: 3}]
+- will get a row where <code class="docutils literal notranslate"><span class="pre">hash_col</span></code> is 1 and <code class="docutils literal notranslate"><span class="pre">range_col</span></code> is 2, and also all rows where
+<code class="docutils literal notranslate"><span class="pre">hash_col</span></code> is 3.</p>
+</dd>
+</dl>
+<p>Optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>str</em>)</p></li>
+<li><p><strong>max_retries</strong> (<em>int</em>) – If failed to get some items, retry this many times. Waiting between retries is
+multiplied by 2 after each retry, so <code class="docutils literal notranslate"><span class="pre">retries</span></code> shouldn’t be a big number.
+Default is 1.</p></li>
+<li><p><strong>retry_wait_base_time</strong> (<em>int</em>) – Wait this much time after first retry. Will wait twice longer in each retry.</p></li>
+<li><p><strong>strict</strong> (<em>bool</em>) – DEPRECATED.</p></li>
+<li><p><strong>fetch_all_fields</strong> (<em>bool</em>) – If False, will only get the attributes specified in the row mapper.
+If True, will get all attributes. Default is False.</p></li>
+<li><p><strong>consistent_read</strong> (<em>bool</em>) – If True , then the operation uses strongly consistent reads;
+otherwise, the operation uses eventually consistent reads. Default is False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of items from the table</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.convert_glue_column_to_ddb">
+<span class="sig-name descname"><span class="pre">convert_glue_column_to_ddb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.convert_glue_column_to_ddb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.convert_glue_column_to_ddb" title="Link to this definition"></a></dt>
+<dd><p>From Glue column:
+<code class="docutils literal notranslate"><span class="pre">{'Name':</span> <span class="pre">'id',</span> <span class="pre">'Type':</span> <span class="pre">'string'}</span></code></p>
+<p>To Dynamo DB column:
+<code class="docutils literal notranslate"><span class="pre">{'id':</span> <span class="pre">'S'}</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.create" title="Link to this definition"></a></dt>
+<dd><p>Uses the mechanism of the <code class="docutils literal notranslate"><span class="pre">put</span></code> method, but first validates that the item with same hash &amp; [range] key[s]
+does not exist in the table. Otherwise, raises: <code class="docutils literal notranslate"><span class="pre">ConditionalCheckFailedException</span></code></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This method requires the config to have a ‘hash_key’ parameter with a name of a field.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong></p></li>
+<li><p><strong>table_name</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.delete" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keys</strong> (<em>dict</em>) – Keys and values of the row we delete.</p></li>
+<li><p><strong>table_name</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.dict_to_dynamo">
+<span class="sig-name descname"><span class="pre">dict_to_dynamo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.dict_to_dynamo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.dict_to_dynamo" title="Link to this definition"></a></dt>
+<dd><p>Convert the row from regular dictionary to the ugly DynamoDB syntax. Takes settings from row_mapper.</p>
+<p>e.g.                <code class="docutils literal notranslate"><span class="pre">{'key1':</span> <span class="pre">'value1',</span> <span class="pre">'key2':</span> <span class="pre">'value2'}</span></code>
+will convert to:    <code class="docutils literal notranslate"><span class="pre">{'key1':</span> <span class="pre">{'Type1':</span> <span class="pre">'value1'},</span> <span class="pre">'key2':</span> <span class="pre">{'Type2':</span> <span class="pre">'value2'}}</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row_dict</strong> (<em>dict</em>) – A row we want to convert to dynamo syntax.</p></li>
+<li><p><strong>add_prefix</strong> (<em>str</em>) – A string prefix to add to the key in the result dict. Useful for queries like update.</p></li>
+<li><p><strong>strict</strong> (<em>bool</em>) – If False, will get the type from the value in the dict (this works for numbers and
+strings). If True, won’t add them if they’re not in the required_fields, and if they
+are, will raise an error. Uses <code class="docutils literal notranslate"><span class="pre">boto3.types.TypeSerializer</span></code> for type conversion,
+but before that automatically guesses that numeric values should become <code class="docutils literal notranslate"><span class="pre">N</span></code> type,
+boolean types or ‘true/false’ strings - <code class="docutils literal notranslate"><span class="pre">B</span></code>, dictionaries - <code class="docutils literal notranslate"><span class="pre">M</span></code> recursively.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DynamoDB Task item</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.dynamo_to_dict">
+<span class="sig-name descname"><span class="pre">dynamo_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dynamo_row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_all_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.dynamo_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.dynamo_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Convert the ugly DynamoDB syntax of the row, to regular dictionary.
+We currently support only String or Numeric values. Latest ones are converted to int or float.
+Takes settings from row_mapper.</p>
+<p>e.g.:               <code class="docutils literal notranslate"><span class="pre">{'key1':</span> <span class="pre">{'N':</span> <span class="pre">'3'},</span> <span class="pre">'key2':</span> <span class="pre">{'S':</span> <span class="pre">'value2'}}</span></code>
+will convert to:    <code class="docutils literal notranslate"><span class="pre">{'key1':</span> <span class="pre">3,</span> <span class="pre">'key2':</span> <span class="pre">'value2'}</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dynamo_row</strong> (<em>dict</em>) – DynamoDB row item</p></li>
+<li><p><strong>strict</strong> (<em>bool</em>) – DEPRECATED.</p></li>
+<li><p><strong>fetch_all_fields</strong> (<em>bool</em>) – If False only row_mapper fields will be extracted from dynamo_row, else, all
+fields will be extracted from dynamo_row.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The row in a key-value format</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.enrich_config_from_glue">
+<span class="sig-name descname"><span class="pre">enrich_config_from_glue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glue_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">client</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.enrich_config_from_glue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.enrich_config_from_glue" title="Link to this definition"></a></dt>
+<dd><p>This functions allows config to have only the <code class="docutils literal notranslate"><span class="pre">table_name</span></code> and in case we have a Glue Database <code class="docutils literal notranslate"><span class="pre">ddb_tables</span></code>
+with Crawlers regularly updating it, we can construct the rest of the config from it.</p>
+<p>Read more: <a class="reference external" href="https://github.com/sosw/sosw-examples/tree/master/helper_lambdas/sys_glue_ddb_crawler">sys_glue_ddb_crawler</a></p>
+<p>Lazy initialization of <code class="docutils literal notranslate"><span class="pre">boto3.client('glue')</span></code> is supposed to be in the <code class="docutils literal notranslate"><span class="pre">app</span></code> module, but for compatibility
+with <code class="docutils literal notranslate"><span class="pre">DynamoDbClient</span></code> initialized outside the scope of the Processor (e.g. your custom scripts), we support
+initialization of the <code class="docutils literal notranslate"><span class="pre">glue_client</span></code> if missing.</p>
+<p>In order to use Glue the Role of your application should have relevant permissions.
+By default, we ignore missing permissions and just return the config as is.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_by_query">
+<span class="sig-name descname"><span class="pre">get_by_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_by_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_by_query" title="Link to this definition"></a></dt>
+<dd><p>Executes a query to the DynamoDB database using the provided keys and additional parameters.</p>
+<p>For signature description see: <a class="reference internal" href="#query-constructor">query_constructor</a></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_by_scan">
+<span class="sig-name descname"><span class="pre">get_by_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_all_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consistent_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_by_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_by_scan" title="Link to this definition"></a></dt>
+<dd><p>Scans a table. Don’t use this method if you want to select by keys. It is SLOW compared to get_by_query.
+Careful - don’t make queries of too many items, this could run for a long time.</p>
+<p>Optional:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attrs</strong> (<em>dict</em>) – Attribute names and values of the items we get. Can be empty to get the whole table.</p></li>
+<li><p><strong>table_name</strong> (<em>str</em>) – Name of the dynamo table. If not specified, will use table_name from the config.</p></li>
+<li><p><strong>index_name</strong> (<em>str</em>) – Name of the dynamo table index. If not specified, will use index_name from the config.
+If not specified also in the config, will scan the table itself without any index.</p></li>
+<li><p><strong>consistent_read</strong> (<em>bool</em>) – If True , then the operation uses strongly consistent reads;
+otherwise, the operation uses eventually consistent reads. Default is False</p></li>
+<li><p><strong>strict</strong> (<em>bool</em>) – DEPRECATED.</p></li>
+<li><p><strong>fetch_all_fields</strong> (<em>bool</em>) – If False, will only get the attributes specified in the row mapper.
+If True, will get all attributes. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of items from the table, each item in key-value format</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_by_scan_generator">
+<span class="sig-name descname"><span class="pre">get_by_scan_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_all_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consistent_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_by_scan_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_by_scan_generator" title="Link to this definition"></a></dt>
+<dd><p>Scans a table. Don’t use this method if you want to select by keys. It is SLOW compared to get_by_query.
+Careful - don’t make queries of too many items, this could run for a long time.
+Same as get_by_scan, but yields parts of the results.</p>
+<p>Optional:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attrs</strong> (<em>dict</em>) – Attribute names and values of the items we get. Can be empty to get the whole table.</p></li>
+<li><p><strong>table_name</strong> (<em>str</em>) – Name of the dynamo table. If not specified, will use table_name from the config.</p></li>
+<li><p><strong>index_name</strong> (<em>str</em>) – Name of the dynamo table index. If not specified, will use index_name from the config.
+If not specified also in the config, will scan the table itself without any index.</p></li>
+<li><p><strong>consistent_read</strong> (<em>bool</em>) – If True , then the operation uses strongly consistent reads;
+otherwise, the operation uses eventually consistent reads. Default uses this settings of boto3 (False).</p></li>
+<li><p><strong>strict</strong> (<em>bool</em>) – DEPRECATED.</p></li>
+<li><p><strong>fetch_all_fields</strong> (<em>bool</em>) – If False, will only get the attributes specified in the row mapper.
+If false, will get all attributes. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of items from the table, each item in key-value format</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_capacity">
+<span class="sig-name descname"><span class="pre">get_capacity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_capacity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_capacity" title="Link to this definition"></a></dt>
+<dd><p>Fetches capacity for data tables</p>
+<dl class="simple">
+<dt>Keyword Arguments:</dt><dd><p>table_name {str} – DynamoDB (default: {None})</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict – read/write capacity for the table requested or None for ON_DEMAND (PAY_PER_REQUEST) tables</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_stats">
+<span class="sig-name descname"><span class="pre">get_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_stats" title="Link to this definition"></a></dt>
+<dd><p>Return statistics of operations performed by current instance of the Class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>dict    - key: int statistics.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_table_indexes">
+<span class="sig-name descname"><span class="pre">get_table_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_table_indexes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_table_indexes" title="Link to this definition"></a></dt>
+<dd><p>Returns <strong>active</strong> indexes of the table: their hash key, range key, and projection type.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;index_1_name&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;projection_type&#39;</span><span class="p">:</span> <span class="s1">&#39;ALL&#39;</span><span class="p">,</span>  <span class="c1"># One of: &#39;ALL&#39;|&#39;KEYS_ONLY&#39;|&#39;INCLUDE&#39;</span>
+        <span class="s1">&#39;hash_key&#39;</span><span class="p">:</span> <span class="s1">&#39;the_hash_key_column_name&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;range_key&#39;</span><span class="p">:</span> <span class="s1">&#39;the_range_key_column_name&#39;</span><span class="p">,</span>  <span class="c1"># Can be None if the index has no range key</span>
+        <span class="s1">&#39;provisioned_throughput&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;write_capacity&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="s1">&#39;read_capacity&#39;</span><span class="p">:</span> <span class="mi">10</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;index_2_name&#39;</span><span class="p">:</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the provisioned_throughput is set to 0.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.get_table_keys">
+<span class="sig-name descname"><span class="pre">get_table_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.get_table_keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.get_table_keys" title="Link to this definition"></a></dt>
+<dd><p>Returns table’s hash key name and range key name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>table_name</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>hash key and range key names</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.identify_dynamo_capacity">
+<span class="sig-name descname"><span class="pre">identify_dynamo_capacity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.identify_dynamo_capacity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.identify_dynamo_capacity" title="Link to this definition"></a></dt>
+<dd><p>Identify and store the table capacity for a given table on the object.</p>
+<p>In case the table has ON DEMAND (PAY_PER_REQUEST) BillingMode the ProvisionedThroughput is missing.</p>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>table_name {str} – short name of the dynamo db table to analyze</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.patch">
+<span class="sig-name descname"><span class="pre">patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_increment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_remove</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.patch" title="Link to this definition"></a></dt>
+<dd><p>Updates an item in DynamoDB. Will fail if an item with these keys does not exist.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_existing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.put"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.put" title="Link to this definition"></a></dt>
+<dd><p>Writes the row to the DynamoDB table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> – The row to add to the table. key is column name, value is value.</p></li>
+<li><p><strong>table_name</strong> – Name of the dynamo table to add the row to.</p></li>
+<li><p><strong>overwrite_existing</strong> – Overwrite the existing row if True, otherwise will raise an exception if exists.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">overwrite_existing</span></code> option requires the config to have a ‘hash_key’ parameter with a name of a field.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.reset_stats">
+<span class="sig-name descname"><span class="pre">reset_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.reset_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.reset_stats" title="Link to this definition"></a></dt>
+<dd><p>Cleans statistics.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.sleep_db">
+<span class="sig-name descname"><span class="pre">sleep_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">last_action_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.sleep_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.sleep_db" title="Link to this definition"></a></dt>
+<dd><p>Sleeps between calls to dynamodb (if it needs to).
+Uses the table’s capacity to decide how long it needs to sleep.
+No need to sleep for ON DEMAND (PAY_PER_REQUEST) tables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>last_action_time</strong> – Last time when we did this action (read/write) to this dynamo table</p></li>
+<li><p><strong>action</strong> – “read” or “write”</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.transact_write">
+<span class="sig-name descname"><span class="pre">transact_write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">transactions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.transact_write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.transact_write" title="Link to this definition"></a></dt>
+<dd><p>Executes many write transaction. Can execute operations on different tables.
+Will split transactions to chunks - because transact_write_items accepts up to 10 actions.
+WARNING: If you’re expecting a transaction on more than 10 operations - AWS DynamoDB doesn’t support it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dynamo_db_client</span> <span class="o">=</span> <span class="n">DynamoDbClient</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="n">t1</span> <span class="o">=</span> <span class="n">dynamo_db_client</span><span class="o">.</span><span class="n">make_put_transaction_item</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;table1&#39;</span><span class="p">)</span>
+<span class="n">t2</span> <span class="o">=</span> <span class="n">dynamo_db_client</span><span class="o">.</span><span class="n">make_delete_transaction_item</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;table2&#39;</span><span class="p">)</span>
+<span class="n">dynamo_db_client</span><span class="o">.</span><span class="n">transact_write</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.DynamoDbClient.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_increment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_to_remove</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#DynamoDbClient.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.DynamoDbClient.update" title="Link to this definition"></a></dt>
+<dd><p>Updates an item in DynamoDB. Will create a new item if it doesn’t exist.
+IMPORTANT - If you want to make sure it exists, use <code class="docutils literal notranslate"><span class="pre">patch</span></code> method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keys</strong> (<em>dict</em>) – Keys and values of the row we update.
+Example, in a table where the hash key is ‘hk’ and the range key is ‘rk’:
+<code class="docutils literal notranslate"><span class="pre">{'hk':</span> <span class="pre">'cat',</span> <span class="pre">'rk':</span> <span class="pre">'123'}</span></code></p></li>
+<li><p><strong>attributes_to_update</strong> (<em>dict</em>) – Dict of the attributes to be updated.
+Can contain both existing attributes and new attributes.
+Will update existing, and create new attributes.
+Example: <code class="docutils literal notranslate"><span class="pre">{'col_name':</span> <span class="pre">'some_value'}</span></code></p></li>
+<li><p><strong>attributes_to_increment</strong> (<em>dict</em>) – Attribute names to increment, and the value to increment by. If the attribute doesn’t exist, will create it.
+Example: <code class="docutils literal notranslate"><span class="pre">{'some_counter':</span> <span class="pre">'3'}</span></code></p></li>
+<li><p><strong>attributes_to_remove</strong> (<em>list</em>) – Will remove these attributes from the record</p></li>
+<li><p><strong>condition_expression</strong> (<em>str</em>) – Condition Expression that must be fulfilled on the object to update.</p></li>
+<li><p><strong>table_name</strong> (<em>str</em>) – Name of the table</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.dynamo_db.clean_dynamo_table">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.dynamo_db.</span></span><span class="sig-name descname"><span class="pre">clean_dynamo_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'autotest_dynamo_db'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('hash_col',</span> <span class="pre">'range_col')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_expression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/dynamo_db.html#clean_dynamo_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.dynamo_db.clean_dynamo_table" title="Link to this definition"></a></dt>
+<dd><p>Cleans the DynamoDB Table. Only for autotest tables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table_name</strong> (<em>str</em>) – name of the table</p></li>
+<li><p><strong>keys</strong> (<em>tuple</em>) – the keys of the table</p></li>
+<li><p><strong>filter_expression</strong> (<em>str</em>) – Supports regular comparisons and <cite>between</cite>. Input must be a regular human string
+e.g. <code class="docutils literal notranslate"><span class="pre">'key</span> <span class="pre">&lt;=</span> <span class="pre">42',</span> <span class="pre">'name</span> <span class="pre">=</span> <span class="pre">marta',</span> <span class="pre">'foo</span> <span class="pre">between</span> <span class="pre">10</span> <span class="pre">and</span> <span class="pre">20'</span></code>, etc.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There are some reserved words that would not work with
+Filter Expression in case they are attribute names. Fix this one day.</p>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="config.html" class="btn btn-neutral float-left" title="Config Source" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="helpers.html" class="btn btn-neutral float-right" title="Helpers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processor &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/essentials/processor.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Worker" href="worker.html" />
+    <link rel="prev" title="Essentials" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Essentials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker.html">Worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essential.html">Essential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="orchestrator.html">Orchestrator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scheduler.html">Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scavenger.html">Scavenger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker_assistant.html">Worker Assitant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Essentials</a></li>
+      <li class="breadcrumb-item active">Processor</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/essentials/processor.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="processor">
+<span id="id1"></span><h1>Processor<a class="headerlink" href="#processor" title="Link to this heading"></a></h1>
+<p>Core class for other components to inherit.</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock10'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock10" style="display: none"><div class="highlight-text notranslate" id="module-sosw.app"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.app.LambdaGlobals">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.app.</span></span><span class="sig-name descname"><span class="pre">LambdaGlobals</span></span><a class="reference internal" href="../_modules/sosw/app.html#LambdaGlobals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.LambdaGlobals" title="Link to this definition"></a></dt>
+<dd><p>Global placeholder for global_vars that we want to preserve in the lifetime of the Lambda Container.
+e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.</p>
+<p>This namespace also contains the lambda_context which should be reset by <cite>get_lambda_handler</cite> method.
+See Worker examples in documentation for more info.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sosw.app.Processor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.app.</span></span><span class="sig-name descname"><span class="pre">Processor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor" title="Link to this definition"></a></dt>
+<dd><p>Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
+You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
+<cite>Worker</cite> class in case you are running functions under <cite>sosw</cite> orchestration.</p>
+<p><code class="docutils literal notranslate"><span class="pre">get_ddbc(prefix:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">DynamoDbClient:</span></code></p>
+<p>Lazily initializes and retrieves a DynamoDB client configured for a specific table and schema validation.</p>
+<p>This method initializes custom DynamoDB clients based on the provided prefix. If a client with the
+specified prefix has already been initialized, it returns the existing client. If not, it looks in the
+Processor config for a prefixed dynamodb config (e.g. for prefix <code class="docutils literal notranslate"><span class="pre">project_a</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">project_a_dynamo_db_config</span></code>).
+The dynamo_db client will be initialized as <code class="docutils literal notranslate"><span class="pre">self.project_a_dynamo_db_client</span></code>.</p>
+<p>This is particularly useful for scenarios requiring schema validation, transformation of DynamoDB
+syntax to dictionary format, and other operations beyond the capabilities of the raw boto3 client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>prefix</strong> (<em>str</em>) – The prefix for the DynamoDB client configuration and naming.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the provided prefix is not supported by the available configuration.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="sosw.app.Processor._account">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_account</span></span><a class="headerlink" href="#sosw.app.Processor._account" title="Link to this definition"></a></dt>
+<dd><p>Get current AWS Account to construct different ARNs.</p>
+<p>We don’t have this parameter in Environmental variables, only can parse from Context. It is stored
+in <code class="docutils literal notranslate"><span class="pre">global_vars</span></code> and is supposed to be passed by your <cite>lambda_handler</cite> during initialization.</p>
+<p>As a fallback for cases when we use <code class="docutils literal notranslate"><span class="pre">Processor</span></code> not in the Lambda environment, we have a lazy autodetection
+mechanism using STS, but it is pretty heavy (~0.3 seconds).</p>
+<dl class="simple">
+<dt>Some things to note:</dt><dd><ul class="simple">
+<li><p>We store this value in class variable for fast access</p></li>
+<li><p>It uses Lazy initialization.</p></li>
+<li><p>We first try from context and only if not provided - use the autodetection.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor._c">
+<span class="sig-name descname"><span class="pre">_c</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/sosw/app.html#Processor._c"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor._c" title="Link to this definition"></a></dt>
+<dd><p>Shortcut to access values from the Processor config.</p>
+<p>E.g. <code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">self._c('path.to.param')</span></code></p>
+<p>Is similar to: <code class="docutils literal notranslate"><span class="pre">val</span> <span class="pre">=</span> <span class="pre">self.config.get('path',</span> <span class="pre">{}).get('to',</span> <span class="pre">{}).get('param',</span> <span class="pre">default)</span></code></p>
+<p>The value specified in <cite>default</cite> or None is returned if the path is not found.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="sosw.app.Processor._region">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">_region</span></span><a class="headerlink" href="#sosw.app.Processor._region" title="Link to this definition"></a></dt>
+<dd><p>Property fetched from AWS Lambda Environmental variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor.die">
+<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unknown</span> <span class="pre">Failure'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor.die"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor.die" title="Link to this definition"></a></dt>
+<dd><p>Logs current Processor stats and <cite>message</cite>. Then raises RuntimeError with <cite>message</cite>.</p>
+<p>If there is access to publish SNS messages, the method will also try to publish to the topic configured as
+<cite>dead_sns_topic</cite> or <cite>‘SoswWorkerErrors’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message</strong> (<em>str</em>) – Description of failure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor.get_config">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor.get_config" title="Link to this definition"></a></dt>
+<dd><p>Returns config by name from DynamoDB config or SSM. Override this to provide your config handling method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – Name of the config</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor.get_stats">
+<span class="sig-name descname"><span class="pre">get_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recursive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor.get_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor.get_stats" title="Link to this definition"></a></dt>
+<dd><p>Return statistics of operations performed by current instance of the Class.</p>
+<p>Statistics of custom clients existing in the Processor is also aggregated by default.
+Clients must be initialized as <cite>self.some_client</cite> ending with <cite>_client</cite> suffix (e.g. self.dynamo_db_client).
+Clients must also have their own get_stats() methods implemented.</p>
+<p>Be careful about circular get_stats() calls from child classes.
+If required overwrite get_stats() with recursive = False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>recursive</strong> – Merge stats from self.***_client.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Statistics counter of current Processor instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor.init_config">
+<span class="sig-name descname"><span class="pre">init_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor.init_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor.init_config" title="Link to this definition"></a></dt>
+<dd><p>By default, tries to initialize config from <code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIG</span></code> or as an empty dictionary.
+After that, a specific custom config of the Lambda will recursively update the existing one.
+The last step is update config recursively with a passed custom_config.</p>
+<p>Overwrite this method if custom logic of recursive updates in configs is required.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Read more about <a class="reference internal" href="../components/config.html#config-sourse"><span class="std std-ref">Config Source</span></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>custom_config</strong> (<em>Dict</em>) – dict with custom configurations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.app.Processor.reset_stats">
+<span class="sig-name descname"><span class="pre">reset_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recursive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#Processor.reset_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.Processor.reset_stats" title="Link to this definition"></a></dt>
+<dd><p>Cleans statistics other than specified for the lifetime of processor.
+All the parameters with prefix <em>‘total_’</em> are also preserved.</p>
+<p>The function makes sense if your Processor lives outside the scope of <cite>lambda_handler</cite>.</p>
+<p>Be careful about circular get_stats() calls from child classes.
+If required overwrite reset_stats() with recursive = False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>recursive</strong> – Reset stats from self.***_client.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.app.get_lambda_handler">
+<span class="sig-prename descclassname"><span class="pre">sosw.app.</span></span><span class="sig-name descname"><span class="pre">get_lambda_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processor_class</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/app.html#get_lambda_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.app.get_lambda_handler" title="Link to this definition"></a></dt>
+<dd><p>Return a reference to the entry point of the lambda function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>processor_class</strong> – Callable processor class.</p></li>
+<li><p><strong>global_vars</strong> – Lambda’s global variables (processor, context).</p></li>
+<li><p><strong>custom_config</strong> – Custom configuration to pass the processor constructor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Function reference for the lambda handler.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Essentials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="worker.html" class="btn btn-neutral float-right" title="Worker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

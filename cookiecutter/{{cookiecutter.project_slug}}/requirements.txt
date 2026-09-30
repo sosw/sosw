@@ -1,0 +1,3 @@
+# Local development and unit testing. At runtime the function imports sosw from the
+# Lambda layer referenced in template.yaml, so nothing is bundled with the code.
+sosw

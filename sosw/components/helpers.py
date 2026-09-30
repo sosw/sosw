@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ __all__ = ['validate_account_to_dashed',
            'camel_case_to_underscore',
            'underscore_to_camel_case',
            'slug_to_camel_case',
-           'camel_case_to_slug',           
+           'camel_case_to_slug',
            'chunks',
            'validate_uuid4',
            'rstrip_all',
@@ -52,6 +52,7 @@ __all__ = ['validate_account_to_dashed',
            'recursive_matches_strict',
            'recursive_matches_extract',
            'dunder_to_dict',
+           'dict_to_dunder',
            'nested_dict_from_keys',
            'convert_string_to_words',
            'construct_dates_from_event',
@@ -195,16 +196,6 @@ def camel_case_to_slug(name):
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', str(name))
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
-
-
-def slug_to_camel_case(name):
-    """
-    Convert input from slug case to camel case
-
-    :param name:    - str   -   slug-case string
-    :return:        - str   -   SnakeCase string
-    """
-    return re.sub(r'-([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
 
 
 def chunks(l, n):
@@ -383,10 +374,11 @@ def validate_datetime_from_something(d):
                 * datetime.date
                 * int - Epoch or Epoch milliseconds
                 * float - Epoch or Epoch milliseconds
-                * str (YYYY-MM-DD)
-                * str (YYYY-MM-DD HH:MM:SS)
-                * str(epoch time seconds as string)
-                * str(epoch time seconds (float) as string)
+                * str (epoch time seconds as string)
+                * str (epoch time seconds (float) as string)
+                * str: Many different formats are supported, but the order only from more specific to less specific,
+                (e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).
+
     :return: Transformed `d`
     :rtype: datetime.datetime
     :raises: ValueError
@@ -398,16 +390,36 @@ def validate_datetime_from_something(d):
         ((int, float), lambda x: datetime.datetime.fromtimestamp(x)
         if x < datetime.datetime(datetime.MAXYEAR, 12, 31).timestamp()
         else datetime.datetime.fromtimestamp(x / 1000)),
-        (str, lambda x: datetime.datetime.fromtimestamp(float(d)) if x.replace('.', '').isnumeric() else
-        (datetime.datetime.strptime(d, '%Y-%m-%d')
-         if len(d) == 10 else datetime.datetime.strptime(d[:19], '%Y-%m-%d %H:%M:%S'))),
+        (str, lambda x: try_str_to_dt(x)),
     ]
+
+
+    def try_str_to_dt(x):
+        if x.replace('.', '').isnumeric():
+            try:
+                return datetime.datetime.fromtimestamp(float(x))
+            except ValueError:
+                return datetime.datetime.fromtimestamp(float(x) / 1000)
+
+        formats = ['%Y-%m-%d',
+                   '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S%z',
+                   '%Y-%m-%d %H:%M:%S.%f%z', '%Y-%m-%d %H:%M:%S%:z', '%Y-%m-%d %H:%M:%S.%f%:z',
+                   '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S%z',
+                   '%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S%:z', '%Y-%m-%dT%H:%M:%S.%f%:z']
+        val = x.strip()
+        for fmt in formats:
+            try:
+                return datetime.datetime.strptime(val, fmt)
+            except ValueError:
+                continue  # Try the next format
+        raise ValueError(f"Some unconvertable type for datetime validation: {d}")
+
 
     for mutator in mutators:
         if isinstance(d, mutator[0]):
             return mutator[1](d)
 
-    raise ValueError("Some unconvertable type for datetime validation: {}".format(d))
+    raise ValueError(f"Some unconvertable type for datetime validation: {d}")
 
 
 def validate_date_from_something(d):
@@ -600,11 +612,11 @@ def ignore_case_copy(src):
     :param dict src -- Input dictionary
     :return dict: a copy of the dict with all string keys in lower case.
     """
-    
+
     output = {}
     for k, v in src.items():
-        if isinstance(k,str):
-            if isinstance(v,dict):
+        if isinstance(k, str):
+            if isinstance(v, dict):
                 output[k.lower()] = ignore_case_copy(v)
             output[k.lower()] = v
             continue
@@ -612,37 +624,47 @@ def ignore_case_copy(src):
         output[k] = v
     return output
 
+
 def recursive_matches_extract(src, key, separator=None, **kwargs):
     """
-    Recursively extracts the first matching value from a nested dictionary or iterable structure using a dot notation path.
-
-    In case some levels are iterable (list, tuple), it checks each element recursively until it finds the match.
+    Searches the 'src' recursively for nested elements provided in 'key' with dot notation.
+    In case some levels are iterable (list, tuple) it checks every element in it till finds it.
 
     Returns the first found element or None.
-    If the full path is inaccessible, also returns None.
+    In case the full path is inaccessible also returns None.
 
-    You may also want to use `recursive_exists_strict()` or `recursive_exists_soft()` if you're only checking for existence.
+    If you are just checking if some elements exist, you might be interested in
+    recursive_exists_strict() or recursive_exists_soft() helpers.
 
-    .. warning::
-        This method does not check for duplicates in iterable elements at any level during extraction.
+    ..  warning::
 
-    :param dict|list src: Input nested structure (dicts/lists).
-    :param str key: Dot notation path to extract, e.g., "user.profile.name".
-    :param str separator: Path separator (default: '.').
-    :param bool case_insensitive: (optional) If True, performs case-insensitive matching for keys in path.
-    :param str exclude_key: (optional) Key to check for exclusion.
-    :param Any exclude_val: (optional) Value to match for exclusion (requires exclude_key).
-    :return: The first matching value from the structure or None.
+        Please be aware that this method does not check for duplicates in iterable elements on neither
+        level during extraction.
+
+    :param dict src:        Input dictionary. Can contain nested dictionaries and lists.
+    :param str key:         Path to search with dot notation.
+    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
+
+    In order to filter out some specific elements, you might want to use the optional 'exclude' attributes.
+    If attributes are specified and the last level element following the path
+    (dot notation) will have a key-value, the check for the main key-value will be skipped.
+    See unittests to understand the bahaviour better.
+
+    :param str exclude_key:     Key to check in last level element to exclude.
+    :param str exclude_val:     Value to match in last level element to exclude.
+
+    :param bool case_insensitive:   If True, performs case-insensitive matching for keys in the path.
+                                    The legacy alias `ignore_case` is still supported.
+                                    `case_insensitive` option contributed by @SHMaryana (#379).
+
+    :return:    Value from structure extracted by specified path
     """
 
-    exclude_key = kwargs.get("exclude_key")
-    exclude_val = kwargs.get("exclude_val")
-    case_insensitive = kwargs.get("case_insensitive") or kwargs.get("ignore_case", False)
+    case_insensitive = kwargs.get('case_insensitive') or kwargs.get('ignore_case', False)
 
     if case_insensitive:
         key = key.lower()
         src = ignore_case_copy(src) if isinstance(src, dict) else [ignore_case_copy(s) for s in src]
-
 
     if any([x in kwargs for x in ['exclude_key', 'exclude_val']]) \
             and not all([x in kwargs for x in ['exclude_key', 'exclude_val']]):
@@ -678,8 +700,7 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
                 return None
         except KeyError:
             pass
-        
-        
+
         # There is a chance that the exclude key is simply missing. We ignore it then.
         return src.get(key)
     else:
@@ -701,7 +722,6 @@ def dunder_to_dict(data: dict, separator=None):
        result = dunder_to_dict(data)
 
        # result:
-
        {
            'a': 'v1',
            'b': {
@@ -711,7 +731,7 @@ def dunder_to_dict(data: dict, separator=None):
        }
 
     :param data: A dictionary that is converted to Nested.
-    :param str separator:   Custom separator for recursive extraction. Default: `'.'`
+    :param str separator:   Custom separator for recursive extraction. Default: `'__'`
     """
 
     if not separator:
@@ -744,6 +764,36 @@ def dunder_to_dict(data: dict, separator=None):
             result[main_key] = recursive_update(result[main_key], new_subdict)
 
     return dict(result)
+
+
+def dict_to_dunder(d, *, parent: str = '', separator: str = '__') -> dict:
+    """
+    Converts the nested dict to a flat dict with keys using dunder notation. Reverse of `dunder_to_dict`.
+
+    ..  code-block:: python
+
+        d = {
+               'a': 'v1',
+               'b': {
+                   'c': 'v2',
+                   'd': {'e': 'v3'}
+               }
+            }
+        result = dict_to_dunder(d)
+
+        # result:
+        {'a': 'v1', 'b__c': 'v2', 'b__d__e': 'v3'}
+
+    :param str separator:   Custom separator for recursive extraction. Default: `'__'`
+    """
+    items = {}
+    for k, v in d.items():
+        new_key = f"{parent}{separator}{k}" if parent else str(k)
+        if isinstance(v, dict):
+            items.update(dict_to_dunder(v, parent=new_key, separator=separator))
+        else:
+            items[new_key] = v
+    return items
 
 
 def nested_dict_from_keys(keys: List, value: Optional = None) -> Dict:
@@ -970,7 +1020,7 @@ def trim_arn_to_name(arn: str) -> str:
     Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Special handling for super global services (e.g. S3 buckets)
@@ -989,7 +1039,7 @@ def trim_arn_to_account(arn: str) -> str:
     Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Seems a little messy, but passes more/less any test of different ARNs we tried.
@@ -1232,4 +1282,3 @@ def slug_to_camel_case(text: str) -> str:
     camel_case = ''.join(word.capitalize() for word in words)
 
     return camel_case
-

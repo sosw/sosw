@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Siblings &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/components/siblings.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SigV4 Request Generator" href="sigv4.html" />
+    <link rel="prev" title="Helpers" href="helpers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Config Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamo_db.html">DynamoDB Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Siblings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigv4.html">SigV4 Request Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sns.html">SNS Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Components</a></li>
+      <li class="breadcrumb-item active">Siblings</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/components/siblings.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="siblings">
+<h1>Siblings<a class="headerlink" href="#siblings" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This components has performance issues unless running with <code class="docutils literal notranslate"><span class="pre">force=True</span></code>.
+Can cause CloudWatch requests throttling. Requires some refactoring.</p>
+</div>
+<p>SiblingsManager provides Lambda executions an option of a “healthy” shutdown.
+They may pass the remaining payload to another execution automatically. See example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw</span><span class="w"> </span><span class="kn">import</span> <span class="n">Processor</span> <span class="k">as</span> <span class="n">SoswProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">LambdaGlobals</span><span class="p">,</span> <span class="n">get_lambda_handler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.siblings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SiblingsManager</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Processor</span><span class="p">(</span><span class="n">SoswProcessor</span><span class="p">):</span>
+
+    <span class="n">DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;init_clients&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s1">&#39;Siblings&#39;</span><span class="p">],</span>    <span class="c1"># Automatically initialize Siblings Manager</span>
+        <span class="s1">&#39;shutdown_period&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># Some time to shutdown in a healthy manner.</span>
+    <span class="p">}</span>
+
+    <span class="n">siblings_client</span><span class="p">:</span> <span class="n">SiblingsManager</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cursor&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">sufficient_execution_time_left</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">cursor</span><span class="p">)</span>
+            <span class="n">cursor</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">cursor</span> <span class="o">==</span> <span class="mi">20</span><span class="p">:</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Reached the end of data&quot;</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Spawning another sibling to continue the processing</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cursor&#39;</span><span class="p">:</span> <span class="n">cursor</span><span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">siblings_client</span><span class="o">.</span><span class="n">spawn_sibling</span><span class="p">(</span><span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;siblings_spawned&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Your custom logic respecting current cursor. &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing data at cursor: </span><span class="si">{</span><span class="n">cursor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_execution_time_left</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return whether there is a sufficient execution time for processing (&#39;shutdown period&#39; is in seconds). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="o">.</span><span class="n">get_remaining_time_in_millis</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;shutdown_period&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1000</span>
+
+
+<span class="n">global_vars</span> <span class="o">=</span> <span class="n">LambdaGlobals</span><span class="p">()</span>
+<span class="n">lambda_handler</span> <span class="o">=</span> <span class="n">get_lambda_handler</span><span class="p">(</span><span class="n">Processor</span><span class="p">,</span> <span class="n">global_vars</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here is an example use-case when you can store the remaining payload for example in S3 and call the sibling with a pointer to it.</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock5'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock5" style="display: none"><div class="highlight-text notranslate" id="module-sosw.components.siblings"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.siblings.SiblingsManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.siblings.</span></span><span class="sig-name descname"><span class="pre">SiblingsManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/siblings.html#SiblingsManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.siblings.SiblingsManager" title="Link to this definition"></a></dt>
+<dd><p>This set of helpers can be used for Lambdas that want to invoke some siblings of self. Very useful for Lambdas
+processing queues and running out of time.</p>
+<p>The Role of your Lambda must have the following extra permissions to run correctly. Please note that we hardcode
+the Arn in the policy to avoid circular dependency when parsing YAML. This dependency is absolutely valid, but
+CloudFormation doesn’t know how to parse it.</p>
+<div class="line-block">
+<div class="line">Read more:</div>
+<div class="line"><a class="reference external" href="https://aws.amazon.com/premiumsupport/knowledge-center/unable-validate-circular-dependency-cloudformation/">https://aws.amazon.com/premiumsupport/knowledge-center/unable-validate-circular-dependency-cloudformation/</a></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Policies</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">PolicyName</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;YOUR_FUNCTION_NAME&quot;</span>
+<span class="nt">PolicyDocument</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">Version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2012-10-17&quot;</span>
+<span class="w">  </span><span class="nt">Statement</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Effect</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Allow&quot;</span>
+<span class="w">    </span><span class="nt">Action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cloudwatch:GetMetricStatistics&quot;</span>
+<span class="w">    </span><span class="nt">Resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;*&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Effect</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Allow&quot;</span>
+<span class="w">    </span><span class="nt">Action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lambda:InvokeFunction&quot;</span>
+<span class="w">    </span><span class="nt">Resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;arn:aws:lambda:us-west-2:737060422660:function:YOUR_FUNCTION_NAME&quot;</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.siblings.SiblingsManager.any_events_rules_enabled">
+<span class="sig-name descname"><span class="pre">any_events_rules_enabled</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lambda_context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/siblings.html#SiblingsManager.any_events_rules_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.siblings.SiblingsManager.any_events_rules_enabled" title="Link to this definition"></a></dt>
+<dd><p>Checks the <cite>Status</cite> of CloudWatch Events Rules.
+It is very important to use this checker before launching siblings.
+Otherwise, you can create an infinite autorespawning loop and waste <strong>A LOT</strong> of money.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lambda_context</strong> – Context object from your lambda_handler.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ResourceNotFoundException</strong> – If Rule with the given <cite>name</cite> doesn’t exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.siblings.SiblingsManager.get_approximate_concurrent_executions">
+<span class="sig-name descname"><span class="pre">get_approximate_concurrent_executions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minutes_back</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/siblings.html#SiblingsManager.get_approximate_concurrent_executions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.siblings.SiblingsManager.get_approximate_concurrent_executions" title="Link to this definition"></a></dt>
+<dd><p>Get approximate concurrent executions from CloudWatch Metrics.
+The value is <strong>very</strong> approximate and calculated as count of invocations during <cite>minutes_back</cite> divided
+by average duration in same period. Return value is rounded to integer using <cite>ceil</cite>.</p>
+<p>We assume that the Role has permissions to read CloudWatch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>minutes_back</strong> (<em>int</em>) – Aggregate statistics for this number of minutes.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the function to check. <em>Default: currently running lambda.</em></p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Approximate number of concurrent executions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.siblings.SiblingsManager.spawn_sibling">
+<span class="sig-name descname"><span class="pre">spawn_sibling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lambda_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/siblings.html#SiblingsManager.spawn_sibling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.siblings.SiblingsManager.spawn_sibling" title="Link to this definition"></a></dt>
+<dd><p>Asynchronously invokes a copy of same function to continue working.
+Should be called if there is still work left to do (ex: messages in the queue).</p>
+<p>Can optionally send some payload for example remaining unprocessed rows of something.
+Should be formatted as dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lambda_context</strong> – Context object from your lambda_handler.</p></li>
+<li><p><strong>payload</strong> (<em>dict</em>) – The payload to be put to event.</p></li>
+<li><p><strong>force</strong> (<em>bool</em>) – If specified True it will ignore the checks of enabled Events Rules.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="helpers.html" class="btn btn-neutral float-left" title="Helpers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sigv4.html" class="btn btn-neutral float-right" title="SigV4 Request Generator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

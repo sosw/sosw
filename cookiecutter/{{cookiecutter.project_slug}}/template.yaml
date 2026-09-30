@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: '{{ cookiecutter.description }}'
+
+
+Parameters:
+
+  Stage:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Deployment stage. Pass explicitly on the first deploy to an account.
+
+  LambdaLayerSoswLatestArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: lambda-layer-sosw-latest
+    Description: SSM parameter holding the ARN of the latest sosw Lambda layer version.
+
+
+Resources:
+
+  {{ cookiecutter.project_slug | replace('_', ' ') | title | replace(' ', '') }}Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: {{ cookiecutter.function_name }}
+      Description: '{{ cookiecutter.description }}'
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Runtime: python{{ cookiecutter.python_version }}
+      MemorySize: 128
+      Timeout: 30
+      Layers:
+        - !Ref LambdaLayerSoswLatestArn
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      {% if cookiecutter.use_lambda_api == 'yes' %}
+      Events:
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: ANY
+            Path: /{proxy+}
+      {% endif %}
+      Policies:
+        # The sosw Processor looks up the '{{ cookiecutter.function_name }}_config' record in the
+        # DynamoDB 'config' table on cold start. Remove this statement and set
+        # 'disable_ddb_config': True in DEFAULT_CONFIG if you do not use DynamoDB configs.
+        - Statement:
+            - Sid: ReadSoswConfig
+              Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:DescribeTable
+              Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/config'
+  {% if cookiecutter.use_lambda_api == 'yes' %}
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    # The application validates caller claims itself ('auth_enabled' in DEFAULT_CONFIG) and
+    # returns 401 for requests without them. To have API Gateway verify the JWTs, add an Auth
+    # section with your Cognito JWT authorizer here - see the README.
+  {% endif %}
+
+
+Outputs:
+
+  FunctionArn:
+    Description: ARN of the deployed Lambda function.
+    Value: !GetAtt {{ cookiecutter.project_slug | replace('_', ' ') | title | replace(' ', '') }}Function.Arn
+  {% if cookiecutter.use_lambda_api == 'yes' %}
+
+  ApiUrl:
+    Description: Invoke URL of the HTTP API.
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
+  {% endif %}

@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial Pull Tweeter Hashtags &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/tutorials/sosw_tutorial_pull_tweeter_hashtags.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cleanup after tutorials" href="cleanup.html" />
+    <link rel="prev" title="Tutorials" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial Pull Tweeter Hashtags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanup.html">Cleanup after tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial Pull Tweeter Hashtags</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/sosw_tutorial_pull_tweeter_hashtags.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-pull-tweeter-hashtags">
+<h1>Tutorial Pull Tweeter Hashtags<a class="headerlink" href="#tutorial-pull-tweeter-hashtags" title="Link to this heading"></a></h1>
+<p>In this tutorial we are going to pull the data about popularity of several different topics in the hash tags of tweets.
+Imagine that we have already classified some popular hashtags to several specific groups. Now we want to pull the data
+about their usage in the last day.</p>
+<p>Every day we would want to read the data only for the last 3 previous days, so we add the chunking parameters:
+<code class="docutils literal notranslate"><span class="pre">&quot;period&quot;:</span> <span class="pre">&quot;last_2_days&quot;,</span> <span class="pre">&quot;isolate_days&quot;:</span> <span class="pre">true</span></code></p>
+<p>We shall pretend that pulling the data for every keyword takes several minutes.
+In this case we add another parameter: <code class="docutils literal notranslate"><span class="pre">“isolate_words”:</span> <span class="pre">true</span></code> to make sure that each word shall be processed
+in an different Lambda execution.</p>
+<p>The following payload shall become our Job.
+This means that we shall chunk it per specific word / day combination and create independent tasks for the
+Worker Lambda for each chunk.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;topics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;cars&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;toyota&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mazda&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;nissan&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;racing&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;automobile&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;car&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;food&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;recipe&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cooking&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;eating&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;food&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;meal&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tasty&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;shows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;opera&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cinema&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;movie&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;concert&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;show&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;musical&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;period&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;last_2_days&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;isolate_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;isolate_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Now the time has come to create the actual Lambda.</p>
+<section id="register-twitter-app">
+<h2>Register Twitter App<a class="headerlink" href="#register-twitter-app" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">First of all you will have to register your own twitter API credentials. <a class="reference external" href="https://developer.twitter.com/">https://developer.twitter.com/</a></div>
+<div class="line">Submitting the application takes 2-3 minutes, but after that you have to wait severals hours (or even days).
+You can submit the application now and add them to config later. The Lambda shall handle the missing credentials.</div>
+</div>
+</section>
+<section id="package-lambda-code">
+<h2>Package Lambda Code<a class="headerlink" href="#package-lambda-code" title="Link to this heading"></a></h2>
+<p>Creating the Lambda is very similar to the way we deployed <code class="docutils literal notranslate"><span class="pre">sosw</span></code> Essentials. We use the same scripts and deployment
+workflow. Feel free to use your own favourite method or contribute to upgrade this one.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="nv">FUNCTION</span><span class="o">=</span><span class="s2">&quot;sosw_tutorial_pull_tweeter_hashtags&quot;</span>
+<span class="nv">FUNCTIONDASHED</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$FUNCTION</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/_/-/g<span class="sb">`</span>
+
+<span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/workers/<span class="nv">$FUNCTION</span>
+
+<span class="c1"># Install sosw package locally. It&#39;s only dependency is boto3, but we have it in Lambda</span>
+<span class="c1"># containter already. Saving a lot of packages size ignoring this dependency.</span>
+<span class="c1"># Install other possible requirements directly into package.</span>
+pip3<span class="w"> </span>install<span class="w"> </span>sosw<span class="w"> </span>--no-dependencies<span class="w"> </span>--target<span class="w"> </span>.
+pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w"> </span>--target<span class="w"> </span>.
+
+<span class="c1"># Make a source package. TODO is skip &#39;dist-info&#39; and &#39;test&#39; paths.</span>
+zip<span class="w"> </span>-qr<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>*
+
+<span class="c1"># Upload the file to S3, so that AWS Lambda will be able to easily take it from there.</span>
+aws<span class="w"> </span>s3<span class="w"> </span>cp<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>s3://<span class="nv">$BUCKETNAME</span>/sosw/packages/
+
+<span class="c1"># Package and Deploy CloudFormation stack for the Function.</span>
+<span class="c1"># It will create the Function and a custom IAM role for it with permissions to</span>
+<span class="c1"># acces the required DynamoDB tables.</span>
+aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$FUNCTION</span>.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--stack-name<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+</pre></div>
+</div>
+<p>This pattern has created the IAM Role for the function, the Lambda function itself and a
+DynamoDB table to save data to. All these resources are still falling under the AWS free tier
+if you do not abuse them.</p>
+<p>In case you will later make any changes to the application and need to re-deploy
+a new version, you may use the following script. It will validate changes in CloudFormation
+template and also publish the new version of the Lambda code package:</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock21'))">Show script <br></a><br /><div id="hiddencodeblock21" style="display: none"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="nv">FUNCTION</span><span class="o">=</span><span class="s2">&quot;sosw_tutorial_pull_tweeter_hashtags&quot;</span>
+<span class="nv">FUNCTIONDASHED</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$FUNCTION</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/_/-/g<span class="sb">`</span>
+
+<span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/workers/<span class="nv">$FUNCTION</span>
+
+<span class="c1"># Make a source package.</span>
+zip<span class="w"> </span>-qr<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>*
+
+<span class="c1"># Upload the file to S3, so that AWS Lambda will be able to easily take it from there.</span>
+aws<span class="w"> </span>s3<span class="w"> </span>cp<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>s3://<span class="nv">$BUCKETNAME</span>/sosw/packages/
+
+aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$FUNCTION</span>.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--stack-name<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+
+aws<span class="w"> </span>lambda<span class="w"> </span>update-function-code<span class="w"> </span>--function-name<span class="w"> </span><span class="nv">$FUNCTION</span><span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--s3-key<span class="w"> </span>sosw/packages/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>--publish
+</pre></div>
+</div>
+</div></section>
+<section id="upload-configs">
+<h2>Upload configs<a class="headerlink" href="#upload-configs" title="Link to this heading"></a></h2>
+<p>In order for this function to be managed by <code class="docutils literal notranslate"><span class="pre">sosw</span></code>, we have to register in as a Labourer
+in the configs of sosw-Essentials. As you probably remember the configs are in the
+<code class="docutils literal notranslate"><span class="pre">config</span></code> DynamoDB table.</p>
+<p>Specially for this tutorial we have a nice script to inject configs. It finds the JSON files
+of the worker in <code class="docutils literal notranslate"><span class="pre">FUNCTION/config</span></code> and <em>“injects”</em> the <code class="docutils literal notranslate"><span class="pre">labourer.json</span></code> contents to the
+existing configs of Essentials. It will also create a config for the Worker Lambda itself
+out of the <code class="docutils literal notranslate"><span class="pre">self.json</span></code>. You shall add twitter credentials in the placeholders there once
+you receive them and re-run the uploader.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples
+pipenv<span class="w"> </span>run<span class="w"> </span>python3<span class="w"> </span>config_updater.py<span class="w"> </span>sosw_tutorial_pull_tweeter_hashtags
+</pre></div>
+</div>
+<p>After updating the configs we must reset the Essentials so that they read fresh configs from
+the DynamoDB. There is currently no special AWS API endpoint for this, so we just re-deploy
+the essentials.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="k">for</span><span class="w"> </span>name<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>ls<span class="w"> </span>/var/app/sosw/examples/essentials<span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Deploying </span><span class="nv">$name</span><span class="s2">&quot;</span>
+
+<span class="w">    </span><span class="nv">FUNCTIONDASHED</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$name</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/_/-/g<span class="sb">`</span>
+
+<span class="w">    </span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/essentials/<span class="nv">$name</span>
+<span class="w">    </span>zip<span class="w"> </span>-qr<span class="w"> </span>/tmp/<span class="nv">$name</span>.zip<span class="w"> </span>*
+<span class="w">    </span>aws<span class="w"> </span>lambda<span class="w"> </span>update-function-code<span class="w"> </span>--function-name<span class="w"> </span><span class="nv">$name</span><span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--s3-key<span class="w"> </span>sosw/packages/<span class="nv">$name</span>.zip<span class="w"> </span>--publish
+<span class="k">done</span>
+</pre></div>
+</div>
+</section>
+<section id="schedule-task">
+<h2>Schedule task<a class="headerlink" href="#schedule-task" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">Congratulations!</div>
+<div class="line">You are ready to <strong>run</strong> the tutorial. You just to call the <code class="docutils literal notranslate"><span class="pre">sosw_scheduler</span></code> Lambda
+with the Job that we constructed at the very beginning. The payload for the Scheduler
+must have the <code class="docutils literal notranslate"><span class="pre">labourer_id</span></code> which is the name of Worker function and the optional <code class="docutils literal notranslate"><span class="pre">job</span></code>.</div>
+</div>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock22'))">See full payload <br></a><br /><div id="hiddencodeblock22" style="display: none"><div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;lambda_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sosw_tutorial_pull_tweeter_hashtags&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;job&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;topics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cars&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;isolate_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;toyota&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mazda&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;nissan&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;racing&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;automobile&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;car&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;food&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;isolate_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;recipe&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cooking&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;eating&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;food&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;meal&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tasty&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;shows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;isolate_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;words&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;opera&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cinema&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;movie&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;concert&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;show&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;musical&quot;</span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;period&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;last_2_days&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;isolate_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;isolate_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div><p>This JSON payload is also available in the file <code class="docutils literal notranslate"><span class="pre">FUNCTION/config/task.json</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples
+<span class="nv">PAYLOAD</span><span class="o">=</span><span class="sb">`</span>cat<span class="w"> </span>workers/sosw_tutorial_pull_tweeter_hashtags/config/task.json<span class="sb">`</span>
+aws<span class="w"> </span>lambda<span class="w"> </span>invoke<span class="w"> </span>--function-name<span class="w"> </span>sosw_scheduler<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--payload<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PAYLOAD</span><span class="s2">&quot;</span><span class="w"> </span>/tmp/output.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cat<span class="w"> </span>/tmp/output.txt
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cleanup.html" class="btn btn-neutral float-right" title="Cleanup after tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

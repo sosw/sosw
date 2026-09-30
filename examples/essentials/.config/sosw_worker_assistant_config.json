@@ -1,8 +1,0 @@
-{
-  "task_config": {
-
-  },
-  "dynamo_db_config": {
-    "table_name": "sosw_tasks"
-  }
-}

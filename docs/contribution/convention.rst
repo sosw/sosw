@@ -7,7 +7,7 @@ Documentation Convention
 
 This document states the convention that we follow for writing Documentation and especially docstrings for
 classes and functions for ``sosw`` package. This convention is based on
-[https://www.python.org/dev/peps/pep-0008/](PEP8), with minor styling changes listed below.
+`PEP8 <https://peps.python.org/pep-0008/>`_, with minor styling changes listed below.
 
 
 Basics
@@ -56,11 +56,11 @@ Building the docs
 ------------------
 
 You can locally build the docs and use the built in python web server to view the html version directly from localhost
-in your preferred browser.
+in your preferred browser. Warnings are treated as errors (``-W``), exactly as in CI.
 
 ..  code-block:: bash
 
-    sphinx-build -ab html ./docs ./sosw-rtd; (cd sosw-rtd && python -m http.server)
+    python -m sphinx -W -a -b html docs sosw-rtd; (cd sosw-rtd && python -m http.server)
 
 
 Common Sense Boosters
@@ -141,18 +141,3 @@ when displayed as code in rendered HTML. Our convention is 120 characters max wi
 --------
 
 **End of the compiled example.**
-
-
-.. _components-config:
-
-Configuration
--------------
-
-There are some bugs with compiling documentation for components. Sphinx recognises the module components correctly,
-but then in notices the same module during import from autodoc of lambdas. And fails to import manually.
-
-* One workaround - create a symlink inside the lambdas (as init-lambda would normally do) and then include
-  `:automodule:` for components directly in Lambdas index.
-
-* Another option is to rename the components to smth else like `components-tmp` and compile the documentation for it.
-  But you will have to take care about the links directly in the documentation of lambdas in the second case.

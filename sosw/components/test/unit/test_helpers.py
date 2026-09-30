@@ -1,8 +1,8 @@
 import datetime
-from datetime import timezone
 import time
 import unittest
 import os
+import uuid
 from copy import deepcopy
 
 from sosw.components.test.unit.helpers_test_variables import *
@@ -11,7 +11,8 @@ os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
 from sosw.components.helpers import *
-from sosw.components.helpers import underscore_to_camel_case, camel_case_to_slug, slug_to_camel_case
+from sosw.components.helpers import ignore_case_copy
+
 
 class helpers_UnitTestCase(unittest.TestCase):
 
@@ -288,8 +289,18 @@ class helpers_UnitTestCase(unittest.TestCase):
             ('1234567890.123456789000', datetime.datetime.fromtimestamp(1234567890.123456789000)),
             ('2018-01-01', datetime.datetime(2018, 1, 1)),
             ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1, 10, 1, 3)),
-            ('2018-01-01 10:01:03 hello_world', datetime.datetime(2018, 1, 1, 10, 1, 3)),
-            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+            ('2018-01-01 10:01:03   ', datetime.datetime(2018, 1, 1, 10, 1, 3)),
+
+            ('2025-01-01T10:01:03', datetime.datetime(2025, 1, 1, 10, 1, 3)),
+            ('2025-01-01T10:01:03.250577', datetime.datetime(2025, 1, 1, 10, 1, 3, 250577)),
+
+            ('2025-01-01T10:01:03', datetime.datetime(2025, 1, 1, 10, 1, 3)),
+            ('2025-01-01T10:01:03.250577', datetime.datetime(2025, 1, 1, 10, 1, 3, 250577)),
+
+            ('2025-01-01T10:01:03-0100',
+             datetime.datetime(2025, 1, 1, 10, 1, 3, tzinfo=datetime.timezone(datetime.timedelta(hours=-1)))),
+            ('2025-01-01T10:01:03.250577+0300',
+             datetime.datetime(2025, 1, 1, 10, 1, 3, 250577, tzinfo=datetime.timezone(datetime.timedelta(hours=3)))),
         ]
 
         for variant, expected_result in TESTS:
@@ -333,13 +344,11 @@ class helpers_UnitTestCase(unittest.TestCase):
             (datetime.date(2023, 9, 1), datetime.datetime(2023, 9, 1).timestamp()),
             (1000, datetime.datetime(1970, 1, 1).timestamp()),
             (1000.1, datetime.datetime(1970, 1, 1).timestamp()),
-            ('2018-01-01 10:01:03,', datetime.datetime(2018, 1, 1).timestamp()),
-            ('2018-01-01 10:01:03 hello world', datetime.datetime(2018, 1, 1).timestamp())
+            ('2018-01-01 10:01:03', datetime.datetime(2018, 1, 1).timestamp()),
         ]
 
         for variant, expected_result in TESTS:
             self.assertEqual(validate_date_timestamp_from_something(variant), expected_result)
-
 
         self.assertRaises(ValueError, validate_date_timestamp_from_something, 'somebadstring')
         self.assertRaises(ValueError, validate_date_timestamp_from_something, 253402300800000)
@@ -366,17 +375,35 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertRaises(AttributeError, recursive_matches_extract, SRC, 'foo.bar.baz', exclude_val=1)
 
 
-    def test_recursive_matches_extract__case_insensitive(self):
+    def test_recursive_matches_extract__ignore_case(self):
         TESTS = [
             ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
             ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
             ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
-            (({"hEaDeRs": {"oRiGiN": "foo"}},{"headers": {"origin": "foo"}}), "headers.origin", "foo")
+            (({"hEaDeRs": {"oRiGiN": "foo"}}, {"headers": {"origin": "foo"}}), "headers.origin", "foo")
+        ]
+
+        for payload, path, result in TESTS:
+            self.assertEqual(recursive_matches_extract(payload, path, ignore_case=True), result)
+
+
+    def test_recursive_matches_extract__case_insensitive(self):
+        """
+        `case_insensitive` option contributed by @SHMaryana (#379).
+        """
+
+        TESTS = [
+            ({"HEADERS": {"Origin": "foo"}}, "headers.origin", "foo"),
+            ({"headers": {"oriGIN": "foo"}}, "Headers.OrIgiN", "foo"),
+            ({"hEaDeRs": {"oRiGiN": "foo"}}, "headers.origin", "foo"),
+            (({"hEaDeRs": {"oRiGiN": "foo"}}, {"headers": {"origin": "foo"}}), "headers.origin", "foo")
         ]
 
         for payload, path, result in TESTS:
             self.assertEqual(recursive_matches_extract(payload, path, case_insensitive=True), result)
 
+        # Without the flag the mixed-case path must not match.
+        self.assertIsNone(recursive_matches_extract({"HEADERS": {"Origin": "foo"}}, "headers.origin"))
 
 
     def test_chunks(self):
@@ -599,6 +626,18 @@ class helpers_UnitTestCase(unittest.TestCase):
         self.assertIn({'a': '42', 'b': '42'}, r['a'])
 
 
+    def test_recursive_update__unhashable_non_dict_types_in_lists(self):
+
+        # The elements are unhashable (lists) and are not dictionaries: uniques can be filtered
+        # neither via set() nor via JSONification of dict items, so the lists are merged as is.
+        a = {'a': [[1], [2]]}
+        b = {'a': [[2], [3]]}
+
+        r = recursive_update(a, b)
+
+        self.assertEqual(r['a'], [[1], [2], [2], [3]])
+
+
     def test_recursive_insert(self):
         TESTS = [
             (({}, 'a', 42), {'a': 42}),
@@ -638,8 +677,8 @@ class helpers_UnitTestCase(unittest.TestCase):
             ({"a__b": {"c__x": {'z': 42}}}, {"a": {"b": {"c": {"x": {"z": 42}}}}}),
         ]
 
-        for paylod, expected in TESTS:
-            self.assertEqual(dunder_to_dict(paylod), expected)
+        for payload, expected in TESTS:
+            self.assertEqual(dunder_to_dict(payload), expected)
 
 
     def test_dunder_to_dict__exceptions(self):
@@ -655,6 +694,17 @@ class helpers_UnitTestCase(unittest.TestCase):
         for exception, kwarg in TESTS:
             print(kwarg)
             self.assertRaises(exception, dunder_to_dict, **kwarg)
+
+
+    def test_dict_to_dunder(self):
+        TESTS = [
+            ({"a": "v1", "b__c": "v2", "b__d__e": "v3"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"a": "v1", "b__d__e": "v3", "b__c": "v2"}, {"a": "v1", "b": {"c": "v2", "d": {"e": "v3"}}}),
+            ({"b__c__c1": 41, "b__c__e": "e_val"}, {"b__c": {"c1": 41, "e": "e_val"}}),
+        ]
+
+        for expected, payload in TESTS:
+            self.assertEqual(dict_to_dunder(payload), expected)
 
 
     def test_nested_dict_from_keys(self):
@@ -884,14 +934,14 @@ class helpers_UnitTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             small_int_from_string("test", num_digits=-1)
 
-            
-    def test_case_helper_functions(self):    
+
+    def test_case_helper_functions(self):
         self.assertEqual(camel_case_to_underscore(VALID_CASES['camel']), VALID_CASES['underscore'])
         self.assertEqual(underscore_to_camel_case(VALID_CASES['underscore']), VALID_CASES['camel'])
         self.assertEqual(camel_case_to_slug(VALID_CASES['camel']), VALID_CASES['slug'])
         self.assertEqual(slug_to_camel_case(VALID_CASES['slug']), VALID_CASES['camel'])
- 
-    
+
+
     def test_slug_to_camel_case(self):
         test_cases = [
             ("camel-case-text", "CamelCaseText"),
@@ -899,12 +949,121 @@ class helpers_UnitTestCase(unittest.TestCase):
             ("singleword", "Singleword"),
             ("multiple--consecutive--hyphens", "MultipleConsecutiveHyphens"),
             ("someWord-partially-CamelCased", "SomeWordPartiallyCamelCased"),
-            ("",""),
+            ("", ""),
             ("camel", "Camel")
         ]
         for input_text, expected_output in test_cases:
             with self.subTest(input_text=input_text, expected_output=expected_output):
                 self.assertEqual(slug_to_camel_case(input_text), expected_output)
+
+
+    def test_validate_account_to_int(self):
+        self.assertEqual(validate_account_to_int('123-456-7890'), 1234567890)
+        self.assertEqual(validate_account_to_int('1234567890'), 1234567890)
+        self.assertEqual(validate_account_to_int(1234567890), 1234567890)
+
+        self.assertRaises(ValueError, validate_account_to_int, '123')
+        self.assertRaises(ValueError, validate_account_to_int, 'not-an-account')
+
+
+    def test_validate_list_of_numbers_from_csv__not_iterable(self):
+        self.assertEqual(validate_list_of_numbers_from_csv(None), [])
+
+
+    def test_validate_uuid4(self):
+        # Beware the historical quirk of this validator: an invalid uuid string returns False,
+        # while a valid uuid4 falls through the validation and returns None (also falsy!).
+        self.assertFalse(validate_uuid4('not-a-uuid'))
+        self.assertIsNone(validate_uuid4(str(uuid.uuid4())))
+
+
+    def test_rstrip_all__raises_unsupported_patterns(self):
+        # A frozenset of strings still compiles the regex, but only str | list | set | tuple are supported.
+        self.assertRaises(ValueError, rstrip_all, 'some_name', frozenset({'_name'}))
+
+
+    def test_get_one_or_none_from_dict__not_iterable_plural(self):
+        with self.assertRaises(ValueError) as exc:
+            get_one_or_none_from_dict({'accounts': 42}, 'account')
+
+        self.assertIn("not-iterable", str(exc.exception))
+
+
+    def test_validate_date_list_from_event_or_days_back__defaults(self):
+        self.assertEqual(validate_date_list_from_event_or_days_back({}), [datetime.date.today()])
+        self.assertEqual(validate_date_list_from_event_or_days_back({}, days_back=3),
+                         [datetime.date.today() - datetime.timedelta(days=3)])
+        self.assertEqual(validate_date_list_from_event_or_days_back({'date_list': ''}, days_back=1),
+                         [datetime.date.today() - datetime.timedelta(days=1)])
+
+
+    def test_validate_datetime_from_something__epoch_milliseconds_string(self):
+        # The value is too big for the epoch seconds, so it is retried as epoch milliseconds.
+        self.assertEqual(validate_datetime_from_something('1700000000000'),
+                         datetime.datetime.fromtimestamp(1700000000))
+
+
+    def test_validate_string_matches_datetime_format__invalid_date_str(self):
+        for bad_date_str in [None, '', 42]:
+            with self.subTest(date_str=bad_date_str):
+                with self.assertRaises(ValueError) as exc:
+                    validate_string_matches_datetime_format(bad_date_str, '%Y/%m/%d', field_name='my_date')
+
+                self.assertIn("Bad input for my_date", str(exc.exception))
+
+
+    def test_validate_string_matches_datetime_format__invalid_format(self):
+        for bad_format in [None, '', 42]:
+            with self.subTest(date_format=bad_format):
+                with self.assertRaises(ValueError) as exc:
+                    validate_string_matches_datetime_format('2018/05/15', bad_format)
+
+                self.assertIn("Bad input for format", str(exc.exception))
+
+
+    def test_is_valid_date(self):
+        self.assertTrue(is_valid_date('2018/09/16', ['%Y/%m/%d']))
+        self.assertTrue(is_valid_date('2018-09-16', ['%Y/%m/%d', '%Y-%m-%d']))
+
+        self.assertFalse(is_valid_date('16.09.2018', ['%Y/%m/%d', '%Y-%m-%d']))
+        self.assertFalse(is_valid_date('2018/09/16', []))
+
+
+    def test_recursive_matchers__guard_against_empty_key_path(self):
+        """
+        The defensive RuntimeError branch of the recursive matchers is reachable only with a str-like
+        key whose split() yields an empty path. Assert all three matchers guard against it.
+        """
+
+
+        class EmptySplitKey(str):
+
+            def split(self, *args, **kwargs):
+                return []
+
+
+        key = EmptySplitKey('a')
+
+        self.assertRaises(RuntimeError, recursive_matches_soft, {'a': 1}, key, 1)
+        self.assertRaises(RuntimeError, recursive_matches_strict, {'a': 1}, key, 1)
+        self.assertRaises(RuntimeError, recursive_matches_extract, {'a': 1}, key)
+
+
+    def test_recursive_matches_strict__requires_both_exclude_attributes(self):
+        self.assertRaises(AttributeError, recursive_matches_strict, {'a': 1}, 'a', 1, exclude_key='b')
+
+
+    def test_ignore_case_copy(self):
+        SRC = {'Foo': 1, 'BAR': {'Nested': 2}, 42: 'numeric_key'}
+
+        result = ignore_case_copy(SRC)
+
+        self.assertEqual(result, {'foo': 1, 'bar': {'Nested': 2}, 42: 'numeric_key'},
+                         "String keys must be lowercased, other keys preserved as is")
+
+
+    def test_convert_string_to_words__raises_not_a_string(self):
+        self.assertRaises(TypeError, convert_string_to_words, 42)
 
 
 if __name__ == '__main__':

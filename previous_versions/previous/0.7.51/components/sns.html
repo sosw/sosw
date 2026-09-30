@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SNS Manager &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/components/sns.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Managers" href="../managers/index.html" />
+    <link rel="prev" title="SigV4 Request Generator" href="sigv4.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="benchmark.html">Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Config Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamo_db.html">DynamoDB Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="siblings.html">Siblings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sigv4.html">SigV4 Request Generator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SNS Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Components</a></li>
+      <li class="breadcrumb-item active">SNS Manager</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/components/sns.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-sosw.components.sns">
+<span id="sns-manager"></span><h1>SNS Manager<a class="headerlink" href="#module-sosw.components.sns" title="Link to this heading"></a></h1>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock7'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock7" style="display: none"><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.components.sns.</span></span><span class="sig-name descname"><span class="pre">SnsManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager" title="Link to this definition"></a></dt>
+<dd><p>AWS Simple Notification System Manager helper.
+Requires the Role to have permissions to access SSM for requested resources, something like.</p>
+<p>Must have a recipient specified either during initialization or later using set_recipient method.
+Messages received by send_message() are batched and will be actually send to SNS only during the
+call of commit() or during the destruction of the class.</p>
+<p>The method doesn’t yet support batching messages for multiple recipients, so in case you try to
+change the recipient it automatically sends all the currently batched messages to the previous recipient.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.commit">
+<span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.commit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.commit" title="Link to this definition"></a></dt>
+<dd><p>Combines messages from self.queue and pushes them to self.recipient.
+Cleans the queue after that.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.compare_message_attributtes">
+<span class="sig-name descname"><span class="pre">compare_message_attributtes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_attributes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.compare_message_attributtes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.compare_message_attributtes" title="Link to this definition"></a></dt>
+<dd><p>Compare MessageAttributes. If new object was received - set new value to the attribute</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message_attributes</strong> (<em>dict</em>) – Message attributes for SNS subscription filter policies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.create_subscription">
+<span class="sig-name descname"><span class="pre">create_subscription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic_arn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">protocol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.create_subscription"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.create_subscription" title="Link to this definition"></a></dt>
+<dd><p>Create a subscription to the topic</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topic_arn</strong> (<em>str</em>) – ARN of a topic</p></li>
+<li><p><strong>protocol</strong> (<em>str</em>) – The type of endpoint to subscribe</p></li>
+<li><p><strong>endpoint</strong> (<em>str</em>) – Endpoint that can receive notifications from Amazon SNS</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.create_topic">
+<span class="sig-name descname"><span class="pre">create_topic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topic_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.create_topic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.create_topic" title="Link to this definition"></a></dt>
+<dd><p>Create a new topic name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topic_name</strong> (<em>str</em>) – New topic name to create</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New topic ARN</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.get_message_attribute">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_message_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.get_message_attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.get_message_attribute" title="Link to this definition"></a></dt>
+<dd><p>Amazon SNS compares policy attributes only to message attributes that have the following data types:
+- String
+- String.Array
+- Number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type and value of an attribute</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.send_message">
+<span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forse_commit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message_attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.send_message" title="Link to this definition"></a></dt>
+<dd><p>If the subject is not yet set (for example during __init__() of the class) - then require subject to be set.
+Otherwize we accept None subject and simply append messages to queue.
+Once the subject changes - the queue is commite automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<em>str</em>) – Message to be send in body of SNS message. Queued.</p></li>
+<li><p><strong>subject</strong> (<em>str</em>) – Optional. Custom subject for message.</p></li>
+<li><p><strong>forse_commit</strong> (<em>bool</em>) – Commit the queue immediately if True, by default False</p></li>
+<li><p><strong>message_attributes</strong> (<em>dict</em>) – Optional. Message attributes for SNS subscription filter policies</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.set_client_attr">
+<span class="sig-name descname"><span class="pre">set_client_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.set_client_attr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.set_client_attr" title="Link to this definition"></a></dt>
+<dd><p>Sets the given _name_ attribute to _value_.
+Commits the self.queue if there are any messages in it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.set_message_attributes">
+<span class="sig-name descname"><span class="pre">set_message_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_attributes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.set_message_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.set_message_attributes" title="Link to this definition"></a></dt>
+<dd><p>Validate attribute value and set new value</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.components.sns.SnsManager.set_separator">
+<span class="sig-name descname"><span class="pre">set_separator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separator</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/sns.html#SnsManager.set_separator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.sns.SnsManager.set_separator" title="Link to this definition"></a></dt>
+<dd><p>Set custom separator for messages from the queue</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sigv4.html" class="btn btn-neutral float-left" title="SigV4 Request Generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../managers/index.html" class="btn btn-neutral float-right" title="Managers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

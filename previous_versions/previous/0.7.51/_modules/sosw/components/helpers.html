@@ -1,0 +1,1533 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.components.helpers &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/components/helpers.html" />
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.components.helpers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.components.helpers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+
+<span class="sd">Static helper methods which you can use in any Lambdas.</span>
+<span class="sd">Must be completely independent with no specific requirements.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;validate_account_to_dashed&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_account_to_int&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_list_of_numbers_from_csv&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;camel_case_to_underscore&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;underscore_to_camel_case&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;slug_to_camel_case&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;camel_case_to_slug&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;chunks&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_uuid4&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;rstrip_all&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_one_or_none_from_dict&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_one_from_dict&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_list_of_multiple_or_one_or_empty_from_dict&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_date_list_from_event_or_days_back&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_date_from_something&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_datetime_from_something&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_date_timestamp_from_something&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_string_matches_datetime_format&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;is_valid_date&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;recursive_matches_soft&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;recursive_matches_strict&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;recursive_matches_extract&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;dunder_to_dict&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;dict_to_dunder&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;nested_dict_from_keys&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;convert_string_to_words&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;construct_dates_from_event&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;validate_list_of_words_from_csv_or_list&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;first_or_none&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;recursive_update&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;recursive_insert&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;trim_arn_to_name&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;trim_arn_to_account&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;make_hash&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;to_bool&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;get_message_dict_from_sns_event&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;is_event_from_sns&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;unwrap_event_recursively&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;is_event_from_sqs&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;small_int_from_string&#39;</span><span class="p">,</span>
+           <span class="p">]</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">abc</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventNotFromSourceException</span>
+
+
+<div class="viewcode-block" id="validate_account_to_dashed">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_account_to_dashed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_account_to_dashed</span><span class="p">(</span><span class="n">account</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates the the provided string is in valid AdWords account format and converts it to dashed format.</span>
+
+<span class="sd">    :param str account: AdWords Account</span>
+<span class="sd">    :rtype:             str</span>
+<span class="sd">    :return:            Dashed format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">account</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">account</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;[0-9]</span><span class="si">{3}</span><span class="s2">-[0-9]</span><span class="si">{3}</span><span class="s2">-[0-9]</span><span class="si">{4}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">account</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^[0-9]</span><span class="si">{10}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">account</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">account</span><span class="p">)[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">account</span><span class="p">)[</span><span class="mi">6</span><span class="p">:]])</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid account format provided: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">account</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="validate_account_to_int">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_account_to_int">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_account_to_int</span><span class="p">(</span><span class="n">account</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates the provided string is in valid AdWords account format and converts it to integer format.</span>
+
+<span class="sd">    :param (str, int) account: AdWords Account</span>
+<span class="sd">    :return:                   Account ID as integer</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">account</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">account</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;^[0-9]</span><span class="si">{10}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">account</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid account format provided: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">account</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="validate_list_of_numbers_from_csv">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_list_of_numbers_from_csv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_list_of_numbers_from_csv</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a comma separated string of numeric values to a list of sorted unique integers.</span>
+<span class="sd">    The values that do not match are skipped.</span>
+
+<span class="sd">    :param (str, iterable) data:    - str | iterable</span>
+<span class="sd">    :return:        - list(int)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">():</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()))</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="validate_uuid4">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_uuid4">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_uuid4</span><span class="p">(</span><span class="n">uuid_string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate that a UUID string is in</span>
+<span class="sd">    fact a valid uuid4.</span>
+<span class="sd">    Happily, the uuid module does the actual</span>
+<span class="sd">    checking for us.</span>
+<span class="sd">    It is vital that the &#39;version&#39; kwarg be passed</span>
+<span class="sd">    to the UUID() call, otherwise any 32-character</span>
+<span class="sd">    hex string is considered valid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="n">uuid_string</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="c1"># If it&#39;s a value error, then the string</span>
+        <span class="c1"># is not a valid hex code for a UUID.</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+    <span class="c1"># If the uuid_string is a valid hex code,</span>
+    <span class="c1"># but an invalid uuid4,</span>
+    <span class="c1"># the UUID.__init__ will convert it to a</span>
+    <span class="c1"># valid uuid4. This is bad for validation purposes.</span>
+
+
+<div class="viewcode-block" id="camel_case_to_underscore">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.camel_case_to_underscore">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">camel_case_to_underscore</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts attribute to string and formats it as underscored.</span>
+
+<span class="sd">    :param name:    - str   -   CamelCase string (or something convertable to CamelCase with __str__() method.</span>
+<span class="sd">    :return:        - str   -   underscore_formatted_value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(.)([A-Z][a-z]+)&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1_\2&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1_\2&#39;</span><span class="p">,</span> <span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="underscore_to_camel_case">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.underscore_to_camel_case">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">underscore_to_camel_case</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert input from underscore case to camel case</span>
+
+<span class="sd">    :param name:    - str   -   snake_case string</span>
+<span class="sd">    :return:        - str   -   SnakeCase string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;_([a-zA-Z0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">match</span><span class="p">:</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="camel_case_to_slug">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.camel_case_to_slug">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">camel_case_to_slug</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert input from camel case to slug case</span>
+
+<span class="sd">    :param name:    - str   -   CamleCase string</span>
+<span class="sd">    :return:        - str   -   slug-case string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(.)([A-Z][a-z]+)&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1-\2&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1-\2&#39;</span><span class="p">,</span> <span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">slug_to_camel_case</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert input from slug case to camel case</span>
+
+<span class="sd">    :param name:    - str   -   slug-case string</span>
+<span class="sd">    :return:        - str   -   SnakeCase string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;-([a-zA-Z0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">match</span><span class="p">:</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="chunks">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.chunks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chunks</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield successive n-sized chunks from l.&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="rstrip_all">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.rstrip_all">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rstrip_all</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">patterns</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strips all of the patterns from the right of the input. Order and spaces do not matter.</span>
+
+<span class="sd">    :param input:       - str                   - String to modify</span>
+<span class="sd">    :param patterns:    - list|set|tuple|str    - Pattern[-s] to remove.</span>
+<span class="sd">    :return:            - str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">{}</span><span class="s2">$)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">patterns</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">{}</span><span class="s2">$)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;$|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">,</span> <span class="n">patterns</span><span class="p">))))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span><span class="n">patterns</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Patterns for rstrip_all() are supposed to be string or iterable of strings&quot;</span><span class="p">)</span>
+    <span class="n">rabbit</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">rabbit</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span> <span class="o">==</span> <span class="n">rabbit</span><span class="p">:</span>
+        <span class="c1"># Go recursive in case we stripped smth in this iteration.</span>
+        <span class="k">return</span> <span class="n">rstrip_all</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">patterns</span><span class="p">)</span>
+    <span class="c1"># If nothing left to change, return the rabbit.</span>
+    <span class="k">return</span> <span class="n">rabbit</span></div>
+
+
+
+<div class="viewcode-block" id="get_one_or_none_from_dict">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.get_one_or_none_from_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_one_or_none_from_dict</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extracts object by &#39;name&#39; from the &#39;input&#39;.</span>
+<span class="sd">    Tries also plural name in case not found by single &#39;name&#39;.</span>
+<span class="sd">    In case found an iterable by plural name, validates that it has one or zero values in it.</span>
+<span class="sd">    If vtype is specified, tries to convert result to it.</span>
+
+<span class="sd">    :param dict input:  Input dictionary. Event of Lambda for example.</span>
+<span class="sd">    :param str name:    Name of attribute (in singular form).</span>
+<span class="sd">    :param type vtype:  Type to be converted to. Must be callable. Tested types: str, int, float</span>
+<span class="sd">    :return:            - instance of vtype | something else | None</span>
+
+<span class="sd">    :raises ValueError: In all cases something is wrong.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;input&#39; attribute must be a dict. Received: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">input</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;name&#39; attribute must be a str. Received: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">t</span> <span class="k">else</span> <span class="n">t</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+    <span class="c1"># Best case scenario. :)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">convert</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span>
+
+    <span class="c1"># if not result, try to search for plural</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># If we found some results with plural name, we make sure it is iterable and has one or zero value.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;More than one </span><span class="si">{}</span><span class="s2">s found in input.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">convert</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vtype</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Some not-iterable &#39;</span><span class="si">{}</span><span class="s2">s&#39; found in input: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">))))</span></div>
+
+
+
+<div class="viewcode-block" id="get_one_from_dict">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.get_one_from_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_one_from_dict</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extracts object by &#39;name&#39; from the &#39;input&#39;.</span>
+<span class="sd">    Tries also plural name in case not found by single &#39;name&#39;.</span>
+<span class="sd">    In case found an iterable by plural name, validates that it has exactly one value in it.</span>
+<span class="sd">    If vtype is specified, tries to convert result to it.</span>
+
+<span class="sd">    :param input:       - dict       - Input dictionary. Event of Lambda for example.</span>
+<span class="sd">    :param name:        - str        - Name of attribute (in singular form).</span>
+<span class="sd">    :param vtype:       - type       - Type to be converted to. Must be callable. Tested types: str, int, float</span>
+<span class="sd">    :return:            - instance of vtype | something else | None</span>
+<span class="sd">    :raises ValueError:  - In all cases something is wrong.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">get_one_or_none_from_dict</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Did not find any value </span><span class="si">{}</span><span class="s2"> in the input </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">input</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="get_list_of_multiple_or_one_or_empty_from_dict">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.get_list_of_multiple_or_one_or_empty_from_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_list_of_multiple_or_one_or_empty_from_dict</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extracts objects by &#39;name&#39; from the &#39;input&#39; and returns as a list.</span>
+<span class="sd">    Tries both plural and singular names from the input.</span>
+<span class="sd">    If vtype is specified, tries to convert each of the elements in the result to this type.</span>
+
+<span class="sd">    :param input:       - dict       - Input dictionary. Event of Lambda for example.</span>
+<span class="sd">    :param name:        - str        - Name of attribute (in plural form).</span>
+<span class="sd">    :param vtype:       - type       - Type to be converted to. Must be callable. Tested types: str, int, float</span>
+<span class="sd">    :return:            - list       - List of vtypes, or list of whatever was in input, or empty list.</span>
+<span class="sd">    :raises ValueError:  In all cases something is wrong.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;input&#39; attribute must be a dict. Received: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">input</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;name&#39; attribute must be a str. Received: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">t</span> <span class="k">else</span> <span class="n">t</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># Wrap to list if not there yet.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">results</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="c1"># Apply vtype convertion if required.</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">vtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="validate_date_list_from_event_or_days_back">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_date_list_from_event_or_days_back">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_date_list_from_event_or_days_back</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">days_back</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">key_name</span><span class="o">=</span><span class="s1">&#39;date_list&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes from input the date_list and extracts date_list. Validates and converts to datetime.date.</span>
+<span class="sd">    Input should have date_list as list of strings or comma-separated string.</span>
+
+<span class="sd">    * Format:     ``YYYY-MM-DD``</span>
+<span class="sd">    * Examples:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">       [&#39;2018-01-01&#39;, &#39;2018-02-01&#39;]</span>
+<span class="sd">       &#39;2018-01-01, 2018-02-01&#39;</span>
+
+<span class="sd">    :param dict input:      This is supposed to be your whole Lambda event.</span>
+<span class="sd">    :param int days_back:   Optional Number of days to take back from today.</span>
+<span class="sd">                            Ex: days_back=1 is yesterday. Default: today.</span>
+<span class="sd">    :param str key_name:    Optional custom name of key to extract from &#39;input&#39;.</span>
+<span class="sd">    :return:                list(datetime.date)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">date_list</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key_name</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">date_list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_back</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date_list</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">date_list</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">date_list</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">date_list</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="validate_datetime_from_something">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_datetime_from_something">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_datetime_from_something</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts the input `d` to datetime.datetime.</span>
+
+<span class="sd">    :param d: Some input. Supported types:</span>
+<span class="sd">                * datetime.datetime</span>
+<span class="sd">                * datetime.date</span>
+<span class="sd">                * int - Epoch or Epoch milliseconds</span>
+<span class="sd">                * float - Epoch or Epoch milliseconds</span>
+<span class="sd">                * str (epoch time seconds as string)</span>
+<span class="sd">                * str (epoch time seconds (float) as string)</span>
+<span class="sd">                * str: Many different formats are supported, but the order only from more specific to less specific,</span>
+<span class="sd">                (e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).</span>
+
+<span class="sd">    :return: Transformed `d`</span>
+<span class="sd">    :rtype: datetime.datetime</span>
+<span class="sd">    :raises: ValueError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">mutators</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">time</span><span class="p">())),</span>
+        <span class="p">((</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">MAXYEAR</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)),</span>
+        <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">try_str_to_dt</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+    <span class="p">]</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">try_str_to_dt</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+
+        <span class="n">formats</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S.</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S%z&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S.</span><span class="si">%f</span><span class="s1">%z&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S%:z&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S.</span><span class="si">%f</span><span class="s1">%:z&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S.</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S%z&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S.</span><span class="si">%f</span><span class="s1">%z&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S%:z&#39;</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S.</span><span class="si">%f</span><span class="s1">%:z&#39;</span><span class="p">]</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="n">formats</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">fmt</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># Try the next format</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Some unconvertable type for datetime validation: </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+    <span class="k">for</span> <span class="n">mutator</span> <span class="ow">in</span> <span class="n">mutators</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">mutator</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">mutator</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Some unconvertable type for datetime validation: </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="validate_date_from_something">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_date_from_something">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_date_from_something</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert valid input to datetime.date() or raise either AttributeError or ValueError.</span>
+
+<span class="sd">    :param d: Some input. Supported types:</span>
+<span class="sd">                * datetime.datetime</span>
+<span class="sd">                * datetime.date</span>
+<span class="sd">                * int - Epoch or Epoch milliseconds</span>
+<span class="sd">                * float - Epoch or Epoch milliseconds</span>
+<span class="sd">                * str (YYYY-MM-DD)</span>
+<span class="sd">                * str (YYYY-MM-DD HH:MM:SS)</span>
+<span class="sd">    :return: Transformed `d`</span>
+<span class="sd">    :rtype: datetime.date</span>
+<span class="sd">    :raises: ValueError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">validate_datetime_from_something</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="validate_date_timestamp_from_something">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_date_timestamp_from_something">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_date_timestamp_from_something</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts the input `d` to timestamp of the date rounded.</span>
+
+<span class="sd">    :param d: Some input. Supported types:</span>
+<span class="sd">                * datetime.datetime</span>
+<span class="sd">                * datetime.date</span>
+<span class="sd">                * int - Epoch or Epoch milliseconds</span>
+<span class="sd">                * float - Epoch or Epoch milliseconds</span>
+<span class="sd">                * str (YYYY-MM-DD)</span>
+<span class="sd">                * str (YYYY-MM-DD HH:MM:SS)</span>
+<span class="sd">                * str(epoch time seconds as string)</span>
+<span class="sd">                * str(epoch time seconds (float) as string)</span>
+<span class="sd">    :return: Transformed `d`</span>
+<span class="sd">    :raises: ValueError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">validate_datetime_from_something</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="n">date_only</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">date_only</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="validate_string_matches_datetime_format">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_string_matches_datetime_format">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_string_matches_datetime_format</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="n">date_format</span><span class="p">,</span> <span class="n">field_name</span><span class="o">=</span><span class="s1">&#39;date&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate string, make sure it&#39;s of the given datetime format</span>
+
+<span class="sd">    :param str date_str: a date or time or both, Example: &#39;2018/09/16&#39;</span>
+<span class="sd">    :param str date_format: datetime format, that is acceptable for datetime.strptime. Example: &#39;%Y/%m/%d&#39;</span>
+<span class="sd">            (https://docs.python.org/3.6/library/datetime.html#strftime-and-strptime-behavior)</span>
+<span class="sd">    :param str field_name: name of the field (for the error)</span>
+<span class="sd">    :raises: ValueError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">date_str</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bad input for </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">date_str</span><span class="si">}</span><span class="s2">), must be a string&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">date_format</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date_format</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bad input for format (</span><span class="si">{</span><span class="n">date_format</span><span class="si">}</span><span class="s2">), must be a string&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Incorrect format of </span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">date_str</span><span class="si">}</span><span class="s2">), should be </span><span class="si">{</span><span class="n">date_format</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="is_valid_date">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.is_valid_date">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_valid_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="n">date_formats</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate string to be at least one of the given datetime formats.</span>
+
+<span class="sd">    :param str date_str: a date or time or both, Example: &#39;2018/09/16&#39;</span>
+<span class="sd">    :param list date_formats: List of datetime format, that is acceptable for datetime.strptime. Example: &#39;%Y/%m/%d&#39;</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    :return: True if the date string is valid for any of the datetime formats, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">date_format</span> <span class="ow">in</span> <span class="n">date_formats</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">validate_string_matches_datetime_format</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="recursive_matches_soft">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.recursive_matches_soft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_matches_soft</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches the &#39;src&#39; recursively for nested elements provided in &#39;key&#39; with dot notation.</span>
+<span class="sd">    In case some levels are iterable (list, tuple) it checks every element.</span>
+<span class="sd">    In case the full path is inaccessible returns False.</span>
+<span class="sd">    If any of the elements addressed by &#39;key&#39; matches the &#39;val&#39; - Bingo! Return True.</span>
+
+<span class="sd">    You might also be interested in recursive_exists_strict() helper.</span>
+
+<span class="sd">    :param dict src:    Input dictionary. Can contain nested dictionaries and lists.</span>
+<span class="sd">    :param str key:     Path to search with dot notation.</span>
+<span class="sd">    :param any val:     Value to match in some elements specified by path.</span>
+
+<span class="sd">    In order to check not just that some element exists, but to check for duplicates, you might want to use</span>
+<span class="sd">    optional &#39;exclude&#39; attributes. If attributes are specified and the last level element following the path</span>
+<span class="sd">    (dot notation) will have a key-value, the check for the main key-value will be skipped.</span>
+<span class="sd">    See unittests to understand the bahaviour better.</span>
+
+<span class="sd">    :param str exclude_key:     Key to check in last level element to exclude.</span>
+<span class="sd">    :param srt exclude_val:     Value to match in last level element to exclude.</span>
+
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]])</span> \
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]]):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;If you use &#39;exclude&#39; attributes you must specify both &#39;exclude_key&#39; and &#39;exclude_val&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">path_elements</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="c1"># logging.debug(&quot;Invoked func: &quot;, src, key, path_elements)</span>
+
+    <span class="c1"># if src is iterable: iterate recursively</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">recursive_matches_soft</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">src</span><span class="p">)</span>
+
+    <span class="c1"># We should try to dig deeper.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">recursive_matches_soft</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># Last level of digging</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">src</span><span class="p">[</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_val&#39;</span><span class="p">]:</span>
+                <span class="c1"># logging.debug(&quot;Skipping element because it matches exclude parameters.&quot;)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># There is a chance that the exclude key is simply missing. We ignore it then.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">src</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">val</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Your function is stupid&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If nothing found we return False</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="recursive_matches_strict">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.recursive_matches_strict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_matches_strict</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches the &#39;input&#39; recursively for nested elements provided in &#39;key&#39; with dot notation.</span>
+<span class="sd">    In case some levels are iterable (list, tuple) it checks every element.</span>
+<span class="sd">    In case the full path is inaccessible raises AttributeError or KeyError.</span>
+
+<span class="sd">    :param dict src:    Input dictionary. Can contain nested dictionaries and lists.</span>
+<span class="sd">    :param str key:     Path to search with dot notation.</span>
+<span class="sd">    :param any val:     Value to match in some elements specified by path.</span>
+
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]])</span> \
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]]):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;If you use &#39;exclude&#39; attributes you must specify both &#39;exclude_key&#39; and &#39;exclude_val&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">path_elements</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># if src is iterable: iterate</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">recursive_matches_strict</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">src</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">recursive_matches_strict</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">src</span><span class="p">[</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_val&#39;</span><span class="p">]:</span>
+                <span class="c1"># logging.debug(&quot;Skipping element because it matches exclude parameters.&quot;)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># There is a chance that the exclude key is simply missing. We ignore it then.</span>
+        <span class="k">return</span> <span class="n">src</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">val</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Your function is stupid&quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ignore_case_copy</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A funtion to create a copy of a source dict with all string keys in lower case.</span>
+<span class="sd">    </span>
+<span class="sd">    Keyword arguments:</span>
+<span class="sd">    :param dict src -- Input dictionary</span>
+<span class="sd">    :return dict: a copy of the dict with all string keys in lower case.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">src</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">ignore_case_copy</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">continue</span>
+
+        <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">output</span>
+
+
+<div class="viewcode-block" id="recursive_matches_extract">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.recursive_matches_extract">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_matches_extract</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Searches the &#39;src&#39; recursively for nested elements provided in &#39;key&#39; with dot notation.</span>
+<span class="sd">    In case some levels are iterable (list, tuple) it checks every element in it till finds it.</span>
+
+<span class="sd">    Returns the first found element or None.</span>
+<span class="sd">    In case the full path is inaccessible also returns None.</span>
+
+<span class="sd">    If you are just checking if some elements exist, you might be interested in</span>
+<span class="sd">    recursive_exists_strict() or recursive_exists_soft() helpers.</span>
+
+<span class="sd">    ..  warning::</span>
+
+<span class="sd">        Please be aware that this method does not check for duplicates in iterable elements on neither</span>
+<span class="sd">        level during extraction.</span>
+
+<span class="sd">    :param dict src:        Input dictionary. Can contain nested dictionaries and lists.</span>
+<span class="sd">    :param str key:         Path to search with dot notation.</span>
+<span class="sd">    :param str separator:   Custom separator for recursive extraction. Default: `&#39;.&#39;`</span>
+
+<span class="sd">    In order to filter out some specific elements, you might want to use the optional &#39;exclude&#39; attributes.</span>
+<span class="sd">    If attributes are specified and the last level element following the path</span>
+<span class="sd">    (dot notation) will have a key-value, the check for the main key-value will be skipped.</span>
+<span class="sd">    See unittests to understand the bahaviour better.</span>
+
+<span class="sd">    :param str exclude_key:     Key to check in last level element to exclude.</span>
+<span class="sd">    :param str exclude_val:     Value to match in last level element to exclude.</span>
+
+<span class="sd">    :return:    Value from structure extracted by specified path</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ignore_case</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ignore_case&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ignore_case</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">ignore_case_copy</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">ignore_case_copy</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">src</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]])</span> \
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude_val&#39;</span><span class="p">]]):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;If you use &#39;exclude&#39; attributes you must specify both &#39;exclude_key&#39; and &#39;exclude_val&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">separator</span><span class="p">:</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;Separator must be a string.&quot;</span>
+
+    <span class="n">path_elements</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+    <span class="c1"># logging.debug(&quot;Invoked func: &quot;, src, key, path_elements)</span>
+
+    <span class="c1"># if src is iterable: iterate recursively</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">src</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">recursive_matches_extract</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+    <span class="c1"># We should try to dig deeper.</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">recursive_matches_extract</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_elements</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># Last level of digging</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">path_elements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">src</span><span class="p">[</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_key&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;exclude_val&#39;</span><span class="p">]:</span>
+                <span class="c1"># logging.debug(&quot;Skipping element because it matches exclude parameters.&quot;)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># There is a chance that the exclude key is simply missing. We ignore it then.</span>
+        <span class="k">return</span> <span class="n">src</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Your function is stupid&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If nothing found we return False</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="dunder_to_dict">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.dunder_to_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dunder_to_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts the flat dict with keys using dunder notation for nesting elements to regular nested dictionary.</span>
+
+<span class="sd">    E.g.:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">       data = {&#39;a&#39;: &#39;v1&#39;, &#39;b__c&#39;: &#39;v2&#39;, &#39;b__d__e&#39;: &#39;v3&#39;}</span>
+<span class="sd">       result = dunder_to_dict(data)</span>
+
+<span class="sd">       # result:</span>
+<span class="sd">       {</span>
+<span class="sd">           &#39;a&#39;: &#39;v1&#39;,</span>
+<span class="sd">           &#39;b&#39;: {</span>
+<span class="sd">               &#39;c&#39;: &#39;v2&#39;,</span>
+<span class="sd">               &#39;d&#39;: {&#39;e&#39;: &#39;v3&#39;}</span>
+<span class="sd">           }</span>
+<span class="sd">       }</span>
+
+<span class="sd">    :param data: A dictionary that is converted to Nested.</span>
+<span class="sd">    :param str separator:   Custom separator for recursive extraction. Default: `&#39;__&#39;`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">separator</span><span class="p">:</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Separator must be a string.&quot;</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">separator</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>  <span class="c1"># Just set the value if key is not separated</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span> <span class="ow">or</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">separator</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Your keys should not have </span><span class="si">{</span><span class="n">separator</span><span class="si">}</span><span class="s2"> on sides of keys. Only as separators: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">k_split</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span>
+            <span class="n">main_key</span><span class="p">,</span> <span class="n">nested_keys</span> <span class="o">=</span> <span class="n">k_split</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">k_split</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="c1"># Make sure that value is recursively parsed for separators as well.</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">dunder_to_dict</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">)</span>
+
+            <span class="c1"># Construct a nested dictionary embedding value to the deepest level.</span>
+            <span class="n">new_subdict</span> <span class="o">=</span> <span class="n">nested_dict_from_keys</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+
+            <span class="c1"># Just merge the new nested dictionary in the final result.</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">main_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">recursive_update</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">main_key</span><span class="p">],</span> <span class="n">new_subdict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dict_to_dunder">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.dict_to_dunder">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_to_dunder</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts the nested dict to a flat dict with keys using dunder notation. Reverse of `dunder_to_dict`.</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        d = {</span>
+<span class="sd">               &#39;a&#39;: &#39;v1&#39;,</span>
+<span class="sd">               &#39;b&#39;: {</span>
+<span class="sd">                   &#39;c&#39;: &#39;v2&#39;,</span>
+<span class="sd">                   &#39;d&#39;: {&#39;e&#39;: &#39;v3&#39;}</span>
+<span class="sd">               }</span>
+<span class="sd">            }</span>
+<span class="sd">        result = dict_to_dunder(d)</span>
+
+<span class="sd">        # result:</span>
+<span class="sd">        {&#39;a&#39;: &#39;v1&#39;, &#39;b__c&#39;: &#39;v2&#39;, &#39;b__d__e&#39;: &#39;v3&#39;}</span>
+
+<span class="sd">    :param str separator:   Custom separator for recursive extraction. Default: `&#39;__&#39;`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">new_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">parent</span><span class="si">}{</span><span class="n">separator</span><span class="si">}{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">parent</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dict_to_dunder</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">new_key</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">items</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">items</span></div>
+
+
+
+<div class="viewcode-block" id="nested_dict_from_keys">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.nested_dict_from_keys">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nested_dict_from_keys</span><span class="p">(</span><span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs a nested dictionary using a list of keys to embed recursively.</span>
+<span class="sd">    If `value` is provided it is assigned to the last subkey.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        nested_dict_from_keys([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]) == {&#39;a&#39;: {&#39;b&#39;: {&#39;c&#39;: None}}}</span>
+<span class="sd">        nested_dict_from_keys([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;], value=42) == {&#39;a&#39;: {&#39;b&#39;: {&#39;c&#39;: 42}}}</span>
+
+<span class="sd">    :param keys:    List of keys to embed.</span>
+<span class="sd">    :param value:   Optional value to set to lowest level</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">abc</span><span class="o">.</span><span class="n">Hashable</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Keys of dictionary must be hashable for nestify. Got: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">nested_dict_from_keys</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">value</span><span class="p">)}</span></div>
+
+
+
+<div class="viewcode-block" id="convert_string_to_words">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.convert_string_to_words">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_string_to_words</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert string to comma separated words.</span>
+
+<span class="sd">    :param  str string:     String to convert into words.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    :return: Comma separated words.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input must be string, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s+&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="construct_dates_from_event">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.construct_dates_from_event">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_dates_from_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Processes given event dictionary for start and end points of time. Otherwise takes the default settings.</span>
+
+<span class="sd">    The end date of the period may be specified as `en_date` in the event. The default value is today.</span>
+
+<span class="sd">    Also the `event` should have either `st_date` or `days_back` numeric parameter.</span>
+<span class="sd">    If provided the days_back it will be substracted from end date.</span>
+
+<span class="sd">    Both `st_date` and `en_date` might be either `date`, `datetime` or `string` (`&#39;YYYY-MM-DD&#39;`) types.</span>
+<span class="sd">    In case of `datetime`, the hours/minutes/etc are ignored.</span>
+
+<span class="sd">    :param dict event:  Lambda payload.</span>
+<span class="sd">    :return:            start_date, end_date    as datetime.date</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">en_date</span> <span class="o">=</span> <span class="n">validate_date_from_something</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;en_date&#39;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()))</span>
+    <span class="n">st_date</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;st_date&#39;</span><span class="p">)</span>
+    <span class="n">days_back</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;days_back&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">st_date</span> <span class="ow">and</span> <span class="n">days_back</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;construct_dates_from_event() doesn&#39;t allow st_date and days_back simultaneously&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">st_date</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">days_back</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;construct_dates_from_event() expects either st_date or days_back&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">days_back</span><span class="p">:</span>
+        <span class="n">st_date</span> <span class="o">=</span> <span class="n">en_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">days_back</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">st_date</span> <span class="o">=</span> <span class="n">validate_date_from_something</span><span class="p">(</span><span class="n">st_date</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">st_date</span> <span class="o">&lt;</span> <span class="n">en_date</span><span class="p">,</span> <span class="s2">&quot;Start date must be earlier than end date.&quot;</span>
+
+    <span class="k">return</span> <span class="n">st_date</span><span class="p">,</span> <span class="n">en_date</span></div>
+
+
+
+<div class="viewcode-block" id="validate_list_of_words_from_csv_or_list">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.validate_list_of_words_from_csv_or_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_list_of_words_from_csv_or_list</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Splits a CSV string to list of stripped words.</span>
+<span class="sd">    In case the `data` is already a list of strings - splits it&#39;s elements and flattens the result.</span>
+
+<span class="sd">    All resulting elements must be single words, if any of the elements contains spaces (i.e. multiple words)</span>
+<span class="sd">    the validation fails with `ValueError`.</span>
+
+<span class="sd">    :param data:    CSV string of list of strings (possibly CSV themselves)</span>
+<span class="sd">    :return:        List of stripped and split words</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_csv</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type of data for validate_list_of_words_from_csv_or_list(): </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">split_csv</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">split_csv</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data for validate_list_of_words_from_csv_or_list() should be csv of WORDS or list: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="first_or_none">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.first_or_none">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">first_or_none</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return first element in iterable to match condition or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">condition</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">condition</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="recursive_update">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.recursive_update">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_update</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">u</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively updates the dictionary `d` with another one `u`.</span>
+<span class="sd">    Values of `u` overwrite in case of type conflict.</span>
+
+<span class="sd">    Examples (in comparison with dict.update([other])):</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        d = {&#39;a&#39;: 42, &#39;b&#39;: {&#39;b1&#39;: 33, &#39;b2&#39;: 44}}</span>
+<span class="sd">        u = {&#39;a&#39;: 43, &#39;b&#39;: {&#39;b1&#39;: 22, &#39;b3&#39;: 33}}</span>
+
+<span class="sd">        recursive_update(d, u)</span>
+
+<span class="sd">        # result:</span>
+<span class="sd">        {&#39;a&#39;: 43, &#39;b&#39;: {&#39;b1&#39;: 22, &#39;b2&#39;: 44, &#39;b3&#39;: 33}}</span>
+
+<span class="sd">        d.update(u)</span>
+
+<span class="sd">        # result:</span>
+<span class="sd">        {&#39;a&#39;: 43, &#39;b&#39;: {&#39;b1&#39;: 22, &#39;b3&#39;: 33}}</span>
+
+<span class="sd">    List, set and tuple values of `d` and `u` are merged, preserving only unique values. Returned as List.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">new</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+            <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">recursive_update</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">set</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="p">(</span><span class="nb">set</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="c1"># Merge lists of uniques. I really want this helper to eat anything and return what it should. :)</span>
+                <span class="n">nv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nv</span><span class="p">))</span>
+                <span class="c1"># The types of values in list could be unhashable, so it is not that easy filter uniques.</span>
+                <span class="c1"># In case the elements are dictionaries try JSONification and unuque by strings.</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="c1"># If types are not hashable we still try to deal with them as if Dictionaries.</span>
+                <span class="c1"># In this case we filter unique ones by JSON values and them unfold them back and reconstruct Dicts.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">jsons</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">nv</span><span class="p">)</span>
+                        <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">jsons</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                        <span class="c1"># If not all values of iterable are hashable and not Dictionaries we just merge them as is.</span>
+                        <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">nv</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">return</span> <span class="n">new</span></div>
+
+
+
+<div class="viewcode-block" id="recursive_insert">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.recursive_insert">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_insert</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insert the ``value`` to the input dictionary ``d`` nested according to the ``path``.</span>
+
+<span class="sd">    By default, the separator is ``.``, but can be changed in the ``separator`` argument.</span>
+<span class="sd">    Returns the input ``d`` with modifications applied.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        d = {&#39;a&#39;: {&#39;b&#39;: {&#39;z&#39;: 42}}}</span>
+<span class="sd">        result = recursive_insert(d, &#39;a.b.ccc.ddd&#39;, 123)</span>
+
+<span class="sd">        # Result</span>
+<span class="sd">        {&#39;a&#39;: {&#39;b&#39;: {&#39;z&#39;: 42, &#39;ccc&#39;: {&#39;ddd&#39;: 123}}}}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Path is invalid. Should be a non-empty string separated with &#39;</span><span class="si">{</span><span class="n">separator</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;but received: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prefix</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">parts</span>
+        <span class="k">if</span> <span class="n">prefix</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">prefix</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">prefix</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The path &#39;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; leads to some non-dict nested element. Can&#39;t insert deeper.&quot;</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">prefix</span><span class="p">]</span> <span class="o">=</span> <span class="n">recursive_insert</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">prefix</span><span class="p">],</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">separator</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="trim_arn_to_name">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.trim_arn_to_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">trim_arn_to_name</span><span class="p">(</span><span class="n">arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).</span>
+
+<span class="sd">    More information about ARN Format:</span>
+<span class="sd">    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Special handling for super global services (e.g. S3 buckets)</span>
+    <span class="k">if</span> <span class="n">arn</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">6</span> <span class="ow">and</span> <span class="s1">&#39;/&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">arn</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arn</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Seems a little messy, but passes more/less any test of different ARNs we tried.</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;(arn:aws:[0-9a-zA-Z-]{2,20}:[0-9a-zA-Z-]{0,12}:[0-9]</span><span class="si">{12}</span><span class="s2">:[0-9a-zA-Z-]{2,20}[:/])?&quot;</span> \
+              <span class="s2">&quot;(?P&lt;name&gt;[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?&quot;</span>
+
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">arn</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="trim_arn_to_account">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.trim_arn_to_account">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">trim_arn_to_account</span><span class="p">(</span><span class="n">arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).</span>
+
+<span class="sd">    More information about ARN Format:</span>
+<span class="sd">    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Seems a little messy, but passes more/less any test of different ARNs we tried.</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;(arn:aws:[0-9a-zA-Z-]{2,20}:[0-9a-zA-Z-]{0,12}:)?(?P&lt;acc&gt;[0-9]</span><span class="si">{12}</span><span class="s2">)(:[0-9a-zA-Z-]{2,20}[:/])?&quot;</span> \
+              <span class="s2">&quot;(?P&lt;name&gt;[0-9a-zA-Z_=,.@-]*)(:)?([0-9a-zA-Z$]*)?&quot;</span>
+
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">arn</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;acc&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="make_hash">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.make_hash">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_hash</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes a hash from a dictionary, list, tuple or set to any level, that contains</span>
+<span class="sd">    only other hashable types (including any lists, tuples, sets, and</span>
+<span class="sd">    dictionaries).</span>
+
+<span class="sd">    Original idea from this user:</span>
+<span class="sd">    https://stackoverflow.com/users/660554/jomido</span>
+
+<span class="sd">    Plus some upgrades to work with sets and dicts having different types of keys appropriately.</span>
+<span class="sd">    See source unittests of this function for some more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">make_hash</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">o</span><span class="p">])</span>
+
+    <span class="c1"># Set should be sorted (by hashes of elements) before returns</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">make_hash</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">o</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+
+    <span class="c1"># We are left with a dictionary</span>
+    <span class="n">new_o</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">o</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># hash both keys and values to make sure types and order doesn&#39;t affect.</span>
+        <span class="n">new_o</span><span class="p">[</span><span class="n">make_hash</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="n">make_hash</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">new_o</span><span class="o">.</span><span class="n">items</span><span class="p">()))))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">to_bool</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;true&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;false&#39;</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can&#39;t convert unexpected value to bool: </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">, type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_msg_dict_from_sns_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s1">&#39;Records&#39;</span> <span class="ow">in</span> <span class="n">event</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;Records&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SNS event is not expected to have more than one record. Event: </span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;Records&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;Sns&#39;</span><span class="p">][</span><span class="s1">&#39;Message&#39;</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;Message&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="get_message_dict_from_sns_event">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.get_message_dict_from_sns_event">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_message_dict_from_sns_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract SNS event message and return it loaded as a dict.</span>
+
+<span class="sd">    :param event:   Lambda SNS event (payload). Must be a JSON document.</span>
+<span class="sd">    :return:        The SNS message, converted to dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">is_event_from_sns</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_unwrap_msg_dict_from_sns_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Event is not from SNS&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="is_event_from_sns">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.is_event_from_sns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_event_from_sns</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the lambda invocation was by SNS.</span>
+
+<span class="sd">    :param dict event: Lambda Event (payload)</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;Records&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;Sns&#39;</span><span class="p">][</span><span class="s1">&#39;Message&#39;</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="s1">&#39;Message&#39;</span> <span class="ow">in</span> <span class="n">event</span> <span class="ow">and</span> <span class="s1">&#39;TopicArn&#39;</span> <span class="ow">in</span> <span class="n">event</span> <span class="ow">and</span> <span class="s1">&#39;:sns:&#39;</span> <span class="ow">in</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;TopicArn&#39;</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_message_dicts_from_sqs_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+    <span class="n">sqs_messages</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;Records&#39;</span><span class="p">]:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">])</span>
+        <span class="n">sqs_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sqs_messages</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_event_from_sqs</span><span class="p">(</span><span class="n">event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">event</span><span class="p">[</span><span class="s1">&#39;Records&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;eventSource&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;aws:sqs&#39;</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="n">unwrap_checker_methods</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Methods with input: event, output: bool</span>
+    <span class="s1">&#39;sns&#39;</span><span class="p">:</span> <span class="n">is_event_from_sns</span><span class="p">,</span>
+    <span class="s1">&#39;sqs&#39;</span><span class="p">:</span> <span class="n">is_event_from_sqs</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">unwrap_extractor_methods</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Methods with input: event, output: Dict / List[Dict]</span>
+    <span class="s1">&#39;sns&#39;</span><span class="p">:</span> <span class="n">_unwrap_msg_dict_from_sns_event</span><span class="p">,</span>
+    <span class="s1">&#39;sqs&#39;</span><span class="p">:</span> <span class="n">_unwrap_message_dicts_from_sqs_event</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_event_messages</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    *source* can be sns / sqs</span>
+<span class="sd">    Unwrap list of messages from *source*, if the event is from this source.</span>
+<span class="sd">    Will unwrap a single layer (unlike ``unwrap_event_recursively`` - which is recursive).</span>
+<span class="sd">    If the event is not from this source, will raiseEventNotFromSourceException</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        unwrapped_sns_messages = _unwrap_event_messages(event, source=&#39;sns&#39;):</span>
+
+<span class="sd">    :param event:</span>
+<span class="sd">    :param source: &#39;sns&#39; or &#39;sqs&#39;</span>
+<span class="sd">    :return: List of events/messages unwrapped from the *source*</span>
+<span class="sd">    :raises: EventNotFromSourceException</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">checker_method</span> <span class="o">=</span> <span class="n">unwrap_checker_methods</span><span class="p">[</span><span class="n">source</span><span class="p">]</span>
+    <span class="n">extractor_method</span> <span class="o">=</span> <span class="n">unwrap_extractor_methods</span><span class="p">[</span><span class="n">source</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">checker_method</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>  <span class="c1"># is_event_from_sns/sqs</span>
+        <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">extractor_method</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>  <span class="c1"># _unwrap_msg_dicts_from_sns/sqs_event</span>
+        <span class="k">return</span> <span class="n">unwrapped</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">unwrapped</span><span class="p">]</span>
+
+    <span class="k">raise</span> <span class="n">EventNotFromSourceException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Event is not from </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">, can&#39;t unwrap it&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="unwrap_event_recursively">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.unwrap_event_recursively">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unwrap_event_recursively</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">sources</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively unwraps lambda event from SQS and/or SNS event skeletons.</span>
+<span class="sd">    Supported sources: &#39;sqs&#39;, &#39;sns&#39;.</span>
+<span class="sd">    Will unwrap recursively until the event is not wrapped anymore, or up to depth of 10</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        unwrapped_messages = unwrap_event_recursively(event, sources=[&#39;sns&#39;, &#39;sqs&#39;]):</span>
+
+<span class="sd">    :param event: Lambda event</span>
+<span class="sd">    :param sources: List of strings describing what the event might be wrapped by. If empty, will unwrapped from all.</span>
+<span class="sd">    :return: List of dictionaries - unwrapped messages from the event</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">event</span><span class="p">]</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sources</span> <span class="ow">or</span> <span class="p">[</span><span class="s1">&#39;sns&#39;</span><span class="p">,</span> <span class="s1">&#39;sqs&#39;</span><span class="p">]]</span>
+    <span class="n">max_depth</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Unwrapping up to depth of 10, as a safety mechanism against infinite loop</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_depth</span><span class="p">):</span>
+        <span class="n">original</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+            <span class="n">converted_messages</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">_unwrap_event_messages</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">EventNotFromSourceException</span><span class="p">:</span>
+                    <span class="n">unwrapped</span> <span class="o">=</span> <span class="p">[</span><span class="n">msg</span><span class="p">]</span>
+
+                <span class="n">converted_messages</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span>
+
+            <span class="n">messages</span> <span class="o">=</span> <span class="n">converted_messages</span>
+
+        <span class="k">if</span> <span class="n">original</span> <span class="o">==</span> <span class="n">messages</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">messages</span></div>
+
+
+
+<div class="viewcode-block" id="small_int_from_string">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.small_int_from_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">small_int_from_string</span><span class="p">(</span><span class="n">input_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_digits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a small integer based on the input string using its MD5 hash.</span>
+<span class="sd">    This value is reproducible, so it could be useful for example if you use it</span>
+<span class="sd">    for some kind of partitioning or unsorted batching in order to be able to</span>
+<span class="sd">    query based on it later on.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    ..  code-block:: python</span>
+
+<span class="sd">        small_int_from_string(&quot;hello world&quot;)</span>
+<span class="sd">        91</span>
+<span class="sd">        small_int_from_string(&quot;hello world&quot;, num_digits=3)</span>
+<span class="sd">        291</span>
+
+<span class="sd">    :return: The generated small integer.</span>
+<span class="sd">    :raises: ValueError: If num_digits is not a positive integer.</span>
+
+<span class="sd">      &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_digits</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">num_digits</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of digits must be a positive integer.&quot;</span><span class="p">)</span>
+
+    <span class="n">hash_object</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="n">hash_object</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_string</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">hex_digest</span> <span class="o">=</span> <span class="n">hash_object</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">int_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hex_digest</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">int_value</span> <span class="o">%</span> <span class="p">(</span><span class="mi">10</span> <span class="o">**</span> <span class="n">num_digits</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="slug_to_camel_case">
+<a class="viewcode-back" href="../../../components/helpers.html#sosw.components.helpers.slug_to_camel_case">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">slug_to_camel_case</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split the input text by hyphens to get individual words</span>
+<span class="sd">    Convert each word to capitalize the first letter and join them to form CamelCase</span>
+<span class="sd">    </span>
+<span class="sd">    :return: Resulting CamelCase string</span>
+<span class="sd">     </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?&lt;!^)(?=[A-Z])&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+
+    <span class="n">camel_case</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">camel_case</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>
