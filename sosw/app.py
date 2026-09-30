@@ -52,6 +52,49 @@ from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient
 
 
+# Value substituted in logs for anything a sensitive key holds. See `_redact_for_logging`.
+LOG_REDACTED_VALUE = '***REDACTED***'
+
+# A key of a dict is considered sensitive (and its value is redacted in logs) when the lowercase
+# form of the key contains any of these substrings. Consumers may extend the matching by reassigning
+# `sosw.app.LOG_SENSITIVE_KEY_PARTS` (read from the module globals at call time).
+LOG_SENSITIVE_KEY_PARTS = (
+    'authorization', 'cookie', 'token', 'secret', 'password', 'passwd', 'api-key', 'api_key', 'apikey',
+    'x-origin-verify', 'credential', 'signature', 'private-key', 'private_key',
+)
+
+
+def _redact_for_logging(data):
+    """
+    Return a redacted copy of ``data`` suitable for logging. Never mutates the input.
+
+    Values of sensitive keys are replaced with :py:data:`LOG_REDACTED_VALUE` whatever their type
+    (string, list, dict); a key is sensitive when its lowercase form contains any substring from
+    :py:data:`LOG_SENSITIVE_KEY_PARTS`. Dicts, lists and tuples are copied and processed
+    recursively; anything else is returned as is. Both constants are looked up in the module
+    globals at call time, so reassigning them changes the behaviour.
+
+    :param data:    Dict, list, tuple or scalar value to prepare for logging.
+    :rtype:         Redacted copy of ``data`` of the same shape; scalars are returned unchanged.
+    """
+    if isinstance(data, dict):
+        redacted = {}
+        for key, value in data.items():
+            if any(part in str(key).lower() for part in LOG_SENSITIVE_KEY_PARTS):
+                redacted[key] = LOG_REDACTED_VALUE
+            else:
+                redacted[key] = _redact_for_logging(value)
+        return redacted
+
+    if isinstance(data, list):
+        return [_redact_for_logging(item) for item in data]
+
+    if isinstance(data, tuple):
+        return tuple(_redact_for_logging(item) for item in data)
+
+    return data
+
+
 def _derive_test_flag(explicit_flag=None):
     """
     Resolve the effective ``test`` flag of the Processor or the lambda handler.
@@ -573,7 +616,7 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
                     os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
                     __name__, context)
-        logger.info(event)
+        logger.info(_redact_for_logging(event))
 
         test = _derive_test_flag(event.get('test') if isinstance(event, dict) else None)
 
@@ -588,7 +631,7 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         global_vars.processor.reset_stats(recursive=True)
 
-        logger.info(result)
+        logger.info(_redact_for_logging(result))
 
         return result
 
@@ -605,6 +648,11 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     ``processor.result`` (reset on every call), while ``processor.stats`` carries the counters
     of the container lifetime: ``reset_stats()`` runs once after every invocation and preserves
     the ``total_*`` counters and the ones configured in ``lifetime_stats_params``.
+
+    The logged copies of the event and the result are redacted: values of keys whose lowercase
+    name contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``,
+    ``Cookie``, ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE``. The Processor still
+    receives the original event, and the original result object is returned to the caller.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
