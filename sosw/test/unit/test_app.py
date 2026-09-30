@@ -1,7 +1,9 @@
+import copy
 import datetime
 
 import boto3
 import os
+import sosw.app
 import unittest
 
 from unittest.mock import MagicMock, patch
@@ -9,7 +11,8 @@ from unittest.mock import MagicMock, patch
 os.environ["STAGE"] = "test"
 os.environ["autotest"] = "True"
 
-from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
+from sosw.app import (LOG_REDACTED_VALUE, Processor, LambdaGlobals, _redact_for_logging, get_lambda_handler,
+                      logger)
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
@@ -337,6 +340,207 @@ class app_UnitTestCase(unittest.TestCase):
 
         lambda_handler(event={'k': 2}, context=MagicMock())
         self.assertEqual(processor_instance.reset_stats.call_count, 2)
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_lambda_handler__redacts_logged_event_and_result(self, mock_logger_info, _):
+        """
+        The handler logs redacted copies of the event and result, but the Processor receives the
+        original event object and the original result object is returned to the caller.
+        """
+
+        received = {}
+
+
+        class RecordingChild(Processor):
+            def __call__(self, event):
+                super().__call__(event)
+                received['event'] = event
+                received['result'] = {'headers': {'Set-Cookie': 'test-set-cookie-value'}}
+                return received['result']
+
+
+        global_vars = LambdaGlobals()
+        lambda_handler = get_lambda_handler(RecordingChild, global_vars, self.TEST_CONFIG)
+
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+
+        event = {
+            'headers':        {'Authorization': 'test-jwt-value', 'X-Origin-Verify': 'test-edge-secret-value'},
+            'requestContext': {'authorizer': {'claims': {'sub': 'test-sub-claim'}}},
+        }
+        result = lambda_handler(event=event, context=mock_context)
+
+        # The Processor got the exact same event object, with the secrets intact.
+        self.assertIs(received['event'], event)
+        self.assertEqual(event['headers']['Authorization'], 'test-jwt-value')
+        self.assertEqual(event['headers']['X-Origin-Verify'], 'test-edge-secret-value')
+
+        # The handler returned the exact same result object, un-redacted.
+        self.assertIs(result, received['result'])
+        self.assertEqual(result, {'headers': {'Set-Cookie': 'test-set-cookie-value'}})
+
+        # None of the secrets leaked into any logger.info call, but the redaction marker is there.
+        logged = ' '.join(str(call) for call in mock_logger_info.call_args_list)
+        for secret in ('test-jwt-value', 'test-edge-secret-value', 'test-set-cookie-value'):
+            self.assertNotIn(secret, logged)
+        self.assertIn(LOG_REDACTED_VALUE, logged)
+
+
+    def test__redact_for_logging__api_gateway_v1_proxy_event(self):
+        """
+        REST API (v1) proxy event: headers, multiValueHeaders, query params and nested authorizer
+        claims. Sensitive keys are masked at any depth; non-sensitive claim keys survive.
+        """
+
+        event = {
+            'httpMethod':            'GET',
+            'path':                  '/things',
+            'headers':               {
+                'Authorization':   'test-jwt-value',
+                'X-Origin-Verify': 'test-edge-secret-value',
+                'Cookie':          'session=test-cookie-value',
+                'X-Api-Key':       'test-api-key-value',
+                'Content-Type':    'application/json',
+            },
+            'multiValueHeaders':     {
+                'Authorization':   ['test-jwt-value'],
+                'X-Origin-Verify': ['test-edge-secret-value'],
+                'Cookie':          ['session=test-cookie-value', 'theme=dark'],
+                'Content-Type':    ['application/json'],
+            },
+            'queryStringParameters': {'access_token': 'test-access-token-value', 'limit': '10'},
+            'requestContext':        {
+                'authorizer': {'claims': {'sub': 'test-sub-claim', 'email': 'test@example.com'}},
+            },
+            'body':                  None,
+        }
+        snapshot = copy.deepcopy(event)
+
+        redacted = _redact_for_logging(event)
+
+        self.assertEqual(event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['httpMethod'], 'GET')
+        self.assertEqual(redacted['path'], '/things')
+        self.assertEqual(redacted['headers'], {
+            'Authorization':   LOG_REDACTED_VALUE,
+            'X-Origin-Verify': LOG_REDACTED_VALUE,
+            'Cookie':          LOG_REDACTED_VALUE,
+            'X-Api-Key':       LOG_REDACTED_VALUE,
+            'Content-Type':    'application/json',
+        })
+        self.assertEqual(redacted['multiValueHeaders']['Authorization'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['X-Origin-Verify'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['Cookie'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['Content-Type'], ['application/json'])
+        self.assertEqual(redacted['queryStringParameters'], {'access_token': LOG_REDACTED_VALUE, 'limit': '10'})
+        self.assertEqual(redacted['requestContext']['authorizer']['claims'],
+                         {'sub': 'test-sub-claim', 'email': 'test@example.com'})
+        self.assertIsNone(redacted['body'])
+
+
+    def test__redact_for_logging__http_api_v2_and_token_authorizer(self):
+        """
+        HTTP API (v2) carries `cookies` as a top-level list; a TOKEN authorizer event carries the
+        raw token in `authorizationToken`. Both must be masked.
+        """
+
+        v2_event = {
+            'version':               '2.0',
+            'routeKey':              'GET /things',
+            'cookies':               ['session=test-cookie-value', 'theme=dark'],
+            'headers':               {'authorization': 'test-jwt-value'},
+            'queryStringParameters': {'access_token': 'test-access-token-value'},
+        }
+        snapshot = copy.deepcopy(v2_event)
+
+        redacted = _redact_for_logging(v2_event)
+
+        self.assertEqual(v2_event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['version'], '2.0')
+        self.assertEqual(redacted['cookies'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['headers'], {'authorization': LOG_REDACTED_VALUE})
+        self.assertEqual(redacted['queryStringParameters'], {'access_token': LOG_REDACTED_VALUE})
+
+        auth_event = {
+            'type':               'TOKEN',
+            'authorizationToken': 'test-jwt-value',
+            'methodArn':          'arn:aws:execute-api:us-east-1:123456789012:api/GET/things',
+        }
+        snapshot = copy.deepcopy(auth_event)
+
+        redacted = _redact_for_logging(auth_event)
+
+        self.assertEqual(auth_event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['type'], 'TOKEN')
+        self.assertEqual(redacted['authorizationToken'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['methodArn'], auth_event['methodArn'])
+
+
+    def test__redact_for_logging__mixed_case_and_non_string_keys(self):
+        data = {
+            'AUTHORIZATION':        'test-jwt-value',
+            'x-origin-verify':      'test-edge-secret-value',
+            'Proxy-Authorization':  'test-proxy-auth-value',
+            42:                     {'Authorization': 'test-jwt-value'},
+            'path':                 '/things',
+        }
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertIn(42, redacted)
+        self.assertEqual(redacted[42], {'Authorization': LOG_REDACTED_VALUE})
+        self.assertEqual(redacted['AUTHORIZATION'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['x-origin-verify'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['Proxy-Authorization'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['path'], '/things')
+
+
+    def test__redact_for_logging__containers_and_scalars(self):
+        """
+        Lists and tuples are rebuilt recursively; only dict KEYS are matched, values like a plain
+        string are kept; non-container leaves are returned as the same object.
+        """
+
+        data = [
+            [{'X-Amz-Security-Token': 'test-sts-token-value'}, {'signature_check': 'checked'}],
+            ('X-Amz-Signature', 'public'),
+            None,
+        ]
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted, [
+            [{'X-Amz-Security-Token': LOG_REDACTED_VALUE}, {'signature_check': LOG_REDACTED_VALUE}],
+            ('X-Amz-Signature', 'public'),
+            None,
+        ])
+        self.assertIsInstance(redacted[1], tuple)
+
+        for scalar in ('plain', None, 42, 4.2):
+            self.assertIs(_redact_for_logging(scalar), scalar)
+
+
+    def test__redact_for_logging__sensitive_parts_read_at_call_time(self):
+        """
+        Reassigning `sosw.app.LOG_SENSITIVE_KEY_PARTS` extends the matching for subsequent calls.
+        """
+
+        original = sosw.app.LOG_SENSITIVE_KEY_PARTS
+        self.addCleanup(setattr, sosw.app, 'LOG_SENSITIVE_KEY_PARTS', original)
+
+        sosw.app.LOG_SENSITIVE_KEY_PARTS = original + ('wayli',)
+
+        self.assertEqual(_redact_for_logging({'wayli-key': 'test-wayli-secret-value', 'path': '/x'}),
+                         {'wayli-key': LOG_REDACTED_VALUE, 'path': '/x'})
+        self.assertEqual(_redact_for_logging({'Authorization': 'test-jwt-value'}),
+                         {'Authorization': LOG_REDACTED_VALUE})
 
 
     @patch.object(logger, 'error')
