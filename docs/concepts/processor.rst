@@ -162,11 +162,13 @@ What is redacted:
     readable.
 -   **Bodies.** A string ``body`` is redacted when it carries JSON (parsed, redacted recursively
     and re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the
-    sibling ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case)
-    or by its ``k=v&k=v`` shape — it is redacted like a query string; and it is replaced with the
-    marker entirely when the sibling ``isBase64Encoded`` flag is set (base64 is reversible), when
-    the ``content-type`` starts with ``multipart/``, or when it looks like JSON but fails to
-    parse and is not form-shaped (a truncated payload may still carry secrets).
+    sibling ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case,
+    whitespace around the value is trimmed) or by its ``k=v&k=v`` shape — it is redacted like a
+    query string; and it is replaced with the marker entirely when the sibling
+    ``isBase64Encoded`` flag is set (base64 is reversible), when the ``content-type`` starts with
+    ``multipart/`` or the body itself has the multipart shape (starts with ``--`` and contains
+    ``content-disposition:``), or when it looks like JSON but fails to parse (a truncated payload
+    may still carry secrets).
 
 All three constants are plain module globals read at call time, so a deployment can extend the
 matching without touching ``sosw`` code:

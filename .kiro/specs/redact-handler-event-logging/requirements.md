@@ -25,14 +25,15 @@ receiving the original event and the caller the original result.
   the query parameters whose names match `LOG_SENSITIVE_KEY_PARTS` and keep the other parameters
   (and an empty string) intact.
 - WHEN a dict has a `body` key with a string value, THE SYSTEM SHALL prepare its logged copy as
-  follows, in order: the marker, when the same dict has a truthy `isBase64Encoded` or a sibling
-  `headers` dict (any key case) carries a `content-type` (any key case) starting with
-  `multipart/`; redacted and re-serialized JSON (`ensure_ascii=False`), when the stripped body
-  starts with `{` or `[` and parses; the marker, when such a body is too deeply nested to redact
-  or fails to parse and is not form-encoded; redacted like a query string, when the body is
-  form-encoded — a sibling `headers` dict carries a `content-type` starting with
-  `application/x-www-form-urlencoded`, or the body matches the `k=v&k=v` shape; unchanged
-  otherwise (e.g. plain text).
+  follows, in order: the marker, when the same dict has a truthy `isBase64Encoded`, a sibling
+  `headers` dict (any key case) carries a `content-type` (any key case) whose whitespace-trimmed
+  value starts with `multipart/`, or the body has the multipart shape on its own (starts with
+  `--` and contains `content-disposition:`); redacted and re-serialized JSON
+  (`ensure_ascii=False`), when the stripped body starts with `{` or `[` and parses; the marker,
+  when such a body is too deeply nested to redact or fails to parse; redacted like a query
+  string, when the body is form-encoded — a sibling `headers` dict carries a whitespace-trimmed
+  `content-type` starting with `application/x-www-form-urlencoded`, or the body matches the
+  `k=v&k=v` shape; unchanged otherwise (e.g. plain text).
 
 ## R3 — Extensibility and pass-through guarantees
 

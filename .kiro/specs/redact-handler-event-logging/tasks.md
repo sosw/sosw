@@ -16,3 +16,6 @@
 - [x] 10. Round-4 review: `_log_redacted` catches any exception and warns naming only the type
   (e.g. a lone surrogate in `rawQueryString`); JSON-looking bodies that do not parse and
   `multipart/` bodies log the marker; full core imports before `boto3` in `sosw/app.py`.
+- [x] 11. Round-5 review: a JSON-looking body that fails to parse always logs the marker (no
+  form-redaction fallback), content-type values are whitespace-trimmed before the prefix check,
+  and a headerless multipart body is masked by its shape.

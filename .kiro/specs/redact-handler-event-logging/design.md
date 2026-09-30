@@ -31,15 +31,18 @@ marker instead of raising `RecursionError`.
   stays readable.
 - `body`, prepared by `_redact_body(body, container)`:
   - a truthy sibling `isBase64Encoded` → `LOG_REDACTED_VALUE` (base64 is reversible);
-  - a sibling `headers` dict (key `headers`, any case) has a `content-type` (any case) starting
-    with `multipart/` → `LOG_REDACTED_VALUE` (multipart payloads are opaque to the redactor);
+  - a sibling `headers` dict (key `headers`, any case) has a `content-type` (any case) whose
+    whitespace-trimmed value starts with `multipart/`, or the body itself has the multipart shape
+    (starts with `--`, contains `content-disposition:` in any case) → `LOG_REDACTED_VALUE`
+    (multipart payloads are opaque to the redactor);
   - stripped body starts with `{` or `[` → `json.loads` + `_redact_for_logging` +
     `json.dumps(..., ensure_ascii=False)`, all inside one `try` catching `(ValueError,
-    RecursionError)`: `RecursionError` (too deeply nested) → `LOG_REDACTED_VALUE`; `ValueError`
-    (not valid JSON) falls through to the form check below but returns `LOG_REDACTED_VALUE` when
-    the body is not form-encoded (a truncated payload may still carry secrets);
-  - form-encoded — a sibling `headers` dict has a `content-type` starting with
-    `application/x-www-form-urlencoded`, or the body matches the
+    RecursionError)`: either failure — too deeply nested, or not valid JSON — returns
+    `LOG_REDACTED_VALUE` (a truncated payload may still carry secrets, and `parse_qsl` would
+    leave them inside a parameter *name*, so a JSON-looking body is never redacted as a form
+    instead);
+  - form-encoded — a sibling `headers` dict has a `content-type` (whitespace-trimmed) starting
+    with `application/x-www-form-urlencoded`, or the body matches the
     `^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$` shape → `_redact_query_string(body)`;
   - anything else → unchanged.
 
@@ -56,10 +59,18 @@ marker instead of raising `RecursionError`.
   not parsed.
 - Header names outside `LOG_SENSITIVE_KEY_PARTS` (e.g. `X-Auth-Key`, `X-Session-Id`, `sessionid`)
   are kept; the price of extending the list is over-redaction of look-alike names.
+- A body that starts with `--` and contains `content-disposition:` is masked as multipart by
+  shape alone, without any content-type header — coarse on purpose, so a look-alike text body is
+  over-masked.
 - Logging is best-effort: secrets must not be sent in fields that are bound for the logs by
   design.
-- The redacted copy is built even when the INFO level is disabled for the handler logger; an
-  `isEnabledFor` guard is left to a follow-up ticket.
+- The handler log lines keep the pre-existing `logger.info(<object>)` shape without a format
+  string on purpose: the powertools Logger emits a dict message as a structured JSON object that
+  CloudWatch queries depend on, and wrapping it in `"%s"` would change the log format for every
+  consumer.
+- The redacted copy is built even when the INFO level is disabled for the handler logger, and
+  the pre-existing `logger.info(self.config)` and Processor result log lines stay as they are;
+  an `isEnabledFor` guard and those lines are left to a follow-up ticket.
 - The re-serialized JSON body is a log copy only — key order is preserved but whitespace differs
   from the original.
 
@@ -67,8 +78,9 @@ marker instead of raising `RecursionError`.
 
 Unit tests cover proxy events (v1 and v2), mixed-case and non-string keys, containers and
 scalars, the `None`/bool/counter-word rules, the raw query string and every body path (JSON
-object, JSON array, non-ASCII JSON, malformed JSON, multipart, plain text, form-encoded with and
-without the content-type header, base64 flag, 2000-deep JSON nesting), the redaction guards at
-helper and handler level (recursion and the lone-surrogate `UnicodeEncodeError`), plus
-handler-level assertions that no secret value reaches any `logger.info` call while the Processor
-and the caller keep the original event and result objects.
+object, JSON array, non-ASCII JSON, malformed JSON — including form-shaped bodies under every
+content-type declaration —, multipart with headers, by shape and whitespace-padded content types,
+plain text, form-encoded with and without the content-type header, base64 flag, 2000-deep JSON
+nesting), the redaction guards at helper and handler level (recursion and the lone-surrogate
+`UnicodeEncodeError`), plus handler-level assertions that no secret value reaches any
+`logger.info` call while the Processor and the caller keep the original event and result objects.
