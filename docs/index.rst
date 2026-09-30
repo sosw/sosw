@@ -66,6 +66,7 @@ Install it and build your first function in minutes:
     tools/index
     tutorials/index
     migration_3_0
+    support
 
     contribution/index
 

@@ -164,3 +164,9 @@ Next steps
 * Building an HTTP API? Use :doc:`LambdaApi <lambda_api>`.
 * Long-running workflows? See :doc:`durable functions <durable>`.
 * Create a shared Lambda Layer with ``sosw`` for faster deployments: :ref:`SOSW Layer`.
+
+
+..  note::
+
+    Running ``sosw`` in production? SOSW LTD offers commercial support and
+    consulting — see :doc:`support`.
