@@ -527,6 +527,35 @@ class app_UnitTestCase(unittest.TestCase):
             self.assertIs(_redact_for_logging(scalar), scalar)
 
 
+    def test__redact_for_logging__numeric_counters_kept(self):
+        """
+        Numeric, boolean and None values of sensitive keys survive redaction (LLM Lambdas log
+        usage counters like `max_tokens`); str, list and bytes values are still replaced.
+        """
+
+        data = {
+            'usage':         {'input_tokens': 1200, 'output_tokens': 300},
+            'max_tokens':    4096,
+            'token_valid':   True,
+            'next_token':    None,
+            'access_token':  'test-access-token-value',
+            'refresh_token': ['x'],
+            'api_key':       b'test-bytes',
+        }
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['usage'], {'input_tokens': 1200, 'output_tokens': 300})
+        self.assertEqual(redacted['max_tokens'], 4096)
+        self.assertIs(redacted['token_valid'], True)
+        self.assertIsNone(redacted['next_token'])
+        self.assertEqual(redacted['access_token'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['refresh_token'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['api_key'], LOG_REDACTED_VALUE)
+
+
     def test__redact_for_logging__sensitive_parts_read_at_call_time(self):
         """
         Reassigning `sosw.app.LOG_SENSITIVE_KEY_PARTS` extends the matching for subsequent calls.
@@ -535,10 +564,10 @@ class app_UnitTestCase(unittest.TestCase):
         original = sosw.app.LOG_SENSITIVE_KEY_PARTS
         self.addCleanup(setattr, sosw.app, 'LOG_SENSITIVE_KEY_PARTS', original)
 
-        sosw.app.LOG_SENSITIVE_KEY_PARTS = original + ('wayli',)
+        sosw.app.LOG_SENSITIVE_KEY_PARTS = original + ('custom',)
 
-        self.assertEqual(_redact_for_logging({'wayli-key': 'test-wayli-secret-value', 'path': '/x'}),
-                         {'wayli-key': LOG_REDACTED_VALUE, 'path': '/x'})
+        self.assertEqual(_redact_for_logging({'custom-key': 'test-custom-secret-value', 'path': '/x'}),
+                         {'custom-key': LOG_REDACTED_VALUE, 'path': '/x'})
         self.assertEqual(_redact_for_logging({'Authorization': 'test-jwt-value'}),
                          {'Authorization': LOG_REDACTED_VALUE})
 

@@ -69,7 +69,8 @@ def _redact_for_logging(data):
     Return a redacted copy of ``data`` suitable for logging. Never mutates the input.
 
     Values of sensitive keys are replaced with :py:data:`LOG_REDACTED_VALUE` whatever their type
-    (string, list, dict); a key is sensitive when its lowercase form contains any substring from
+    (string, list, dict; numeric, boolean and None values are kept); a key is sensitive when its
+    lowercase form contains any substring from
     :py:data:`LOG_SENSITIVE_KEY_PARTS`. Dicts, lists and tuples are copied and processed
     recursively; anything else is returned as is. Both constants are looked up in the module
     globals at call time, so reassigning them changes the behaviour.
@@ -81,7 +82,10 @@ def _redact_for_logging(data):
         redacted = {}
         for key, value in data.items():
             if any(part in str(key).lower() for part in LOG_SENSITIVE_KEY_PARTS):
-                redacted[key] = LOG_REDACTED_VALUE
+                # Numeric, boolean and None values of sensitive keys are kept: keys like `max_tokens`
+                # or `usage.input_tokens` carry counters, not secrets.
+                redacted[key] = value if isinstance(value, (bool, int, float)) or value is None \
+                    else LOG_REDACTED_VALUE
             else:
                 redacted[key] = _redact_for_logging(value)
         return redacted
@@ -651,7 +655,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
     The logged copies of the event and the result are redacted: values of keys whose lowercase
     name contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``,
-    ``Cookie``, ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE``. The Processor still
+    ``Cookie``, ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` (numeric, boolean
+    and None values are kept). The Processor still
     receives the original event, and the original result object is returned to the caller.
 
     :param processor_class:  Callable processor class.
