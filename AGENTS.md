@@ -82,6 +82,9 @@ Rules that follow from the warm-start contract:
 - `self.stats` is the container-lifetime counter. The handler calls `reset_stats()` after every
   invocation: plain counters are rolled up into `total_*` keys, `total_*` and keys listed in the
   `lifetime_stats_params` config survive as-is.
+- The handler's event/result log lines are redacted: values of keys matching
+  `sosw.app.LOG_SENSITIVE_KEY_PARTS` (`Authorization`, cookies, tokens, ...) are masked in
+  CloudWatch — the Processor still receives the original event.
 
 ### Configuration
 
