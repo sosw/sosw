@@ -84,7 +84,9 @@ Rules that follow from the warm-start contract:
   `lifetime_stats_params` config survive as-is.
 - The handler's event/result log lines are redacted: values of keys matching
   `sosw.app.LOG_SENSITIVE_KEY_PARTS` (`Authorization`, cookies, tokens, ...) are masked in
-  CloudWatch — the Processor still receives the original event.
+  CloudWatch, together with sensitive parameters of `rawQueryString` and secrets inside JSON
+  `body` strings; counter-like numeric values (`max_tokens`, ...) are kept — the Processor still
+  receives the original event.
 
 ### Configuration
 
