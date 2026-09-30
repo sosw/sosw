@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -196,16 +196,6 @@ def camel_case_to_slug(name):
     """
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', str(name))
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
-
-
-def slug_to_camel_case(name):
-    """
-    Convert input from slug case to camel case
-
-    :param name:    - str   -   slug-case string
-    :return:        - str   -   SnakeCase string
-    """
-    return re.sub(r'-([a-zA-Z0-9])', lambda match: match.group(1).upper(), name.capitalize())
 
 
 def chunks(l, n):
@@ -663,12 +653,16 @@ def recursive_matches_extract(src, key, separator=None, **kwargs):
     :param str exclude_key:     Key to check in last level element to exclude.
     :param str exclude_val:     Value to match in last level element to exclude.
 
+    :param bool case_insensitive:   If True, performs case-insensitive matching for keys in the path.
+                                    The legacy alias `ignore_case` is still supported.
+                                    `case_insensitive` option contributed by @SHMaryana (#379).
+
     :return:    Value from structure extracted by specified path
     """
 
-    ignore_case = kwargs.get("ignore_case", False)
+    case_insensitive = kwargs.get('case_insensitive') or kwargs.get('ignore_case', False)
 
-    if ignore_case:
+    if case_insensitive:
         key = key.lower()
         src = ignore_case_copy(src) if isinstance(src, dict) else [ignore_case_copy(s) for s in src]
 
@@ -1026,7 +1020,7 @@ def trim_arn_to_name(arn: str) -> str:
     Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Special handling for super global services (e.g. S3 buckets)
@@ -1045,7 +1039,7 @@ def trim_arn_to_account(arn: str) -> str:
     Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).
 
     More information about ARN Format:
-    https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns
+    https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html
     """
 
     # Seems a little messy, but passes more/less any test of different ARNs we tried.

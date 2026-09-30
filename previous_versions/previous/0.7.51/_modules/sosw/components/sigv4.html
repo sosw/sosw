@@ -1,0 +1,413 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.components.sigv4 &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/components/sigv4.html" />
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.components.sigv4</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.components.sigv4</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AwsSigV4RequestGenerator&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Ivan Sushkov&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hmac</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span><span class="p">,</span> <span class="n">urlparse</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AwsSigV4RequestGenerator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Signature Version 4 (SigV4) is the process to add authentication information to AWS API requests sent by HTTP.</span>
+<span class="sd">    For security, most requests to AWS must be signed with an access key. The access key consists of an access key</span>
+<span class="sd">    ID and secret access key, which are commonly referred to as your security credentials.</span>
+
+<span class="sd">    How Signature Version 4 works:</span>
+
+<span class="sd">    #. Create a canonical request.</span>
+<span class="sd">    #. Use the canonical request and additional metadata to create a string for signing.</span>
+<span class="sd">    #. Derive a signing key from your AWS secret access key. Then use the signing key, and the string from the previous</span>
+<span class="sd">    #. Add the resulting signature to the HTTP request in a header.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Supported parameters as kwargs:</span>
+<span class="sd">        </span>
+<span class="sd">        - aws_service=&#39;es&#39;</span>
+<span class="sd">        - aws_access_key_id=&#39;YOUR_KEY_ID&#39;</span>
+<span class="sd">        - aws_secret_access_key=&#39;YOUR_SECRET&#39;</span>
+<span class="sd">        - aws_session_token=&#39;YOUR_SESSION_TOKEN&#39;</span>
+<span class="sd">        - aws_region=&#39;us-east-1&#39;</span>
+<span class="sd">        - aws_host=&#39;search-service.us-east-1.es.amazonaws.com&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;aws_service&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Service is required&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;aws_access_key_id&quot;</span><span class="p">,</span> <span class="s2">&quot;aws_secret_access_key&quot;</span><span class="p">]):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Checking environment for credentials&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_access_key_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_ACCESS_KEY_ID&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_secret_access_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_SECRET_ACCESS_KEY&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_SESSION_TOKEN&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_SECURITY_TOKEN&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="kc">True</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aws_access_key_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_secret_access_key</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;AWS Access Key ID and Secret Access Key are required&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;aws_region&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Checking environment for region&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_region</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_REGION&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_region</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Region is required&quot;</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds the authorization headers required by Amazon&#39;s signature</span>
+<span class="sd">        version 4 signing process to the request.</span>
+
+<span class="sd">        Adapted from https://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">amzdate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">datestamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_headers_and_credential_date</span><span class="p">()</span>
+        <span class="n">aws_sigv4_headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_aws_sigv4_headers</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aws_sigv4_headers</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">request</span>
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_aws_sigv4_headers">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_aws_sigv4_headers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aws_sigv4_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary containing the necessary headers for Amazon&#39;s</span>
+<span class="sd">        signature version 4 signing process.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Request URL: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">parsed_url</span><span class="p">)</span>
+
+        <span class="n">canonical_querystring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_canonical_querystring</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">)</span>
+        <span class="n">canonical_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_canonical_uri</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">)</span>
+        <span class="n">canonical_headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_canonical_headers</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">)</span>
+
+        <span class="n">payload_hash</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_payload_hash</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="n">signed_headers</span> <span class="o">=</span> <span class="s1">&#39;host;x-amz-date;x-amz-security-token&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span> <span class="k">else</span> <span class="s1">&#39;host;x-amz-date&#39;</span>
+
+        <span class="n">canonical_request</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">canonical_uri</span><span class="p">,</span> <span class="n">canonical_querystring</span><span class="p">,</span>
+                                       <span class="n">canonical_headers</span><span class="p">,</span> <span class="n">signed_headers</span><span class="p">,</span> <span class="n">payload_hash</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Canonical Request: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span> <span class="n">canonical_request</span><span class="p">)</span>
+
+        <span class="n">authorization_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_authorization_header</span><span class="p">(</span><span class="n">canonical_request</span><span class="p">,</span> <span class="n">signed_headers</span><span class="p">)</span>
+
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Authorization&#39;</span><span class="p">:</span>        <span class="n">authorization_header</span><span class="p">,</span>
+            <span class="s1">&#39;X-AMZ-Date&#39;</span><span class="p">:</span>           <span class="bp">self</span><span class="o">.</span><span class="n">amzdate</span><span class="p">,</span>
+            <span class="s1">&#39;x-amz-content-sha256&#39;</span><span class="p">:</span> <span class="n">payload_hash</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span><span class="p">:</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;x-amz-security-token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Generated Request Headers: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">headers</span></div>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">hmac</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_headers_and_credential_date">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_headers_and_credential_date">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_headers_and_credential_date</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a date for headers and the credential string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">date_utc_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="n">amzdate</span> <span class="o">=</span> <span class="n">date_utc_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">T%H%M%SZ&#39;</span><span class="p">)</span>
+        <span class="n">datestamp</span> <span class="o">=</span> <span class="n">date_utc_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Starting authentication with amzdate=</span><span class="si">%s</span><span class="s2"> and datestamp=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">amzdate</span><span class="p">,</span> <span class="n">datestamp</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">amzdate</span><span class="p">,</span> <span class="n">datestamp</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_payload_hash">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_payload_hash">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_payload_hash</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create payload hash. For GET requests, the payload is an empty string (&quot;&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;GET&#39;</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Request Body: &lt;bytes&gt; </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_canonical_querystring">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_canonical_querystring">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_canonical_querystring</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the canonical query string. According to AWS, by the</span>
+<span class="sd">        end of this function our query string values must</span>
+<span class="sd">        be URL-encoded (space=%20) and the parameters must be sorted</span>
+<span class="sd">        by name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">querystring</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">),</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;&amp;&#39;</span><span class="p">)))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+            <span class="n">parsed_url</span><span class="o">.</span><span class="n">query</span><span class="p">)</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">canonical_querystring</span> <span class="o">=</span> <span class="s2">&quot;&amp;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">parsed_url</span><span class="p">:</span> <span class="s2">&quot;=&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">querystring</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+
+        <span class="k">return</span> <span class="n">canonical_querystring</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_canonical_uri">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_canonical_uri">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_canonical_uri</span><span class="p">(</span><span class="n">parsed_url</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create canonical URI--the part of the URI from domain to query</span>
+<span class="sd">        string (use &#39;/&#39; if no path)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">canonical_uri</span> <span class="o">=</span> <span class="n">quote</span><span class="p">(</span><span class="n">parsed_url</span><span class="o">.</span><span class="n">path</span> <span class="k">if</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">path</span> <span class="k">else</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s1">&#39;/-_.~&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">canonical_uri</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_signature_key">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_signature_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_signature_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Key derivation functions. See:</span>
+<span class="sd">        http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="s1">&#39;AWS4&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_secret_access_key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">datestamp</span><span class="p">)</span>
+        <span class="n">k_region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">k_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_region</span><span class="p">)</span>
+        <span class="n">k_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">k_region</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_service</span><span class="p">)</span>
+        <span class="n">k_signing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">k_service</span><span class="p">,</span> <span class="s1">&#39;aws4_request&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">k_signing</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_canonical_headers">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_canonical_headers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_canonical_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parsed_url</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the canonical headers and signed headers. Header names</span>
+<span class="sd">        must be trimmed and lowercase, and sorted in code point order from</span>
+<span class="sd">        low to high. Note that there is a trailing ``\\n``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># We check if we get host from kwargs than hostname of parsed url</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;aws_host&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">hostname</span>
+        <span class="n">canonical_headers</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;host:&#39;</span> <span class="o">+</span> <span class="n">host</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;x-amz-date:&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">amzdate</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span><span class="p">:</span>
+            <span class="n">canonical_headers</span> <span class="o">+=</span> <span class="s1">&#39;x-amz-security-token:&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_session_token</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">canonical_headers</span></div>
+
+
+
+<div class="viewcode-block" id="AwsSigV4RequestGenerator.get_authorization_header">
+<a class="viewcode-back" href="../../../components/sigv4.html#sosw.components.sigv4.AwsSigV4RequestGenerator.get_authorization_header">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_authorization_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonical_request</span><span class="p">,</span> <span class="n">signed_headers</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create authorization header and add to request headers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">credential_scope</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">datestamp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_region</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_service</span><span class="p">,</span> <span class="s1">&#39;aws4_request&#39;</span><span class="p">])</span>
+        <span class="n">string_to_sign</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;AWS4-HMAC-SHA256&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">amzdate</span><span class="p">,</span>
+                                    <span class="n">credential_scope</span><span class="p">,</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">canonical_request</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;String-to-Sign: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">string_to_sign</span><span class="p">)</span>
+
+        <span class="n">signing_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_signature_key</span><span class="p">()</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">hmac</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">signing_key</span><span class="p">,</span> <span class="n">string_to_sign</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Signature: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">signature</span><span class="p">)</span>
+
+        <span class="n">authorization_header</span> <span class="o">=</span> <span class="s2">&quot;AWS4-HMAC-SHA256 Credential=</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">, SignedHeaders=</span><span class="si">{}</span><span class="s2">, Signature=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aws_access_key_id</span><span class="p">,</span> <span class="n">credential_scope</span><span class="p">,</span> <span class="n">signed_headers</span><span class="p">,</span> <span class="n">signature</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">authorization_header</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

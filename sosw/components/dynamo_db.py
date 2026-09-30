@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -249,7 +249,7 @@ class DynamoDbClient:
     def _describe_table(self, table_name: Optional[str] = None) -> Dict:
         """
         Returns description of the table from AWS. Response like: `DynamoDB.Client.describe_table
-        <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.describe_table>`_
+        <https://docs.aws.amazon.com/boto3/latest/reference/services/dynamodb/client/describe_table.html>`_
 
         :return: Description of the table
         """
@@ -1290,4 +1290,4 @@ def clean_dynamo_table(table_name='autotest_dynamo_db', keys=('hash_col', 'range
             stats['deleted'] += 1
         logger.debug("clean_dynamo_table() of %s: %s", table_name, stats)
 
-    logger.info(f"clean_dynamo_table() of %s: %s", table_name, stats)
+    logger.info("clean_dynamo_table() of %s: %s", table_name, stats)

@@ -12,8 +12,8 @@ They may pass the remaining payload to another execution automatically. See exam
 
    import logging
    import time
-   from sosw import Processor as SoswProcessor
-   from sosw.app import LambdaGlobals, get_lambda_handler
+
+   from sosw.app import LambdaGlobals, get_lambda_handler, Processor as SoswProcessor
    from sosw.components.siblings import SiblingsManager
 
    logger = logging.getLogger()
@@ -37,7 +37,7 @@ They may pass the remaining payload to another execution automatically. See exam
                self.process_data(cursor)
                cursor += 1
                if cursor == 20:
-                   return f"Reached the end of data"
+                   return "Reached the end of data"
    
            else:
                # Spawning another sibling to continue the processing
@@ -49,7 +49,7 @@ They may pass the remaining payload to another execution automatically. See exam
    
        def process_data(self, cursor):
            """ Your custom logic respecting current cursor. """
-           logger.info(f"Processing data at cursor: {cursor}")
+           logger.info("Processing data at cursor: %s", cursor)
            time.sleep(1)
    
    

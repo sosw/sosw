@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lambda Layer &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/tools/sosw_layer.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="AWS Glue Crawlers for DynamoDB" href="ddb_glue_crawler.html" />
+    <link rel="prev" title="Tools" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tools</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Lambda Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#main-benefits-of-using-layers">Main Benefits of Using Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">SOSW Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ddb_glue_crawler.html">AWS Glue Crawlers for DynamoDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../components/helpers.html">Helpers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tools</a></li>
+      <li class="breadcrumb-item active">Lambda Layer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tools/sosw_layer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lambda-layer">
+<span id="sosw-layer"></span><h1>Lambda Layer<a class="headerlink" href="#lambda-layer" title="Link to this heading"></a></h1>
+<p>A Lambda layer is a .zip file archive that contains supplementary code or data.
+Layers usually contain library dependencies, a custom runtime, or configuration files.</p>
+<p>You can find full documentation <a class="reference external" href="https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html">here</a>.</p>
+<p>The following diagram represents how does Lambda layer work.</p>
+<figure class="align-center">
+<img alt="Lambda Layer" src="../_images/lambda-layers-diagram.png" />
+</figure>
+<p>In general, you might want to create a Lambda layer whenever you have code or dependencies
+that need to be shared or managed independently of your function code.
+Creating a layer can help you simplify the deployment process, improve code reuse,
+and make it easier to manage dependencies across multiple functions.</p>
+</section>
+<section id="main-benefits-of-using-layers">
+<h1>Main Benefits of Using Layers<a class="headerlink" href="#main-benefits-of-using-layers" title="Link to this heading"></a></h1>
+<p>1.  <strong>Fast Mounting for Short Cold Starts:</strong> Lambda layers allow you to include shared code, dependencies,
+or runtime libraries separately from your function code. When a function is invoked, Lambda can mount the layer alongside
+the function’s execution environment, significantly reducing cold start times. This fast mounting capability ensures that
+your functions start quickly, providing better responsiveness to user requests and improving overall performance.</p>
+<p>2.  <strong>Simplified Maintenance of Shared Libraries:</strong> By encapsulating shared code and dependencies within layers, you can centralize the management
+and maintenance of these components. This simplifies the development process, as you can update, version, and distribute common libraries independently of your function code.
+Additionally, using layers promotes code reuse and helps maintain consistency across multiple functions within your serverless application.</p>
+</section>
+<section id="id1">
+<h1>SOSW Layer<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
+<p>SOSW layer encapsulates essential components implemented as AWS Lambda functions,
+facilitating the orchestration of asynchronous invocations of Lambda functions within
+the AWS ecosystem. The SOSW library simplifies the management of distributed tasks and workflows
+in serverless applications, offering features such as asynchronous invocation, fault tolerance,
+scalability, monitoring, and logging. By utilizing the SOSW layer, developers can efficiently
+orchestrate serverless workflows, streamline task execution, and enhance the resilience and scalability
+of their serverless applications.</p>
+<section id="how-to-start">
+<h2>How to start<a class="headerlink" href="#how-to-start" title="Link to this heading"></a></h2>
+<p>Create <code class="docutils literal notranslate"><span class="pre">deploy.sh</span></code> file by using
+<a class="reference external" href="https://github.com/sosw/sosw-examples/blob/master/layers/deploy.sh">deploy.sh</a>.</p>
+</section>
+<section id="how-to-run">
+<h2>How to run<a class="headerlink" href="#how-to-run" title="Link to this heading"></a></h2>
+<p>While in the same folder as your <code class="docutils literal notranslate"><span class="pre">deploy.sh</span></code> file just run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./deploy.sh<span class="w"> </span><span class="o">[</span>-v<span class="w"> </span>branch<span class="o">]</span><span class="w"> </span><span class="o">[</span>-p<span class="w"> </span>profile<span class="o">]</span>
+</pre></div>
+</div>
+<p>Installs SOSW from latest pip version, or from a specific branch if you use -v.
+Use -p in case you have specific profile (not the default one) in your .aws/config with appropriate permissions.
+It will create a folder with all dependencies. You only need to pack it into zip-archive.</p>
+</section>
+<section id="what-s-next">
+<h2>What’s next?<a class="headerlink" href="#what-s-next" title="Link to this heading"></a></h2>
+<p>You simply need to load layer zip file to your s3 bucket and deploy
+Lambda layer with CloudFormation or AWS SAM by using one of the following templates.</p>
+</section>
+<section id="initial-layer-creation">
+<h2>Initial Layer creation<a class="headerlink" href="#initial-layer-creation" title="Link to this heading"></a></h2>
+</section>
+<section id="cloudformation">
+<h2>CloudFormation<a class="headerlink" href="#cloudformation" title="Link to this heading"></a></h2>
+<p>To deploy a layer by CloudFormation you will need to create a <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file with <a class="reference external" href="https://github.com/sosw/sosw-examples/blob/master/layers/sosw/sosw.yaml">sosw-layer.yaml</a>.</p>
+<p>And after create a stack in AWS CloudFormation.
+To create a stack you run the <code class="docutils literal notranslate"><span class="pre">aws</span> <span class="pre">cloudformation</span> <span class="pre">create-stack</span></code> command.
+You must provide the stack name, the location of a valid template, and any input parameters.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws<span class="w"> </span>cloudformation<span class="w"> </span>create-stack<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--stack-name<span class="w"> </span>myteststack<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--template-body<span class="w"> </span>file:///home/testuser/mytemplate.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--parameters<span class="w"> </span><span class="nv">ParameterKey</span><span class="o">=</span>Parm1,ParameterValue<span class="o">=</span>test1<span class="w"> </span><span class="nv">ParameterKey</span><span class="o">=</span>Parm2,ParameterValue<span class="o">=</span>test2
+</pre></div>
+</div>
+<p>Or upload it directly via GUI.</p>
+</section>
+<section id="aws-sam">
+<h2>AWS SAM<a class="headerlink" href="#aws-sam" title="Link to this heading"></a></h2>
+<p>To deploy layer with AWS SAM you will simply need to create two files <code class="docutils literal notranslate"><span class="pre">samconfig.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">template.yaml</span></code>
+which are represented below.</p>
+<p><a class="reference external" href="https://github.com/sosw/sosw-examples/blob/master/layers/sosw/samconfig.toml">samconfig.toml</a></p>
+<p><a class="reference external" href="https://github.com/sosw/sosw-examples/blob/master/layers/sosw/template.yaml">template.yaml</a></p>
+<p>After you create these files you can run them just by entering <code class="docutils literal notranslate"><span class="pre">sam</span> <span class="pre">build</span> <span class="pre">&amp;&amp;</span> <span class="pre">sam</span> <span class="pre">deploy</span></code> in your console.</p>
+</section>
+<section id="how-to-connect-an-aws-layer-to-your-lambda-function">
+<h2>How to connect an AWS Layer to your Lambda Function?<a class="headerlink" href="#how-to-connect-an-aws-layer-to-your-lambda-function" title="Link to this heading"></a></h2>
+<p>Connecting a layer to a Lambda resource in AWS CloudFormation involves specifying the ARN (Amazon Resource Name) of the layer
+when defining the Lambda function. This connection enables the Lambda function to utilize the code and dependencies provided by
+the layer.</p>
+<p>Here’s a basic CloudFormation template snippet demonstrating how to connect a layer to a Lambda function:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Resources</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">MyLambdaLayer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS::Lambda::LayerVersion</span>
+<span class="w">    </span><span class="nt">Properties</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">ContentUri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_sosw_layer.zip</span>
+<span class="w">        </span><span class="nt">CompatibleRuntimes</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3.10</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3.11</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3.12</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3.13</span>
+
+<span class="w">    </span><span class="nt">MyLambdaFunction</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AWS::Lambda::Function</span>
+<span class="w">        </span><span class="nt">Properties</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">Code</span><span class="p">:</span>
+<span class="w">           </span><span class="nt">S3Bucket</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_bucket</span>
+<span class="w">           </span><span class="nt">S3Key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_function.zip</span>
+<span class="w">        </span><span class="nt">Handler</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app.lambda_handler</span>
+<span class="w">        </span><span class="nt">Runtime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3.13</span>
+<span class="w">        </span><span class="nt">Layers</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="kt">!Ref</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyLambdaLayer</span>
+</pre></div>
+</div>
+</section>
+<section id="update-layer">
+<h2>Update Layer<a class="headerlink" href="#update-layer" title="Link to this heading"></a></h2>
+<p>To update a layer version:</p>
+<p>1.  <strong>Publish a New Version:</strong> Make changes to your layer code or configuration and publish a new version using the AWS Lambda console,
+AWS CLI, or SDK. Lambda will automatically increment the version number and create a new layer version.</p>
+<p>2.  <strong>Update CloudFormation Templates:</strong> After publishing a new layer version, update your CloudFormation templates to reference the latest version ARN.
+Ensure that the ContentUri property points to the updated layer content, and update any other relevant properties if necessary.</p>
+<p>3.  <strong>Update CloudFormation Stacks:</strong> Once your templates are updated, use AWS CloudFormation or SAM to update the stacks that use the updated layer.
+This will apply the changes and ensure that functions within your stacks use the latest layer version.</p>
+</section>
+<section id="versions">
+<h2>Versions<a class="headerlink" href="#versions" title="Link to this heading"></a></h2>
+<p>A layer version is an immutable snapshot of a specific version of a layer.
+When you create a new layer, Lambda creates a new layer version with a version number of 1.
+Each time you publish an update to the layer, Lambda increments the version number and creates a new layer version.</p>
+<p>Every layer version is identified by a unique Amazon Resource Name (ARN).
+When adding a layer to the function, you must specify the exact layer version you want to use.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The correct way as of Dec 2025 is to publish version to AWS SSM Parameter Store and import from there in Lambda stacks.</p>
+</div>
+<p>You can also use <a class="reference external" href="https://github.com/sosw/sosw-examples/blob/master/helpers/sosw_layers_version_changer/layers_versions_changer.py">layers_versions_changer.py</a> to automate the process of updating layer versions across all CloudFormation and SAM templates in your project.
+This script intelligently replaces placeholders in your templates with the actual layer version, ensuring that functions within your project
+automatically use the latest layer versions without manual intervention. This streamlines the management of layer versions across your serverless applications,
+improving efficiency and ensuring consistency in your deployment process.</p>
+<p>Check that you changed the next line in your <code class="docutils literal notranslate"><span class="pre">template.yaml</span></code> from :</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">Layers</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="kt">!Sub</span><span class="w"> </span><span class="s">&quot;arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:1&quot;</span>
+</pre></div>
+</div>
+<p>to</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="nt">Layers</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="kt">!Sub</span><span class="w"> </span><span class="s">&quot;arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:SOSW_LAYER_PLACEHOLDER&quot;</span>
+</pre></div>
+</div>
+<p><strong>Note:</strong> Ensure to update the layer version in your CloudFormation templates when necessary, especially when introducing changes or fixes to your layer code.
+This ensures that your functions utilize the latest enhancements and improvements provided by the updated layer versions.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ddb_glue_crawler.html" class="btn btn-neutral float-right" title="AWS Glue Crawlers for DynamoDB" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

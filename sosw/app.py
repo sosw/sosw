@@ -2,10 +2,10 @@
 ..  hidden-code-block:: text
     :label: View Licence Agreement <br>
 
-    sosw - Serverless Orchestrator of Serverless Workers
+    sosw - a framework for bootstrapping AWS Lambda functions
 
     The MIT License (MIT)
-    Copyright (C) 2025  sosw core contributors <info@sosw.app>
+    Copyright (C) 2026  sosw core contributors <info@sosw.app>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@
     SOFTWARE.
 """
 
-__all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler']
+__all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler', 'LOG_REDACTED_VALUE', 'LOG_SENSITIVE_KEY_PARTS',
+           'LOG_COUNTER_KEY_WORDS']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
 try:
@@ -40,23 +41,264 @@ except ImportError:
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-import boto3
+import json
 import os
+import re
+
+import boto3
 
 from collections import defaultdict
+from decimal import Decimal
 from importlib import import_module
 from typing import Dict, Any
+from urllib.parse import parse_qsl, urlencode
+
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
 from sosw.components.helpers import *
 from sosw.components.dynamo_db import DynamoDbClient
 
 
+#: Value substituted in logs for anything a sensitive key holds. See ``_redact_for_logging``.
+LOG_REDACTED_VALUE = '***REDACTED***'
+
+#: A key of a dict is considered sensitive (and its value is redacted in logs) when the lowercase
+#: form of the key contains any of these substrings. Consumers may extend the matching by reassigning
+#: ``sosw.app.LOG_SENSITIVE_KEY_PARTS`` (read from the module globals at call time).
+LOG_SENSITIVE_KEY_PARTS = (
+    'authorization', 'cookie', 'token', 'secret', 'password', 'passwd', 'api-key', 'api_key', 'apikey',
+    'x-origin-verify', 'credential', 'signature', 'private-key', 'private_key',
+)
+
+#: A sensitive key that has one of these words among the words of its own name keeps a numeric
+#: value: counters like ``max_tokens``, ``inputTokens`` or ``tokenCount`` are useful in logs and
+#: carry no secret. Words are the lowercase chunks of the key split on any non-alphanumeric
+#: character and on camelCase boundaries, so ``account_password`` does not match ``count``. Reassign
+#: ``sosw.app.LOG_COUNTER_KEY_WORDS`` to extend the matching (read at call time, like the others).
+LOG_COUNTER_KEY_WORDS = ('tokens', 'count')
+
+#: Matches a form-encoded body of ``name=value`` pairs joined with ``&``. See ``_redact_body``.
+_FORM_BODY_PATTERN = re.compile(r'^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$')
+
+
+def _key_words(key):
+    """
+    Split a dict key into lowercase words — the matching unit of :py:data:`LOG_COUNTER_KEY_WORDS`.
+
+    The key is split on any non-alphanumeric character and on camelCase boundaries, so
+    ``max_tokens``, ``inputTokens`` and ``tokenCount`` all yield plain lowercase words.
+
+    :param key:  Dict key to split.
+    :return:     Lowercase words of the key.
+    :rtype:      list
+    """
+    return [word.lower() for word in re.findall(r'[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])', str(key))]
+
+
+def _redact_query_string(query):
+    """
+    Return a copy of a raw URL query string with the values of sensitive parameters masked.
+
+    Parameter names are matched against :py:data:`LOG_SENSITIVE_KEY_PARTS` exactly like dict keys;
+    parameters with non-sensitive names keep their values, and blank values are preserved.
+
+    :param str query:   Raw query string of the request.
+    :return:            The query string with sensitive parameter values replaced by
+                        :py:data:`LOG_REDACTED_VALUE`.
+    :rtype:             str
+    """
+    pairs = []
+    for name, value in parse_qsl(query, keep_blank_values=True):
+        sensitive = any(part in name.lower() for part in LOG_SENSITIVE_KEY_PARTS)
+        pairs.append((name, LOG_REDACTED_VALUE if sensitive else value))
+    return urlencode(pairs, safe='*')
+
+
+def _content_type_starts_with(container, prefix):
+    """
+    Check whether a sibling ``headers`` dict carries a ``content-type`` header starting with a prefix.
+
+    The ``headers`` key of the container and the header name itself match in any case, and the
+    prefix compares against the whitespace-trimmed lowercase header value. See
+    ``_body_is_form_encoded`` and ``_redact_body``.
+
+    :param dict container:  Dict holding the ``body`` key.
+    :param str prefix:      Lowercase content-type prefix, e.g. ``multipart/``.
+    :return:                True when a sibling headers dict has such a content-type header.
+    :rtype:                 bool
+    """
+    for key, headers in container.items():
+        if str(key).lower() != 'headers' or not isinstance(headers, dict):
+            continue
+        for name, value in headers.items():
+            if str(name).lower() == 'content-type' and isinstance(value, str) and (
+                    value.strip().lower().startswith(prefix)):
+                return True
+
+    return False
+
+
+def _body_is_form_encoded(body, container):
+    """
+    Check whether a string body should be treated as ``application/x-www-form-urlencoded``.
+
+    True when a sibling ``headers`` dict (any key case) carries a ``content-type`` header (any key
+    case) whose whitespace-trimmed lowercase value starts with
+    ``application/x-www-form-urlencoded``, or when the body itself matches the
+    ``name=value&name=value`` shape of ``_FORM_BODY_PATTERN``.
+
+    :param str body:        Raw body of the request or response.
+    :param dict container:  Dict holding the ``body`` key.
+    :return:                True when the body should be redacted as a form.
+    :rtype:                 bool
+    """
+    return (_content_type_starts_with(container, 'application/x-www-form-urlencoded')
+            or _FORM_BODY_PATTERN.match(body) is not None)
+
+
+def _redact_body(body, container):
+    """
+    Return a log-safe copy of a string request or response body.
+
+    A body of a dict with a truthy ``isBase64Encoded`` sibling is replaced with
+    :py:data:`LOG_REDACTED_VALUE` — base64 is reversible, so it is never logged. A body whose
+    sibling ``headers`` declare a ``multipart/`` content type, or one that has the multipart shape
+    on its own (starts with ``--`` and contains ``content-disposition:``), is replaced with the
+    marker as well. A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON,
+    redacted recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to
+    redact, or one that looks like JSON but fails to parse, is replaced with the marker as well —
+    it may be a truncated payload still carrying secrets, and is never redacted as a form instead.
+    Any other string that ``_body_is_form_encoded`` accepts is redacted like a query string;
+    everything else is returned unchanged.
+
+    :param str body:        Raw body of the request or response.
+    :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
+    :return:                The redacted body, or the original string when there is nothing to redact.
+    :rtype:                 str
+    """
+    if container.get('isBase64Encoded'):
+        return LOG_REDACTED_VALUE
+
+    if _content_type_starts_with(container, 'multipart/'):
+        return LOG_REDACTED_VALUE
+
+    if body.lstrip().startswith('--') and 'content-disposition:' in body.lower():
+        # Headerless multipart by shape - the payload is opaque to the redactor either way.
+        return LOG_REDACTED_VALUE
+
+    if body.strip()[:1] in ('{', '['):
+        try:
+            return json.dumps(_redact_for_logging(json.loads(body)), ensure_ascii=False)
+        except ValueError:
+            # Not JSON after all - and a truncated payload may still carry secrets.
+            return LOG_REDACTED_VALUE
+        except RecursionError:
+            # Too deeply nested to redact - and it may still hold secrets.
+            return LOG_REDACTED_VALUE
+
+    if _body_is_form_encoded(body, container):
+        return _redact_query_string(body)
+
+    return body
+
+
+def _redact_for_logging(data):
+    """
+    Return a redacted copy of ``data`` suitable for logging. Never mutates the input.
+
+    A key of a dict is sensitive when its lowercase form contains any substring from
+    :py:data:`LOG_SENSITIVE_KEY_PARTS`. The value of a sensitive key is replaced with
+    :py:data:`LOG_REDACTED_VALUE`, except for ``None`` and booleans, and for numbers (``int``,
+    ``float``, ``Decimal``) under keys that have a whole word of :py:data:`LOG_COUNTER_KEY_WORDS`
+    (the words of a key are its lowercase chunks split on any non-alphanumeric character and on
+    camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
+    ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
+    has the values of its sensitive parameters masked, and a string ``body`` is redacted by
+    ``_redact_body`` (JSON parsed and re-serialized, form-encoded values masked, base64-encoded,
+    multipart and JSON-looking-but-unparsable bodies replaced with the marker). Dicts, lists and
+    tuples are copied and processed recursively;
+    anything else is returned as is. All constants are looked up in the module globals at call
+    time, so reassigning them changes the behaviour.
+
+    :param data:    Dict, list, tuple or scalar value to prepare for logging.
+    :return:        Redacted copy of ``data`` with the values of sensitive keys masked.
+    :rtype:         dict | list | tuple | object
+    """
+    if isinstance(data, dict):
+        redacted = {}
+        for key, value in data.items():
+            key_lower = str(key).lower()
+            if any(part in key_lower for part in LOG_SENSITIVE_KEY_PARTS):
+                # None and booleans are kept as is, numbers only under counter-like keys; everything
+                # else a sensitive key holds (str, list, dict, bytes, a plain number) is masked.
+                if value is None or isinstance(value, bool) or (
+                        isinstance(value, (int, float, Decimal))
+                        and any(word in _key_words(key) for word in LOG_COUNTER_KEY_WORDS)):
+                    redacted[key] = value
+                else:
+                    redacted[key] = LOG_REDACTED_VALUE
+            elif key_lower == 'rawquerystring' and isinstance(value, str):
+                redacted[key] = _redact_query_string(value)
+            elif key_lower == 'body' and isinstance(value, str):
+                redacted[key] = _redact_body(value, data)
+            else:
+                redacted[key] = _redact_for_logging(value)
+        return redacted
+
+    if isinstance(data, list):
+        return [_redact_for_logging(item) for item in data]
+
+    if isinstance(data, tuple):
+        return tuple(_redact_for_logging(item) for item in data)
+
+    return data
+
+
+def _log_redacted(value):
+    """
+    Return the redacted copy of ``value`` for a handler log line, or the redaction marker.
+
+    A guard around ``_redact_for_logging``: logging must never fail an invocation, so when the
+    redacted copy cannot be built — a value too deeply nested to copy, a query string that cannot
+    be re-encoded — a warning naming only the exception type is logged and
+    :py:data:`LOG_REDACTED_VALUE` is returned instead.
+
+    :param value:   Event or result object to prepare for logging.
+    :return:        Redacted copy of ``value``, or the marker when it cannot be built.
+    :rtype:         object
+    """
+    try:
+        return _redact_for_logging(value)
+    except Exception as exc:
+        logger.warning("Could not redact the value for logging (%s), logging the redaction marker instead",
+                       type(exc).__name__)
+        return LOG_REDACTED_VALUE
+
+
+def _derive_test_flag(explicit_flag=None):
+    """
+    Resolve the effective ``test`` flag of the Processor or the lambda handler.
+
+    An explicitly provided flag (the ``test`` keyword of the Processor constructor, or the ``test`` key
+    of the Lambda event) always wins. When no flag is provided (``None``), the flag is derived from the
+    ``STAGE`` environment variable: the ``test`` and ``autotest`` stages run in test mode.
+
+    :param explicit_flag:   Explicitly provided value of the flag or None when not provided.
+    :return:                The effective test flag.
+    """
+
+    if explicit_flag is not None:
+        return explicit_flag
+
+    return os.environ.get('STAGE') in ['test', 'autotest']
+
+
 class Processor:
     """
-    Core Processor class template. All the main components (Worker, Orchestrator and Scheduler) inherit from this one.
-    You can also use this class as parent for some of your standalone Lambdas, but we strictly encourage you to use
-    `Worker` class in case you are running functions under `sosw` orchestration.
+    Core Processor class template. This is the base class of the framework: every Lambda built on
+    ``sosw`` subclasses it (directly, or through specializations like
+    :py:class:`~sosw.lambda_api.LambdaApi`). It provides layered configuration, automatic client
+    registration, statistics counters and a uniform entry point.
 
 
     ``get_ddbc(prefix: str) -> DynamoDbClient:``
@@ -78,6 +320,10 @@ class Processor:
 
     DEFAULT_CONFIG = {}
 
+    # Set to True in a subclass to skip the lookup of the per-function config in DynamoDB / SSM.
+    # See `init_config()` for details.
+    DISABLE_DDB_CONFIG = False
+
     aws_account: str = None
     aws_region: str = os.getenv('AWS_REGION', None)
     ddb_names: list = None
@@ -91,7 +337,7 @@ class Processor:
         Recursively Updates the default config with parameters from DynamoDB / SSM, then from provided custom config.
         """
 
-        self.test = kwargs.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        self.test = _derive_test_flag(kwargs.get('test'))
 
         if global_vars.lambda_context:
             if invoked_function_arn := getattr(global_vars.lambda_context, 'invoked_function_arn', None):
@@ -114,6 +360,12 @@ class Processor:
         After that, a specific custom config of the Lambda will recursively update the existing one.
         The last step is update config recursively with a passed custom_config.
 
+        The lookup of the specific custom config of the Lambda (``{AWS_LAMBDA_FUNCTION_NAME}_config``
+        from DynamoDB / SSM) can be skipped either by setting the class attribute
+        ``DISABLE_DDB_CONFIG = True`` in your Processor, or by passing a truthy ``disable_ddb_config``
+        key in the ``DEFAULT_CONFIG`` or ``custom_config``. ``DEFAULT_CONFIG`` and ``custom_config``
+        are still applied in this case.
+
         Overwrite this method if custom logic of recursive updates in configs is required.
 
         ..  note:: Read more about :ref:`Config_Sourse`
@@ -121,13 +373,20 @@ class Processor:
         :param Dict custom_config: dict with custom configurations
         """
 
+        custom_config = custom_config or {}
+
         # Initialize config from default config
         self.config = self.DEFAULT_CONFIG or {}
-        # Update config recursively from any existing lambda function config
-        self.config = recursive_update(self.config,
-                                       self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+
+        # Update config recursively from any existing lambda function config, unless explicitly disabled.
+        disable_ddb_config = (self.DISABLE_DDB_CONFIG or self.config.get('disable_ddb_config')
+                              or custom_config.get('disable_ddb_config'))
+        if not disable_ddb_config:
+            self.config = recursive_update(
+                    self.config, self.get_config(f"{os.environ.get('AWS_LAMBDA_FUNCTION_NAME')}_config") or {})
+
         # Update config recursively from custom config
-        self.config = recursive_update(self.config, custom_config or {})
+        self.config = recursive_update(self.config, custom_config)
 
 
     @benchmark
@@ -135,8 +394,10 @@ class Processor:
         """
         Initialize the given `clients` and assign them to self with suffix `_client`.
 
-        Clients are imported from `components` or `managers`. Name of the module must be underscored name of Client.
-        Name of the Class must be name of `client` with either of the suffixes ('Manager' or 'Client').
+        Clients are imported from the `components` or `managers` packages of your own Lambda, from
+        `sosw.components`, or fall back to a plain boto3 client. Name of the module must be
+        underscored name of Client. Name of the Class must be name of `client` with either of the
+        suffixes ('Manager' or 'Client').
 
         .. warning::
            To be implemented!
@@ -156,7 +417,6 @@ class Processor:
             lambda x: f"components.{x}",
             lambda x: f"managers.{x}",
             lambda x: f"sosw.components.{x}",
-            lambda x: f"sosw.managers.{x}",
         ]
 
         # # Initialize required clients
@@ -459,7 +719,7 @@ class LambdaGlobals:
     e.g. once initiailised the given Processor, we keep it alive in the container to minimize warm-run time.
 
     This namespace also contains the lambda_context which should be reset by `get_lambda_handler` method.
-    See Worker examples in documentation for more info.
+    See the Processor examples in documentation for more info.
     """
 
 
@@ -497,9 +757,13 @@ class LambdaGlobals:
         _processor = val
 
 
-def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
+def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
     """
-    Return a reference to the entry point of the lambda function.
+    Build the ``lambda_handler`` closure over the given Processor class.
+
+    This is the shared internal builder used by :func:`get_lambda_handler` and by the optional
+    durable functions wrapper (``sosw.durable.get_durable_lambda_handler``). It has no knowledge
+    of any optional SDKs and must stay this way.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
@@ -532,9 +796,9 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
                     os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
                     __name__, context)
-        logger.info(event)
+        logger.info(_log_redacted(event))
 
-        test = event.get('test') or True if os.environ.get('STAGE') in ['test', 'autotest'] else False
+        test = _derive_test_flag(event.get('test') if isinstance(event, dict) else None)
 
         global_vars.lambda_context = context
 
@@ -545,15 +809,44 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         logger.info(global_vars.processor.get_stats())
 
-        global_vars.processor.reset_stats()
         global_vars.processor.reset_stats(recursive=True)
 
-        logger.info(result)
+        logger.info(_log_redacted(result))
 
         return result
 
 
     return lambda_handler
+
+
+def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
+    """
+    Return a reference to the entry point of the lambda function.
+
+    The handler caches the initialized Processor in `global_vars` and reuses it in the warm
+    invocations for the lifetime of the Lambda container. Per-invocation state belongs to
+    ``processor.result`` (reset on every call), while ``processor.stats`` carries the counters
+    of the container lifetime: ``reset_stats()`` runs once after every invocation and preserves
+    the ``total_*`` counters and the ones configured in ``lifetime_stats_params``.
+
+    The logged copies of the event and the result are redacted: values of keys whose lowercase name
+    contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``, ``Cookie``,
+    ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
+    of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
+    Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings and
+    form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded``, a
+    ``multipart/`` body (declared by a whitespace-trimmed content type or detected by shape) or
+    one that looks like JSON but does not parse is replaced with the marker (base64 is
+    reversible, and an unparsable payload may still carry secrets). The Processor still receives
+    the original event, and the original result object is returned to the caller.
+
+    :param processor_class:  Callable processor class.
+    :param global_vars:      Lambda's global variables (processor, context).
+    :param custom_config:    Custom configuration to pass the processor constructor.
+    :return: Function reference for the lambda handler.
+    """
+
+    return _make_lambda_handler(processor_class, global_vars, custom_config)
 
 
 # Global placeholder for global_vars.

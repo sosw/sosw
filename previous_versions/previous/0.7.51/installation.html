@@ -1,0 +1,440 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/installation.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=38589524"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Essentials" href="essentials/index.html" />
+    <link rel="prev" title="Essential Workflow Schema" href="orchestration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<span id="installation-guidelines"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<section id="steps">
+<h2>Steps<a class="headerlink" href="#steps" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#setup-aws-account">Setup AWS Account</a></p></li>
+<li><p><a class="reference internal" href="#provision-required-aws-resources">Provision Required AWS Resources</a></p></li>
+<li><p><a class="reference internal" href="#provision-lambda-functions-for-essentials">Provision Lambda Functions for Essentials</a></p></li>
+<li><p><a class="reference internal" href="#upload-essentials-configurations">Upload Essentials Configurations</a></p></li>
+<li><p><a class="reference internal" href="#create-scheduled-rules">Create Scheduled Rules</a></p></li>
+</ol>
+</section>
+<section id="setup-aws-account">
+<h2>Setup AWS Account<a class="headerlink" href="#setup-aws-account" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">sosw</span></code> implementation currently supports only AWS infrastructure. If you are running
+production operations on AWS, we highly recommend setting up a standalone account for your
+first experiments with <code class="docutils literal notranslate"><span class="pre">sosw</span></code>. <a class="reference external" href="https://aws.amazon.com/organizations/">AWS Organisations</a>
+now provide an easy way to set sub-accounts from the primary one.</p>
+<p>To setup a completely isolated new account, follow the
+<a class="reference external" href="https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/">AWS Documentation</a></p>
+<p>We shall require several services, but they are all supposed to fit in the
+<a class="reference external" href="https://aws.amazon.com/free/">AWS Free Tier.</a> As long as the resources are created using
+CloudFormation, once you delete the stacks - the related resources will also be deleted
+automatically to avoid unnecessary charges.</p>
+<p>See <a class="reference internal" href="tutorials/cleanup.html#cleanup"><span class="std std-ref">Cleanup after tutorials</span></a> instructions in the <a class="reference internal" href="tutorials/index.html#tutorials"><span class="std std-ref">Tutorials</span></a> section.</p>
+</section>
+<section id="provision-required-aws-resources">
+<h2>Provision Required AWS Resources<a class="headerlink" href="#provision-required-aws-resources" title="Link to this heading"></a></h2>
+<p>This document shall guide you through the setup process for <code class="docutils literal notranslate"><span class="pre">sosw</span></code> Essentials and different
+resources required for them. All the resources are created using Infrastructure as Code
+concept and can be easily cleaned up if no longer required.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The following Guide assumes that you are running these comands from some EC2 machine using
+either Key or Role with permissions to control IAM, CloudFormation, Lambda, CloudWatch,
+DynamoDB, S3 (and probably something else).</p>
+</div>
+<p>If you are running this in the test account - feel free to grant the IAM role of your EC2
+instance the policy <code class="docutils literal notranslate"><span class="pre">arn:aws:iam::aws:policy/AdministratorAccess</span></code>, but never do this in
+Production.</p>
+<p>If you plan to run tutorials after this, we recommend setting this up in <code class="docutils literal notranslate"><span class="pre">us-west-2</span></code>
+(Oregon) Region. Some scripts in the tutorials guidelines may have the region hardcoded.</p>
+<p>Now we assume that you have created a fresh Amazon Linux 2 machine with some IAM Role having
+permissions listed above. You may follow <a class="reference external" href="https://docs.aws.amazon.com/efs/latest/ug/gs-step-one-create-ec2-resources.html">this tutorial</a>
+if feeling uncertain, just create a new IAM Role on Step 3 of the instance setup Wizard.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do not run this in Production AWS Account unless you completely understand
+what is going on!</p>
+</div>
+<p>The following commands are tested on a fresh EC2 instance of type <code class="docutils literal notranslate"><span class="pre">t2.micro</span></code> running
+on default Amazon Linux 2 AMI 64-bit.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install required system packages for SAM, AWS CLI and Python.</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>update<span class="w"> </span>-y
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>zlib-devel<span class="w"> </span>build-essential<span class="w"> </span>python3.7<span class="w"> </span>python3-devel<span class="w"> </span>git<span class="w"> </span>docker<span class="w"> </span>-y
+
+<span class="c1"># Update pip and ensure you have required Python packages locally for the user.</span>
+<span class="c1"># You might not need all of them at first, but if you would like to test `sosw`</span>
+<span class="c1"># or play with it run tests</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pip<span class="w"> </span>pipenv<span class="w"> </span>boto3
+
+sudo<span class="w"> </span>mkdir<span class="w"> </span>/var/app
+sudo<span class="w"> </span>chown<span class="w"> </span>ec2-user:ec2-user<span class="w"> </span>/var/app
+
+<span class="nb">cd</span><span class="w"> </span>/var/app
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/sosw/sosw.git
+<span class="nb">cd</span><span class="w"> </span>sosw
+
+<span class="c1"># Need to configure your AWS CLI environment.</span>
+<span class="c1"># Assuming you are using a new machine we shall just copy config with default region</span>
+<span class="c1"># `us-west-2` to $HOME. The credentials you should not keep in the profile.</span>
+<span class="c1"># The correct secure way is to use IAM roles if running from the AWS infrastructure.</span>
+<span class="c1"># Feel free to change or skip this step if your environment is configured.</span>
+cp<span class="w"> </span>-nr<span class="w"> </span>.aws<span class="w"> </span>~/
+</pre></div>
+</div>
+<p>Now you are ready to start creating AWS resources. First let us provide some shared resources
+that both <code class="docutils literal notranslate"><span class="pre">sosw</span></code> Essentials and <code class="docutils literal notranslate"><span class="pre">sosw</span></code>-managed Lambdas will use.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="nv">PREFIX</span><span class="o">=</span>/var/app/sosw/examples/yaml/initial
+
+<span class="c1"># Create new CloudFormation stacks</span>
+<span class="k">for</span><span class="w"> </span>filename<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>ls<span class="w"> </span><span class="nv">$PREFIX</span><span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">STACK</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$filename</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/.yaml//<span class="sb">`</span>
+
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$PREFIX</span>/<span class="nv">$filename</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--stack-name<span class="w"> </span><span class="nv">$STACK</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+<span class="k">done</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Now take a break and wait for these resourced to be created. You may observe the changes
+in the CloudFormation web-console (Services -&gt; CloudFormation).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>DO NOT continue until all stacks reach the CREATE_COMPLETE status.</p>
+</div>
+<p>If you later make any changes in these files (after the initial deployment), use the
+following script and it will update CloudFormation stacks. No harm to run it extra time.
+CloudFormation is smart enough not to take any action if there are no changes in templates.</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock15'))">Show script <br></a><br /><div id="hiddencodeblock15" style="display: none"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="nv">PREFIX</span><span class="o">=</span>/var/app/sosw/examples/yaml/initial
+
+<span class="c1"># Package and Deploy CloudFormation stacks</span>
+<span class="k">for</span><span class="w"> </span>filename<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>ls<span class="w"> </span><span class="nv">$PREFIX</span><span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+
+<span class="w">    </span><span class="nv">stack</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$filename</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/.yaml//<span class="sb">`</span>
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$PREFIX</span>/<span class="nv">$filename</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--stack-name<span class="w"> </span><span class="nv">$stack</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+<span class="k">done</span>
+</pre></div>
+</div>
+</div></section>
+<section id="provision-lambda-functions-for-essentials">
+<h2>Provision Lambda Functions for Essentials<a class="headerlink" href="#provision-lambda-functions-for-essentials" title="Link to this heading"></a></h2>
+<p>In this tutorial we were first going to use AWS SAM for provisioning Lambdas,
+but eventually gave it up. Too many black magic is required and you eventually loose
+control over the Lambda. The example of deploying Essentials uses raw bash/python scripts,
+AWS CLI and CloudFormation templates. If you want to contribute providing examples
+with SAM - welcome. Some sandbox can be found in <cite>examples/sam/</cite> in the repository.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="k">for</span><span class="w"> </span>name<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>ls<span class="w"> </span>/var/app/sosw/examples/essentials<span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Deploying </span><span class="nv">$name</span><span class="s2">&quot;</span>
+
+<span class="w">    </span><span class="nv">FUNCTION</span><span class="o">=</span><span class="nv">$name</span>
+<span class="w">    </span><span class="nv">FUNCTIONDASHED</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$name</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/_/-/g<span class="sb">`</span>
+
+<span class="w">    </span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/essentials/<span class="nv">$FUNCTION</span>
+
+<span class="w">    </span><span class="c1"># Install sosw package locally.</span>
+<span class="w">    </span>pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w"> </span>--no-dependencies<span class="w"> </span>--target<span class="w"> </span>.
+
+<span class="w">    </span><span class="c1"># Make a source package.</span>
+<span class="w">    </span>zip<span class="w"> </span>-qr<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>*
+
+<span class="w">    </span><span class="c1"># Upload the file to S3, so that AWS Lambda will be able to easily take it from there.</span>
+<span class="w">    </span>aws<span class="w"> </span>s3<span class="w"> </span>cp<span class="w"> </span>/tmp/<span class="nv">$FUNCTION</span>.zip<span class="w"> </span>s3://<span class="nv">$BUCKETNAME</span>/sosw/packages/
+
+<span class="w">    </span><span class="c1"># Package and Deploy CloudFormation stack for the Function.</span>
+<span class="w">    </span><span class="c1"># It will create the Function and a custom IAM role for it with permissions</span>
+<span class="w">    </span><span class="c1"># to access required DynamoDB tables.</span>
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span>.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--stack-name<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>If you change anything in the code or simply want to redeploy the code use the following:</p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock16'))">Show script <br></a><br /><div id="hiddencodeblock16" style="display: none"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get your AccountId from EC2 metadata. Assuming you run this on EC2.</span>
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+<span class="c1"># Set your bucket name</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+
+<span class="k">for</span><span class="w"> </span>name<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>ls<span class="w"> </span>/var/app/sosw/examples/essentials<span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Deploying </span><span class="nv">$name</span><span class="s2">&quot;</span>
+
+<span class="w">    </span><span class="nv">FUNCTIONDASHED</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$name</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>s/_/-/g<span class="sb">`</span>
+
+<span class="w">    </span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/essentials/<span class="nv">$name</span>
+<span class="w">    </span>zip<span class="w"> </span>-qr<span class="w"> </span>/tmp/<span class="nv">$name</span>.zip<span class="w"> </span>*
+<span class="w">    </span>aws<span class="w"> </span>lambda<span class="w"> </span>update-function-code<span class="w"> </span>--function-name<span class="w"> </span><span class="nv">$name</span><span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--s3-key<span class="w"> </span>sosw/packages/<span class="nv">$name</span>.zip<span class="w"> </span>--publish
+
+<span class="w">    </span><span class="c1"># Package and Deploy (if there are changes) CloudFormation stack for the Function.</span>
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span>.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+<span class="w">    </span>aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--stack-name<span class="w"> </span><span class="nv">$FUNCTIONDASHED</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+<span class="k">done</span>
+</pre></div>
+</div>
+</div></section>
+<section id="upload-essentials-configurations">
+<h2>Upload Essentials Configurations<a class="headerlink" href="#upload-essentials-configurations" title="Link to this heading"></a></h2>
+<p>sosw-managed Lambdas (and Essentials themselves) will automatically try to read their
+configuration from the DynamoDB table <code class="docutils literal notranslate"><span class="pre">config</span></code>. Each Lambda looks for the document with
+a range_key <code class="docutils literal notranslate"><span class="pre">config_name</span> <span class="pre">=</span> <span class="pre">'LAMBDA_NAME_config'</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">'sosw_orchestrator_config'</span></code>).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">config_value</span></code> should contain a JSON that will be recursively merged to the
+<code class="docutils literal notranslate"><span class="pre">DEFAULT_CONFIG</span></code> of each Lambda.</p>
+<p>We have provided some very basic examples of configuring Essentials.
+The config files have some values that are dependant on your AWS Account ID,
+so we shall substitute it and then upload these configs to DynamoDB.
+It is much easier to do this in Python, so we shall call a python script for that. The
+script uses some <cite>sosw</cite> features for working with DynamoDB, so we shall have to install sosw.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/var/app/sosw
+pipenv<span class="w"> </span>run<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>sosw
+<span class="nb">cd</span><span class="w"> </span>/var/app/sosw/examples/
+pipenv<span class="w"> </span>run<span class="w"> </span>python3<span class="w"> </span>config_updater.py
+
+<span class="c1">### Or alternatively use old one:</span>
+<span class="c1"># cd /var/app/sosw/examples/essentials/.config</span>
+<span class="c1"># python3 config_uploader.py</span>
+<span class="c1"># cd /var/app/sosw</span>
+</pre></div>
+</div>
+<p>Please take your time to read more about <a class="reference internal" href="components/config.html#config-sourse"><span class="std std-ref">Config Sourse</span></a> and find
+advanced examples in the guidelines of <a class="reference internal" href="essentials/orchestrator.html#orchestrator"><span class="std std-ref">Orchestrator</span></a>, <a class="reference internal" href="essentials/scavenger.html#scavenger"><span class="std std-ref">Scavenger</span></a>
+and <a class="reference internal" href="essentials/scheduler.html#scheduler"><span class="std std-ref">Scheduler</span></a>.</p>
+</section>
+<section id="create-scheduled-rules">
+<h2>Create Scheduled Rules<a class="headerlink" href="#create-scheduled-rules" title="Link to this heading"></a></h2>
+<p>The usual implementation expects the <code class="docutils literal notranslate"><span class="pre">Orchestrator</span></code> and <code class="docutils literal notranslate"><span class="pre">Scavenger</span></code> to run every minute,
+while <code class="docutils literal notranslate"><span class="pre">Scheduler</span></code> and <code class="docutils literal notranslate"><span class="pre">WorkerAssistant</span></code> are executed per request. <code class="docutils literal notranslate"><span class="pre">Scheduler</span></code> may have
+any number of cronned Business Tasks with any desired periodicity of course.</p>
+<p>The following script will create an AWS CloudWatch Events Scheduled Rule that will invoke
+the <code class="docutils literal notranslate"><span class="pre">Orchestrator</span></code> and <code class="docutils literal notranslate"><span class="pre">Scavenger</span></code> every minute.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Make sure not to leave this rule enabled after you finish your tutorial, because after
+passing the free tier of AWS for Lambda functions it might cause unexpected charges.</p>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set parameters:</span>
+<span class="nv">BUCKETNAME</span><span class="o">=</span>sosw-s3-<span class="nv">$ACCOUNT</span>
+<span class="nv">PREFIX</span><span class="o">=</span>/var/app/sosw/examples/yaml
+<span class="nv">FILENAME</span><span class="o">=</span>sosw-dev-scheduled-rules.yaml
+<span class="nv">STACK</span><span class="o">=</span>sosw-dev-scheduled-rules
+
+aws<span class="w"> </span>cloudformation<span class="w"> </span>package<span class="w"> </span>--template-file<span class="w"> </span><span class="nv">$PREFIX</span>/<span class="nv">$FILENAME</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span>--s3-bucket<span class="w"> </span><span class="nv">$BUCKETNAME</span>
+
+aws<span class="w"> </span>cloudformation<span class="w"> </span>deploy<span class="w"> </span>--template-file<span class="w"> </span>/tmp/deployment-output.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--stack-name<span class="w"> </span><span class="nv">$STACK</span><span class="w"> </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM
+</pre></div>
+</div>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock17'))">Manual creation of rules <br></a><br /><div id="hiddencodeblock17" style="display: none"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">############</span>
+<span class="c1"># WARNING! #</span>
+<span class="c1">############</span>
+<span class="c1"># This is not recommended to run!</span>
+<span class="c1"># Use CloudFormation.</span>
+
+<span class="nv">ACCOUNT</span><span class="o">=</span><span class="sb">`</span>curl<span class="w"> </span>http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info/<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grep<span class="w"> </span>AccountId<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="w"> </span><span class="s2">&quot;\&quot;&quot;</span><span class="w"> </span><span class="s1">&#39;{print $4}&#39;</span><span class="sb">`</span>
+
+aws<span class="w"> </span>events<span class="w"> </span>put-rule<span class="w"> </span>--schedule-expression<span class="w"> </span><span class="s1">&#39;rate(1 minute)&#39;</span><span class="w"> </span>--name<span class="w"> </span>SoswEssentials
+aws<span class="w"> </span>events<span class="w"> </span>put-targets<span class="w"> </span>--rule<span class="w"> </span>SoswEssentials<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--targets<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s2">&quot;Id&quot;</span><span class="o">=</span><span class="s2">&quot;1&quot;</span>,<span class="s2">&quot;Arn&quot;</span><span class="o">=</span><span class="s2">&quot;arn:aws:lambda:us-west-2:</span><span class="nv">$ACCOUNT</span><span class="s2">:function:sosw_orchestrator&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s2">&quot;Id&quot;</span><span class="o">=</span><span class="s2">&quot;2&quot;</span>,<span class="s2">&quot;Arn&quot;</span><span class="o">=</span><span class="s2">&quot;arn:aws:lambda:us-west-2:</span><span class="nv">$ACCOUNT</span><span class="s2">:function:sosw_scavenger&quot;</span>
+</pre></div>
+</div>
+</div></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="orchestration.html" class="btn btn-neutral float-left" title="Essential Workflow Schema" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="essentials/index.html" class="btn btn-neutral float-right" title="Essentials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

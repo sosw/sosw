@@ -337,9 +337,8 @@ class AutotestDdbManager:
 
     def __init__(self, tables: List[Dict] = None):
         if not tables:
-            # By default, we create all main tables, but you can specify explicit ones
-            tables = [autotest_dynamo_db_tasks_setup, autotest_dynamo_db_meta_setup,
-                      autotest_dynamo_db_closed_tasks_setup, autotest_dynamo_db_retry_tasks_setup]
+            # By default, we create the generic autotest table, but you can specify explicit ones
+            tables = [autotest_dynamo_db_setup]
         self.tables = tables
         asyncio.run(self.create_ddbs(self.tables))
 
@@ -472,28 +471,3 @@ autotest_dynamo_db_with_index_setup = add_gsi(setup=autotest_dynamo_db_setup, in
 
 autotest_dynamo_db_config_setup = get_table_setup(hash_key=('env', 'S'), range_key=('config_name', 'S'),
                                                   table_name=get_autotest_ddb_name_with_custom_suffix('config'))
-
-autotest_dynamo_db_tasks_draft = get_table_setup(hash_key=('task_id', 'S'),
-                                                 table_name=get_autotest_ddb_name() + '_sosw_tasks')
-autotest_dynamo_db_tasks_setup = add_gsi(setup=autotest_dynamo_db_tasks_draft, index_name='sosw_tasks_greenfield',
-                                         hash_key=('labourer_id', 'S'), range_key=('greenfield', 'N'))
-
-autotest_dynamo_db_meta_setup = get_table_setup(hash_key=('task_id', 'S'), range_key=('created_at', 'N'),
-                                                table_name=get_autotest_ddb_name() + '_sosw_tasks_meta')
-
-autotest_dynamo_db_closed_tasks_draft = get_table_setup(hash_key=('task_id', 'S'),
-                                                        table_name=get_autotest_ddb_name() + '_sosw_closed_tasks')
-autotest_dynamo_db_closed_tasks_setup = add_gsi(setup=autotest_dynamo_db_closed_tasks_draft,
-                                                index_name='labourer_task_status_with_time',
-                                                hash_key=('labourer_id_task_status', 'S'),
-                                                range_key=('closed_at', 'N'))
-
-autotest_dynamo_db_retry_tasks_draft = get_table_setup(hash_key=('labourer_id', 'S'), range_key=('task_id', 'S'),
-                                                       table_name=get_autotest_ddb_name() + '_sosw_retry_tasks')
-autotest_dynamo_db_retry_tasks_setup = add_gsi(setup=autotest_dynamo_db_retry_tasks_draft,
-                                               index_name='labourer_id_greenfield',
-                                               hash_key=('labourer_id', 'S'),
-                                               range_key=('desired_launch_time', 'N'))
-
-autotest_dynamo_db_config_setup = get_table_setup(hash_key=('env', 'S'), range_key=('config_name', 'S'),
-                                                  table_name=get_autotest_ddb_name() + '_config')

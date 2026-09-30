@@ -1,34 +1,7 @@
-alabaster
-ApiDoc
-autodoc
-Babel
-beautifulsoup4
+# Requirements for building the documentation (see docs/conf.py and the Docs workflow).
+# boto3 is needed because autodoc imports the sosw modules, and sosw requires boto3.
+# The sphinx.ext.* extensions ship with Sphinx itself; docs.ext.hidden_code_block is local.
 boto3
-botocore
-certifi
-chardet
-decorator
-docutils
-idna
-imagesize
-Jinja2
-jmespath
-jsonschema
-MarkupSafe
-packaging
-Pygments
-pyparsing
-python-dateutil
-pytz
-PyYAML
-requests
-s3transfer
-six
-snowballstemmer
-Sphinx
-sphinxcontrib-websupport
+sphinx
+furo
 sphinx-sitemap
-urllib3
-waitress
-WebOb
-WebTest

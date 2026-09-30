@@ -1,0 +1,963 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Helpers &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/components/helpers.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Siblings" href="siblings.html" />
+    <link rel="prev" title="DynamoDB Client" href="dynamo_db.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tools/index.html">Tools</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../tools/sosw_layer.html">Lambda Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/sosw_layer.html#main-benefits-of-using-layers">Main Benefits of Using Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/sosw_layer.html#id1">SOSW Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/ddb_glue_crawler.html">AWS Glue Crawlers for DynamoDB</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Helpers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Components</a></li>
+      <li class="breadcrumb-item active">Helpers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/components/helpers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-sosw.components.helpers">
+<span id="helpers"></span><h1>Helpers<a class="headerlink" href="#module-sosw.components.helpers" title="Link to this heading"></a></h1>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock4'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock4" style="display: none"><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><p>Static helper methods which you can use in any Lambdas.
+Must be completely independent with no specific requirements.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.camel_case_to_slug">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">camel_case_to_slug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#camel_case_to_slug"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.camel_case_to_slug" title="Link to this definition"></a></dt>
+<dd><p>Convert input from camel case to slug case</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – <ul class="simple">
+<li><p>str   -   CamleCase string</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str   -   slug-case string</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.camel_case_to_underscore">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">camel_case_to_underscore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#camel_case_to_underscore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.camel_case_to_underscore" title="Link to this definition"></a></dt>
+<dd><p>Converts attribute to string and formats it as underscored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – <ul class="simple">
+<li><p>str   -   CamelCase string (or something convertable to CamelCase with __str__() method.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str   -   underscore_formatted_value</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.chunks">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#chunks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.chunks" title="Link to this definition"></a></dt>
+<dd><p>Yield successive n-sized chunks from l.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.construct_dates_from_event">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">construct_dates_from_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#construct_dates_from_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.construct_dates_from_event" title="Link to this definition"></a></dt>
+<dd><p>Processes given event dictionary for start and end points of time. Otherwise takes the default settings.</p>
+<p>The end date of the period may be specified as <cite>en_date</cite> in the event. The default value is today.</p>
+<p>Also the <cite>event</cite> should have either <cite>st_date</cite> or <cite>days_back</cite> numeric parameter.
+If provided the days_back it will be substracted from end date.</p>
+<p>Both <cite>st_date</cite> and <cite>en_date</cite> might be either <cite>date</cite>, <cite>datetime</cite> or <cite>string</cite> (<cite>‘YYYY-MM-DD’</cite>) types.
+In case of <cite>datetime</cite>, the hours/minutes/etc are ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>dict</em>) – Lambda payload.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>start_date, end_date    as datetime.date</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.convert_string_to_words">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">convert_string_to_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#convert_string_to_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.convert_string_to_words" title="Link to this definition"></a></dt>
+<dd><p>Convert string to comma separated words.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>string</strong> (<em>str</em>) – String to convert into words.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Comma separated words.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.dict_to_dunder">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">dict_to_dunder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'__'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#dict_to_dunder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.dict_to_dunder" title="Link to this definition"></a></dt>
+<dd><p>Converts the nested dict to a flat dict with keys using dunder notation. Reverse of <cite>dunder_to_dict</cite>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+       <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span>
+       <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span>
+           <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="s1">&#39;v3&#39;</span><span class="p">}</span>
+       <span class="p">}</span>
+    <span class="p">}</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">dict_to_dunder</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+<span class="c1"># result:</span>
+<span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;b__c&#39;</span><span class="p">:</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="s1">&#39;b__d__e&#39;</span><span class="p">:</span> <span class="s1">&#39;v3&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>separator</strong> (<em>str</em>) – Custom separator for recursive extraction. Default: <cite>‘__’</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.dunder_to_dict">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">dunder_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#dunder_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.dunder_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Converts the flat dict with keys using dunder notation for nesting elements to regular nested dictionary.</p>
+<p>E.g.:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;b__c&#39;</span><span class="p">:</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="s1">&#39;b__d__e&#39;</span><span class="p">:</span> <span class="s1">&#39;v3&#39;</span><span class="p">}</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">dunder_to_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># result:</span>
+<span class="p">{</span>
+    <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="s1">&#39;v3&#39;</span><span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – A dictionary that is converted to Nested.</p></li>
+<li><p><strong>separator</strong> (<em>str</em>) – Custom separator for recursive extraction. Default: <cite>‘__’</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.first_or_none">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">first_or_none</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#first_or_none"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.first_or_none" title="Link to this definition"></a></dt>
+<dd><p>Return first element in iterable to match condition or None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.get_list_of_multiple_or_one_or_empty_from_dict">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">get_list_of_multiple_or_one_or_empty_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#get_list_of_multiple_or_one_or_empty_from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.get_list_of_multiple_or_one_or_empty_from_dict" title="Link to this definition"></a></dt>
+<dd><p>Extracts objects by ‘name’ from the ‘input’ and returns as a list.
+Tries both plural and singular names from the input.
+If vtype is specified, tries to convert each of the elements in the result to this type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> – <ul>
+<li><p>dict       - Input dictionary. Event of Lambda for example.</p></li>
+</ul>
+</p></li>
+<li><p><strong>name</strong> – <ul>
+<li><p>str        - Name of attribute (in plural form).</p></li>
+</ul>
+</p></li>
+<li><p><strong>vtype</strong> – <ul>
+<li><p>type       - Type to be converted to. Must be callable. Tested types: str, int, float</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>list       - List of vtypes, or list of whatever was in input, or empty list.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – In all cases something is wrong.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.get_message_dict_from_sns_event">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">get_message_dict_from_sns_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#get_message_dict_from_sns_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.get_message_dict_from_sns_event" title="Link to this definition"></a></dt>
+<dd><p>Extract SNS event message and return it loaded as a dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> – Lambda SNS event (payload). Must be a JSON document.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The SNS message, converted to dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.get_one_from_dict">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">get_one_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#get_one_from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.get_one_from_dict" title="Link to this definition"></a></dt>
+<dd><p>Extracts object by ‘name’ from the ‘input’.
+Tries also plural name in case not found by single ‘name’.
+In case found an iterable by plural name, validates that it has exactly one value in it.
+If vtype is specified, tries to convert result to it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> – <ul>
+<li><p>dict       - Input dictionary. Event of Lambda for example.</p></li>
+</ul>
+</p></li>
+<li><p><strong>name</strong> – <ul>
+<li><p>str        - Name of attribute (in singular form).</p></li>
+</ul>
+</p></li>
+<li><p><strong>vtype</strong> – <ul>
+<li><p>type       - Type to be converted to. Must be callable. Tested types: str, int, float</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>instance of vtype | something else | None</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – <ul class="simple">
+<li><p>In all cases something is wrong.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.get_one_or_none_from_dict">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">get_one_or_none_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#get_one_or_none_from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.get_one_or_none_from_dict" title="Link to this definition"></a></dt>
+<dd><p>Extracts object by ‘name’ from the ‘input’.
+Tries also plural name in case not found by single ‘name’.
+In case found an iterable by plural name, validates that it has one or zero values in it.
+If vtype is specified, tries to convert result to it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<em>dict</em>) – Input dictionary. Event of Lambda for example.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of attribute (in singular form).</p></li>
+<li><p><strong>vtype</strong> (<em>type</em>) – Type to be converted to. Must be callable. Tested types: str, int, float</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>instance of vtype | something else | None</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – In all cases something is wrong.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.is_event_from_sns">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">is_event_from_sns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#is_event_from_sns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.is_event_from_sns" title="Link to this definition"></a></dt>
+<dd><p>Check if the lambda invocation was by SNS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>dict</em>) – Lambda Event (payload)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.is_valid_date">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">is_valid_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_formats</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#is_valid_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.is_valid_date" title="Link to this definition"></a></dt>
+<dd><p>Validate string to be at least one of the given datetime formats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date_str</strong> (<em>str</em>) – a date or time or both, Example: ‘2018/09/16’</p></li>
+<li><p><strong>date_formats</strong> (<em>list</em>) – List of datetime format, that is acceptable for datetime.strptime. Example: ‘%Y/%m/%d’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the date string is valid for any of the datetime formats, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.make_hash">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">make_hash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#make_hash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.make_hash" title="Link to this definition"></a></dt>
+<dd><p>Makes a hash from a dictionary, list, tuple or set to any level, that contains
+only other hashable types (including any lists, tuples, sets, and
+dictionaries).</p>
+<p>Original idea from this user:
+<a class="reference external" href="https://stackoverflow.com/users/660554/jomido">https://stackoverflow.com/users/660554/jomido</a></p>
+<p>Plus some upgrades to work with sets and dicts having different types of keys appropriately.
+See source unittests of this function for some more details.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.nested_dict_from_keys">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">nested_dict_from_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#nested_dict_from_keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.nested_dict_from_keys" title="Link to this definition"></a></dt>
+<dd><p>Constructs a nested dictionary using a list of keys to embed recursively.
+If <cite>value</cite> is provided it is assigned to the last subkey.</p>
+<p>Examples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nested_dict_from_keys</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}}}</span>
+<span class="n">nested_dict_from_keys</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">}}}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keys</strong> – List of keys to embed.</p></li>
+<li><p><strong>value</strong> – Optional value to set to lowest level</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.recursive_insert">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">recursive_insert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#recursive_insert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.recursive_insert" title="Link to this definition"></a></dt>
+<dd><p>Insert the <code class="docutils literal notranslate"><span class="pre">value</span></code> to the input dictionary <code class="docutils literal notranslate"><span class="pre">d</span></code> nested according to the <code class="docutils literal notranslate"><span class="pre">path</span></code>.</p>
+<p>By default, the separator is <code class="docutils literal notranslate"><span class="pre">.</span></code>, but can be changed in the <code class="docutils literal notranslate"><span class="pre">separator</span></code> argument.
+Returns the input <code class="docutils literal notranslate"><span class="pre">d</span></code> with modifications applied.</p>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">}}}</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">recursive_insert</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="s1">&#39;a.b.ccc.ddd&#39;</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
+
+<span class="c1"># Result</span>
+<span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span> <span class="s1">&#39;ccc&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;ddd&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">}}}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.recursive_matches_extract">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">recursive_matches_extract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#recursive_matches_extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.recursive_matches_extract" title="Link to this definition"></a></dt>
+<dd><p>Searches the ‘src’ recursively for nested elements provided in ‘key’ with dot notation.
+In case some levels are iterable (list, tuple) it checks every element in it till finds it.</p>
+<p>Returns the first found element or None.
+In case the full path is inaccessible also returns None.</p>
+<p>If you are just checking if some elements exist, you might be interested in
+recursive_exists_strict() or recursive_exists_soft() helpers.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please be aware that this method does not check for duplicates in iterable elements on neither
+level during extraction.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>dict</em>) – Input dictionary. Can contain nested dictionaries and lists.</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – Path to search with dot notation.</p></li>
+<li><p><strong>separator</strong> (<em>str</em>) – Custom separator for recursive extraction. Default: <cite>‘.’</cite></p></li>
+</ul>
+</dd>
+</dl>
+<p>In order to filter out some specific elements, you might want to use the optional ‘exclude’ attributes.
+If attributes are specified and the last level element following the path
+(dot notation) will have a key-value, the check for the main key-value will be skipped.
+See unittests to understand the bahaviour better.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exclude_key</strong> (<em>str</em>) – Key to check in last level element to exclude.</p></li>
+<li><p><strong>exclude_val</strong> (<em>str</em>) – Value to match in last level element to exclude.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Value from structure extracted by specified path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.recursive_matches_soft">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">recursive_matches_soft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#recursive_matches_soft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.recursive_matches_soft" title="Link to this definition"></a></dt>
+<dd><p>Searches the ‘src’ recursively for nested elements provided in ‘key’ with dot notation.
+In case some levels are iterable (list, tuple) it checks every element.
+In case the full path is inaccessible returns False.
+If any of the elements addressed by ‘key’ matches the ‘val’ - Bingo! Return True.</p>
+<p>You might also be interested in recursive_exists_strict() helper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>dict</em>) – Input dictionary. Can contain nested dictionaries and lists.</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – Path to search with dot notation.</p></li>
+<li><p><strong>val</strong> (<em>any</em>) – Value to match in some elements specified by path.</p></li>
+</ul>
+</dd>
+</dl>
+<p>In order to check not just that some element exists, but to check for duplicates, you might want to use
+optional ‘exclude’ attributes. If attributes are specified and the last level element following the path
+(dot notation) will have a key-value, the check for the main key-value will be skipped.
+See unittests to understand the bahaviour better.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exclude_key</strong> (<em>str</em>) – Key to check in last level element to exclude.</p></li>
+<li><p><strong>exclude_val</strong> (<em>srt</em>) – Value to match in last level element to exclude.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.recursive_matches_strict">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">recursive_matches_strict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#recursive_matches_strict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.recursive_matches_strict" title="Link to this definition"></a></dt>
+<dd><p>Searches the ‘input’ recursively for nested elements provided in ‘key’ with dot notation.
+In case some levels are iterable (list, tuple) it checks every element.
+In case the full path is inaccessible raises AttributeError or KeyError.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>dict</em>) – Input dictionary. Can contain nested dictionaries and lists.</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – Path to search with dot notation.</p></li>
+<li><p><strong>val</strong> (<em>any</em>) – Value to match in some elements specified by path.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.recursive_update">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">recursive_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#recursive_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.recursive_update" title="Link to this definition"></a></dt>
+<dd><p>Recursively updates the dictionary <cite>d</cite> with another one <cite>u</cite>.
+Values of <cite>u</cite> overwrite in case of type conflict.</p>
+<p>Examples (in comparison with dict.update([other])):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="mi">33</span><span class="p">,</span> <span class="s1">&#39;b2&#39;</span><span class="p">:</span> <span class="mi">44</span><span class="p">}}</span>
+<span class="n">u</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">&#39;b3&#39;</span><span class="p">:</span> <span class="mi">33</span><span class="p">}}</span>
+
+<span class="n">recursive_update</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+
+<span class="c1"># result:</span>
+<span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">&#39;b2&#39;</span><span class="p">:</span> <span class="mi">44</span><span class="p">,</span> <span class="s1">&#39;b3&#39;</span><span class="p">:</span> <span class="mi">33</span><span class="p">}}</span>
+
+<span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+<span class="c1"># result:</span>
+<span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span> <span class="s1">&#39;b3&#39;</span><span class="p">:</span> <span class="mi">33</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>List, set and tuple values of <cite>d</cite> and <cite>u</cite> are merged, preserving only unique values. Returned as List.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.rstrip_all">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">rstrip_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patterns</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#rstrip_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.rstrip_all" title="Link to this definition"></a></dt>
+<dd><p>Strips all of the patterns from the right of the input. Order and spaces do not matter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> – <ul>
+<li><p>str                   - String to modify</p></li>
+</ul>
+</p></li>
+<li><p><strong>patterns</strong> – <ul>
+<li><p>list|set|tuple|str    - Pattern[-s] to remove.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.slug_to_camel_case">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">slug_to_camel_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#slug_to_camel_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.slug_to_camel_case" title="Link to this definition"></a></dt>
+<dd><p>Split the input text by hyphens to get individual words
+Convert each word to capitalize the first letter and join them to form CamelCase</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Resulting CamelCase string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.small_int_from_string">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">small_int_from_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_digits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#small_int_from_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.small_int_from_string" title="Link to this definition"></a></dt>
+<dd><p>Generate a small integer based on the input string using its MD5 hash.
+This value is reproducible, so it could be useful for example if you use it
+for some kind of partitioning or unsorted batching in order to be able to
+query based on it later on.</p>
+<p>Examples:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">small_int_from_string</span><span class="p">(</span><span class="s2">&quot;hello world&quot;</span><span class="p">)</span>
+<span class="mi">91</span>
+<span class="n">small_int_from_string</span><span class="p">(</span><span class="s2">&quot;hello world&quot;</span><span class="p">,</span> <span class="n">num_digits</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="mi">291</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The generated small integer.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p>ValueError: If num_digits is not a positive integer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.trim_arn_to_account">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">trim_arn_to_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#trim_arn_to_account"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.trim_arn_to_account" title="Link to this definition"></a></dt>
+<dd><p>Extract just the ACCOUNT_ID from full ARN. Supports versions, aliases or raw name (without ARN).</p>
+<p>More information about ARN Format:
+<a class="reference external" href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns">https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.trim_arn_to_name">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">trim_arn_to_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#trim_arn_to_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.trim_arn_to_name" title="Link to this definition"></a></dt>
+<dd><p>Extract just the name of function from full ARN. Supports versions, aliases or raw name (without ARN).</p>
+<p>More information about ARN Format:
+<a class="reference external" href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns">https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-arns</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.underscore_to_camel_case">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">underscore_to_camel_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#underscore_to_camel_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.underscore_to_camel_case" title="Link to this definition"></a></dt>
+<dd><p>Convert input from underscore case to camel case</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – <ul class="simple">
+<li><p>str   -   snake_case string</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str   -   SnakeCase string</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.unwrap_event_recursively">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">unwrap_event_recursively</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#unwrap_event_recursively"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.unwrap_event_recursively" title="Link to this definition"></a></dt>
+<dd><p>Recursively unwraps lambda event from SQS and/or SNS event skeletons.
+Supported sources: ‘sqs’, ‘sns’.
+Will unwrap recursively until the event is not wrapped anymore, or up to depth of 10</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">unwrapped_messages</span> <span class="o">=</span> <span class="n">unwrap_event_recursively</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sns&#39;</span><span class="p">,</span> <span class="s1">&#39;sqs&#39;</span><span class="p">]):</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event</strong> – Lambda event</p></li>
+<li><p><strong>sources</strong> – List of strings describing what the event might be wrapped by. If empty, will unwrapped from all.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries - unwrapped messages from the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_account_to_dashed">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_account_to_dashed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_account_to_dashed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_account_to_dashed" title="Link to this definition"></a></dt>
+<dd><p>Validates the the provided string is in valid AdWords account format and converts it to dashed format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>account</strong> (<em>str</em>) – AdWords Account</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dashed format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_account_to_int">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_account_to_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">account</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_account_to_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_account_to_int" title="Link to this definition"></a></dt>
+<dd><p>Validates the provided string is in valid AdWords account format and converts it to integer format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>account</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em>) – AdWords Account</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Account ID as integer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_date_from_something">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_date_from_something</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_date_from_something"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_date_from_something" title="Link to this definition"></a></dt>
+<dd><p>Convert valid input to datetime.date() or raise either AttributeError or ValueError.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> – Some input. Supported types:
+* datetime.datetime
+* datetime.date
+* int - Epoch or Epoch milliseconds
+* float - Epoch or Epoch milliseconds
+* str (YYYY-MM-DD)
+* str (YYYY-MM-DD HH:MM:SS)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transformed <cite>d</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime.date</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p>ValueError</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_date_list_from_event_or_days_back">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_date_list_from_event_or_days_back</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_back</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'date_list'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_date_list_from_event_or_days_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_date_list_from_event_or_days_back" title="Link to this definition"></a></dt>
+<dd><p>Takes from input the date_list and extracts date_list. Validates and converts to datetime.date.
+Input should have date_list as list of strings or comma-separated string.</p>
+<ul class="simple">
+<li><p>Format:     <code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD</span></code></p></li>
+<li><p>Examples:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;2018-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2018-02-01&#39;</span><span class="p">]</span>
+<span class="s1">&#39;2018-01-01, 2018-02-01&#39;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<em>dict</em>) – This is supposed to be your whole Lambda event.</p></li>
+<li><p><strong>days_back</strong> (<em>int</em>) – Optional Number of days to take back from today.
+Ex: days_back=1 is yesterday. Default: today.</p></li>
+<li><p><strong>key_name</strong> (<em>str</em>) – Optional custom name of key to extract from ‘input’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list(datetime.date)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_date_timestamp_from_something">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_date_timestamp_from_something</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_date_timestamp_from_something"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_date_timestamp_from_something" title="Link to this definition"></a></dt>
+<dd><p>Converts the input <cite>d</cite> to timestamp of the date rounded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> – Some input. Supported types:
+* datetime.datetime
+* datetime.date
+* int - Epoch or Epoch milliseconds
+* float - Epoch or Epoch milliseconds
+* str (YYYY-MM-DD)
+* str (YYYY-MM-DD HH:MM:SS)
+* str(epoch time seconds as string)
+* str(epoch time seconds (float) as string)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transformed <cite>d</cite></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ValueError</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_datetime_from_something">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_datetime_from_something</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_datetime_from_something"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_datetime_from_something" title="Link to this definition"></a></dt>
+<dd><p>Converts the input <cite>d</cite> to datetime.datetime.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> – Some input. Supported types:
+* datetime.datetime
+* datetime.date
+* int - Epoch or Epoch milliseconds
+* float - Epoch or Epoch milliseconds
+* str (epoch time seconds as string)
+* str (epoch time seconds (float) as string)
+* str: Many different formats are supported, but the order only from more specific to less specific,
+(e.g., YYYY-MM-DD, in favor of DD-MM-YYYY).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transformed <cite>d</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime.datetime</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p>ValueError</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_list_of_numbers_from_csv">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_list_of_numbers_from_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_list_of_numbers_from_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_list_of_numbers_from_csv" title="Link to this definition"></a></dt>
+<dd><p>Converts a comma separated string of numeric values to a list of sorted unique integers.
+The values that do not match are skipped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>(</em><em>str</em><em>, </em><em>iterable</em><em>)</em>) – <ul class="simple">
+<li><p>str | iterable</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>list(int)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_list_of_words_from_csv_or_list">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_list_of_words_from_csv_or_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'list'&gt;)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_list_of_words_from_csv_or_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_list_of_words_from_csv_or_list" title="Link to this definition"></a></dt>
+<dd><p>Splits a CSV string to list of stripped words.
+In case the <cite>data</cite> is already a list of strings - splits it’s elements and flattens the result.</p>
+<p>All resulting elements must be single words, if any of the elements contains spaces (i.e. multiple words)
+the validation fails with <cite>ValueError</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – CSV string of list of strings (possibly CSV themselves)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of stripped and split words</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_string_matches_datetime_format">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_string_matches_datetime_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'date'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_string_matches_datetime_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_string_matches_datetime_format" title="Link to this definition"></a></dt>
+<dd><p>Validate string, make sure it’s of the given datetime format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date_str</strong> (<em>str</em>) – a date or time or both, Example: ‘2018/09/16’</p></li>
+<li><p><strong>date_format</strong> (<em>str</em>) – datetime format, that is acceptable for datetime.strptime. Example: ‘%Y/%m/%d’
+(<a class="reference external" href="https://docs.python.org/3.6/library/datetime.html#strftime-and-strptime-behavior">https://docs.python.org/3.6/library/datetime.html#strftime-and-strptime-behavior</a>)</p></li>
+<li><p><strong>field_name</strong> (<em>str</em>) – name of the field (for the error)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p>ValueError</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sosw.components.helpers.validate_uuid4">
+<span class="sig-prename descclassname"><span class="pre">sosw.components.helpers.</span></span><span class="sig-name descname"><span class="pre">validate_uuid4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/components/helpers.html#validate_uuid4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.components.helpers.validate_uuid4" title="Link to this definition"></a></dt>
+<dd><p>Validate that a UUID string is in
+fact a valid uuid4.
+Happily, the uuid module does the actual
+checking for us.
+It is vital that the ‘version’ kwarg be passed
+to the UUID() call, otherwise any 32-character
+hex string is considered valid.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dynamo_db.html" class="btn btn-neutral float-left" title="DynamoDB Client" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="siblings.html" class="btn btn-neutral float-right" title="Siblings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -145,29 +145,96 @@ class siblings_TestCase(unittest.TestCase):
             'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func2'
         })))
 
-        # testing auto_spawning defaults from config
-        self.CUSTOM_CONFIG['auto_spawning'] = False
-        self.assertFalse(SiblingsManager(custom_config=self.CUSTOM_CONFIG).any_events_rules_enabled(
-            type('lambda_context', (object,), {
-                'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func1'
-            })))
+        # Testing auto_spawning defaults from config. Copies of the config: mutating the shared
+        # class-level CUSTOM_CONFIG would leak into other tests and suite reruns in the same process.
+        self.assertFalse(SiblingsManager(custom_config={**self.CUSTOM_CONFIG, 'auto_spawning': False})
+                         .any_events_rules_enabled(type('lambda_context', (object,), {
+                             'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func1'
+                         })))
 
-        self.CUSTOM_CONFIG['auto_spawning'] = True
-        self.assertTrue(SiblingsManager(custom_config=self.CUSTOM_CONFIG).any_events_rules_enabled(
-            type('lambda_context', (object,), {
-                'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func1'
-            })))
+        self.assertTrue(SiblingsManager(custom_config={**self.CUSTOM_CONFIG, 'auto_spawning': True})
+                        .any_events_rules_enabled(type('lambda_context', (object,), {
+                            'invoked_function_arn': 'arn:aws:lambda:us-west-2:123:function:my-test-func1'
+                        })))
 
 
     @mock.patch("boto3.client")
     def test_spawn_sibling(self, mock_boto_client):
+        """
+        With enabled Events Rules the sibling is invoked with the JSON-dumped payload.
+        The STAGE=test environment enforces the DryRun invocation type.
+        """
+
         client = MagicMock()
-
-        client.list_rules = MagicMock(return_value={})
-        client.list_targets_by_rule = MagicMock(return_value={})
-
         mock_boto_client.return_value = client
-        # Test here that sibling is spawned only if rule enabled.
+
+        from sosw.components.siblings import SiblingsManager
+
+        manager = SiblingsManager(custom_config=self.CUSTOM_CONFIG)
+        manager.any_events_rules_enabled = MagicMock(return_value=True)
+
+        manager.spawn_sibling(MagicMock(), payload={'rows': [1, 2]})
+
+        manager.lambda_client.invoke.assert_called_once_with(
+                FunctionName='test_function', InvocationType='DryRun', Payload='{"rows": [1, 2]}')
+
+
+    @mock.patch("boto3.client")
+    def test_spawn_sibling__no_rules_enabled(self, mock_boto_client):
+        """
+        Without enabled Events Rules (and without force) the sibling must NOT be invoked.
+        """
+
+        client = MagicMock()
+        mock_boto_client.return_value = client
+
+        from sosw.components.siblings import SiblingsManager
+
+        manager = SiblingsManager(custom_config=self.CUSTOM_CONFIG)
+        manager.any_events_rules_enabled = MagicMock(return_value=False)
+
+        manager.spawn_sibling(MagicMock())
+
+        manager.lambda_client.invoke.assert_not_called()
+
+
+    @mock.patch("boto3.client")
+    def test_spawn_sibling__force_skips_rules_check(self, mock_boto_client):
+        """
+        `force=True` must skip the check of Events Rules. A string payload is passed through as is.
+        """
+
+        client = MagicMock()
+        mock_boto_client.return_value = client
+
+        from sosw.components.siblings import SiblingsManager
+
+        manager = SiblingsManager(custom_config=self.CUSTOM_CONFIG)
+        manager.any_events_rules_enabled = MagicMock(return_value=False)
+
+        manager.spawn_sibling(MagicMock(), payload='{"file_name": "some.txt"}', force=True)
+
+        manager.any_events_rules_enabled.assert_not_called()
+        manager.lambda_client.invoke.assert_called_once_with(
+                FunctionName='test_function', InvocationType='DryRun', Payload='{"file_name": "some.txt"}')
+
+
+    @mock.patch("boto3.client")
+    def test_get_approximate_concurrent_executions__no_datapoints(self, mock_boto_client):
+        """
+        Without CloudWatch Datapoints (no recent invocations) the estimate is zero.
+        """
+
+        client = MagicMock()
+        client.get_metric_statistics = MagicMock(return_value={'Datapoints': []})
+        mock_boto_client.return_value = client
+
+        from sosw.components.siblings import SiblingsManager
+
+        manager = SiblingsManager(custom_config=self.CUSTOM_CONFIG)
+
+        self.assertEqual(manager.get_approximate_concurrent_executions(), 0)
+        client.get_metric_statistics.assert_called_once()
 
 
 if __name__ == '__main__':

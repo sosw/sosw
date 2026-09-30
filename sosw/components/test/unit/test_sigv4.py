@@ -38,6 +38,86 @@ class sigv4_TestCase(unittest.TestCase):
             pass
 
 
+    def test_init__raises_without_service(self):
+        with self.assertRaises(KeyError) as exc:
+            AwsSigV4RequestGenerator()
+
+        self.assertIn("Service is required", str(exc.exception))
+
+
+    def test_init__credentials_from_environment(self):
+        env = {
+            'AWS_ACCESS_KEY_ID':     'ENV_KEY_ID',
+            'AWS_SECRET_ACCESS_KEY': 'ENV_SECRET',
+            'AWS_SESSION_TOKEN':     'ENV_SESSION_TOKEN',
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            auth = AwsSigV4RequestGenerator(aws_service='es', aws_region='us-east-1')
+
+        self.assertEqual(auth.aws_access_key_id, 'ENV_KEY_ID')
+        self.assertEqual(auth.aws_secret_access_key, 'ENV_SECRET')
+        self.assertEqual(auth.aws_session_token, 'ENV_SESSION_TOKEN')
+
+
+    def test_init__session_token_from_legacy_security_token(self):
+        env = {
+            'AWS_ACCESS_KEY_ID':     'ENV_KEY_ID',
+            'AWS_SECRET_ACCESS_KEY': 'ENV_SECRET',
+            'AWS_SECURITY_TOKEN':    'ENV_LEGACY_TOKEN',
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            auth = AwsSigV4RequestGenerator(aws_service='es', aws_region='us-east-1')
+
+        self.assertEqual(auth.aws_session_token, 'ENV_LEGACY_TOKEN')
+
+
+    def test_init__partial_credentials_fall_back_to_environment(self):
+        """
+        If only one of the two credential parts comes in kwargs, both are (re-)read from the environment.
+        """
+
+        env = {
+            'AWS_ACCESS_KEY_ID':     'ENV_KEY_ID',
+            'AWS_SECRET_ACCESS_KEY': 'ENV_SECRET',
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            auth = AwsSigV4RequestGenerator(aws_service='es', aws_region='us-east-1',
+                                            aws_access_key_id='KWARGS_KEY_ID')
+
+        self.assertEqual(auth.aws_access_key_id, 'ENV_KEY_ID')
+        self.assertEqual(auth.aws_secret_access_key, 'ENV_SECRET')
+
+
+    def test_init__raises_without_credentials(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(KeyError) as exc:
+                AwsSigV4RequestGenerator(aws_service='es', aws_region='us-east-1')
+
+        self.assertIn("AWS Access Key ID and Secret Access Key are required", str(exc.exception))
+
+
+    def test_init__region_from_environment(self):
+        env = {'AWS_REGION': 'eu-west-1'}
+
+        with patch.dict(os.environ, env, clear=True):
+            auth = AwsSigV4RequestGenerator(aws_service='es', aws_access_key_id='YOUR_KEY_ID',
+                                            aws_secret_access_key='YOUR_SECRET')
+
+        self.assertEqual(auth.aws_region, 'eu-west-1')
+
+
+    def test_init__raises_without_region(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(KeyError) as exc:
+                AwsSigV4RequestGenerator(aws_service='es', aws_access_key_id='YOUR_KEY_ID',
+                                         aws_secret_access_key='YOUR_SECRET')
+
+        self.assertIn("Region is required", str(exc.exception))
+
+
     def test_call(self):
         expected_result = {'Authorization': 'AWS4-HMAC-SHA256 '
                                             'Credential=YOUR_KEY_ID/20220715/us-east-1/es/aws4_request, '

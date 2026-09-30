@@ -1,0 +1,223 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/index.html" />
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=38589524"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#">
+            
+              <img src="_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="serverless-orchestrator-of-serverless-workers">
+<h1>Serverless Orchestrator of Serverless Workers<a class="headerlink" href="#serverless-orchestrator-of-serverless-workers" title="Link to this heading"></a></h1>
+<a class="reference external image-reference" href="https://travis-ci.com/sosw/sosw"><img alt="Travis - Build" src="https://travis-ci.com/sosw/sosw.svg?branch=master" />
+</a>
+<a class="reference external image-reference" href="https://docs.sosw.app/?badge=latest"><img alt="Documentation Status" src="https://img.shields.io/docsrs/docs" />
+</a>
+<a class="reference external image-reference" href="https://docs.sosw.app/?badge=latest"><img alt="Test Coverage" src="_images/coverage.svg" />
+</a>
+<a class="reference external image-reference" href="https://pypi.org/project/sosw/"><img alt="PyPI - Installs / month" src="https://img.shields.io/pypi/dm/sosw?color=blue&amp;label=pypi%20installs" />
+</a>
+<a class="reference external image-reference" href="https://github.com/sosw/sosw/blob/master/LICENSE"><img alt="PyPI - License" src="https://img.shields.io/pypi/l/sosw?color=blue" />
+</a>
+<dl class="simple">
+<dt><strong>`sosw`</strong>:</dt><dd><ul class="simple">
+<li><p>Framework to simplify the design of AWS Lambda functions in Python</p></li>
+<li><p>Set of tools for orchestrating <strong>asynchronous</strong> invocations of AWS Lambda functions.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Essential components of <strong>`sosw`</strong> orchestration are implemented as AWS Lambda functions themselves.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please pronounce <cite>sosw</cite> correctly: <em>/ˈsɔːsəʊ/</em></p>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="essentials/index.html">Essentials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="essentials/processor.html">Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/worker.html">Worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/essential.html">Essential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/orchestrator.html">Orchestrator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/scheduler.html">Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/scavenger.html">Scavenger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essentials/worker_assistant.html">Worker Assitant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="components/index.html">Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="components/benchmark.html">Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/config.html">Config Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/dynamo_db.html">DynamoDB Client</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/helpers.html">Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/siblings.html">Siblings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/sigv4.html">SigV4 Request Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/sns.html">SNS Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="managers/index.html">Managers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="managers/task.html">TaskManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managers/ecology.html">EcologyManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managers/meta_handler.html">MetaHandler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="greenfield.html">Greenfield</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tools/index.html">Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tools/sosw_layer.html">Lambda Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/sosw_layer.html#main-benefits-of-using-layers">Main Benefits of Using Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/sosw_layer.html#id1">SOSW Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/ddb_glue_crawler.html">AWS Glue Crawlers for DynamoDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="components/helpers.html">Helpers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/sosw_tutorial_pull_tweeter_hashtags.html">Tutorial Pull Tweeter Hashtags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/cleanup.html">Cleanup after tutorials</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribution/index.html">Contribution Guidelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribution/convention.html">Documentation Convention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribution/pycon-us-2019.html">Sprinting PyCon US 2019</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

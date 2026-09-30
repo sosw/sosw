@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orchestrator &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/essentials/orchestrator.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=38589524"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Scheduler" href="scheduler.html" />
+    <link rel="prev" title="Essential" href="essential.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Essentials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="processor.html">Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker.html">Worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="essential.html">Essential</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Orchestrator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scheduler.html">Scheduler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scavenger.html">Scavenger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="worker_assistant.html">Worker Assitant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Essentials</a></li>
+      <li class="breadcrumb-item active">Orchestrator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/essentials/orchestrator.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="orchestrator">
+<span id="id1"></span><h1>Orchestrator<a class="headerlink" href="#orchestrator" title="Link to this heading"></a></h1>
+<p>Orchestrator does the … Orchestration.</p>
+<p>You can use the class in your Lambda as is, just configure some settings using one of the
+supported ways in <a class="reference internal" href="../contribution/convention.html#components-config"><span class="std std-ref">Config</span></a></p>
+<p>The following diagram represents the basic Task Workflow initiated by the Orchestrator.</p>
+<figure class="align-center" id="id2">
+<img alt="Invocation Process" src="../_images/orchestrator-invocation.png" />
+<figcaption>
+<p><span class="caption-text">Workers Invocation Workflow</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">TASKS_TABLE_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;row_mapper&#39;</span><span class="p">:</span>       <span class="p">{</span>
+        <span class="s1">&#39;task_id&#39;</span><span class="p">:</span>             <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span>         <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;greenfield&#39;</span><span class="p">:</span>          <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;attempts&#39;</span><span class="p">:</span>            <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;closed_at&#39;</span><span class="p">:</span>           <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span>        <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;desired_launch_time&#39;</span><span class="p">:</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;arn&#39;</span><span class="p">:</span>                 <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;payload&#39;</span><span class="p">:</span>             <span class="s1">&#39;S&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;required_fields&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;task_id&#39;</span><span class="p">,</span> <span class="s1">&#39;labourer_id&#39;</span><span class="p">,</span> <span class="s1">&#39;created_at&#39;</span><span class="p">,</span> <span class="s1">&#39;greenfield&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;table_name&#39;</span><span class="p">:</span>       <span class="s1">&#39;sosw_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;index_greenfield&#39;</span><span class="p">:</span> <span class="s1">&#39;sosw_tasks_greenfield&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;field_names&#39;</span><span class="p">:</span>      <span class="p">{</span>
+        <span class="s1">&#39;task_id&#39;</span><span class="p">:</span>     <span class="s1">&#39;task_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span> <span class="s1">&#39;labourer_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;greenfield&#39;</span><span class="p">:</span>  <span class="s1">&#39;greenfield&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">TASK_CLIENT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;dynamo_db_config&#39;</span><span class="p">:</span>                  <span class="n">TASKS_TABLE_CONFIG</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_closed_tasks_table&#39;</span><span class="p">:</span>           <span class="s1">&#39;sosw_closed_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_retry_tasks_table&#39;</span><span class="p">:</span>            <span class="s1">&#39;sosw_retry_tasks&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sosw_retry_tasks_greenfield_index&#39;</span><span class="p">:</span> <span class="s1">&#39;labourer_id_greenfield&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ecology_config&#39;</span><span class="p">:</span>             <span class="p">{},</span>
+    <span class="s1">&#39;labourers&#39;</span><span class="p">:</span>                         <span class="p">{</span>
+        <span class="s1">&#39;some_function&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;arn&#39;</span><span class="p">:</span>                          <span class="sa">f</span><span class="s2">&quot;arn:aws:lambda:us-west-2:737060422660:function:some_function&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;max_simultaneous_invocations&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">&#39;health_metrics&#39;</span><span class="p">:</span>               <span class="p">{</span>
+                <span class="s1">&#39;SomeDBCPU&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;details&#39;</span><span class="p">:</span>                     <span class="p">{</span>
+                        <span class="s1">&#39;Name&#39;</span><span class="p">:</span>       <span class="s1">&#39;CPUUtilization&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Namespace&#39;</span><span class="p">:</span>  <span class="s1">&#39;AWS/RDS&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Period&#39;</span><span class="p">:</span>     <span class="mi">60</span><span class="p">,</span>
+                        <span class="s1">&#39;Statistics&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Average&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;Dimensions&#39;</span><span class="p">:</span> <span class="p">[</span>
+                            <span class="p">{</span>
+                                <span class="s1">&#39;Name&#39;</span><span class="p">:</span>  <span class="s1">&#39;DBInstanceIdentifier&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;Value&#39;</span><span class="p">:</span> <span class="s1">&#39;YOUR-DB&#39;</span>
+                            <span class="p">},</span>
+                        <span class="p">],</span>
+                    <span class="p">},</span>
+
+                    <span class="c1"># These is the mapping of how the Labourer should &quot;feel&quot; about this metric.</span>
+                    <span class="c1"># See EcologyManager.ECO_STATUSES.</span>
+                    <span class="c1"># This is just a mapping ``ECO_STATUS: value`` using ``feeling_comparison_operator``.</span>
+                    <span class="s1">&#39;feelings&#39;</span><span class="p">:</span>                    <span class="p">{</span>
+                        <span class="mi">3</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                        <span class="mi">4</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s1">&#39;feeling_comparison_operator&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;=&#39;</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">ORCHESTRATOR_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;task_config&#39;</span><span class="p">:</span> <span class="n">TASK_CLIENT_CONFIG</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Example <a class="reference external" href="https://raw.githubusercontent.com/sosw/sosw/master/examples/essentials/sosw_orchestrator/sosw-orchestrator.yaml">CloudFormation template for Orchestrator</a></p>
+<p>See also <a class="reference internal" href="../greenfield.html#greenfield"><span class="std std-ref">Greenfield</span></a></p>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock9'))">View Licence Agreement <br></a><br /><div id="hiddencodeblock9" style="display: none"><div class="highlight-text notranslate" id="module-sosw.orchestrator"><div class="highlight"><pre><span></span>sosw - Serverless Orchestrator of Serverless Workers
+
+The MIT License (MIT)
+Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre></div>
+</div>
+</div><dl class="py class">
+<dt class="sig sig-object py" id="sosw.orchestrator.Orchestrator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">sosw.orchestrator.</span></span><span class="sig-name descname"><span class="pre">Orchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/orchestrator.html#Orchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.orchestrator.Orchestrator" title="Link to this definition"></a></dt>
+<dd><div class="line-block">
+<div class="line">Orchestrator class.</div>
+<div class="line">Iterates the pre-configured Labourers and invokes appropriate number of Tasks for each one.</div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.orchestrator.Orchestrator.get_db_field_name">
+<span class="sig-name descname"><span class="pre">get_db_field_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/sosw/orchestrator.html#Orchestrator.get_db_field_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.orchestrator.Orchestrator.get_db_field_name" title="Link to this definition"></a></dt>
+<dd><p>Could be useful if you overwrite field names with your own ones (e.g. for tests).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.orchestrator.Orchestrator.get_desired_invocation_number_for_labourer">
+<span class="sig-name descname"><span class="pre">get_desired_invocation_number_for_labourer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labourer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Labourer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/sosw/orchestrator.html#Orchestrator.get_desired_invocation_number_for_labourer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.orchestrator.Orchestrator.get_desired_invocation_number_for_labourer" title="Link to this definition"></a></dt>
+<dd><p>Decides the desired maximum number of simultaneous invocations for a specific Labourer.
+The decision is based on the ecology status of the Labourer and the configs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of invocations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.orchestrator.Orchestrator.get_labourers">
+<span class="sig-name descname"><span class="pre">get_labourers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Labourer</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/sosw/orchestrator.html#Orchestrator.get_labourers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.orchestrator.Orchestrator.get_labourers" title="Link to this definition"></a></dt>
+<dd><p>Gets a list of pre-configured Labourers from TaskManager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sosw.orchestrator.Orchestrator.invoke_for_labourer">
+<span class="sig-name descname"><span class="pre">invoke_for_labourer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labourer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Labourer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sosw/orchestrator.html#Orchestrator.invoke_for_labourer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sosw.orchestrator.Orchestrator.invoke_for_labourer" title="Link to this definition"></a></dt>
+<dd><p>Invokes required queued tasks for <cite>labourer</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="essential.html" class="btn btn-neutral float-left" title="Essential" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scheduler.html" class="btn btn-neutral float-right" title="Scheduler" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -1,0 +1,456 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.managers.ecology &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/managers/ecology.html" />
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.managers.ecology</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.managers.ecology</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;EcologyManager&#39;</span><span class="p">,</span> <span class="s1">&#39;ECO_STATUSES&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Nikolay Grishchenko&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">aws_lambda_powertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">Processor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.labourer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Labourer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.benchmark</span><span class="w"> </span><span class="kn">import</span> <span class="n">benchmark</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_hash</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.managers.task</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskManager</span>
+
+
+<span class="n">ECO_STATUSES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Bad&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Poor&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Moderate&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Good&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;High&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="EcologyManager">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EcologyManager</span><span class="p">(</span><span class="n">Processor</span><span class="p">):</span>
+    <span class="n">DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;init_clients&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;cloudwatch&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;default_metric_values&#39;</span><span class="p">:</span>
+                        <span class="p">{</span>
+                            <span class="s1">&#39;Period&#39;</span><span class="p">:</span>                     <span class="mi">60</span><span class="p">,</span>
+                            <span class="s1">&#39;Statistics&#39;</span><span class="p">:</span>                 <span class="p">[</span><span class="s1">&#39;Average&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;MetricAggregationTimeSlice&#39;</span><span class="p">:</span> <span class="mi">300</span>
+                        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">running_tasks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">health_metrics</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">task_client</span><span class="p">:</span> <span class="n">TaskManager</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Will be Circular import! Careful!</span>
+    <span class="n">cloudwatch_client</span><span class="p">:</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<div class="viewcode-block" id="EcologyManager.register_task_manager">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.register_task_manager">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_task_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_manager</span><span class="p">:</span> <span class="n">TaskManager</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        We will have to make some queries, and don&#39;t want to initialise another TaskManager locally.</span>
+<span class="sd">        Just receive the pointer to TaskManager from whoever needs.</span>
+
+<span class="sd">        This could be in __init__, but I don&#39;t want to update the initialization workflows for every function</span>
+<span class="sd">        initialising me. They usually use built-in in core Processor mechanism to register_clients().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Registering TaskManager for EcologyManager&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span> <span class="o">=</span> <span class="n">task_manager</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reset cache of running_tasks counter in EcologyManager&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reset cache of health_metrics in EcologyManager&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">health_metrics</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eco_statuses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ECO_STATUSES</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="EcologyManager.fetch_metric_stats">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.fetch_metric_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fetch_metric_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetches from CloudWatch Datapoints of aggregated metric statistics.</span>
+<span class="sd">        Fields in `metric` are the attributes of get_metric_statistics_.</span>
+<span class="sd">        Additional parameter: MetricAggregationTimeSlice in seconds is used to calculate the Start and EndTime.</span>
+
+<span class="sd">        .. _get_metric_statistics: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.get_metric_statistics</span>
+
+<span class="sd">        If some fields are missing in the metric, the defaults come from ``config[&#39;default_metric_values&#39;]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span>
+
+        <span class="n">COMPARATORS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Average&#39;</span><span class="p">:</span> <span class="n">mean</span><span class="p">,</span>
+            <span class="s1">&#39;Maximum&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span>
+            <span class="s1">&#39;Minimum&#39;</span><span class="p">:</span> <span class="nb">min</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Setting up default metric parameters if unspecified for current metric.</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_cfg</span><span class="p">(</span><span class="s1">&#39;default_metric_values&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metric</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set the default </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> in metric query </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;Statistics&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Complex statistics aggregation is not yet supported&quot;</span>
+
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;MetricAggregationTimeSlice&#39;</span><span class="p">))</span>
+
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;EndTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;StartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;EndTime&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query to CloudWatch `get_metric_statistics`: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloudwatch_client</span><span class="o">.</span><span class="n">get_metric_statistics</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">comparator_name</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;Statistics&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">comparator</span> <span class="o">=</span> <span class="n">COMPARATORS</span><span class="p">[</span><span class="n">comparator_name</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">comparator</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">comparator_name</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Datapoints&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.get_labourer_status">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.get_labourer_status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_labourer_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labourer</span><span class="p">:</span> <span class="n">Labourer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the worst (lowest) health status according to preconfigured health metrics of the Labourer.</span>
+
+<span class="sd">        .. _ECO_STATUSES:</span>
+
+<span class="sd">        Current ECO_STATUSES:</span>
+
+<span class="sd">        - (0, &#39;Bad&#39;)</span>
+<span class="sd">        - (1, &#39;Poor&#39;)</span>
+<span class="sd">        - (2, &#39;Moderate&#39;)</span>
+<span class="sd">        - (3, &#39;Good&#39;)</span>
+<span class="sd">        - (4, &#39;High&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span>
+
+        <span class="n">health</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">ECO_STATUSES</span><span class="p">))</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">labourer</span><span class="p">,</span> <span class="s1">&#39;health_metrics&#39;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">health_metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+
+            <span class="n">metric_hash</span> <span class="o">=</span> <span class="n">make_hash</span><span class="p">(</span><span class="n">health_metric</span><span class="p">[</span><span class="s1">&#39;details&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">metric_hash</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">health_metrics</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">health_metrics</span><span class="p">[</span><span class="n">metric_hash</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch_metric_stats</span><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">health_metric</span><span class="p">[</span><span class="s1">&#39;details&#39;</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated the cache of Ecology metric </span><span class="si">{</span><span class="n">metric_hash</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">health_metric</span><span class="si">}</span><span class="s2"> &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">health_metrics</span><span class="p">[</span><span class="n">metric_hash</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">health_metrics</span><span class="p">[</span><span class="n">metric_hash</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ecology metric </span><span class="si">{</span><span class="n">metric_hash</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">health</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">health</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_health</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">health_metric</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ecology health of Labourer </span><span class="si">{</span><span class="n">labourer</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">health</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">health</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.get_health">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.get_health">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_health</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">metric</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks the value against the health_metric configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">op</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">metric</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;feeling_comparison_operator&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Find the first configured feeling from the map that does not comply.</span>
+        <span class="c1"># Order and validate the feelings</span>
+        <span class="n">feelings</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">key</span><span class="p">,</span> <span class="n">metric</span><span class="p">[</span><span class="s1">&#39;feelings&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">metric</span><span class="p">[</span><span class="s1">&#39;feelings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)])</span>
+
+        <span class="n">last_target</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">health</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">feelings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">op</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">last_target</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Order of values if feelings is invalid and doesn&#39;t match expected eco statuses: &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">feelings</span><span class="o">.</span><span class="n">items</span><span class="p">()</span><span class="si">}</span><span class="s2">. Failed: </span><span class="si">{</span><span class="n">last_target</span><span class="si">}</span><span class="s2"> not &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;feeling_comparison_operator&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">op</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">health</span><span class="p">)</span>
+
+            <span class="n">last_target</span> <span class="o">=</span> <span class="n">target</span>
+
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.count_running_tasks_for_labourer">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.count_running_tasks_for_labourer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_running_tasks_for_labourer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labourer</span><span class="p">:</span> <span class="n">Labourer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TODO Refactor this to cache the value in the Labourer object itself.</span>
+<span class="sd">        Should also update add_running_tasks_for_labourer() for that.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;EcologyManager doesn&#39;t have a TaskManager registered. &quot;</span>
+                               <span class="s2">&quot;You have to call register_task_manager() after initiazation and pass the pointer &quot;</span>
+                               <span class="s2">&quot;to your TaskManager instance.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">labourer</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">get_count_of_running_tasks_for_labourer</span><span class="p">(</span><span class="n">labourer</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EcologyManager.count_running_tasks_for_labourer() recalculated cache for Labourer &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">labourer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EcologyManager.count_running_tasks_for_labourer() returns: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.add_running_tasks_for_labourer">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.add_running_tasks_for_labourer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_running_tasks_for_labourer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labourer</span><span class="p">:</span> <span class="n">Labourer</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds to the current counter of running tasks the given `count`.</span>
+<span class="sd">        Invokes the getter first in case the original number was not yet calculated from DynamoDB.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_running_tasks_for_labourer</span><span class="p">(</span><span class="n">labourer</span><span class="p">)</span> <span class="o">+</span> <span class="n">count</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.get_labourer_average_duration">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.get_labourer_average_duration">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_labourer_average_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labourer</span><span class="p">:</span> <span class="n">Labourer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the average duration of `labourer` executions.</span>
+
+<span class="sd">        The operation consumes DynamoDB RCU . Normally this method is called for each labourer only once during</span>
+<span class="sd">        registration of Labourers. If you want to learn this value, you should ask Labourer object.</span>
+
+<span class="sd">        .. code-block::python</span>
+
+<span class="sd">           some_labourer.get_attr(&#39;average_duration&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;EcologyManager doesn&#39;t have a TaskManager registered. &quot;</span>
+                               <span class="s2">&quot;You have to call register_task_manager() after initiazation and pass the pointer &quot;</span>
+                               <span class="s2">&quot;to your TaskManager instance.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">get_average_labourer_duration</span><span class="p">(</span><span class="n">labourer</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.get_max_labourer_duration">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.get_max_labourer_duration">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_max_labourer_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labourer</span><span class="p">:</span> <span class="n">Labourer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Maximum duration of `labourer` executions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">lambda_client</span><span class="o">.</span><span class="n">get_function_configuration</span><span class="p">(</span><span class="n">FunctionName</span><span class="o">=</span><span class="n">labourer</span><span class="o">.</span><span class="n">arn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;Timeout&#39;</span><span class="p">]</span></div>
+
+
+
+    <span class="c1"># The task_client of EcologyManager is just a pointer. We skip recursive stats to avoid infinite loop.</span>
+<div class="viewcode-block" id="EcologyManager.get_stats">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.get_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_stats</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EcologyManager.reset_stats">
+<a class="viewcode-back" href="../../../managers/ecology.html#sosw.managers.ecology.EcologyManager.reset_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reset_stats</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

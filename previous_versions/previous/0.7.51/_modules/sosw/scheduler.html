@@ -1,0 +1,1083 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sosw.scheduler &mdash; sosw - Serverless Orchestrator of Serverless Workers</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=ff52f286" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="canonical" href="https://docs.sosw.app/_modules/sosw/scheduler.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=38589524"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/sosw_white.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html">Essential Workflow Schema</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#workers">Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#orchestration">Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#scavenger">Scavenger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../orchestration.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../essentials/index.html">Essentials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../components/index.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../managers/index.html">Managers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tools/index.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution/index.html">Contribution Guidelines</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sosw</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sosw.scheduler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sosw.scheduler</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">..  hidden-code-block:: text</span>
+<span class="sd">    :label: View Licence Agreement &lt;br&gt;</span>
+
+<span class="sd">    sosw - Serverless Orchestrator of Serverless Workers</span>
+
+<span class="sd">    The MIT License (MIT)</span>
+<span class="sd">    Copyright (C) 2025  sosw core contributors &lt;info@sosw.app&gt;</span>
+
+<span class="sd">    Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">    of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">    in the Software without restriction, including without limitation the rights</span>
+<span class="sd">    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">    copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">    furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">    The above copyright notice and this permission notice shall be included in all</span>
+<span class="sd">    copies or substantial portions of the Software.</span>
+
+<span class="sd">    THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="sd">    SOFTWARE.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Scheduler&#39;</span><span class="p">]</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Nikolay Grishchenko&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">aws_lambda_powertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">Logger</span><span class="p">()</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.essential</span><span class="w"> </span><span class="kn">import</span> <span class="n">Essential</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">LambdaGlobals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_list_of_multiple_or_one_or_empty_from_dict</span><span class="p">,</span> <span class="n">trim_arn_to_name</span><span class="p">,</span> <span class="n">chunks</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.components.siblings</span><span class="w"> </span><span class="kn">import</span> <span class="n">SiblingsManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sosw.managers.task</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskManager</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Simple function. Gives versions with &#39;s&#39; at the end and without it. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">attr</span><span class="p">,</span> <span class="n">attr</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">]))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Simple function. Gives plural form with &#39;s&#39; at the end. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">s&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">InvalidJob</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="Scheduler">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Scheduler</span><span class="p">(</span><span class="n">Essential</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scheduler is converting business jobs to one or multiple Worker tasks.</span>
+
+<span class="sd">    Job supports a lot of dynamic settings that will coordinate the chunking.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    `max_YOURATTRs_per_batch`: int</span>
+
+<span class="sd">    This is applicable only to the lowest level of chunking.  If isolation of this parameters is not required, and all</span>
+<span class="sd">    values of this parameter are simple strings/integers the scheduler shall chunk them in batches of given size.</span>
+<span class="sd">    By default will chunk to 1kk objects in a list.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;init_clients&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s1">&#39;Task&#39;</span><span class="p">,</span> <span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="s1">&#39;Sns&#39;</span><span class="p">,</span> <span class="s1">&#39;Siblings&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;task_config&#39;</span><span class="p">:</span>     <span class="p">{</span>
+            <span class="s1">&#39;labourers&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="c1"># &#39;some_function&#39;: {</span>
+                <span class="c1">#     &#39;arn&#39;: &#39;arn:aws:lambda:us-west-2:000000000000:function:some_function&#39;,</span>
+                <span class="c1">#     &#39;max_simultaneous_invocations&#39;: 10,</span>
+                <span class="c1"># }</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;s3_prefix&#39;</span><span class="p">:</span>       <span class="s1">&#39;sosw/scheduler&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;queue_file&#39;</span><span class="p">:</span>      <span class="s1">&#39;tasks_queue.txt&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;queue_bucket&#39;</span><span class="p">:</span>    <span class="s1">&#39;autotest-bucket&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;shutdown_period&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="s1">&#39;rows_to_process&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="s1">&#39;job_schema&#39;</span><span class="p">:</span>      <span class="p">{},</span>
+        <span class="s1">&#39;job_schema_variants&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;chunkable_attrs&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="c1"># (&#39;section&#39;, {}),</span>
+                    <span class="c1"># (&#39;store&#39;, {}),</span>
+                    <span class="c1"># (&#39;product&#39;, {}),</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;task_operational_overhead_for_ddb&#39;</span><span class="p">:</span> <span class="mf">0.03</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># these clients will be initialized by Processor constructor</span>
+    <span class="n">task_client</span><span class="p">:</span> <span class="n">TaskManager</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">siblings_client</span><span class="p">:</span> <span class="n">SiblingsManager</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">s3_client</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sns_client</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">base_query</span> <span class="o">=</span> <span class="o">...</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_queue_file</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_from_job_schema</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process an event.</span>
+
+<span class="sd">        :param dict event: event data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_job_from_payload</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_job_schema</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_schema_name&#39;</span><span class="p">))</span>
+
+        <span class="c1"># If called as sibling</span>
+        <span class="k">if</span> <span class="s1">&#39;file_name&#39;</span> <span class="ow">in</span> <span class="n">job</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_queue_file</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;file_name&#39;</span><span class="p">])</span>
+
+        <span class="c1"># else construct new data file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_job_to_file</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_file</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scheduler.apply_job_schema">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.apply_job_schema">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_job_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Apply a job_schema from job_schema_variants by the name or apply the default one.&quot;&quot;&quot;</span>
+
+        <span class="n">new_job_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;job_schema_variants&#39;</span><span class="p">][</span><span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;default&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Update job schema if there are any changes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;job_schema&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">new_job_schema</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;job_schema&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;job_schema_variants&#39;</span><span class="p">][</span><span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;default&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_from_job_schema</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.initialize_from_job_schema">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.initialize_from_job_schema">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_from_job_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize attributes that are mapped to the `job_schema` in self.config&quot;&quot;&quot;</span>
+
+        <span class="c1"># Initalize chunkable attrs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;job_schema&#39;</span><span class="p">][</span><span class="s1">&#39;chunkable_attrs&#39;</span><span class="p">]])</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;We do not currently support attributes that end with &#39;s&#39;. &quot;</span> \
+            <span class="sa">f</span><span class="s2">&quot;In the config you should use singular form of attribute. Received from config: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.parse_job_to_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.parse_job_to_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_job_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Splits the Job to multiple tasks and writes them down in self.local_queue_file.</span>
+
+<span class="sd">        :param dict job:    Payload from Scheduled Rule.</span>
+<span class="sd">                            Should be already parsed from whatever payload to dict and contain the raw `job`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;The current Lambda container is already having some unprocessed file. &quot;</span>
+                            <span class="s2">&quot;You probably did not clean it correctly after processing. &quot;</span>
+                            <span class="s2">&quot;Should probably just clean the file now, but during beta version we raise an stop &quot;</span>
+                            <span class="s2">&quot;processing new ones.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The current Lambda container is already having some unprocessed file.&quot;</span><span class="p">)</span>
+
+        <span class="n">labourer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">get_labourer</span><span class="p">(</span><span class="n">labourer_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;lambda_name&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">labourer</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid (unregistered) Labourer: </span><span class="si">{</span><span class="n">labourer</span><span class="si">}</span><span class="s2">. &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;Maybe your job is missing `lambda_name`, or the one provided is not registered &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;in the config of the Scheduler. Current job: </span><span class="si">{</span><span class="n">job</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># In case there is not chunking required, we just schedule `task` directly from the `job`.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_chunking</span><span class="p">(</span><span class="n">plural</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">job</span><span class="p">)]):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span> <span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="o">**</span><span class="n">job</span><span class="p">}]</span>
+
+        <span class="c1"># Else there is much more logic how to chunk the job to tasks.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_job_data</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">skeleton</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;labourer_id&#39;</span><span class="p">:</span> <span class="n">labourer</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">row</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished step: parse_job_to_file()&quot;</span><span class="p">)</span></div>
+
+
+
+    <span class="c1"># def create_tasks(self, labourer: Labourer, data: List):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Iterate tasks from `data` and queue them as new tasks for `labourer`.</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1">#     for task in data:</span>
+    <span class="c1">#         self.task_client.create_task(labourer=labourer, payload=task)</span>
+
+<div class="viewcode-block" id="Scheduler.validate_list_of_vals">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.validate_list_of_vals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_list_of_vals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Supported resulting values: str, int, float.</span>
+
+<span class="sd">        Expects a simple iterable of supported values or a dictionary with values = None.</span>
+<span class="sd">        The keys then are treated as resulting values and if they validate, are returned as a list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">InvalidJob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job has values with embedded data, but chunking is not requested. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;You should either append &#39;isolate_ATTRIBUTE&#39; flag or make values appropriate. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;Should be a flat list or a dict with None - values. Your job was: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">data</span><span class="p">]</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidJob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job have values with embedded data, but chunking is not requested. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;You should either append &#39;isolate_ATTRIBUTE&#39; flag or make values appropriate. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;Should be a flat list or a dict with None - values. Your job was: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidJob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A Job without chunking enabled should have value either as a simple iterable &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;(list, set, tuple), or a dict with all the values = None.&quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;You provided </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.last_x_days">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.last_x_days">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">last_x_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructs the list of date strings for chunking.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;last_[0-9]+_days&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `last_x_days()`&quot;</span>
+
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">today</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.previous_x_days">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.previous_x_days">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">previous_x_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of string dates from today - x - x</span>
+
+<span class="sd">        For example, consider today&#39;s date as 2019-04-30.</span>
+<span class="sd">        If I call for previous_x_days(pattern=&#39;previous_2_days&#39;), I will receive a list of string dates equal to:</span>
+<span class="sd">        [&#39;2019-04-26&#39;, &#39;2019-04-27&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;previous_[0-9]+_days&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `previous_x_days`&quot;</span>
+
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">num</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">end_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.x_days_back">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.x_days_back">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">x_days_back</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Finds the exact date X days back from now.</span>
+<span class="sd">        Returns it as a `str` in a `list` following the interface requirements of `chunk_dates`.</span>
+
+<span class="sd">        e.g. `1_days_back` - yesterday, `7_days_back` - same day as today last week</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;[0-9]+_days_back&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `x_days_back()`&quot;</span>
+
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">today</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">num</span><span class="p">))]</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.yesterday">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.yesterday">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">yesterday</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;yesterday&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple wrapper for x_days_back() to return yesterday&#39;s date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;yesterday&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `yesterday()`&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_days_back</span><span class="p">(</span><span class="s1">&#39;1_days_back&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.today">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.today">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">today</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;today&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns list with one datetime string (YYYY-MM-DD) equal to today&#39;s date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;today&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `today()`&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())]</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.last_week">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.last_week">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">last_week</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;last_week&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns list of dates (YYYY-MM-DD) as strings for last week (Sunday - Saturday)</span>
+<span class="sd">        :param pattern:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;last_week&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Invalid pattern </span><span class="si">{pattern}</span><span class="s2"> for `last_week()`&quot;</span>
+
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">today</span><span class="o">.</span><span class="n">weekday</span><span class="p">()</span> <span class="o">+</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">end_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.chunk_dates">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.chunk_dates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chunk_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        There is a support for multiple not nested parameters to chunk. Dates is one very specific of them.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skeleton</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">skeleton</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+
+        <span class="n">period</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;period&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">isolate</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;isolate_days&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">period_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;last_[0-9]+_days&#39;</span><span class="p">,</span> <span class="s1">&#39;[0-9]+_days_back&#39;</span><span class="p">,</span> <span class="s1">&#39;yesterday&#39;</span><span class="p">,</span> <span class="s1">&#39;today&#39;</span><span class="p">,</span> <span class="s1">&#39;previous_[0-9]+_days&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;last_week&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Adding custom methods for creating date list found in config of child classes</span>
+        <span class="n">custom_period_patterns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;custom_period_patterns&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">custom_period_patterns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">custom_period_patterns</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">custom_period_patterns</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="n">period_patterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pattern &#39;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&#39; expected to be str, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">method</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;custom_period_patterns&#39; expected to be (list, tuple), &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">custom_period_patterns</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">period</span><span class="p">:</span>
+
+            <span class="n">date_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">period_patterns</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">period</span><span class="p">):</span>
+                    <span class="c1"># Call the appropriate method with given value from job.</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found period &#39;%s&#39; for job %s&quot;</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+                    <span class="n">method_name</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[0-9]+&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">date_list</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)(</span><span class="n">period</span><span class="p">)</span>
+
+                    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                        <span class="c1"># For methods without parameter</span>
+                        <span class="n">date_list</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)()</span>
+
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported period requested: </span><span class="si">{</span><span class="n">period</span><span class="si">}</span><span class="s2">. Valid (basic) options are: &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;&#39;last_X_days&#39;, &#39;X_days_back&#39;, &#39;yesterday&#39;, &#39;today&#39;, &#39;previous_[0-9]+_days&#39;, &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;&#39;last_week&#39;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">isolate</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">date_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;The chunking period: </span><span class="si">{</span><span class="n">period</span><span class="si">}</span><span class="s2"> did not generate date_list. Bad.&quot;</span>
+
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">date_list</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">skeleton</span><span class="p">,</span> <span class="s1">&#39;date_list&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span><span class="p">]})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">date_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Running chunking for multiple days, but without date isolation. &quot;</span>
+                                 <span class="s2">&quot;Your workers might feel bad.&quot;</span><span class="p">)</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">skeleton</span><span class="p">,</span> <span class="s1">&#39;date_list&#39;</span><span class="p">:</span> <span class="n">date_list</span><span class="p">})</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No `period` chunking requested in job </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">skeleton</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.construct_job_data">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.construct_job_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">construct_job_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Chunks the job to tasks using several layers. Each layer is represented with a `chunker` method.</span>
+<span class="sd">        All chunkers should accept `job` and optional `skeleton` for tasks and return a list of tasks.</span>
+<span class="sd">        If there is nothing to chunk for some chunker, return same `job` (with injected `skeleton`) wrapped in a list.</span>
+
+<span class="sd">        Default chunkers:</span>
+
+<span class="sd">        - Date list chunking</span>
+<span class="sd">        - Recursive chunking for `chunkable_attrs`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">CHUNKERS</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_dates</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_job</span><span class="p">]</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">job</span><span class="p">]</span>
+        <span class="n">skeleton</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">skeleton</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">chunker</span> <span class="ow">in</span> <span class="n">CHUNKERS</span><span class="p">:</span>
+            <span class="n">chunked</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Container for results of current chunker method.</span>
+            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Chunking </span><span class="si">%s</span><span class="s2"> with </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">chunker</span><span class="p">)</span>
+                <span class="n">chunked</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunker</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">task</span><span class="p">))</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">chunked</span><span class="p">)</span>
+
+        <span class="c1"># Inject the skeleton to the resulting tasks</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">skeleton</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.chunk_job">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.chunk_job">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chunk_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recursively parses a job, validates everything and chunks to simple tasks what should be chunked.</span>
+<span class="sd">        The Scenario of chunking and isolation is worth another story, so you should put a link here once it is ready.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skeleton</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">skeleton</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+
+        <span class="c1"># The current attribute we are looking for in this iteration or the first one of preconfigured chunkables.</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">attr</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># We have to return here the full job to let it work correctly with recursive calls.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[{</span><span class="o">**</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">skeleton</span><span class="p">}]</span>
+
+        <span class="c1"># If we shall need batching of flat vals of this attr we find out the batch size.</span>
+        <span class="c1"># First we search in job (means the current level of recursive subdata being chunked.</span>
+        <span class="c1"># If not specified per job, we try the setting inherited from level(s) upper probably even the root of main job.</span>
+        <span class="n">MAX_BATCH</span> <span class="o">=</span> <span class="mi">1000000</span>  <span class="c1"># This is not configurable!</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max_</span><span class="si">{</span><span class="n">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span><span class="si">}</span><span class="s1">_per_batch&#39;</span><span class="p">,</span>
+                                 <span class="n">skeleton</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;max_</span><span class="si">{</span><span class="n">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span><span class="si">}</span><span class="s1">_per_batch&#39;</span><span class="p">,</span> <span class="n">MAX_BATCH</span><span class="p">)))</span>
+
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">push_list_chunks</span><span class="p">():</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; Appends chunks of lists using current skeleton and vals to chunk. &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">task_skeleton</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span> <span class="n">v</span><span class="p">}})</span>
+
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Testing for chunking %s from %s with skeleton %s&quot;</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">)</span>
+        <span class="c1"># First of all decide whether we need to chunk current job (or a sub-job if called recursively).</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_chunking</span><span class="p">(</span><span class="n">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">),</span> <span class="p">{</span><span class="o">**</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">skeleton</span><span class="p">}):</span>
+
+            <span class="c1"># Force batches to isolate if we shall be dealing with flat data.</span>
+            <span class="c1"># But we still respect the `max_PARAM_per_batch` if it is provided in job.</span>
+            <span class="c1"># Having batch_size == MAX_BATCH asserts that we had</span>
+            <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="n">MAX_BATCH</span> <span class="k">else</span> <span class="n">batch_size</span>
+
+            <span class="c1"># Next attribute is either name of attribute according to config, or None if we are already in last level.</span>
+            <span class="n">next_attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_chunkable_attr</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Next attr: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">)</span>
+
+            <span class="c1"># Here and many places further we support both single and plural versions of attribute names.</span>
+            <span class="k">for</span> <span class="n">possible_attr</span> <span class="ow">in</span> <span class="n">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Iterating possible: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">possible_attr</span><span class="p">)</span>
+                <span class="n">current_vals</span> <span class="o">=</span> <span class="n">get_list_of_multiple_or_one_or_empty_from_dict</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">possible_attr</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">current_vals</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># This is not the `skeleton` received during the call, but the remaining parts of the `job`,</span>
+                <span class="c1"># not related to current `attr`</span>
+                <span class="n">job_skeleton</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">job</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">possible_attr</span><span class="p">]}</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;For </span><span class="si">%s</span><span class="s2"> we got current_vals: </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">, leaving job_skeleton: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">possible_attr</span><span class="p">,</span>
+                             <span class="n">current_vals</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">job_skeleton</span><span class="p">)</span>
+
+                <span class="n">task_skeleton</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">skeleton</span><span class="p">),</span> <span class="o">**</span><span class="n">job_skeleton</span><span class="p">}</span>
+
+                <span class="c1"># For dictionaries we have to either go deeper recursively, or just flatten keys if values are None-s.</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">current_vals</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">current_vals</span><span class="p">:</span>
+
+                        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Value </span><span class="si">%s</span><span class="s2"> is all a dict of Nones. Need to flatten&quot;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                            <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_list_of_vals</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                            <span class="n">push_list_chunks</span><span class="p">()</span>
+
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Real dictionary with values. Can&#39;t flatten it to dict: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">subdata</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SubIterating `</span><span class="si">%s</span><span class="s2">` with </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">subdata</span><span class="p">)</span>
+
+                                <span class="c1"># Merge parts of task</span>
+                                <span class="n">task</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">task_skeleton</span><span class="p">),</span> <span class="o">**</span><span class="p">{</span><span class="n">plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span> <span class="p">[</span><span class="n">name</span><span class="p">]}}</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Task sample:  </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+
+                                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subdata</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">next_attr</span><span class="p">:</span>
+                                        <span class="c1"># If there is no lower level configured to chunk, just keep this subdata in payload</span>
+                                        <span class="n">task</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">subdata</span><span class="p">)</span>
+                                        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+                                    <span class="k">else</span><span class="p">:</span>
+                                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Call recursive for </span><span class="si">%s</span><span class="s2"> from subdata: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">,</span> <span class="n">subdata</span><span class="p">)</span>
+                                        <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">subdata</span><span class="p">,</span> <span class="n">skeleton</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="n">next_attr</span><span class="p">))</span>
+
+                                <span class="c1"># If None-s we just add a task. `Name` (which is actually a value in this scenario)</span>
+                                <span class="c1"># was already added when creating task skeleton.</span>
+                                <span class="k">elif</span> <span class="n">subdata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Appending task to data for </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+                                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="k">raise</span> <span class="n">InvalidJob</span><span class="p">(</span>
+                                        <span class="sa">f</span><span class="s2">&quot;Unsupported type of val: </span><span class="si">{</span><span class="n">subdata</span><span class="si">}</span><span class="s2"> for attribute </span><span class="si">{</span><span class="n">possible_attr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="c1"># If current vals are not dictionaries, we just validate that they are flat supported values</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_list_of_vals</span><span class="p">(</span><span class="n">current_vals</span><span class="p">)</span>
+                    <span class="n">push_list_chunks</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No need for chunking for attr: </span><span class="si">%s</span><span class="s2"> in job: </span><span class="si">%s</span><span class="s2">. Current skeleton is: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">)</span>
+            <span class="n">task_skeleton</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">skeleton</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">job</span><span class="p">:</span>
+                    <span class="n">attr_value</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">attr_value</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_list_of_vals</span><span class="p">(</span><span class="n">attr_value</span><span class="p">)</span>
+                            <span class="n">push_list_chunks</span><span class="p">()</span>
+
+                            <span class="c1"># We are done here for not-chunkable attr. Return now.</span>
+                            <span class="k">return</span> <span class="n">data</span>
+
+                        <span class="k">except</span> <span class="n">InvalidJob</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Caught InvalidJob exception.&quot;</span><span class="p">)</span>
+                            <span class="c1"># If a custom payload is not following the chunking convention - just translate it as is.</span>
+                            <span class="c1"># And return the pop-ed value back to the job.</span>
+                            <span class="n">job</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_value</span>
+                        <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Did not find values for </span><span class="si">%s</span><span class="s2"> in job: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
+            <span class="c1"># Populate the remaining parts of the job back to task.</span>
+            <span class="n">task_skeleton</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task_skeleton</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.get_index_from_list">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.get_index_from_list">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_index_from_list</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Finds the index ignoring the &#39;s&#39; at the end of attribute. &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Non iterable data for get_index_from_list: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Non-string attr for get_index_from_list: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not found </span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.get_next_chunkable_attr">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.get_next_chunkable_attr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_next_chunkable_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the next by order after `attr` chunkable attribute. &quot;&quot;&quot;</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_index_from_list</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunkable_attrs</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.get_isolate_attributes_from_job">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.get_isolate_attributes_from_job">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_isolate_attributes_from_job</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a dictionary with settings for isolation from data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;isolate_[\w]*|max_[\w]*_per_batch&#39;</span><span class="p">,</span> <span class="n">k</span><span class="p">)}</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.needs_chunking">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.needs_chunking">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">needs_chunking</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recursively analyses the data and identifies if the current level of data should be chunked.</span>
+<span class="sd">        This could happen if either isolate_attr marker in the current scope or recursively in any of sub-elements.</span>
+
+<span class="sd">        :param attr:    Name of attribute you want to check for chunking.</span>
+<span class="sd">        :param data:    Input dictionary to analyse.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">single_or_plural</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="n">isolate_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;isolate_</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;max_</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">_per_batch&quot;</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">]</span>
+
+        <span class="n">root_isolate_attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_isolate_attributes_from_job</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">isolate_attrs</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;needs_chunking(): Got requirement to isolate </span><span class="si">%s</span><span class="s2"> in the current scope: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">next_attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_chunkable_attr</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;needs_chunking(): Found next attr </span><span class="si">%s</span><span class="s2">, for </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="c1"># We are not yet lowest level going recursive</span>
+        <span class="k">if</span> <span class="n">next_attr</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+                <span class="n">current_vals</span> <span class="o">=</span> <span class="n">get_list_of_multiple_or_one_or_empty_from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;needs_chunking(): For </span><span class="si">%s</span><span class="s2"> got current_vals: </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">. Analysing </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                             <span class="n">a</span><span class="p">,</span> <span class="n">current_vals</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">current_vals</span><span class="p">:</span>
+
+                    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">subdata</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;needs_chunking(): Going recursive for </span><span class="si">%s</span><span class="s2"> in </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">,</span> <span class="n">subdata</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subdata</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">needs_chunking</span><span class="p">(</span><span class="n">next_attr</span><span class="p">,</span>
+                                                                             <span class="p">{</span><span class="o">**</span><span class="n">subdata</span><span class="p">,</span> <span class="o">**</span><span class="n">root_isolate_attrs</span><span class="p">}):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;needs_chunking(): Returning True for </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">next_attr</span><span class="p">,</span> <span class="n">subdata</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.extract_job_from_payload">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.extract_job_from_payload">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_job_from_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Parse and basically validate job from the event. &quot;&quot;&quot;</span>
+
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+        <span class="n">jh</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">jh</span><span class="p">[</span><span class="s1">&#39;job&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;job&#39;</span> <span class="ow">in</span> <span class="n">jh</span> <span class="k">else</span> <span class="n">jh</span>
+
+        <span class="k">assert</span> <span class="s1">&#39;lambda_name&#39;</span> <span class="ow">in</span> <span class="n">job</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Job is missing required parameter &#39;lambda_name&#39;: </span><span class="si">{</span><span class="n">job</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">job</span><span class="p">[</span><span class="s1">&#39;lambda_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trim_arn_to_name</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;lambda_name&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">job</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.process_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.process_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process a file for creating tasks, then uploading it to S3.</span>
+<span class="sd">        In case of execution time reached its limit, spawning a new sibling to continue the processing.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_db_field_name</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_and_lock_queue_file</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_name</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No file in queue.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing a file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">sufficient_execution_time_left</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Execution time left: </span><span class="si">{</span><span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="o">.</span><span class="n">get_remaining_time_in_millis</span><span class="p">()</span><span class="si">}</span><span class="s2">ms &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;Working next batch of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_rows_to_process</span><span class="si">}</span><span class="s2"> tasks from file </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop_rows_from_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">rows</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_rows_to_process</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No rows in file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+                <span class="k">for</span> <span class="n">raw_task</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Pushing task to DynamoDB: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raw_task</span><span class="p">)</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw_task</span><span class="p">)</span>
+                    <span class="n">labourer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">get_labourer</span><span class="p">(</span><span class="n">task</span><span class="p">[</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;labourer_id&#39;</span><span class="p">)])</span>
+                    <span class="n">new_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">labourer</span><span class="o">=</span><span class="n">labourer</span><span class="p">,</span> <span class="o">**</span><span class="n">task</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">meta_handler</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="n">new_task</span><span class="p">[</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;task_id&#39;</span><span class="p">)],</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;created&#39;</span><span class="p">,</span>
+                                           <span class="n">labourer</span><span class="o">=</span><span class="n">task</span><span class="p">[</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;labourer_id&#39;</span><span class="p">)])</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sleeptime_for_dynamo</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Spawning another sibling to continue the processing</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ran out of execution time in `process_file`. Spawning sibling.&quot;</span><span class="p">)</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">siblings_client</span><span class="o">.</span><span class="n">spawn_sibling</span><span class="p">(</span><span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;siblings_spawned&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Could not spawn sibling with context: </span><span class="si">%s</span><span class="s2">, payload: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                     <span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_and_unlock_queue_file</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clean_tmp</span><span class="p">()</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sleeptime_for_dynamo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pull DynamoDB write capacity dynamically and configure speed of writing.</span>
+
+<span class="sd">        Calculates based on the assumption that a single write action consumes a full WCU.</span>
+<span class="sd">        It also assumes that the duration of processing the task itself takes some time and decreases sleep accordingly.</span>
+<span class="sd">        This duration is theoretically configurable in ``config[&#39;task_operational_overhead_for_ddb&#39;]``, but after</span>
+<span class="sd">        several versions this should probably be removed from config.</span>
+
+<span class="sd">        For on-demand billing of the DynamoDB table returns zero.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">write_throughput</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">dynamo_db_client</span><span class="o">.</span><span class="n">get_capacity</span><span class="p">()[</span><span class="s1">&#39;write&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="n">operational_overhead</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;task_operational_overhead_for_ddb&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">write_throughput</span> <span class="o">-</span> <span class="n">operational_overhead</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scheduler.pop_rows_from_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.pop_rows_from_file">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop_rows_from_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reads the rows from the top of file. Along the way removes them from original file.</span>
+
+<span class="sd">        :param str file_name:    File to read.</span>
+<span class="sd">        :param int rows:        Number of rows to read. Default: 1</span>
+<span class="sd">        :return:                List of strings read from file top.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tmp_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/tmp/in_prog_</span><span class="si">{</span><span class="n">file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;_&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">out</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                        <span class="k">break</span>
+
+                <span class="c1"># Writing remaining rows to the temp file.</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+
+            <span class="c1"># If there is no dat remaining in the file we remove it.</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean_tmp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">file_to_remove</span> <span class="o">=</span> <span class="n">file_name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_to_remove</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_to_remove</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rows_to_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;rows_to_process&#39;</span><span class="p">]</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sufficient_execution_time_left</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return if there is a sufficient execution time for processing (&#39;shutdown period&#39; is in seconds).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="o">.</span><span class="n">get_remaining_time_in_millis</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;shutdown_period&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1000</span>
+
+
+<div class="viewcode-block" id="Scheduler.get_and_lock_queue_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.get_and_lock_queue_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_and_lock_queue_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Either take a new (recently created) file in local /tmp/, or download the version of queue file from S3.</span>
+<span class="sd">        We move the file in S3 to `locked_` by prefix state or simply upload the new one there in `locked_` state.</span>
+
+<span class="sd">        :return: Local path to the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_file</span><span class="p">,</span>
+                                             <span class="n">Filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">)</span>
+            <span class="k">except</span> <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;non_existing_remote_queue&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Not found remote file to download&quot;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">copy_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span>
+                                           <span class="n">CopySource</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                           <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_locked_file</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">delete_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_file</span><span class="p">)</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloaded a copy of </span><span class="si">%s</span><span class="s2"> for processing and moved the remote one to </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_locked_file</span><span class="p">)</span>
+
+        <span class="c1"># If the local file exists (means we have probably just created it). Then we upload it in `locked_` state.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">Filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span>
+                                       <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_locked_file</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span></div>
+
+
+
+<div class="viewcode-block" id="Scheduler.upload_and_unlock_queue_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.upload_and_unlock_queue_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upload_and_unlock_queue_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload the local queue file to S3 and remove the `locked_` by prefix copy if it exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># If there is data left unprocessed in the file, upload it for future processing by siblings or someone else.</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">Filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_queue_file</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span>
+                                       <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_file</span><span class="p">)</span>
+
+        <span class="c1"># Delete the locked file from S3 (aka unlock)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">delete_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_locked_file</span><span class="p">)</span>
+        <span class="k">except</span> <span class="bp">self</span><span class="o">.</span><span class="n">s3_client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No remote locked file to remove: </span><span class="si">%s</span><span class="s2">. This is probably new.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_queue_locked_file</span><span class="p">)</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_queue_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Name of S3 bucket for file with queue of tasks not yet in DynamoDB. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;queue_bucket&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Scheduler.set_queue_file">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.set_queue_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_queue_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a unique file_name to store the queue of tasks to write.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filename_parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;queue_file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filename_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Got bad file name&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queue_file_name</span> <span class="o">=</span> \
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">global_vars</span><span class="o">.</span><span class="n">lambda_context</span><span class="o">.</span><span class="n">aws_request_id</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">filename_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queue_file_name</span> <span class="o">=</span> <span class="n">name</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">local_queue_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;/tmp/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_file_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remote_queue_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Full S3 Key of file with queue of tasks not yet in DynamoDB. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s3_prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_file_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remote_queue_locked_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Full S3 Key of file with queue of tasks not yet in DynamoDB in the `locked` state.</span>
+<span class="sd">        Concurrent processes should not touch it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s3_prefix&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/locked_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_queue_file_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<div class="viewcode-block" id="Scheduler.get_db_field_name">
+<a class="viewcode-back" href="../../essentials/scheduler.html#sosw.scheduler.Scheduler.get_db_field_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_db_field_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Could be useful if you overwrite field names with your own ones (e.g. for tests). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_client</span><span class="o">.</span><span class="n">get_db_field_name</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">global_vars</span> <span class="o">=</span> <span class="n">LambdaGlobals</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, sosw.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2R1VYR62X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z2R1VYR62X', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>
