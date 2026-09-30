@@ -119,8 +119,8 @@ def _content_type_starts_with(container, prefix):
     Check whether a sibling ``headers`` dict carries a ``content-type`` header starting with a prefix.
 
     The ``headers`` key of the container and the header name itself match in any case, and the
-    prefix compares against the lowercase header value. See ``_body_is_form_encoded`` and
-    ``_redact_body``.
+    prefix compares against the whitespace-trimmed lowercase header value. See
+    ``_body_is_form_encoded`` and ``_redact_body``.
 
     :param dict container:  Dict holding the ``body`` key.
     :param str prefix:      Lowercase content-type prefix, e.g. ``multipart/``.
@@ -131,7 +131,8 @@ def _content_type_starts_with(container, prefix):
         if str(key).lower() != 'headers' or not isinstance(headers, dict):
             continue
         for name, value in headers.items():
-            if str(name).lower() == 'content-type' and isinstance(value, str) and value.lower().startswith(prefix):
+            if str(name).lower() == 'content-type' and isinstance(value, str) and (
+                    value.strip().lower().startswith(prefix)):
                 return True
 
     return False
@@ -142,7 +143,8 @@ def _body_is_form_encoded(body, container):
     Check whether a string body should be treated as ``application/x-www-form-urlencoded``.
 
     True when a sibling ``headers`` dict (any key case) carries a ``content-type`` header (any key
-    case) starting with ``application/x-www-form-urlencoded``, or when the body itself matches the
+    case) whose whitespace-trimmed lowercase value starts with
+    ``application/x-www-form-urlencoded``, or when the body itself matches the
     ``name=value&name=value`` shape of ``_FORM_BODY_PATTERN``.
 
     :param str body:        Raw body of the request or response.
@@ -160,13 +162,14 @@ def _redact_body(body, container):
 
     A body of a dict with a truthy ``isBase64Encoded`` sibling is replaced with
     :py:data:`LOG_REDACTED_VALUE` — base64 is reversible, so it is never logged. A body whose
-    sibling ``headers`` declare a ``multipart/`` content type is replaced with the marker as well.
-    A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON, redacted recursively
-    and re-serialized (``ensure_ascii=False``); a body too deeply nested to redact, or one that
-    looks like JSON but fails to parse and is not form-encoded, is replaced with the marker as
-    well — it may be a truncated payload still carrying secrets. Any other string that
-    ``_body_is_form_encoded`` accepts is redacted like a query string; everything else is returned
-    unchanged.
+    sibling ``headers`` declare a ``multipart/`` content type, or one that has the multipart shape
+    on its own (starts with ``--`` and contains ``content-disposition:``), is replaced with the
+    marker as well. A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON,
+    redacted recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to
+    redact, or one that looks like JSON but fails to parse, is replaced with the marker as well —
+    it may be a truncated payload still carrying secrets, and is never redacted as a form instead.
+    Any other string that ``_body_is_form_encoded`` accepts is redacted like a query string;
+    everything else is returned unchanged.
 
     :param str body:        Raw body of the request or response.
     :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
@@ -179,13 +182,16 @@ def _redact_body(body, container):
     if _content_type_starts_with(container, 'multipart/'):
         return LOG_REDACTED_VALUE
 
+    if body.lstrip().startswith('--') and 'content-disposition:' in body.lower():
+        # Headerless multipart by shape - the payload is opaque to the redactor either way.
+        return LOG_REDACTED_VALUE
+
     if body.strip()[:1] in ('{', '['):
         try:
             return json.dumps(_redact_for_logging(json.loads(body)), ensure_ascii=False)
         except ValueError:
-            # Not JSON after all: only a form-shaped body is still worth redacting as a form.
-            if not _body_is_form_encoded(body, container):
-                return LOG_REDACTED_VALUE
+            # Not JSON after all - and a truncated payload may still carry secrets.
+            return LOG_REDACTED_VALUE
         except RecursionError:
             # Too deeply nested to redact - and it may still hold secrets.
             return LOG_REDACTED_VALUE
@@ -829,9 +835,10 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
     Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings and
     form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded``, a
-    ``multipart/`` body or one that looks like JSON but does not parse is replaced with the marker
-    (base64 is reversible, and an unparsable payload may still carry secrets). The Processor still
-    receives the original event, and the original result object is returned to the caller.
+    ``multipart/`` body (declared by a whitespace-trimmed content type or detected by shape) or
+    one that looks like JSON but does not parse is replaced with the marker (base64 is
+    reversible, and an unparsable payload may still carry secrets). The Processor still receives
+    the original event, and the original result object is returned to the caller.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).

@@ -760,12 +760,14 @@ class app_UnitTestCase(unittest.TestCase):
     def test__redact_for_logging__plain_text_body_kept_as_is(self):
         """
         Bodies with nothing to redact are logged unchanged: plain text (spaces make both the JSON
-        and the form shape fail) and an empty body.
+        and the form shape fail), a `--`-prefixed body with no `content-disposition:` in it (the
+        multipart shape needs both), and an empty body.
         """
 
         matrix = [
             {'body': 'some plain text with spaces'},
             {'body': 'some plain text', 'headers': {'Content-Type': 'application/json'}},
+            {'body': '--dash-prefixed note with no disposition header'},
             {'body': ''},
         ]
 
@@ -783,7 +785,9 @@ class app_UnitTestCase(unittest.TestCase):
         """
         A body that looks like JSON (stripped form starts with `{` or `[`) but does not parse is
         replaced with the marker instead of being logged verbatim — a truncated payload may still
-        carry secrets. The declared content type and the headers key case make no difference.
+        carry secrets. The declared content type and the headers key case make no difference, and
+        a form-shaped body is not rescued by the form path either: `parse_qsl` would split at the
+        first `=` and leave the secret inside a parameter *name*, which only value-masking covers.
         """
 
         matrix = [
@@ -791,7 +795,16 @@ class app_UnitTestCase(unittest.TestCase):
             {'body': '{"password": "test-password-value", oops', 'headers': {'Content-Type': 'application/json'}},
             {'body': '["password", "test-password-value"'},
             {'body': '["password", "test-password-value"', 'Headers': {'Content-Type': 'APPLICATION/JSON'}},
+            {'body': '[password=test-form-password&x=1', 'headers': {'Content-Type': 'application/json'}},
         ]
+        for body in ('{"password":"test-hunter2="',
+                     '{"client_secret":"test-s3cr3t","redirect":"https://x/?a=1"',
+                     '{"token":"test-eyJabc.def=="'):
+            matrix += [
+                {'body': body},
+                {'body': body, 'headers': {'content-type': 'application/json'}},
+                {'body': body, 'headers': {'content-type': 'application/x-www-form-urlencoded'}},
+            ]
 
         for data in matrix:
             with self.subTest(data=data):
@@ -801,13 +814,17 @@ class app_UnitTestCase(unittest.TestCase):
 
                 self.assertEqual(data, snapshot, "Input must not be mutated")
                 self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+                for secret in ('test-form-password', 'test-hunter2', 'test-s3cr3t', 'test-eyJabc'):
+                    self.assertNotIn(secret, str(redacted['body']), "Secret leaked into the logged body")
 
 
     def test__redact_for_logging__multipart_body_masked(self):
         """
         A body whose sibling headers declare a `multipart/` content type (any headers-key or
-        header-name case, value with parameters) is replaced with the marker entirely — the
-        payload is opaque to the redactor, even when it happens to be parseable JSON.
+        header-name case, value with parameters or surrounding whitespace) is replaced with the
+        marker entirely — the payload is opaque to the redactor, even when it happens to be
+        parseable JSON. Without any headers, the multipart shape alone (stripped body starts with
+        `--` and contains `content-disposition:` in any case) masks the body too.
         """
 
         multipart_body = ('--boundary\r\n'
@@ -818,6 +835,9 @@ class app_UnitTestCase(unittest.TestCase):
             {'body': multipart_body, 'headers': {'Content-Type': 'multipart/form-data; boundary=boundary'}},
             {'body': multipart_body, 'headers': {'content-type': 'MULTIPART/MIXED'}},
             {'body': multipart_body, 'Headers': {'CONTENT-TYPE': 'multipart/related'}},
+            {'body': multipart_body, 'headers': {'Content-Type': ' multipart/form-data; boundary=x'}},
+            {'body': multipart_body},
+            {'body': ' ' + multipart_body.lower()},
             {'body': json.dumps({'password': 'test-password-value'}),
              'headers': {'Content-Type': 'multipart/form-data'}},
         ]
@@ -838,9 +858,10 @@ class app_UnitTestCase(unittest.TestCase):
         """
         Form-encoded bodies are redacted like query strings: when the sibling headers declare the
         `application/x-www-form-urlencoded` content type (any key or header-name case, value with
-        parameters), when the body has the `k=v&k=v` shape on its own, and even when a sibling
-        content type says otherwise. A body that looks like JSON but does not parse keeps this
-        treatment too, as long as it is form-shaped.
+        parameters or surrounding whitespace), when the body has the `k=v&k=v` shape on its own,
+        and even when a sibling content type says otherwise. A body that looks like JSON but does
+        not parse is never form-redacted — it is pinned to the marker by
+        `test__redact_for_logging__malformed_json_body_masked`.
         """
 
         form_body = 'grant_type=password&password=test-form-password'
@@ -850,13 +871,12 @@ class app_UnitTestCase(unittest.TestCase):
             ({'body': form_body, 'headers': {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}},
              redacted_form),
             ({'body': form_body, 'Headers': {'Content-Type': 'APPLICATION/X-WWW-FORM-URLENCODED'}}, redacted_form),
+            ({'body': form_body, 'headers': {'Content-Type': '\tapplication/x-www-form-urlencoded'}}, redacted_form),
             ({'body': 'password=test form password', 'headers': {'Content-Type': 'application/x-www-form-urlencoded'}},
              f'password={LOG_REDACTED_VALUE}'),
             ({'body': form_body}, redacted_form),
             ({'body': 'password=secret-value', 'headers': {'Content-Type': 'application/json'}},
              f'password={LOG_REDACTED_VALUE}'),
-            ({'body': '[password=test-form-password&x=1', 'headers': {'Content-Type': 'application/json'}},
-             f'%5Bpassword={LOG_REDACTED_VALUE}&x=1'),
         ]
 
         for data, expected in matrix:
