@@ -1,0 +1,21 @@
+# Handler log redaction — Tasks
+
+- [x] 1. Redaction helper: sensitive-key matching, `None`/bool kept, counter-like numerics kept
+  (`LOG_COUNTER_KEY_WORDS`), recursive, non-mutating.
+- [x] 2. `rawQueryString`: mask values of sensitive query parameters, keep the rest readable.
+- [x] 3. String `body`: redact parsable JSON recursively, skip base64, keep other bodies as is.
+- [x] 4. Handler logs redacted copies of event and result; original objects pass through.
+- [x] 5. Unit tests to 100% coverage, including handler-level no-leak assertions.
+- [x] 6. Docs: `#:`-documented constants, docstrings, agent-guide bullet, this spec entry.
+- [x] 7. Whole-word counter matching (`LOG_COUNTER_KEY_WORDS`, split on non-alphanumerics and
+  camelCase); form-encoded and base64-flagged bodies redacted (round-2 review).
+- [x] 8. Recursion guards: a 2000-deep JSON body or event logs `LOG_REDACTED_VALUE`; the handler
+  never fails because of logging (round-2 review).
+- [x] 9. Docs section "Logging of the event and the result" in `docs/concepts/processor.rst`;
+  remaining gaps listed as trade-offs here and in the docs.
+- [x] 10. Round-4 review: `_log_redacted` catches any exception and warns naming only the type
+  (e.g. a lone surrogate in `rawQueryString`); JSON-looking bodies that do not parse and
+  `multipart/` bodies log the marker; full core imports before `boto3` in `sosw/app.py`.
+- [x] 11. Round-5 review: a JSON-looking body that fails to parse always logs the marker (no
+  form-redaction fallback), content-type values are whitespace-trimmed before the prefix check,
+  and a headerless multipart body is masked by its shape.

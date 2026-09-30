@@ -1,15 +1,20 @@
+import copy
 import datetime
-
-import boto3
+import json
 import os
 import unittest
 
-from unittest.mock import MagicMock, patch
+import boto3
 
-os.environ["STAGE"] = "test"
-os.environ["autotest"] = "True"
+from decimal import Decimal
+from unittest.mock import MagicMock, call, patch
 
-from sosw.app import Processor, LambdaGlobals, get_lambda_handler, logger
+os.environ['STAGE'] = 'test'
+os.environ['autotest'] = 'True'
+
+import sosw.app
+from sosw.app import (LOG_REDACTED_VALUE, Processor, LambdaGlobals, _log_redacted, _redact_for_logging,
+                      get_lambda_handler, logger)
 from sosw.components.dynamo_db import DynamoDbClient
 from sosw.components.sns import SnsManager
 from sosw.components.siblings import SiblingsManager
@@ -337,6 +342,617 @@ class app_UnitTestCase(unittest.TestCase):
 
         lambda_handler(event={'k': 2}, context=MagicMock())
         self.assertEqual(processor_instance.reset_stats.call_count, 2)
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_lambda_handler__redacts_logged_event_and_result(self, mock_logger_info, _):
+        """
+        The handler logs redacted copies of the event and the result — headers, the raw query
+        string, the JSON request body and the tokens issued in the response — but the Processor
+        receives the original event object and the original result object is returned to the caller.
+        """
+
+        received = {}
+
+
+        class RecordingChild(Processor):
+            def __call__(self, event):
+                super().__call__(event)
+                received['event'] = event
+                received['result'] = {
+                    'statusCode': 200,
+                    'headers':    {'Set-Cookie': 'test-set-cookie-value'},
+                    'body':       json.dumps({'access_token': 'test-issued-token'}),
+                }
+                return received['result']
+
+
+        global_vars = LambdaGlobals()
+        lambda_handler = get_lambda_handler(RecordingChild, global_vars, self.TEST_CONFIG)
+
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+
+        body = json.dumps({'username': 'test-user', 'password': 'test-body-password'})
+        event = {
+            'headers':        {'Authorization': 'test-jwt-value', 'X-Origin-Verify': 'test-edge-secret-value'},
+            'requestContext': {'authorizer': {'claims': {'sub': 'test-sub-claim'}}},
+            'rawQueryString': 'access_token=test-raw-query-token&limit=10',
+            'body':           body,
+        }
+        result = lambda_handler(event=event, context=mock_context)
+
+        # The Processor got the exact same event object, with the secrets intact.
+        self.assertIs(received['event'], event)
+        self.assertEqual(event['headers']['Authorization'], 'test-jwt-value')
+        self.assertEqual(event['headers']['X-Origin-Verify'], 'test-edge-secret-value')
+        self.assertEqual(event['rawQueryString'], 'access_token=test-raw-query-token&limit=10')
+        self.assertEqual(event['body'], body)
+
+        # The handler returned the exact same result object, un-redacted.
+        self.assertIs(result, received['result'])
+        self.assertEqual(result['statusCode'], 200)
+        self.assertEqual(result['headers'], {'Set-Cookie': 'test-set-cookie-value'})
+        self.assertEqual(result['body'], json.dumps({'access_token': 'test-issued-token'}))
+
+        # None of the secrets leaked into any logger.info call, but the redaction marker is there.
+        logged = ' '.join(str(call) for call in mock_logger_info.call_args_list)
+        for secret in ('test-jwt-value', 'test-edge-secret-value', 'test-raw-query-token', 'test-body-password',
+                       'test-issued-token', 'test-set-cookie-value'):
+            self.assertNotIn(secret, logged)
+        self.assertIn(LOG_REDACTED_VALUE, logged)
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_lambda_handler__deeply_nested_body_still_calls_processor(self, mock_logger_info, _):
+        """
+        A 2000-deep JSON body cannot be redacted recursively: the logged event carries the marker
+        for it instead of the raw body, but the Processor is still called with the original event
+        object and the original result object is returned to the caller.
+        """
+
+        received = {}
+
+
+        class RecordingChild(Processor):
+            def __call__(self, event):
+                super().__call__(event)
+                received['event'] = event
+                received['result'] = {'statusCode': 200}
+                return received['result']
+
+
+        global_vars = LambdaGlobals()
+        lambda_handler = get_lambda_handler(RecordingChild, global_vars, self.TEST_CONFIG)
+
+        deep_body = '[' * 2000 + ']' * 2000
+        mock_context = MagicMock()
+        mock_context.invoked_function_arn = 'arn:aws:lambda:us-east-1:123456789012:function:example:42'
+        event = {'body': deep_body}
+        result = lambda_handler(event=event, context=mock_context)
+
+        self.assertIs(received['event'], event)
+        self.assertEqual(event['body'], deep_body)
+        self.assertIs(result, received['result'])
+
+        logged_events = [c.args[0] for c in mock_logger_info.call_args_list
+                         if isinstance(c.args[0], dict) and 'body' in c.args[0]]
+        self.assertEqual(len(logged_events), 1)
+        self.assertEqual(logged_events[0]['body'], LOG_REDACTED_VALUE)
+        self.assertNotIn(deep_body, ' '.join(str(c) for c in mock_logger_info.call_args_list))
+
+
+    @patch.object(logger, 'info')
+    def test_lambda_handler__too_deep_event_logs_marker(self, mock_logger_info):
+        """
+        The handler-level redaction guard: an event too deeply nested to copy makes
+        `_redact_for_logging` raise, but the handler logs the marker instead, still calls the
+        Processor with the original event and returns its result.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        deep_event = []
+        cursor = deep_event
+        for _ in range(2000):
+            nested = []
+            cursor.append(nested)
+            cursor = nested
+
+        with self.assertRaises(RecursionError):
+            _redact_for_logging(deep_event)
+
+        result = lambda_handler(event=deep_event, context=MagicMock())
+
+        processor_class.assert_called_once()
+        processor_class.return_value.assert_called_once_with(deep_event)
+        self.assertIs(result, processor_class.return_value.return_value)
+        self.assertIn(call(LOG_REDACTED_VALUE), mock_logger_info.call_args_list)
+
+
+    @patch.object(logger, 'warning')
+    def test__log_redacted__unredactable_value_logs_marker_and_warns(self, mock_logger_warning):
+        """
+        The handler-level redaction guard catches more than recursion: a raw query string with a
+        lone surrogate cannot be re-encoded, `_redact_for_logging` raises `UnicodeEncodeError`,
+        and `_log_redacted` returns the marker and warns naming only the exception type.
+        """
+
+        event = {'rawQueryString': 'x=' + chr(0xD800)}
+
+        with self.assertRaises(UnicodeEncodeError):
+            _redact_for_logging(event)
+
+        self.assertEqual(_log_redacted(event), LOG_REDACTED_VALUE)
+        mock_logger_warning.assert_called_once_with(
+            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'UnicodeEncodeError')
+
+
+    @patch.object(logger, 'warning')
+    @patch.object(logger, 'info')
+    def test_lambda_handler__unredactable_event_still_calls_processor(self, mock_logger_info,
+                                                                      mock_logger_warning):
+        """
+        An event whose redacted copy cannot be built (the lone surrogate of the test above) never
+        fails the invocation: the handler logs the marker, the Processor is still called with the
+        original event object and its result object is returned to the caller as is.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        event = {'rawQueryString': 'x=' + chr(0xD800)}
+        result = lambda_handler(event=event, context=MagicMock())
+
+        processor_class.assert_called_once()
+        processor_class.return_value.assert_called_once_with(event)
+        self.assertIs(result, processor_class.return_value.return_value)
+        self.assertIn(call(LOG_REDACTED_VALUE), mock_logger_info.call_args_list)
+        mock_logger_warning.assert_called_once_with(
+            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'UnicodeEncodeError')
+
+
+    def test__redact_for_logging__api_gateway_v1_proxy_event(self):
+        """
+        REST API (v1) proxy event: headers, multiValueHeaders, query params and nested authorizer
+        claims. Sensitive keys are masked at any depth; non-sensitive claim keys survive.
+        """
+
+        event = {
+            'httpMethod':            'GET',
+            'path':                  '/things',
+            'headers':               {
+                'Authorization':   'test-jwt-value',
+                'X-Origin-Verify': 'test-edge-secret-value',
+                'Cookie':          'session=test-cookie-value',
+                'X-Api-Key':       'test-api-key-value',
+                'Content-Type':    'application/json',
+            },
+            'multiValueHeaders':     {
+                'Authorization':   ['test-jwt-value'],
+                'X-Origin-Verify': ['test-edge-secret-value'],
+                'Cookie':          ['session=test-cookie-value', 'theme=dark'],
+                'Content-Type':    ['application/json'],
+            },
+            'queryStringParameters': {'access_token': 'test-access-token-value', 'limit': '10'},
+            'requestContext':        {
+                'authorizer': {'claims': {'sub': 'test-sub-claim', 'email': 'test@example.com'}},
+            },
+            'body':                  None,
+        }
+        snapshot = copy.deepcopy(event)
+
+        redacted = _redact_for_logging(event)
+
+        self.assertEqual(event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['httpMethod'], 'GET')
+        self.assertEqual(redacted['path'], '/things')
+        self.assertEqual(redacted['headers'], {
+            'Authorization':   LOG_REDACTED_VALUE,
+            'X-Origin-Verify': LOG_REDACTED_VALUE,
+            'Cookie':          LOG_REDACTED_VALUE,
+            'X-Api-Key':       LOG_REDACTED_VALUE,
+            'Content-Type':    'application/json',
+        })
+        self.assertEqual(redacted['multiValueHeaders']['Authorization'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['X-Origin-Verify'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['Cookie'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['multiValueHeaders']['Content-Type'], ['application/json'])
+        self.assertEqual(redacted['queryStringParameters'], {'access_token': LOG_REDACTED_VALUE, 'limit': '10'})
+        self.assertEqual(redacted['requestContext']['authorizer']['claims'],
+                         {'sub': 'test-sub-claim', 'email': 'test@example.com'})
+        self.assertIsNone(redacted['body'])
+
+
+    def test__redact_for_logging__http_api_v2_and_token_authorizer(self):
+        """
+        HTTP API (v2) carries `cookies` as a top-level list; a TOKEN authorizer event carries the
+        raw token in `authorizationToken`. Both must be masked.
+        """
+
+        v2_event = {
+            'version':               '2.0',
+            'routeKey':              'GET /things',
+            'cookies':               ['session=test-cookie-value', 'theme=dark'],
+            'headers':               {'authorization': 'test-jwt-value'},
+            'queryStringParameters': {'access_token': 'test-access-token-value'},
+            'rawQueryString':        'access_token=test-access-token-value&limit=10',
+        }
+        snapshot = copy.deepcopy(v2_event)
+
+        redacted = _redact_for_logging(v2_event)
+
+        self.assertEqual(v2_event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['version'], '2.0')
+        self.assertEqual(redacted['cookies'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['headers'], {'authorization': LOG_REDACTED_VALUE})
+        self.assertEqual(redacted['queryStringParameters'], {'access_token': LOG_REDACTED_VALUE})
+        self.assertEqual(redacted['rawQueryString'], f'access_token={LOG_REDACTED_VALUE}&limit=10')
+
+        auth_event = {
+            'type':               'TOKEN',
+            'authorizationToken': 'test-jwt-value',
+            'methodArn':          'arn:aws:execute-api:us-east-1:123456789012:api/GET/things',
+        }
+        snapshot = copy.deepcopy(auth_event)
+
+        redacted = _redact_for_logging(auth_event)
+
+        self.assertEqual(auth_event, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['type'], 'TOKEN')
+        self.assertEqual(redacted['authorizationToken'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['methodArn'], auth_event['methodArn'])
+
+
+    def test__redact_for_logging__mixed_case_and_non_string_keys(self):
+        data = {
+            'AUTHORIZATION':        'test-jwt-value',
+            'x-origin-verify':      'test-edge-secret-value',
+            'Proxy-Authorization':  'test-proxy-auth-value',
+            42:                     {'Authorization': 'test-jwt-value'},
+            'path':                 '/things',
+        }
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertIn(42, redacted)
+        self.assertEqual(redacted[42], {'Authorization': LOG_REDACTED_VALUE})
+        self.assertEqual(redacted['AUTHORIZATION'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['x-origin-verify'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['Proxy-Authorization'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['path'], '/things')
+
+
+    def test__redact_for_logging__containers_and_scalars(self):
+        """
+        Lists and tuples are rebuilt recursively; only dict KEYS are matched, values like a plain
+        string are kept; non-container leaves are returned as the same object.
+        """
+
+        data = [
+            [{'X-Amz-Security-Token': 'test-sts-token-value'}, {'signature_check': 'checked'}],
+            ('X-Amz-Signature', 'public'),
+            None,
+        ]
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted, [
+            [{'X-Amz-Security-Token': LOG_REDACTED_VALUE}, {'signature_check': LOG_REDACTED_VALUE}],
+            ('X-Amz-Signature', 'public'),
+            None,
+        ])
+        self.assertIsInstance(redacted[1], tuple)
+
+        for scalar in ('plain', None, 42, 4.2):
+            self.assertIs(_redact_for_logging(scalar), scalar)
+
+
+    def test__redact_for_logging__numeric_counters_kept(self):
+        """
+        Sensitive keys keep None and boolean values, and numbers of counter-like keys that have a
+        whole word of `LOG_COUNTER_KEY_WORDS` - separator and camelCase variants included. Keys
+        like `account_password` or `otp_token` have no counter word, so their numbers are masked
+        together with str, list and bytes values.
+        """
+
+        data = {
+            'usage':                  {'input_tokens': 1200},
+            'max_tokens':             4096,
+            'token_count':            3,
+            'tokenCount':             96,
+            'inputTokens':            500,
+            'price_tokens':           Decimal('1.5'),
+            'token_valid':            True,
+            'next_token':             None,
+            'password':               12345678,
+            'otp_token':              482913,
+            'account_password':       482913,
+            'service_account_secret': 12345678,
+            'access_token':           'test-access-token-value',
+            'refresh_token':          ['x'],
+            'api_key':                b'test-bytes',
+        }
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['usage'], {'input_tokens': 1200})
+        self.assertEqual(redacted['max_tokens'], 4096)
+        self.assertEqual(redacted['token_count'], 3)
+        self.assertEqual(redacted['tokenCount'], 96)
+        self.assertEqual(redacted['inputTokens'], 500)
+        self.assertEqual(redacted['price_tokens'], Decimal('1.5'))
+        self.assertIs(redacted['token_valid'], True)
+        self.assertIsNone(redacted['next_token'])
+        self.assertEqual(redacted['password'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['otp_token'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['account_password'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['service_account_secret'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['access_token'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['refresh_token'], LOG_REDACTED_VALUE)
+        self.assertEqual(redacted['api_key'], LOG_REDACTED_VALUE)
+
+
+    def test__redact_for_logging__raw_query_string(self):
+        """
+        HTTP API (v2) / Function URL events repeat the unparsed query in `rawQueryString`:
+        parameters with sensitive names are masked inside the string (case-insensitive match on
+        the parameter name), non-sensitive ones keep their values, an empty string stays empty.
+        """
+
+        data = {'rawQueryString': 'access_token=test-access-token-value&limit=10&API_KEY=test-api-key-value'}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['rawQueryString'],
+                         f'access_token={LOG_REDACTED_VALUE}&limit=10&API_KEY={LOG_REDACTED_VALUE}')
+        self.assertEqual(_redact_for_logging({'rawQueryString': ''})['rawQueryString'], '')
+
+
+    def test__redact_for_logging__json_body_redacted(self):
+        """
+        A string `body` carrying a JSON object or array is parsed, redacted recursively and
+        re-serialized for the log; non-sensitive fields survive and the logged copy stays a string.
+        """
+
+        object_body = json.dumps({
+            'username': 'test-user',
+            'password': 'test-password-value',
+            'nested':   {'refresh_token': 'test-refresh-token-value'},
+        })
+        data = {'body': object_body, 'isBase64Encoded': False}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertIsInstance(redacted['body'], str)
+        self.assertEqual(json.loads(redacted['body']), {
+            'username': 'test-user',
+            'password': LOG_REDACTED_VALUE,
+            'nested':   {'refresh_token': LOG_REDACTED_VALUE},
+        })
+
+        array_body = json.dumps([{'api_key': 'test-api-key-value'}, {'path': '/things'}])
+        self.assertEqual(json.loads(_redact_for_logging({'body': array_body})['body']),
+                         [{'api_key': LOG_REDACTED_VALUE}, {'path': '/things'}])
+
+
+    def test__redact_for_logging__plain_text_body_kept_as_is(self):
+        """
+        Bodies with nothing to redact are logged unchanged: plain text (spaces make both the JSON
+        and the form shape fail), a `--`-prefixed body with no `content-disposition:` in it (the
+        multipart shape needs both), and an empty body.
+        """
+
+        matrix = [
+            {'body': 'some plain text with spaces'},
+            {'body': 'some plain text', 'headers': {'Content-Type': 'application/json'}},
+            {'body': '--dash-prefixed note with no disposition header'},
+            {'body': ''},
+        ]
+
+        for data in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], data['body'])
+
+
+    def test__redact_for_logging__malformed_json_body_masked(self):
+        """
+        A body that looks like JSON (stripped form starts with `{` or `[`) but does not parse is
+        replaced with the marker instead of being logged verbatim — a truncated payload may still
+        carry secrets. The declared content type and the headers key case make no difference, and
+        a form-shaped body is not rescued by the form path either: `parse_qsl` would split at the
+        first `=` and leave the secret inside a parameter *name*, which only value-masking covers.
+        """
+
+        matrix = [
+            {'body': '{"password": "test-password-value", oops'},
+            {'body': '{"password": "test-password-value", oops', 'headers': {'Content-Type': 'application/json'}},
+            {'body': '["password", "test-password-value"'},
+            {'body': '["password", "test-password-value"', 'Headers': {'Content-Type': 'APPLICATION/JSON'}},
+            {'body': '[password=test-form-password&x=1', 'headers': {'Content-Type': 'application/json'}},
+        ]
+        for body in ('{"password":"test-hunter2="',
+                     '{"client_secret":"test-s3cr3t","redirect":"https://x/?a=1"',
+                     '{"token":"test-eyJabc.def=="'):
+            matrix += [
+                {'body': body},
+                {'body': body, 'headers': {'content-type': 'application/json'}},
+                {'body': body, 'headers': {'content-type': 'application/x-www-form-urlencoded'}},
+            ]
+
+        for data in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+                for secret in ('test-form-password', 'test-hunter2', 'test-s3cr3t', 'test-eyJabc'):
+                    self.assertNotIn(secret, str(redacted['body']), "Secret leaked into the logged body")
+
+
+    def test__redact_for_logging__multipart_body_masked(self):
+        """
+        A body whose sibling headers declare a `multipart/` content type (any headers-key or
+        header-name case, value with parameters or surrounding whitespace) is replaced with the
+        marker entirely — the payload is opaque to the redactor, even when it happens to be
+        parseable JSON. Without any headers, the multipart shape alone (stripped body starts with
+        `--` and contains `content-disposition:` in any case) masks the body too.
+        """
+
+        multipart_body = ('--boundary\r\n'
+                          'Content-Disposition: form-data; name="password"\r\n\r\n'
+                          'test-multipart-password\r\n'
+                          '--boundary--')
+        matrix = [
+            {'body': multipart_body, 'headers': {'Content-Type': 'multipart/form-data; boundary=boundary'}},
+            {'body': multipart_body, 'headers': {'content-type': 'MULTIPART/MIXED'}},
+            {'body': multipart_body, 'Headers': {'CONTENT-TYPE': 'multipart/related'}},
+            {'body': multipart_body, 'headers': {'Content-Type': ' multipart/form-data; boundary=x'}},
+            {'body': multipart_body},
+            {'body': ' ' + multipart_body.lower()},
+            {'body': json.dumps({'password': 'test-password-value'}),
+             'headers': {'Content-Type': 'multipart/form-data'}},
+        ]
+
+        for data in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+                self.assertEqual({k: v for k, v in redacted.items() if k != 'body'},
+                                 {k: v for k, v in data.items() if k != 'body'})
+
+
+    def test__redact_for_logging__form_body_redacted(self):
+        """
+        Form-encoded bodies are redacted like query strings: when the sibling headers declare the
+        `application/x-www-form-urlencoded` content type (any key or header-name case, value with
+        parameters or surrounding whitespace), when the body has the `k=v&k=v` shape on its own,
+        and even when a sibling content type says otherwise. A body that looks like JSON but does
+        not parse is never form-redacted — it is pinned to the marker by
+        `test__redact_for_logging__malformed_json_body_masked`.
+        """
+
+        form_body = 'grant_type=password&password=test-form-password'
+        redacted_form = f'grant_type=password&password={LOG_REDACTED_VALUE}'
+        matrix = [
+            ({'body': form_body, 'headers': {'content-type': 'application/x-www-form-urlencoded'}}, redacted_form),
+            ({'body': form_body, 'headers': {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}},
+             redacted_form),
+            ({'body': form_body, 'Headers': {'Content-Type': 'APPLICATION/X-WWW-FORM-URLENCODED'}}, redacted_form),
+            ({'body': form_body, 'headers': {'Content-Type': '\tapplication/x-www-form-urlencoded'}}, redacted_form),
+            ({'body': 'password=test form password', 'headers': {'Content-Type': 'application/x-www-form-urlencoded'}},
+             f'password={LOG_REDACTED_VALUE}'),
+            ({'body': form_body}, redacted_form),
+            ({'body': 'password=secret-value', 'headers': {'Content-Type': 'application/json'}},
+             f'password={LOG_REDACTED_VALUE}'),
+        ]
+
+        for data, expected in matrix:
+            with self.subTest(data=data):
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], expected)
+
+
+    def test__redact_for_logging__base64_body_masked(self):
+        """
+        A body of a dict with a truthy `isBase64Encoded` is replaced with the marker: base64 is
+        reversible, so it is never logged, JSON-shaped or not.
+        """
+
+        for body in ('dXNlcjpwYXNzd29yZA==', json.dumps({'password': 'test-password-value'})):
+            with self.subTest(body=body):
+                data = {'body': body, 'isBase64Encoded': True}
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+
+
+    def test__redact_for_logging__deeply_nested_body_masked(self):
+        """
+        JSON bodies nested 2000 deep cannot be redacted recursively, so the logged copy carries the
+        marker for them instead - of both the list and the dict nesting shapes.
+        """
+
+        for shape, deep_body in (('list', '[' * 2000 + ']' * 2000), ('dict', '{"a":' * 2000 + '1' + '}' * 2000)):
+            with self.subTest(shape=shape):
+                data = {'body': deep_body, 'headers': {'Content-Type': 'application/json'}}
+                snapshot = copy.deepcopy(data)
+
+                redacted = _redact_for_logging(data)
+
+                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
+                self.assertEqual(redacted['headers'], {'Content-Type': 'application/json'})
+
+
+    def test__redact_for_logging__json_body_keeps_non_ascii(self):
+        """
+        Re-serialized bodies keep non-ASCII characters readable (`ensure_ascii=False`).
+        """
+
+        body = json.dumps({'name': 'Ωμέγα', 'password': 'test-password-value'})
+        data = {'body': body}
+
+        redacted = _redact_for_logging(data)
+
+        self.assertIn('Ωμέγα', redacted['body'])
+        self.assertNotIn('\\u03a9', redacted['body'])
+        self.assertEqual(json.loads(redacted['body']), {'name': 'Ωμέγα', 'password': LOG_REDACTED_VALUE})
+
+
+    def test__redact_for_logging__sensitive_parts_read_at_call_time(self):
+        """
+        Reassigning `sosw.app.LOG_SENSITIVE_KEY_PARTS` extends the matching for subsequent calls.
+        """
+
+        original = sosw.app.LOG_SENSITIVE_KEY_PARTS
+        self.addCleanup(setattr, sosw.app, 'LOG_SENSITIVE_KEY_PARTS', original)
+
+        sosw.app.LOG_SENSITIVE_KEY_PARTS = original + ('custom',)
+
+        self.assertEqual(_redact_for_logging({'custom-key': 'test-custom-secret-value', 'path': '/x'}),
+                         {'custom-key': LOG_REDACTED_VALUE, 'path': '/x'})
+        self.assertEqual(_redact_for_logging({'Authorization': 'test-jwt-value'}),
+                         {'Authorization': LOG_REDACTED_VALUE})
 
 
     @patch.object(logger, 'error')
