@@ -139,6 +139,55 @@ Custom clients participate in both ``get_stats()`` and ``reset_stats()`` recursi
 implement these methods themselves.
 
 
+Logging of the event and the result
+-----------------------------------
+
+The handler built by ``get_lambda_handler`` logs the incoming event at the beginning and the final
+result at the end of every invocation. Both log lines carry *redacted copies*: the Processor still
+receives the original event object, and the caller gets the original result object.
+
+What is redacted:
+
+-   **Sensitive keys.** Values of dict keys whose lowercase name contains any substring of
+    ``sosw.app.LOG_SENSITIVE_KEY_PARTS`` — ``Authorization``, ``Cookie``, ``X-Origin-Verify``,
+    ``X-Api-Key``, anything with ``token`` / ``secret`` / ``password`` / ``credential`` /
+    ``signature`` in it — are replaced with ``sosw.app.LOG_REDACTED_VALUE``
+    (``'***REDACTED***'``) at any nesting depth, in the event and in the result. ``None`` and
+    booleans are kept; numbers survive only under counter-like keys that contain a whole word of
+    ``sosw.app.LOG_COUNTER_KEY_WORDS`` (``tokens``, ``count`` — words are split on
+    non-alphanumerics and camelCase), so ``max_tokens`` and ``tokenCount`` keep their counters
+    while a numeric ``password`` or ``otp_token`` is masked.
+-   **Raw query strings.** A ``rawQueryString`` value (HTTP API v2 / Function URL events) has the
+    values of its sensitive parameters masked inside the string; the other parameters stay
+    readable.
+-   **Bodies.** A string ``body`` is redacted when it carries JSON (parsed, redacted recursively
+    and re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the
+    sibling ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case,
+    whitespace around the value is trimmed) or by its ``k=v&k=v`` shape — it is redacted like a
+    query string; and it is replaced with the marker entirely when the sibling
+    ``isBase64Encoded`` flag is set (base64 is reversible), when the ``content-type`` starts with
+    ``multipart/`` or the body itself has the multipart shape (starts with ``--`` and contains
+    ``content-disposition:``), or when it looks like JSON but fails to parse (a truncated payload
+    may still carry secrets).
+
+All three constants are plain module globals read at call time, so a deployment can extend the
+matching without touching ``sosw`` code:
+
+..  code-block:: python
+
+    import sosw.app
+
+    sosw.app.LOG_SENSITIVE_KEY_PARTS = sosw.app.LOG_SENSITIVE_KEY_PARTS + ('x-auth-key',)
+
+Known limits: the redaction is best-effort, and secrets must not be sent in fields that are bound
+for the logs by design. Tokens nested inside the *values* of non-sensitive parameters or JSON
+fields (e.g. a redirect URL carrying an ``access_token``) are not masked; JSON strings under keys
+other than ``body`` (e.g. an SNS ``Records[].Sns.Message`` payload) are not parsed; header names
+outside ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``X-Auth-Key``, ``X-Session-Id``) are kept; a value too
+deeply nested to redact — or that fails to redact for any other reason — is logged as the marker
+with a warning instead: logging never fails the invocation.
+
+
 Failing loudly
 --------------
 

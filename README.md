@@ -8,6 +8,8 @@
 
 **sosw** is a Python framework for bootstrapping AWS Lambda functions.
 
+*Built and maintained by [SOSW LTD](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss) — we design AI-native serverless systems for production. [Enterprise support & consulting →](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss)*
+
 Every Lambda gets the same production-grade skeleton in a dozen lines: the `Processor` base class with layered configuration (code defaults + DynamoDB/SSM overrides), automatic initialization of AWS clients, statistics counters, and a generated handler that caches the Processor across warm invocations. On top of that: `LambdaApi` — a declarative router for functions behind API Gateway, optional [AWS durable execution](https://docs.sosw.app/durable.html) support, and a battle-tested library of components and helpers. The only runtime dependency is `boto3`.
 
 ## Quick example
@@ -56,6 +58,14 @@ pip install sosw[durable]       # + AWS durable execution support
 ## Coming from the 0.7.x line?
 
 `sosw` began as the *Serverless Orchestrator of Serverless Workers*. The self-hosted orchestration layer (`Orchestrator`, `Scheduler`, `Scavenger`, `Worker`, and their managers) was **removed in the 3.0 major release**. Teams that use it should pin `pip install 'sosw<3'` (the 0.7.x line keeps working, and its docs are preserved at [docs.sosw.app/previous/0.7.51](https://docs.sosw.app/previous/0.7.51/index.html)) and plan the move to AWS Step Functions, EventBridge Scheduler, or durable functions — guidance in the [migration guide](https://docs.sosw.app/migration_3_0.html).
+
+## Commercial support
+
+sosw is open source (MIT) and built by [SOSW LTD](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss), the team that runs this pattern in production every day.
+
+If your company is putting serverless Lambda systems into production and wants help — an architecture review, production hardening, a custom Lambda platform, or retained support — **[hire us](https://sosw.app?utm_source=github&utm_medium=readme&utm_campaign=sosw-oss)**.
+
+We don't sell hype. We build systems that work.
 
 ## Development
 

@@ -48,6 +48,14 @@ language = 'en'
 exclude_patterns = ['_build']
 
 
+# One-line commercial-support footer appended to every documentation page (HQ-875).
+rst_epilog = """
+----
+
+Running this in production? `SOSW LTD <https://sosw.app?utm_source=github&utm_medium=docs&utm_campaign=sosw-oss>`__ offers commercial support — see :doc:`Commercial Support </support>`.
+"""
+
+
 # -- Options for HTML output -----------------------------------------------
 
 html_theme = 'furo'
