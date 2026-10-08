@@ -104,6 +104,13 @@ Beyond the removal, this major release ships exactly these intentional changes:
     extra ``sosw[durable]`` pulls the AWS Durable Execution SDK. Build tooling that patched
     ``setup.py`` must target ``pyproject.toml``.
 
+    .. warning::
+
+        On a build host running Python **< 3.12**, an unpinned ``pip install sosw`` will silently
+        resolve backward to ``sosw 0.7.51`` (no error) — the last version that supported older
+        Python. If you are rebuilding a Lambda layer or CI image, pin the version explicitly
+        (``pip install 'sosw>=3'``) or pin Python to 3.12+ to avoid accidental downgrades.
+
 **4. ``import sosw`` is a lazy façade.**
     The package ``__init__`` uses :pep:`562` lazy attribute resolution: ``import sosw`` no longer
     imports ``boto3`` or any submodule, and emits no warnings. ``from sosw import Processor``
