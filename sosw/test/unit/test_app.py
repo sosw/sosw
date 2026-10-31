@@ -1020,7 +1020,21 @@ class app_UnitTestCase(unittest.TestCase):
         JSON body is parsed and redacted rather than passed through unchanged.
         """
 
-        data = {'body': ' ﻿{"password": "test-ws-bom-password"}'}
+        data = {'body': ' \ufeff{"password": "test-ws-bom-password"}'}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
+        self.assertEqual(json.loads(redacted['body']), {'password': LOG_REDACTED_VALUE})
+
+
+    def test__redact_for_logging__alternating_whitespace_bom_body(self):
+        """
+        Any leading run of alternating whitespace and BOMs is stripped before JSON redaction.
+        """
+
+        data = {'body': ' \ufeff \ufeff{"password":"x"}'}
         snapshot = copy.deepcopy(data)
 
         redacted = _redact_for_logging(data)

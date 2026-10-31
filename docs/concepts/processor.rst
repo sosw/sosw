@@ -166,8 +166,8 @@ What is redacted:
     values of its sensitive parameters masked inside the string; the other parameters stay
     readable.
 -   **Bodies.** A string ``body`` is redacted when it carries JSON (a leading UTF-8 BOM — also
-    after leading whitespace — is stripped first; the JSON is parsed, redacted recursively and re-serialized with
-    ``ensure_ascii=False``); when it is form-encoded — declared by the sibling ``headers``
+    after leading whitespace — is stripped first; the JSON is parsed, redacted recursively and
+    re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the sibling
     ``content-type`` of ``application/x-www-form-urlencoded`` (any key case, whitespace around the
     value is trimmed) or by the ``k=v&k=v`` shape of its whitespace-stripped form — it is redacted
     like a query string; and it is replaced with the marker entirely when the sibling

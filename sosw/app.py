@@ -79,6 +79,9 @@ LOG_COUNTER_KEY_WORDS = ('tokens', 'count')
 #: Matches a form-encoded body of ``name=value`` pairs joined with ``&``. See ``_redact_body``.
 _FORM_BODY_PATTERN = re.compile(r'^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$')
 
+#: Matches the leading run of whitespace and UTF-8 BOMs stripped before the body checks.
+_LEADING_WS_BOM_PATTERN = re.compile(r'^[\s\ufeff]+')
+
 
 def _key_words(key):
     """
@@ -166,12 +169,12 @@ def _redact_body(body, container):
     the first boundary (a ``\\n--`` line), and contains ``content-disposition:`` in any case — is
     replaced with the marker as well. A leading UTF-8 BOM — also after leading whitespace — is
     stripped before the JSON and form checks: a body whose stripped form then starts with ``{`` or
-    ``[`` is parsed as JSON, redacted
-    recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to redact, or
-    one that looks like JSON but fails to parse, is replaced with the marker as well — it may be a
-    truncated payload still carrying secrets, and is never redacted as a form instead. Any other
-    string that ``_body_is_form_encoded`` accepts is redacted like a query string (the logged copy
-    is re-encoded from the whitespace-stripped body); everything else is returned unchanged.
+    ``[`` is parsed as JSON, redacted recursively and re-serialized (``ensure_ascii=False``); a body
+    too deeply nested to redact, or one that looks like JSON but fails to parse, is replaced with the
+    marker as well — it may be a truncated payload still carrying secrets, and is never redacted as
+    a form instead. Any other string that ``_body_is_form_encoded`` accepts is redacted like a query
+    string (the logged copy is re-encoded from the whitespace-stripped body); everything else is
+    returned unchanged.
 
     :param str body:        Raw body of the request or response.
     :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
@@ -182,7 +185,7 @@ def _redact_body(body, container):
         return LOG_REDACTED_VALUE
 
     # A leading UTF-8 BOM, also after leading whitespace, breaks both the JSON detection and json.loads.
-    unbombed_body = body.lstrip().lstrip('\ufeff')
+    unbombed_body = _LEADING_WS_BOM_PATTERN.sub('', body)
 
     if _content_type_starts_with(container, 'multipart/'):
         return LOG_REDACTED_VALUE
@@ -220,13 +223,12 @@ def _redact_for_logging(data):
     camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
     ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
     has the values of its sensitive parameters masked, and a string ``body`` is redacted by
-    ``_redact_body`` (a leading UTF-8 BOM — also after leading whitespace — is stripped first,
-    JSON is parsed and re-serialized,
-    form-encoded values are masked, and base64-encoded, multipart — declared by content type or
-    detected by shape, an RFC 2046 preamble allowed — and JSON-looking-but-unparsable bodies are
-    replaced with the marker). Dicts, lists and tuples are copied and processed recursively;
-    anything else is returned as is. All constants are looked up in the module globals at call
-    time, so reassigning them changes the behaviour.
+    ``_redact_body`` (a leading UTF-8 BOM — also after leading whitespace — is stripped first, JSON
+    is parsed and re-serialized, form-encoded values are masked, and base64-encoded, multipart —
+    declared by content type or detected by shape, an RFC 2046 preamble allowed — and
+    JSON-looking-but-unparsable bodies are replaced with the marker). Dicts, lists and tuples are
+    copied and processed recursively; anything else is returned as is. All constants are looked up in
+    the module globals at call time, so reassigning them changes the behaviour.
 
     :param data:    Dict, list, tuple or scalar value to prepare for logging.
     :return:        Redacted copy of ``data`` with the values of sensitive keys masked.
@@ -864,15 +866,14 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
     Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings (a leading
-    UTF-8 BOM — also after leading whitespace — is stripped before parsing) and form-encoded
-    bodies are masked, and a body with a
-    truthy sibling ``isBase64Encoded``, a ``multipart/`` body (declared by a whitespace-trimmed
-    content type, or detected by shape — starting with ``--`` after leading whitespace or after an
-    RFC 2046 preamble, and containing ``content-disposition:``) or one that looks like JSON but
-    does not parse is replaced with the marker (base64 is reversible, and an unparsable payload may
-    still carry secrets). The Processor still receives the original event, and the original result
-    object is returned to the caller. The redacted copies are built only when the INFO level is
-    enabled for the module logger.
+    UTF-8 BOM — also after leading whitespace — is stripped before parsing) and form-encoded bodies
+    are masked, and a body with a truthy sibling ``isBase64Encoded``, a ``multipart/`` body (declared
+    by a whitespace-trimmed content type, or detected by shape — starting with ``--`` after leading
+    whitespace or after an RFC 2046 preamble, and containing ``content-disposition:``) or one that
+    looks like JSON but does not parse is replaced with the marker (base64 is reversible, and an
+    unparsable payload may still carry secrets). The Processor still receives the original event, and
+    the original result object is returned to the caller. The redacted copies are built only when the
+    INFO level is enabled for the module logger.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
