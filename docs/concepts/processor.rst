@@ -144,7 +144,10 @@ Logging of the event and the result
 
 The handler built by ``get_lambda_handler`` logs the incoming event at the beginning and the final
 result at the end of every invocation. Both log lines carry *redacted copies*: the Processor still
-receives the original event object, and the caller gets the original result object.
+receives the original event object, and the caller gets the original result object. The redacted
+copies are built and logged only when the INFO level is enabled for the module logger. The same
+redaction covers the other two object log lines of the framework: the Processor constructor logs a
+redacted copy of the final config, and ``die()`` a redacted copy of its result.
 
 What is redacted:
 
@@ -160,13 +163,15 @@ What is redacted:
 -   **Raw query strings.** A ``rawQueryString`` value (HTTP API v2 / Function URL events) has the
     values of its sensitive parameters masked inside the string; the other parameters stay
     readable.
--   **Bodies.** A string ``body`` is redacted when it carries JSON (parsed, redacted recursively
-    and re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the
-    sibling ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case,
-    whitespace around the value is trimmed) or by its ``k=v&k=v`` shape — it is redacted like a
-    query string; and it is replaced with the marker entirely when the sibling
+-   **Bodies.** A string ``body`` is redacted when it carries JSON (a leading UTF-8 BOM is
+    stripped first; the JSON is parsed, redacted recursively and re-serialized with
+    ``ensure_ascii=False``); when it is form-encoded — declared by the sibling ``headers``
+    ``content-type`` of ``application/x-www-form-urlencoded`` (any key case, whitespace around the
+    value is trimmed) or by the ``k=v&k=v`` shape of its whitespace-stripped form — it is redacted
+    like a query string; and it is replaced with the marker entirely when the sibling
     ``isBase64Encoded`` flag is set (base64 is reversible), when the ``content-type`` starts with
-    ``multipart/`` or the body itself has the multipart shape (starts with ``--`` and contains
+    ``multipart/`` or the body itself has the multipart shape (starts with ``--`` after leading
+    whitespace or carries an RFC 2046 preamble before the first boundary, and contains
     ``content-disposition:``), or when it looks like JSON but fails to parse (a truncated payload
     may still carry secrets).
 

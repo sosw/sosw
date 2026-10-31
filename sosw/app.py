@@ -861,12 +861,15 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``, ``Cookie``,
     ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
-    Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings and
-    form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded``, a
-    ``multipart/`` body (declared by a whitespace-trimmed content type or detected by shape) or
-    one that looks like JSON but does not parse is replaced with the marker (base64 is
-    reversible, and an unparsable payload may still carry secrets). The Processor still receives
-    the original event, and the original result object is returned to the caller.
+    Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings (a leading
+    UTF-8 BOM is stripped before parsing) and form-encoded bodies are masked, and a body with a
+    truthy sibling ``isBase64Encoded``, a ``multipart/`` body (declared by a whitespace-trimmed
+    content type, or detected by shape — starting with ``--`` after leading whitespace or after an
+    RFC 2046 preamble, and containing ``content-disposition:``) or one that looks like JSON but
+    does not parse is replaced with the marker (base64 is reversible, and an unparsable payload may
+    still carry secrets). The Processor still receives the original event, and the original result
+    object is returned to the caller. The redacted copies are built only when the INFO level is
+    enabled for the module logger.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).
