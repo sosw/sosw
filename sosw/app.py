@@ -143,16 +143,16 @@ def _body_is_form_encoded(body, container):
 
     True when a sibling ``headers`` dict (any key case) carries a ``content-type`` header (any key
     case) whose whitespace-trimmed lowercase value starts with
-    ``application/x-www-form-urlencoded``, or when the body itself matches the
+    ``application/x-www-form-urlencoded``, or when the whitespace-stripped body itself matches the
     ``name=value&name=value`` shape of ``_FORM_BODY_PATTERN``.
 
-    :param str body:        Raw body of the request or response.
+    :param str body:        Raw body of the request or response, already stripped of a leading BOM.
     :param dict container:  Dict holding the ``body`` key.
     :return:                True when the body should be redacted as a form.
     :rtype:                 bool
     """
     return (_content_type_starts_with(container, 'application/x-www-form-urlencoded')
-            or _FORM_BODY_PATTERN.match(body) is not None)
+            or _FORM_BODY_PATTERN.match(body.strip()) is not None)
 
 
 def _redact_body(body, container):
@@ -162,13 +162,15 @@ def _redact_body(body, container):
     A body of a dict with a truthy ``isBase64Encoded`` sibling is replaced with
     :py:data:`LOG_REDACTED_VALUE` — base64 is reversible, so it is never logged. A body whose
     sibling ``headers`` declare a ``multipart/`` content type, or one that has the multipart shape
-    on its own (starts with ``--`` and contains ``content-disposition:``), is replaced with the
-    marker as well. A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON,
-    redacted recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to
-    redact, or one that looks like JSON but fails to parse, is replaced with the marker as well —
-    it may be a truncated payload still carrying secrets, and is never redacted as a form instead.
-    Any other string that ``_body_is_form_encoded`` accepts is redacted like a query string;
-    everything else is returned unchanged.
+    on its own — starts with ``--`` after leading whitespace or carries an RFC 2046 preamble before
+    the first boundary (a ``\\n--`` line), and contains ``content-disposition:`` in any case — is
+    replaced with the marker as well. A leading UTF-8 BOM is stripped before the JSON and form
+    checks: a body whose stripped form then starts with ``{`` or ``[`` is parsed as JSON, redacted
+    recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to redact, or
+    one that looks like JSON but fails to parse, is replaced with the marker as well — it may be a
+    truncated payload still carrying secrets, and is never redacted as a form instead. Any other
+    string that ``_body_is_form_encoded`` accepts is redacted like a query string (the logged copy
+    is re-encoded from the whitespace-stripped body); everything else is returned unchanged.
 
     :param str body:        Raw body of the request or response.
     :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
@@ -178,16 +180,20 @@ def _redact_body(body, container):
     if container.get('isBase64Encoded'):
         return LOG_REDACTED_VALUE
 
+    # A leading UTF-8 BOM breaks both the JSON detection and json.loads.
+    unbombed_body = body.lstrip('\ufeff')
+
     if _content_type_starts_with(container, 'multipart/'):
         return LOG_REDACTED_VALUE
 
-    if body.lstrip().startswith('--') and 'content-disposition:' in body.lower():
-        # Headerless multipart by shape - the payload is opaque to the redactor either way.
+    if (unbombed_body.lstrip().startswith('--') or '\n--' in unbombed_body) and (
+            'content-disposition:' in unbombed_body.lower()):
+        # Headerless multipart by shape, with an optional preamble - opaque to the redactor either way.
         return LOG_REDACTED_VALUE
 
-    if body.strip()[:1] in ('{', '['):
+    if unbombed_body.strip()[:1] in ('{', '['):
         try:
-            return json.dumps(_redact_for_logging(json.loads(body)), ensure_ascii=False)
+            return json.dumps(_redact_for_logging(json.loads(unbombed_body)), ensure_ascii=False)
         except ValueError:
             # Not JSON after all - and a truncated payload may still carry secrets.
             return LOG_REDACTED_VALUE
@@ -195,8 +201,8 @@ def _redact_body(body, container):
             # Too deeply nested to redact - and it may still hold secrets.
             return LOG_REDACTED_VALUE
 
-    if _body_is_form_encoded(body, container):
-        return _redact_query_string(body)
+    if _body_is_form_encoded(unbombed_body, container):
+        return _redact_query_string(unbombed_body.strip())
 
     return body
 
@@ -213,9 +219,10 @@ def _redact_for_logging(data):
     camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
     ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
     has the values of its sensitive parameters masked, and a string ``body`` is redacted by
-    ``_redact_body`` (JSON parsed and re-serialized, form-encoded values masked, base64-encoded,
-    multipart and JSON-looking-but-unparsable bodies replaced with the marker). Dicts, lists and
-    tuples are copied and processed recursively;
+    ``_redact_body`` (a leading UTF-8 BOM is stripped first, JSON is parsed and re-serialized,
+    form-encoded values are masked, and base64-encoded, multipart — declared by content type or
+    detected by shape, an RFC 2046 preamble allowed — and JSON-looking-but-unparsable bodies are
+    replaced with the marker). Dicts, lists and tuples are copied and processed recursively;
     anything else is returned as is. All constants are looked up in the module globals at call
     time, so reassigning them changes the behaviour.
 

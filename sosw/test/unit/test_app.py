@@ -832,13 +832,15 @@ class app_UnitTestCase(unittest.TestCase):
         """
         Bodies with nothing to redact are logged unchanged: plain text (spaces make both the JSON
         and the form shape fail), a `--`-prefixed body with no `content-disposition:` in it (the
-        multipart shape needs both), and an empty body.
+        multipart shape needs both), a body with a preamble line and a boundary but still no
+        `content-disposition:`, and an empty body.
         """
 
         matrix = [
             {'body': 'some plain text with spaces'},
             {'body': 'some plain text', 'headers': {'Content-Type': 'application/json'}},
             {'body': '--dash-prefixed note with no disposition header'},
+            {'body': 'preamble line\n--dash-prefixed note with no disposition header'},
             {'body': ''},
         ]
 
@@ -894,8 +896,9 @@ class app_UnitTestCase(unittest.TestCase):
         A body whose sibling headers declare a `multipart/` content type (any headers-key or
         header-name case, value with parameters or surrounding whitespace) is replaced with the
         marker entirely — the payload is opaque to the redactor, even when it happens to be
-        parseable JSON. Without any headers, the multipart shape alone (stripped body starts with
-        `--` and contains `content-disposition:` in any case) masks the body too.
+        parseable JSON. Without any headers, the multipart shape alone masks the body too: the
+        body starts with `--` after leading whitespace or carries an RFC 2046 preamble before the
+        first boundary (a `\\n--` line), and contains `content-disposition:` in any case.
         """
 
         multipart_body = ('--boundary\r\n'
@@ -909,6 +912,8 @@ class app_UnitTestCase(unittest.TestCase):
             {'body': multipart_body, 'headers': {'Content-Type': ' multipart/form-data; boundary=x'}},
             {'body': multipart_body},
             {'body': ' ' + multipart_body.lower()},
+            {'body': 'This is the preamble.\r\n' + multipart_body},
+            {'body': 'preamble line\n\n' + multipart_body.lower()},
             {'body': json.dumps({'password': 'test-password-value'}),
              'headers': {'Content-Type': 'multipart/form-data'}},
         ]
@@ -958,6 +963,50 @@ class app_UnitTestCase(unittest.TestCase):
 
                 self.assertEqual(data, snapshot, "Input must not be mutated")
                 self.assertEqual(redacted['body'], expected)
+
+
+    def test__redact_for_logging__form_body_with_surrounding_whitespace(self):
+        """
+        The form shape is detected on the whitespace-stripped body: surrounding whitespace does
+        not keep a form-encoded secret out of redaction, and the logged copy is re-encoded from
+        the stripped body.
+        """
+
+        data = {'body': ' token=test-form-token&x=1\n'}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(redacted['body'], f'token={LOG_REDACTED_VALUE}&x=1')
+
+
+    def test__redact_for_logging__bom_prefixed_body(self):
+        """
+        A leading UTF-8 BOM is stripped before the body checks: a BOM-prefixed JSON body is
+        parsed and redacted rather than passed through, a BOM-prefixed JSON-looking body that
+        does not parse is replaced with the marker, a BOM-prefixed form body is redacted as a
+        form, and a BOM-prefixed plain-text body is returned unchanged.
+        """
+
+        bom = '\ufeff'
+
+        data = {'body': bom + json.dumps({'password': 'test-bom-password'})}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(json.loads(redacted['body']), {'password': LOG_REDACTED_VALUE})
+
+        malformed = {'body': bom + '{"password": "test-bom-password", oops'}
+        self.assertEqual(_redact_for_logging(malformed)['body'], LOG_REDACTED_VALUE)
+
+        form = {'body': bom + 'password=test-bom-password'}
+        self.assertEqual(_redact_for_logging(form)['body'], f'password={LOG_REDACTED_VALUE}')
+
+        plain = {'body': bom + 'some plain text'}
+        self.assertEqual(_redact_for_logging(plain)['body'], plain['body'])
 
 
     def test__redact_for_logging__base64_body_masked(self):
