@@ -5,10 +5,15 @@
 A single recursive helper, `_redact_for_logging(data)`, produces the log copy of the event and of
 the result. The generated handler logs the redacted copies and passes the original objects
 through untouched — the helper never mutates its input, so the Processor contract is unchanged.
-Logging must never fail an invocation: `_log_redacted()` guards the two handler log lines — any
+Logging must never fail an invocation: `_log_redacted()` guards the handler log lines — any
 failure to build the redacted copy logs the marker and a warning naming only the exception type —
 and `_redact_body()` guards the JSON path, logging a value too deeply nested to redact as the
-marker instead of raising `RecursionError`.
+marker instead of raising `RecursionError`. The redacted copies are built only when INFO is
+enabled for the module logger: `_info_enabled()` wraps `logger.isEnabledFor(logging.INFO)` (the
+powertools Logger forwards it to its internal stdlib logger) and assumes INFO for a logger
+without `isEnabledFor`. The same redaction and guard cover the other two object log lines: the
+Processor constructor logs `_log_redacted(self.config)`, and `die()` logs `_log_redacted()` of
+its result.
 
 ## Key sensitivity
 
@@ -31,10 +36,13 @@ marker instead of raising `RecursionError`.
   stays readable.
 - `body`, prepared by `_redact_body(body, container)`:
   - a truthy sibling `isBase64Encoded` → `LOG_REDACTED_VALUE` (base64 is reversible);
+  - a leading UTF-8 BOM is stripped for all the following checks (a BOM breaks both the JSON
+    detection and `json.loads`);
   - a sibling `headers` dict (key `headers`, any case) has a `content-type` (any case) whose
     whitespace-trimmed value starts with `multipart/`, or the body itself has the multipart shape
-    (starts with `--`, contains `content-disposition:` in any case) → `LOG_REDACTED_VALUE`
-    (multipart payloads are opaque to the redactor);
+    — starts with `--` after leading whitespace or carries an RFC 2046 preamble before the first
+    boundary (a `\n--` line), and contains `content-disposition:` in any case →
+    `LOG_REDACTED_VALUE` (multipart payloads are opaque to the redactor);
   - stripped body starts with `{` or `[` → `json.loads` + `_redact_for_logging` +
     `json.dumps(..., ensure_ascii=False)`, all inside one `try` catching `(ValueError,
     RecursionError)`: either failure — too deeply nested, or not valid JSON — returns
@@ -42,8 +50,9 @@ marker instead of raising `RecursionError`.
     leave them inside a parameter *name*, so a JSON-looking body is never redacted as a form
     instead);
   - form-encoded — a sibling `headers` dict has a `content-type` (whitespace-trimmed) starting
-    with `application/x-www-form-urlencoded`, or the body matches the
-    `^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$` shape → `_redact_query_string(body)`;
+    with `application/x-www-form-urlencoded`, or the whitespace-stripped body matches the
+    `^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$` shape → `_redact_query_string()` of the stripped
+    body;
   - anything else → unchanged.
 
 ## Trade-offs
@@ -59,18 +68,18 @@ marker instead of raising `RecursionError`.
   not parsed.
 - Header names outside `LOG_SENSITIVE_KEY_PARTS` (e.g. `X-Auth-Key`, `X-Session-Id`, `sessionid`)
   are kept; the price of extending the list is over-redaction of look-alike names.
-- A body that starts with `--` and contains `content-disposition:` is masked as multipart by
-  shape alone, without any content-type header — coarse on purpose, so a look-alike text body is
-  over-masked.
+- A body that starts with `--` after leading whitespace — or carries an RFC 2046 preamble before
+  the first boundary — and contains `content-disposition:` is masked as multipart by shape alone,
+  without any content-type header — coarse on purpose, so a look-alike text body is over-masked.
 - Logging is best-effort: secrets must not be sent in fields that are bound for the logs by
   design.
 - The handler log lines keep the pre-existing `logger.info(<object>)` shape without a format
   string on purpose: the powertools Logger emits a dict message as a structured JSON object that
   CloudWatch queries depend on, and wrapping it in `"%s"` would change the log format for every
   consumer.
-- The redacted copy is built even when the INFO level is disabled for the handler logger, and
-  the pre-existing `logger.info(self.config)` and Processor result log lines stay as they are;
-  an `isEnabledFor` guard and those lines are left to a follow-up ticket.
+- The redacted copies are built only when INFO is enabled for the module logger
+  (`_info_enabled()`), and the same redaction covers the config line of the Processor constructor
+  and the result line of `die()`.
 - The re-serialized JSON body is a log copy only — key order is preserved but whitespace differs
   from the original.
 
@@ -79,8 +88,12 @@ marker instead of raising `RecursionError`.
 Unit tests cover proxy events (v1 and v2), mixed-case and non-string keys, containers and
 scalars, the `None`/bool/counter-word rules, the raw query string and every body path (JSON
 object, JSON array, non-ASCII JSON, malformed JSON — including form-shaped bodies under every
-content-type declaration —, multipart with headers, by shape and whitespace-padded content types,
-plain text, form-encoded with and without the content-type header, base64 flag, 2000-deep JSON
-nesting), the redaction guards at helper and handler level (recursion and the lone-surrogate
-`UnicodeEncodeError`), plus handler-level assertions that no secret value reaches any
-`logger.info` call while the Processor and the caller keep the original event and result objects.
+content-type declaration —, multipart with headers, by shape with and without an RFC 2046
+preamble and whitespace-padded content types, plain text, form-encoded with and without the
+content-type header and with surrounding whitespace, base64 flag, a leading UTF-8 BOM on every
+body kind, 2000-deep JSON nesting), the redaction guards at helper and handler level (recursion
+and the lone-surrogate `UnicodeEncodeError`), the INFO guard (`_redact_for_logging` is not called
+when INFO is disabled, and `_info_enabled()` assumes INFO for a logger without `isEnabledFor`),
+the redacted config line of the constructor and the redacted result line of `die()`, plus
+handler-level assertions that no secret value reaches any `logger.info` call while the Processor
+and the caller keep the original event and result objects.

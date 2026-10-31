@@ -28,12 +28,14 @@ receiving the original event and the caller the original result.
   follows, in order: the marker, when the same dict has a truthy `isBase64Encoded`, a sibling
   `headers` dict (any key case) carries a `content-type` (any key case) whose whitespace-trimmed
   value starts with `multipart/`, or the body has the multipart shape on its own (starts with
-  `--` and contains `content-disposition:`); redacted and re-serialized JSON
-  (`ensure_ascii=False`), when the stripped body starts with `{` or `[` and parses; the marker,
-  when such a body is too deeply nested to redact or fails to parse; redacted like a query
-  string, when the body is form-encoded — a sibling `headers` dict carries a whitespace-trimmed
-  `content-type` starting with `application/x-www-form-urlencoded`, or the body matches the
-  `k=v&k=v` shape; unchanged otherwise (e.g. plain text).
+  `--` after leading whitespace or carries an RFC 2046 preamble before the first boundary — a
+  `\n--` line — and contains `content-disposition:` in any case); redacted and re-serialized JSON
+  (`ensure_ascii=False`), when the body — stripped of a leading UTF-8 BOM — starts with `{` or `[`
+  and parses; the marker, when such a body is too deeply nested to redact or fails to parse;
+  redacted like a query string, when the body is form-encoded — a sibling `headers` dict carries a
+  whitespace-trimmed `content-type` starting with `application/x-www-form-urlencoded`, or the
+  whitespace-stripped body matches the `k=v&k=v` shape (the logged copy is re-encoded from the
+  stripped body); unchanged otherwise (e.g. plain text).
 
 ## R3 — Extensibility and pass-through guarantees
 
@@ -45,7 +47,14 @@ receiving the original event and the caller the original result.
   value too deeply nested to copy), THE SYSTEM SHALL log `LOG_REDACTED_VALUE` and a warning
   naming only the exception type.
 
+## R4 — Where the redacted copies are logged
+
+- THE SYSTEM SHALL build and log the redacted copies of the event and the result only when the
+  INFO level is enabled for the module logger; a logger without `isEnabledFor` SHALL be assumed
+  to emit INFO.
+- The Processor constructor SHALL log a redacted copy of the final config, and `die()` a redacted
+  copy of its result, under the same INFO guard.
+
 ## Out of scope
 
-- Config values logged by the Processor constructor (secrets belong in a secrets manager).
 - Over-redaction of keys that merely resemble sensitive names (accepted for a log-only helper).
