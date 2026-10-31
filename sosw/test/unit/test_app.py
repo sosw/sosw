@@ -46,13 +46,13 @@ class app_UnitTestCase(unittest.TestCase):
         global_vars.processor = None
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app_init(self, mock_boto_client):
         Processor(custom_config=self.TEST_CONFIG)
         self.assertTrue(True)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app__pre_call__reset_stats(self, _):
         processor = Processor(custom_config=self.TEST_CONFIG)
         processor.__call__(event={'k': 'success'})
@@ -62,22 +62,22 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(processor.stats['total_processor_calls'], 1)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app_init__with_some_clients(self, mock_boto_client):
         custom_config = {
             'init_clients': ['Sns', 'Siblings'],
             'siblings_config': {
-                "test": True
+                'test': True
             }
         }
 
         processor = Processor(custom_config=custom_config)
         self.assertIsInstance(getattr(processor, 'sns_client'), SnsManager,
-                              "SnsManager was not initialized. Probably boto3 sns instead of it.")
+                              'SnsManager was not initialized. Probably boto3 sns instead of it.')
         self.assertIsNotNone(getattr(processor, 'siblings_client'))
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app_init__client_class_receives_config(self, mock_boto_client):
         """
         Classes with the `Client` suffix (e.g. DynamoDbClient) receive their config as `config`.
@@ -98,12 +98,12 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(processor.dynamo_db_client.config['table_name'], 'autotest_dynamo_db')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app_init__boto_and_components_custom_clients(self, mock_boto_client):
         custom_config = {
             'init_clients': ['dynamodb', 'Siblings'],
             'siblings_config': {
-                "test": True
+                'test': True
             }
         }
 
@@ -115,7 +115,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(str(type(getattr(processor, 'dynamodb_client'))), str(type(boto3.client('dynamodb'))))
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_app_init__with_some_invalid_client(self, mock_boto_client):
         custom_config = {
             'init_clients': ['NotExists']
@@ -124,22 +124,22 @@ class app_UnitTestCase(unittest.TestCase):
         mock_boto_client.assert_called_with('not_exists')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_register_clients__raises_when_boto3_fallback_fails(self, mock_boto_client):
         """
         If a client is neither importable from components/managers nor a valid boto3 service,
         register_clients must fail fast and loud.
         """
 
-        mock_boto_client.side_effect = Exception("Unknown service")
+        mock_boto_client.side_effect = Exception('Unknown service')
 
         with self.assertRaises(RuntimeError) as exc:
             Processor(custom_config={'init_clients': ['NotExists']})
 
-        self.assertIn("Failed to import for service not_exists", str(exc.exception))
+        self.assertIn('Failed to import for service not_exists', str(exc.exception))
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_register_clients__raises_when_module_has_no_client_class(self, mock_boto_client):
         """
         The module `sosw.components.helpers` imports fine, but has neither HelpersManager nor HelpersClient.
@@ -148,12 +148,12 @@ class app_UnitTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError) as exc:
             Processor(custom_config={'init_clients': ['Helpers']})
 
-        self.assertIn("Failed to import Helpers", str(exc.exception))
-        self.assertIn("Manager", str(exc.exception))
-        self.assertIn("Client", str(exc.exception))
+        self.assertIn('Failed to import Helpers', str(exc.exception))
+        self.assertIn('Manager', str(exc.exception))
+        self.assertIn('Client', str(exc.exception))
 
 
-    @patch("sosw.app.get_config")
+    @patch('sosw.app.get_config')
     def test_app_calls_get_config(self, mock_ssm):
 
         mock_ssm.return_value = {'mock': 'called'}
@@ -163,7 +163,7 @@ class app_UnitTestCase(unittest.TestCase):
         mock_ssm.assert_called_once_with('test_func_config')
 
 
-    @patch("sosw.app.get_config")
+    @patch('sosw.app.get_config')
     def test_init__test_flag_precedence(self, mock_ssm):
         """
         An explicitly passed `test` flag must always win. Otherwise the flag is derived from STAGE.
@@ -189,7 +189,7 @@ class app_UnitTestCase(unittest.TestCase):
                 self.assertEqual(processor.test, expected)
 
 
-    @patch("sosw.app.get_config")
+    @patch('sosw.app.get_config')
     def test_init_config__disable_ddb_config__from_custom_config(self, mock_ssm):
 
         os.environ['AWS_LAMBDA_FUNCTION_NAME'] = 'test_func'
@@ -197,10 +197,10 @@ class app_UnitTestCase(unittest.TestCase):
         processor = Processor(custom_config={'disable_ddb_config': True, 'foo': 'bar'})
 
         mock_ssm.assert_not_called()
-        self.assertEqual(processor.config['foo'], 'bar', "custom_config must still be applied")
+        self.assertEqual(processor.config['foo'], 'bar', 'custom_config must still be applied')
 
 
-    @patch("sosw.app.get_config")
+    @patch('sosw.app.get_config')
     def test_init_config__disable_ddb_config__from_class_attribute(self, mock_ssm):
 
         class NoDdbConfigProcessor(Processor):
@@ -211,10 +211,10 @@ class app_UnitTestCase(unittest.TestCase):
         processor = NoDdbConfigProcessor(custom_config=self.TEST_CONFIG)
 
         mock_ssm.assert_not_called()
-        self.assertEqual(processor.config['test'], True, "custom_config must still be applied")
+        self.assertEqual(processor.config['test'], True, 'custom_config must still be applied')
 
 
-    @patch("sosw.app.get_config")
+    @patch('sosw.app.get_config')
     def test_init_config__disable_ddb_config__from_default_config(self, mock_ssm):
 
         class DefaultsProcessor(Processor):
@@ -225,7 +225,7 @@ class app_UnitTestCase(unittest.TestCase):
         processor = DefaultsProcessor()
 
         mock_ssm.assert_not_called()
-        self.assertEqual(processor.config['some_default'], 42, "DEFAULT_CONFIG must still be applied")
+        self.assertEqual(processor.config['some_default'], 42, 'DEFAULT_CONFIG must still be applied')
 
 
     # @unittest.skip("https://github.com/bimpression/sosw/issues/40")
@@ -238,7 +238,7 @@ class app_UnitTestCase(unittest.TestCase):
     #     raise NotImplementedError
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_app_init__config_logged_redacted(self, mock_logger_info, _):
         """
@@ -254,7 +254,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(processor.config, {'db_password': 'test-db-password', 'db_host': 'test-db-host'})
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_app_init__config_not_logged_when_info_disabled(self, mock_logger_info, _):
         """
@@ -375,7 +375,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(processor_instance.reset_stats.call_count, 2)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_lambda_handler__redacts_logged_event_and_result(self, mock_logger_info, _):
         """
@@ -435,7 +435,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIn(LOG_REDACTED_VALUE, logged)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_lambda_handler__deeply_nested_body_still_calls_processor(self, mock_logger_info, _):
         """
@@ -522,7 +522,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(_log_redacted(event), LOG_REDACTED_VALUE)
         mock_logger_warning.assert_called_once_with(
-            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'Could not redact the value for logging (%s), logging the redaction marker instead',
             'UnicodeEncodeError')
 
 
@@ -550,7 +550,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertIs(result, processor_class.return_value.return_value)
         self.assertIn(call(LOG_REDACTED_VALUE), mock_logger_info.call_args_list)
         mock_logger_warning.assert_called_once_with(
-            "Could not redact the value for logging (%s), logging the redaction marker instead",
+            'Could not redact the value for logging (%s), logging the redaction marker instead',
             'UnicodeEncodeError')
 
 
@@ -626,7 +626,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(event)
 
-        self.assertEqual(event, snapshot, "Input must not be mutated")
+        self.assertEqual(event, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['httpMethod'], 'GET')
         self.assertEqual(redacted['path'], '/things')
         self.assertEqual(redacted['headers'], {
@@ -664,7 +664,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(v2_event)
 
-        self.assertEqual(v2_event, snapshot, "Input must not be mutated")
+        self.assertEqual(v2_event, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['version'], '2.0')
         self.assertEqual(redacted['cookies'], LOG_REDACTED_VALUE)
         self.assertEqual(redacted['headers'], {'authorization': LOG_REDACTED_VALUE})
@@ -680,7 +680,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(auth_event)
 
-        self.assertEqual(auth_event, snapshot, "Input must not be mutated")
+        self.assertEqual(auth_event, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['type'], 'TOKEN')
         self.assertEqual(redacted['authorizationToken'], LOG_REDACTED_VALUE)
         self.assertEqual(redacted['methodArn'], auth_event['methodArn'])
@@ -698,7 +698,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertIn(42, redacted)
         self.assertEqual(redacted[42], {'Authorization': LOG_REDACTED_VALUE})
         self.assertEqual(redacted['AUTHORIZATION'], LOG_REDACTED_VALUE)
@@ -722,7 +722,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted, [
             [{'X-Amz-Security-Token': LOG_REDACTED_VALUE}, {'signature_check': LOG_REDACTED_VALUE}],
             ('X-Amz-Signature', 'public'),
@@ -763,7 +763,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['usage'], {'input_tokens': 1200})
         self.assertEqual(redacted['max_tokens'], 4096)
         self.assertEqual(redacted['token_count'], 3)
@@ -793,7 +793,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['rawQueryString'],
                          f'access_token={LOG_REDACTED_VALUE}&limit=10&API_KEY={LOG_REDACTED_VALUE}')
         self.assertEqual(_redact_for_logging({'rawQueryString': ''})['rawQueryString'], '')
@@ -815,7 +815,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertIsInstance(redacted['body'], str)
         self.assertEqual(json.loads(redacted['body']), {
             'username': 'test-user',
@@ -850,7 +850,7 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], data['body'])
 
 
@@ -885,10 +885,10 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
                 for secret in ('test-form-password', 'test-hunter2', 'test-s3cr3t', 'test-eyJabc'):
-                    self.assertNotIn(secret, str(redacted['body']), "Secret leaked into the logged body")
+                    self.assertNotIn(secret, str(redacted['body']), 'Secret leaked into the logged body')
 
 
     def test__redact_for_logging__multipart_body_masked(self):
@@ -924,7 +924,7 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
                 self.assertEqual({k: v for k, v in redacted.items() if k != 'body'},
                                  {k: v for k, v in data.items() if k != 'body'})
@@ -961,7 +961,7 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], expected)
 
 
@@ -977,7 +977,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertEqual(redacted['body'], f'token={LOG_REDACTED_VALUE}&x=1')
 
 
@@ -996,7 +996,7 @@ class app_UnitTestCase(unittest.TestCase):
 
         redacted = _redact_for_logging(data)
 
-        self.assertEqual(data, snapshot, "Input must not be mutated")
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
         self.assertEqual(json.loads(redacted['body']), {'password': LOG_REDACTED_VALUE})
 
         malformed = {'body': bom + '{"password": "test-bom-password", oops'}
@@ -1022,7 +1022,7 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
 
 
@@ -1039,7 +1039,7 @@ class app_UnitTestCase(unittest.TestCase):
 
                 redacted = _redact_for_logging(data)
 
-                self.assertEqual(data, snapshot, "Input must not be mutated")
+                self.assertEqual(data, snapshot, 'Input must not be mutated')
                 self.assertEqual(redacted['body'], LOG_REDACTED_VALUE)
                 self.assertEqual(redacted['headers'], {'Content-Type': 'application/json'})
 
@@ -1102,7 +1102,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual('123456789000', global_vars.processor._account)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_property_account__initialized_from_sts(self, boto_client_mock):
 
         get_caller_identity_mock = MagicMock()
@@ -1118,7 +1118,7 @@ class app_UnitTestCase(unittest.TestCase):
         get_caller_identity_mock.get.assert_called_once_with('Account')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'setLevel')
     def test_lambda_handler__logger_level(self, logger_set_level, client_mock):
         global_vars = LambdaGlobals()
@@ -1128,7 +1128,7 @@ class app_UnitTestCase(unittest.TestCase):
         logger_set_level.assert_called_once_with(20)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_die(self, mock_boto):
 
         p = Processor(custom_config=self.TEST_CONFIG)
@@ -1137,7 +1137,7 @@ class app_UnitTestCase(unittest.TestCase):
             p.die()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_die__uncatchable_death(self, mock_boto):
 
         class Child(Processor):
@@ -1153,7 +1153,7 @@ class app_UnitTestCase(unittest.TestCase):
             p.catch_me()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_die__calls_sns(self, mock_boto):
 
         mock_boto_client = MagicMock()
@@ -1171,24 +1171,24 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(kwargs['Message'], 'Unknown Failure')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_die__sns_failure_still_raises_system_exit(self, mock_boto):
         """
         Even if publishing the death notice to SNS fails, die() must log that and still exit.
         """
 
         p = Processor(custom_config=self.TEST_CONFIG)
-        mock_boto.side_effect = Exception("No SNS access")
+        mock_boto.side_effect = Exception('No SNS access')
 
         with patch.object(logger, 'exception') as mock_logger_exception:
             with self.assertRaises(SystemExit) as exc:
-                p.die("Some failure")
+                p.die('Some failure')
 
         self.assertEqual(exc.exception.code, 1)
-        mock_logger_exception.assert_any_call("Failed to send SNS message to Alarms.")
+        mock_logger_exception.assert_any_call('Failed to send SNS message to Alarms.')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_die__result_logged_redacted(self, mock_logger_info, mock_boto):
         """
@@ -1209,7 +1209,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(p.stats['db_password'], 'test-db-password')
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     @patch.object(logger, 'info')
     def test_die__result_not_logged_when_info_disabled(self, mock_logger_info, mock_boto):
         """
@@ -1227,7 +1227,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(logged_dicts, [])
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_get_stats__recursive_merges_stats_of_clients(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.stats['own_calls'] = 3
@@ -1242,7 +1242,7 @@ class app_UnitTestCase(unittest.TestCase):
         p.foo_client.get_stats.assert_called_once()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_get_stats__not_recursive_skips_clients(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.foo_client = MagicMock()
@@ -1253,7 +1253,7 @@ class app_UnitTestCase(unittest.TestCase):
         p.foo_client.get_stats.assert_not_called()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_reset_stats__skips_non_numeric_values(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.stats['numeric'] = 5
@@ -1266,7 +1266,7 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertNotIn('total_function_name', p.stats)
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_reset_stats__recursive_resets_clients(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.foo_client = MagicMock()
@@ -1277,7 +1277,7 @@ class app_UnitTestCase(unittest.TestCase):
         p.foo_client.reset_stats.assert_called_once()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_reset_stats__not_recursive_skips_clients(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.foo_client = MagicMock()
@@ -1287,7 +1287,7 @@ class app_UnitTestCase(unittest.TestCase):
         p.foo_client.reset_stats.assert_not_called()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_exit__closes_connections(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
         p.sql = MagicMock()
@@ -1299,7 +1299,7 @@ class app_UnitTestCase(unittest.TestCase):
         p.conn.close.assert_called_once()
 
 
-    @patch("boto3.client")
+    @patch('boto3.client')
     def test_exit__survives_missing_connections(self, _):
         p = Processor(custom_config=self.TEST_CONFIG)
 
@@ -1307,8 +1307,8 @@ class app_UnitTestCase(unittest.TestCase):
         p.__exit__(None, None, None)
 
 
-    @patch("boto3.client")
-    @patch("sosw.app.DynamoDbClient")
+    @patch('boto3.client')
+    @patch('sosw.app.DynamoDbClient')
     def test_get_ddbc(self, mock_dynamodb_client, _):
         """
          Tests the `get_ddbc` method of Processor class with a valid prefix and configuration.
