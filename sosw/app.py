@@ -30,18 +30,8 @@ __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler', 'LOG_REDACTED_VAL
            'LOG_COUNTER_KEY_WORDS']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
-try:
-    from aws_lambda_powertools import Logger
-
-    logger = Logger()
-
-except ImportError:
-    import logging
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
 import json
+import logging
 import os
 import re
 
@@ -52,6 +42,15 @@ from decimal import Decimal
 from importlib import import_module
 from typing import Dict, Any
 from urllib.parse import parse_qsl, urlencode
+
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -79,6 +78,9 @@ LOG_COUNTER_KEY_WORDS = ('tokens', 'count')
 
 #: Matches a form-encoded body of ``name=value`` pairs joined with ``&``. See ``_redact_body``.
 _FORM_BODY_PATTERN = re.compile(r'^[^=&\s]+=[^&\s]*(&[^=&\s]+=[^&\s]*)*$')
+
+#: Matches the leading run of whitespace and UTF-8 BOMs stripped before the body checks.
+_LEADING_WS_BOM_PATTERN = re.compile(r'^[\s\ufeff]+')
 
 
 def _key_words(key):
@@ -144,16 +146,16 @@ def _body_is_form_encoded(body, container):
 
     True when a sibling ``headers`` dict (any key case) carries a ``content-type`` header (any key
     case) whose whitespace-trimmed lowercase value starts with
-    ``application/x-www-form-urlencoded``, or when the body itself matches the
+    ``application/x-www-form-urlencoded``, or when the whitespace-stripped body itself matches the
     ``name=value&name=value`` shape of ``_FORM_BODY_PATTERN``.
 
-    :param str body:        Raw body of the request or response.
+    :param str body:        Raw body of the request or response, already stripped of a leading BOM.
     :param dict container:  Dict holding the ``body`` key.
     :return:                True when the body should be redacted as a form.
     :rtype:                 bool
     """
     return (_content_type_starts_with(container, 'application/x-www-form-urlencoded')
-            or _FORM_BODY_PATTERN.match(body) is not None)
+            or _FORM_BODY_PATTERN.match(body.strip()) is not None)
 
 
 def _redact_body(body, container):
@@ -163,13 +165,16 @@ def _redact_body(body, container):
     A body of a dict with a truthy ``isBase64Encoded`` sibling is replaced with
     :py:data:`LOG_REDACTED_VALUE` — base64 is reversible, so it is never logged. A body whose
     sibling ``headers`` declare a ``multipart/`` content type, or one that has the multipart shape
-    on its own (starts with ``--`` and contains ``content-disposition:``), is replaced with the
-    marker as well. A body whose stripped form starts with ``{`` or ``[`` is parsed as JSON,
-    redacted recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to
-    redact, or one that looks like JSON but fails to parse, is replaced with the marker as well —
-    it may be a truncated payload still carrying secrets, and is never redacted as a form instead.
-    Any other string that ``_body_is_form_encoded`` accepts is redacted like a query string;
-    everything else is returned unchanged.
+    on its own — starts with ``--`` after leading whitespace or carries an RFC 2046 preamble before
+    the first boundary (a ``\\n--`` line), and contains ``content-disposition:`` in any case — is
+    replaced with the marker as well. A leading UTF-8 BOM — also after leading whitespace — is
+    stripped before the JSON and form checks: a body whose stripped form then starts with ``{`` or
+    ``[`` is parsed as JSON, redacted recursively and re-serialized (``ensure_ascii=False``); a body
+    too deeply nested to redact, or one that looks like JSON but fails to parse, is replaced with the
+    marker as well — it may be a truncated payload still carrying secrets, and is never redacted as
+    a form instead. Any other string that ``_body_is_form_encoded`` accepts is redacted like a query
+    string (the logged copy is re-encoded from the whitespace-stripped body); everything else is
+    returned unchanged.
 
     :param str body:        Raw body of the request or response.
     :param dict container:  Dict holding the ``body`` key (e.g. the whole event or response).
@@ -179,16 +184,20 @@ def _redact_body(body, container):
     if container.get('isBase64Encoded'):
         return LOG_REDACTED_VALUE
 
+    # A leading UTF-8 BOM, also after leading whitespace, breaks both the JSON detection and json.loads.
+    unbombed_body = _LEADING_WS_BOM_PATTERN.sub('', body)
+
     if _content_type_starts_with(container, 'multipart/'):
         return LOG_REDACTED_VALUE
 
-    if body.lstrip().startswith('--') and 'content-disposition:' in body.lower():
-        # Headerless multipart by shape - the payload is opaque to the redactor either way.
+    if (unbombed_body.lstrip().startswith('--') or '\n--' in unbombed_body) and (
+            'content-disposition:' in unbombed_body.lower()):
+        # Headerless multipart by shape, with an optional preamble - opaque to the redactor either way.
         return LOG_REDACTED_VALUE
 
-    if body.strip()[:1] in ('{', '['):
+    if unbombed_body.strip()[:1] in ('{', '['):
         try:
-            return json.dumps(_redact_for_logging(json.loads(body)), ensure_ascii=False)
+            return json.dumps(_redact_for_logging(json.loads(unbombed_body)), ensure_ascii=False)
         except ValueError:
             # Not JSON after all - and a truncated payload may still carry secrets.
             return LOG_REDACTED_VALUE
@@ -196,8 +205,8 @@ def _redact_body(body, container):
             # Too deeply nested to redact - and it may still hold secrets.
             return LOG_REDACTED_VALUE
 
-    if _body_is_form_encoded(body, container):
-        return _redact_query_string(body)
+    if _body_is_form_encoded(unbombed_body, container):
+        return _redact_query_string(unbombed_body.strip())
 
     return body
 
@@ -214,11 +223,12 @@ def _redact_for_logging(data):
     camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
     ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
     has the values of its sensitive parameters masked, and a string ``body`` is redacted by
-    ``_redact_body`` (JSON parsed and re-serialized, form-encoded values masked, base64-encoded,
-    multipart and JSON-looking-but-unparsable bodies replaced with the marker). Dicts, lists and
-    tuples are copied and processed recursively;
-    anything else is returned as is. All constants are looked up in the module globals at call
-    time, so reassigning them changes the behaviour.
+    ``_redact_body`` (a leading UTF-8 BOM — also after leading whitespace — is stripped first, JSON
+    is parsed and re-serialized, form-encoded values are masked, and base64-encoded, multipart —
+    declared by content type or detected by shape, an RFC 2046 preamble allowed — and
+    JSON-looking-but-unparsable bodies are replaced with the marker). Dicts, lists and tuples are
+    copied and processed recursively; anything else is returned as is. All constants are looked up in
+    the module globals at call time, so reassigning them changes the behaviour.
 
     :param data:    Dict, list, tuple or scalar value to prepare for logging.
     :return:        Redacted copy of ``data`` with the values of sensitive keys masked.
@@ -273,6 +283,24 @@ def _log_redacted(value):
         logger.warning("Could not redact the value for logging (%s), logging the redaction marker instead",
                        type(exc).__name__)
         return LOG_REDACTED_VALUE
+
+
+def _info_enabled():
+    """
+    Check whether the INFO level is enabled for the module logger.
+
+    The module ``logger`` is either an ``aws_lambda_powertools`` Logger — which forwards unknown
+    attributes to its internal stdlib logger — or a plain stdlib logger, so ``isEnabledFor`` works
+    on both. Building a redacted copy is wasted work when INFO is disabled, but logging must never
+    fail an invocation: a logger without ``isEnabledFor`` is assumed to emit INFO.
+
+    :return:    True when the redacted INFO log lines should be built and emitted.
+    :rtype:     bool
+    """
+    try:
+        return logger.isEnabledFor(logging.INFO)
+    except AttributeError:
+        return True
 
 
 def _derive_test_flag(explicit_flag=None):
@@ -346,7 +374,8 @@ class Processor:
 
         self.init_config(custom_config=custom_config)
         logger.info("Final %s processor config", self.__class__.__name__)
-        logger.info(self.config)
+        if _info_enabled():
+            logger.info(_log_redacted(self.config))
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
@@ -669,7 +698,8 @@ class Processor:
 
         result = {'status': 'failed'}
         result.update(self.get_stats())
-        logger.info(result)
+        if _info_enabled():
+            logger.info(_log_redacted(result))
 
         try:
             sns_recipient = self.config.get('dead_sns_topic', 'SoswWorkerErrors')
@@ -796,7 +826,8 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
                     os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
                     __name__, context)
-        logger.info(_log_redacted(event))
+        if _info_enabled():
+            logger.info(_log_redacted(event))
 
         test = _derive_test_flag(event.get('test') if isinstance(event, dict) else None)
 
@@ -811,7 +842,8 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         global_vars.processor.reset_stats(recursive=True)
 
-        logger.info(_log_redacted(result))
+        if _info_enabled():
+            logger.info(_log_redacted(result))
 
         return result
 
@@ -833,12 +865,15 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     contains any substring from ``LOG_SENSITIVE_KEY_PARTS`` (e.g. ``Authorization``, ``Cookie``,
     ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
-    Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings and
-    form-encoded bodies are masked, and a body with a truthy sibling ``isBase64Encoded``, a
-    ``multipart/`` body (declared by a whitespace-trimmed content type or detected by shape) or
-    one that looks like JSON but does not parse is replaced with the marker (base64 is
-    reversible, and an unparsable payload may still carry secrets). The Processor still receives
-    the original event, and the original result object is returned to the caller.
+    Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings (a leading
+    UTF-8 BOM — also after leading whitespace — is stripped before parsing) and form-encoded bodies
+    are masked, and a body with a truthy sibling ``isBase64Encoded``, a ``multipart/`` body (declared
+    by a whitespace-trimmed content type, or detected by shape — starting with ``--`` after leading
+    whitespace or after an RFC 2046 preamble, and containing ``content-disposition:``) or one that
+    looks like JSON but does not parse is replaced with the marker (base64 is reversible, and an
+    unparsable payload may still carry secrets). The Processor still receives the original event, and
+    the original result object is returned to the caller. The redacted copies are built only when the
+    INFO level is enabled for the module logger.
 
     :param processor_class:  Callable processor class.
     :param global_vars:      Lambda's global variables (processor, context).

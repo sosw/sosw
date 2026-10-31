@@ -19,3 +19,10 @@
 - [x] 11. Round-5 review: a JSON-looking body that fails to parse always logs the marker (no
   form-redaction fallback), content-type values are whitespace-trimmed before the prefix check,
   and a headerless multipart body is masked by its shape.
+- [x] 12. Follow-ups (HQ-1527): the redacted copies of the event and the result are built only
+  when INFO is enabled (`_info_enabled()`, `logging` imported at module level); the Processor
+  constructor logs a redacted copy of the final config and `die()` a redacted copy of its result
+  under the same guard.
+- [x] 13. Follow-ups (HQ-1527): a leading UTF-8 BOM is stripped before the JSON and form checks;
+  the form shape is matched on the whitespace-stripped body; the multipart shape allows an RFC
+  2046 preamble before the first boundary.
