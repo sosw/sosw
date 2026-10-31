@@ -168,9 +168,9 @@ What is redacted:
 -   **Bodies.** A string ``body`` is redacted when it carries JSON (a leading UTF-8 BOM — also
     after leading whitespace — is stripped first; the JSON is parsed, redacted recursively and
     re-serialized with ``ensure_ascii=False``); when it is form-encoded — declared by the sibling
-    ``content-type`` of ``application/x-www-form-urlencoded`` (any key case, whitespace around the
-    value is trimmed) or by the ``k=v&k=v`` shape of its whitespace-stripped form — it is redacted
-    like a query string; and it is replaced with the marker entirely when the sibling
+    ``headers`` ``content-type`` of ``application/x-www-form-urlencoded`` (any key case, whitespace
+    around the value is trimmed) or by the ``k=v&k=v`` shape of its whitespace-stripped form — it
+    is redacted like a query string; and it is replaced with the marker entirely when the sibling
     ``isBase64Encoded`` flag is set (base64 is reversible), when the ``content-type`` starts with
     ``multipart/`` or the body itself has the multipart shape (starts with ``--`` after leading
     whitespace or carries an RFC 2046 preamble before the first boundary, and contains
