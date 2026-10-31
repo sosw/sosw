@@ -164,8 +164,9 @@ def _redact_body(body, container):
     sibling ``headers`` declare a ``multipart/`` content type, or one that has the multipart shape
     on its own — starts with ``--`` after leading whitespace or carries an RFC 2046 preamble before
     the first boundary (a ``\\n--`` line), and contains ``content-disposition:`` in any case — is
-    replaced with the marker as well. A leading UTF-8 BOM is stripped before the JSON and form
-    checks: a body whose stripped form then starts with ``{`` or ``[`` is parsed as JSON, redacted
+    replaced with the marker as well. A leading UTF-8 BOM — also after leading whitespace — is
+    stripped before the JSON and form checks: a body whose stripped form then starts with ``{`` or
+    ``[`` is parsed as JSON, redacted
     recursively and re-serialized (``ensure_ascii=False``); a body too deeply nested to redact, or
     one that looks like JSON but fails to parse, is replaced with the marker as well — it may be a
     truncated payload still carrying secrets, and is never redacted as a form instead. Any other
@@ -180,8 +181,8 @@ def _redact_body(body, container):
     if container.get('isBase64Encoded'):
         return LOG_REDACTED_VALUE
 
-    # A leading UTF-8 BOM breaks both the JSON detection and json.loads.
-    unbombed_body = body.lstrip('\ufeff')
+    # A leading UTF-8 BOM, also after leading whitespace, breaks both the JSON detection and json.loads.
+    unbombed_body = body.lstrip().lstrip('\ufeff')
 
     if _content_type_starts_with(container, 'multipart/'):
         return LOG_REDACTED_VALUE
@@ -219,7 +220,8 @@ def _redact_for_logging(data):
     camelCase boundaries, so ``max_tokens`` and ``tokenCount`` keep their counters while a numeric
     ``password`` does not). Two non-sensitive keys get special handling: a string ``rawQueryString``
     has the values of its sensitive parameters masked, and a string ``body`` is redacted by
-    ``_redact_body`` (a leading UTF-8 BOM is stripped first, JSON is parsed and re-serialized,
+    ``_redact_body`` (a leading UTF-8 BOM — also after leading whitespace — is stripped first,
+    JSON is parsed and re-serialized,
     form-encoded values are masked, and base64-encoded, multipart — declared by content type or
     detected by shape, an RFC 2046 preamble allowed — and JSON-looking-but-unparsable bodies are
     replaced with the marker). Dicts, lists and tuples are copied and processed recursively;
@@ -862,7 +864,8 @@ def get_lambda_handler(processor_class, global_vars=None, custom_config=None):
     ``X-Origin-Verify``) are replaced with ``LOG_REDACTED_VALUE`` — ``None``, booleans and numbers
     of counter-like keys (a whole word of ``LOG_COUNTER_KEY_WORDS``, e.g. ``max_tokens``) are kept.
     Sensitive parameters of ``rawQueryString``, secrets inside JSON ``body`` strings (a leading
-    UTF-8 BOM is stripped before parsing) and form-encoded bodies are masked, and a body with a
+    UTF-8 BOM — also after leading whitespace — is stripped before parsing) and form-encoded
+    bodies are masked, and a body with a
     truthy sibling ``isBase64Encoded``, a ``multipart/`` body (declared by a whitespace-trimmed
     content type, or detected by shape — starting with ``--`` after leading whitespace or after an
     RFC 2046 preamble, and containing ``content-disposition:``) or one that looks like JSON but

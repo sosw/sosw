@@ -131,7 +131,7 @@ class app_UnitTestCase(unittest.TestCase):
         register_clients must fail fast and loud.
         """
 
-        mock_boto_client.side_effect = Exception('Unknown service')
+        mock_boto_client.side_effect = Exception("Unknown service")
 
         with self.assertRaises(RuntimeError) as exc:
             Processor(custom_config={'init_clients': ['NotExists']})
@@ -258,12 +258,15 @@ class app_UnitTestCase(unittest.TestCase):
     @patch.object(logger, 'info')
     def test_app_init__config_not_logged_when_info_disabled(self, mock_logger_info, _):
         """
-        The redacted copy of the config is not even built when INFO is disabled for the logger.
+        The redacted copy of the config is not even built when INFO is disabled for the logger:
+        `_log_redacted` is never called.
         """
 
         with patch.object(logger, 'isEnabledFor', return_value=False):
-            Processor(custom_config={'db_password': 'test-db-password'})
+            with patch('sosw.app._log_redacted') as mock_log_redacted:
+                Processor(custom_config={'db_password': 'test-db-password'})
 
+        mock_log_redacted.assert_not_called()
         logged_dicts = [c.args[0] for c in mock_logger_info.call_args_list
                         if c.args and isinstance(c.args[0], dict)]
         self.assertEqual(logged_dicts, [])
@@ -557,8 +560,8 @@ class app_UnitTestCase(unittest.TestCase):
     def test_lambda_handler__redaction_built_only_when_info_enabled(self):
         """
         The redacted copies of the event and the result are built only when INFO is enabled for
-        the module logger: with INFO disabled `_redact_for_logging` is never called, with INFO
-        enabled it is called for the event and for the result.
+        the module logger: with INFO disabled neither `_log_redacted` nor `_redact_for_logging`
+        is called, with INFO enabled the latter is called for the event and for the result.
         """
 
         global_vars = LambdaGlobals()
@@ -569,9 +572,11 @@ class app_UnitTestCase(unittest.TestCase):
 
         with patch.object(logger, 'isEnabledFor', return_value=False):
             with patch('sosw.app._redact_for_logging') as mock_redact:
-                lambda_handler(event={'k': 'v'}, context=MagicMock())
+                with patch('sosw.app._log_redacted') as mock_log_redacted:
+                    lambda_handler(event={'k': 'v'}, context=MagicMock())
 
         mock_redact.assert_not_called()
+        mock_log_redacted.assert_not_called()
 
         with patch.object(logger, 'isEnabledFor', return_value=True):
             with patch('sosw.app._redact_for_logging', return_value=LOG_REDACTED_VALUE) as mock_redact:
@@ -1009,6 +1014,21 @@ class app_UnitTestCase(unittest.TestCase):
         self.assertEqual(_redact_for_logging(plain)['body'], plain['body'])
 
 
+    def test__redact_for_logging__whitespace_before_bom_body(self):
+        """
+        A BOM after leading whitespace is stripped as well: a whitespace-prefixed BOM-prefixed
+        JSON body is parsed and redacted rather than passed through unchanged.
+        """
+
+        data = {'body': ' ﻿{"password": "test-ws-bom-password"}'}
+        snapshot = copy.deepcopy(data)
+
+        redacted = _redact_for_logging(data)
+
+        self.assertEqual(data, snapshot, 'Input must not be mutated')
+        self.assertEqual(json.loads(redacted['body']), {'password': LOG_REDACTED_VALUE})
+
+
     def test__redact_for_logging__base64_body_masked(self):
         """
         A body of a dict with a truthy `isBase64Encoded` is replaced with the marker: base64 is
@@ -1178,7 +1198,7 @@ class app_UnitTestCase(unittest.TestCase):
         """
 
         p = Processor(custom_config=self.TEST_CONFIG)
-        mock_boto.side_effect = Exception('No SNS access')
+        mock_boto.side_effect = Exception("No SNS access")
 
         with patch.object(logger, 'exception') as mock_logger_exception:
             with self.assertRaises(SystemExit) as exc:
@@ -1213,14 +1233,18 @@ class app_UnitTestCase(unittest.TestCase):
     @patch.object(logger, 'info')
     def test_die__result_not_logged_when_info_disabled(self, mock_logger_info, mock_boto):
         """
-        The redacted copy of the die() result is not even built when INFO is disabled for the logger.
+        The redacted copy of the die() result is not even built when INFO is disabled for the
+        logger: `_log_redacted` is never called.
         """
 
         p = Processor(custom_config=self.TEST_CONFIG)
 
         with patch.object(logger, 'isEnabledFor', return_value=False):
-            with self.assertRaises(SystemExit):
-                p.die()
+            with patch('sosw.app._log_redacted') as mock_log_redacted:
+                with self.assertRaises(SystemExit):
+                    p.die()
+
+        mock_log_redacted.assert_not_called()
 
         logged_dicts = [c.args[0] for c in mock_logger_info.call_args_list
                         if c.args and isinstance(c.args[0], dict) and c.args[0].get('status') == 'failed']
