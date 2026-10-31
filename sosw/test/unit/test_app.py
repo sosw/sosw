@@ -238,6 +238,37 @@ class app_UnitTestCase(unittest.TestCase):
     #     raise NotImplementedError
 
 
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_app_init__config_logged_redacted(self, mock_logger_info, _):
+        """
+        The config logged by the constructor is a redacted copy: a sensitive key is masked in the
+        logged value, while `self.config` itself keeps the original.
+        """
+
+        processor = Processor(custom_config={'db_password': 'test-db-password', 'db_host': 'test-db-host'})
+
+        logged_configs = [c.args[0] for c in mock_logger_info.call_args_list
+                          if c.args and isinstance(c.args[0], dict)]
+        self.assertEqual(logged_configs, [{'db_password': LOG_REDACTED_VALUE, 'db_host': 'test-db-host'}])
+        self.assertEqual(processor.config, {'db_password': 'test-db-password', 'db_host': 'test-db-host'})
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_app_init__config_not_logged_when_info_disabled(self, mock_logger_info, _):
+        """
+        The redacted copy of the config is not even built when INFO is disabled for the logger.
+        """
+
+        with patch.object(logger, 'isEnabledFor', return_value=False):
+            Processor(custom_config={'db_password': 'test-db-password'})
+
+        logged_dicts = [c.args[0] for c in mock_logger_info.call_args_list
+                        if c.args and isinstance(c.args[0], dict)]
+        self.assertEqual(logged_dicts, [])
+
+
     def test_lambda_handler(self):
 
         mock_context = MagicMock()
@@ -521,6 +552,46 @@ class app_UnitTestCase(unittest.TestCase):
         mock_logger_warning.assert_called_once_with(
             "Could not redact the value for logging (%s), logging the redaction marker instead",
             'UnicodeEncodeError')
+
+
+    def test_lambda_handler__redaction_built_only_when_info_enabled(self):
+        """
+        The redacted copies of the event and the result are built only when INFO is enabled for
+        the module logger: with INFO disabled `_redact_for_logging` is never called, with INFO
+        enabled it is called for the event and for the result.
+        """
+
+        global_vars = LambdaGlobals()
+        global_vars.processor = None
+
+        processor_class = MagicMock()
+        lambda_handler = get_lambda_handler(processor_class, global_vars, self.TEST_CONFIG)
+
+        with patch.object(logger, 'isEnabledFor', return_value=False):
+            with patch('sosw.app._redact_for_logging') as mock_redact:
+                lambda_handler(event={'k': 'v'}, context=MagicMock())
+
+        mock_redact.assert_not_called()
+
+        with patch.object(logger, 'isEnabledFor', return_value=True):
+            with patch('sosw.app._redact_for_logging', return_value=LOG_REDACTED_VALUE) as mock_redact:
+                lambda_handler(event={'k': 'v'}, context=MagicMock())
+
+        self.assertEqual(mock_redact.call_count, 2)
+        self.assertEqual(mock_redact.call_args_list[0], call({'k': 'v'}))
+        self.assertEqual(mock_redact.call_args_list[1], call(processor_class.return_value.return_value))
+
+
+    def test__info_enabled__falls_back_to_true_without_is_enabled_for(self):
+        """
+        A logger without `isEnabledFor` is assumed to emit INFO - logging must never fail an
+        invocation. A stdlib logger answers for real.
+        """
+
+        with patch.object(logger, 'isEnabledFor', side_effect=AttributeError):
+            self.assertTrue(sosw.app._info_enabled())
+
+        self.assertTrue(sosw.app._info_enabled())
 
 
     def test__redact_for_logging__api_gateway_v1_proxy_event(self):
@@ -1066,6 +1137,45 @@ class app_UnitTestCase(unittest.TestCase):
 
         self.assertEqual(exc.exception.code, 1)
         mock_logger_exception.assert_any_call("Failed to send SNS message to Alarms.")
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_die__result_logged_redacted(self, mock_logger_info, mock_boto):
+        """
+        The result logged by die() is a redacted copy: a sensitive stats key is masked in the
+        logged value, while `self.stats` itself keeps the original.
+        """
+
+        p = Processor(custom_config=self.TEST_CONFIG)
+        p.stats['db_password'] = 'test-db-password'
+
+        with self.assertRaises(SystemExit):
+            p.die()
+
+        logged_results = [c.args[0] for c in mock_logger_info.call_args_list
+                          if c.args and isinstance(c.args[0], dict) and c.args[0].get('status') == 'failed']
+        self.assertEqual(len(logged_results), 1)
+        self.assertEqual(logged_results[0]['db_password'], LOG_REDACTED_VALUE)
+        self.assertEqual(p.stats['db_password'], 'test-db-password')
+
+
+    @patch("boto3.client")
+    @patch.object(logger, 'info')
+    def test_die__result_not_logged_when_info_disabled(self, mock_logger_info, mock_boto):
+        """
+        The redacted copy of the die() result is not even built when INFO is disabled for the logger.
+        """
+
+        p = Processor(custom_config=self.TEST_CONFIG)
+
+        with patch.object(logger, 'isEnabledFor', return_value=False):
+            with self.assertRaises(SystemExit):
+                p.die()
+
+        logged_dicts = [c.args[0] for c in mock_logger_info.call_args_list
+                        if c.args and isinstance(c.args[0], dict) and c.args[0].get('status') == 'failed']
+        self.assertEqual(logged_dicts, [])
 
 
     @patch("boto3.client")

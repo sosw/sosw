@@ -30,18 +30,8 @@ __all__ = ['Processor', 'LambdaGlobals', 'get_lambda_handler', 'LOG_REDACTED_VAL
            'LOG_COUNTER_KEY_WORDS']
 __author__ = "Nikolay Grishchenko, Gil Halperin"
 
-try:
-    from aws_lambda_powertools import Logger
-
-    logger = Logger()
-
-except ImportError:
-    import logging
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
 import json
+import logging
 import os
 import re
 
@@ -52,6 +42,15 @@ from decimal import Decimal
 from importlib import import_module
 from typing import Dict, Any
 from urllib.parse import parse_qsl, urlencode
+
+try:
+    from aws_lambda_powertools import Logger
+
+    logger = Logger()
+
+except ImportError:
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
 from sosw.components.benchmark import benchmark
 from sosw.components.config import get_config
@@ -275,6 +274,24 @@ def _log_redacted(value):
         return LOG_REDACTED_VALUE
 
 
+def _info_enabled():
+    """
+    Check whether the INFO level is enabled for the module logger.
+
+    The module ``logger`` is either an ``aws_lambda_powertools`` Logger — which forwards unknown
+    attributes to its internal stdlib logger — or a plain stdlib logger, so ``isEnabledFor`` works
+    on both. Building a redacted copy is wasted work when INFO is disabled, but logging must never
+    fail an invocation: a logger without ``isEnabledFor`` is assumed to emit INFO.
+
+    :return:    True when the redacted INFO log lines should be built and emitted.
+    :rtype:     bool
+    """
+    try:
+        return logger.isEnabledFor(logging.INFO)
+    except AttributeError:
+        return True
+
+
 def _derive_test_flag(explicit_flag=None):
     """
     Resolve the effective ``test`` flag of the Processor or the lambda handler.
@@ -346,7 +363,8 @@ class Processor:
 
         self.init_config(custom_config=custom_config)
         logger.info("Final %s processor config", self.__class__.__name__)
-        logger.info(self.config)
+        if _info_enabled():
+            logger.info(_log_redacted(self.config))
 
         self.stats = defaultdict(int)
         self.result = defaultdict(int)
@@ -669,7 +687,8 @@ class Processor:
 
         result = {'status': 'failed'}
         result.update(self.get_stats())
-        logger.info(result)
+        if _info_enabled():
+            logger.info(_log_redacted(result))
 
         try:
             sns_recipient = self.config.get('dead_sns_topic', 'SoswWorkerErrors')
@@ -796,7 +815,8 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
         logger.info("Called %s lambda of version %s with __name__: %s, context: %s",
                     os.environ.get('AWS_LAMBDA_FUNCTION_NAME'), os.environ.get('AWS_LAMBDA_FUNCTION_VERSION'),
                     __name__, context)
-        logger.info(_log_redacted(event))
+        if _info_enabled():
+            logger.info(_log_redacted(event))
 
         test = _derive_test_flag(event.get('test') if isinstance(event, dict) else None)
 
@@ -811,7 +831,8 @@ def _make_lambda_handler(processor_class, global_vars=None, custom_config=None):
 
         global_vars.processor.reset_stats(recursive=True)
 
-        logger.info(_log_redacted(result))
+        if _info_enabled():
+            logger.info(_log_redacted(result))
 
         return result
 
